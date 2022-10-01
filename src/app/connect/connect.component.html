@@ -1,0 +1,43 @@
+  <button class="btn btn-primary mb-6" (click)="connect()">Connect and compare</button>
+
+  <ngb-accordion [closeOthers]="true" activeIds="repository">
+    <ngb-panel id="repository" title="Repository">
+      <ng-template ngbPanelContent>
+        <div class="mb-3">
+          <label for="repoType" class="form-label">Repository type</label>
+          <select class="form-select">
+            <option value="github">Github</option>
+            <option value="gitlab">Gitlab</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="repoOwner" class="form-label">Owner</label>
+          <input type="text" class="form-control" id="repoOwner" placeholder="Owner name">
+        </div>
+        <div class="mb-3">
+          <label for="repoName" class="form-label">Repository</label>
+          <input type="text" class="form-control" id="repoName" placeholder="Repository name">
+        </div>
+        <div class="mb-3">
+          <label for="repoBranch" class="form-label">Branch</label>
+          <input type="text" class="form-control" id="repoBranch" placeholder="Repository branch or commit">
+        </div>
+        <div class="mb-3">
+          <label for="repoToken" class="form-label">Token</label>
+          <input type="password" class="form-control" id="repoToken" placeholder="Repository API token">
+        </div>
+      </ng-template>
+    </ngb-panel>
+    <ngb-panel id="dataverse" title="Dataverse">
+      <ng-template ngbPanelContent>
+        <div class="mb-3">
+          <label for="datasetId" class="form-label">Dataset</label>
+          <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier">
+        </div>
+        <div class="mb-3">
+          <label for="dataverseToken" class="form-label">Token</label>
+          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token">
+        </div>
+      </ng-template>
+    </ngb-panel>
+  </ngb-accordion>

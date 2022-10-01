@@ -1,0 +1,56 @@
+<div class="row justify-content-between">
+  <span class="col-auto">
+    Actions:
+    <button class="btn btn-primary mx-3" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse">
+      <fa-icon [icon]="icon_noaction"></fa-icon> No action
+    </button>
+    <button class="btn btn-primary mx-3" (click)="updateSelection()" title="Copy all new and changed files to Dataverse">
+      <fa-icon [icon]="icon_update"></fa-icon> Update
+    </button>
+    <button class="btn btn-primary mx-3" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository">
+      <fa-icon [icon]="icon_mirror"></fa-icon> Mirror
+    </button>
+  </span>
+
+  <span class="col-auto">
+    Filters:
+    <button class="btn btn-primary mx-3" (click)="filterNew()" title="Files that are only in the repository">
+      <fa-icon [icon]="icon_new"></fa-icon>
+    </button>
+    <button class="btn btn-primary mx-3" (click)="filterEqual()" title="Files that are equal">
+      <fa-icon [icon]="icon_equal"></fa-icon>
+    </button>
+    <button class="btn btn-primary mx-3" (click)="filterUpdated()" title="Files that have changed">
+      <fa-icon [icon]="icon_updated"></fa-icon>
+    </button>
+    <button class="btn btn-primary mx-3" (click)="filterDeleted()" title="Files that are only in Dataverse">
+      <fa-icon [icon]="icon_deleted"></fa-icon>
+    </button>
+    <button class="btn btn-primary mx-3" (click)="filterNone()" title="All files">
+      <fa-icon [icon]="icon_all"></fa-icon>
+    </button>
+  </span>
+
+  <span class="col-auto">
+    <button class="btn btn-primary mx-3 align-right" (click)="submit()" title="Submit the selection for processing"><fa-icon [icon]="icon_submit"></fa-icon> Submit</button>
+  </span>
+</div>
+
+<div class="table-responsive" height="100% - 2em">
+  <table class="table">
+    <thead>
+      <th class="repository_col">Repository</th>
+      <th class="compare_col">
+        <fa-icon [icon]="icon_compare"></fa-icon>
+      </th>
+      <th class="action_col">
+        <fa-icon [icon]="icon_action"></fa-icon>
+      </th>
+      <th width="dataverse_col">Dataverse</th>
+    </thead>
+    <tbody class="overlow-auto">
+      <tr app-datafile *ngFor="let datafile of data.data" [hidden]="datafile.hidden" [datafile]="datafile"
+        [class]="rowClass(datafile)">
+    </tbody>
+  </table>
+</div>

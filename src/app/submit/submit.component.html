@@ -1,0 +1,43 @@
+<table class="table">
+  <tbody>
+    <tr>
+      <h2>Files that will be created</h2>
+      <hr>
+    </tr>
+    <tr>
+      <table class="table">
+        <tbody>
+          <tr *ngFor="let datafile of created()">
+            <td>{{ datafile.path ? datafile.path + '/': '' }}{{ datafile.name }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </tr>
+    <tr>
+      <h2>Files that will be updated</h2>
+      <hr>
+    </tr>
+    <tr>
+      <table class="table">
+        <tbody>
+          <tr *ngFor="let datafile of updated()">
+            <td>{{ datafile.path ? datafile.path + '/': '' }}{{ datafile.name }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </tr>
+    <tr>
+      <h2>Files that will be deleted</h2>
+      <hr>
+    </tr>
+    <tr>
+      <table class="table">
+        <tbody>
+          <tr *ngFor="let datafile of deleted()">
+            <td>{{ datafile.path ? datafile.path + '/': '' }}{{ datafile.name }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </tr>
+  </tbody>
+</table>

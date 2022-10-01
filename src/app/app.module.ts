@@ -5,10 +5,18 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { CompareComponent } from './compare/compare.component';
+import { ConnectComponent } from './connect/connect.component';
+import { DatafileComponent } from './datafile/datafile.component';
+import { SubmitComponent } from './submit/submit.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    CompareComponent,
+    ConnectComponent,
+    DatafileComponent,
+    SubmitComponent,
   ],
   imports: [
     BrowserModule,
