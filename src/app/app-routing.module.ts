@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { AppComponent } from './app.component';
 import { CompareComponent } from './compare/compare.component';
 import { ConnectComponent } from './connect/connect.component';
 import { SubmitComponent } from './submit/submit.component';

@@ -1,9 +1,7 @@
-import { Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { ConnectService } from '../connect.service';
 import { DataService } from '../data.service';
 import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';

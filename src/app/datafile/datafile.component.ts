@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { Icon, IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faPlus, faMinus, faEquals, faNotEqual, faCopy, faClone, faTrash, faQuestion } from '@fortawesome/free-solid-svg-icons';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
