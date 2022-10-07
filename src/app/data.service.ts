@@ -50,16 +50,9 @@ export class DataService {
     });
   }
 
-  submit(): Observable<StoreResult> {
+  submit(selected: Datafile[]): Observable<StoreResult> {
     var req;
     var url = '';
-    let selected: Datafile[] = [];
-    this.compare_result.data?.forEach(datafile => {
-      let action = datafile.action === undefined ? Fileaction.Ignore : datafile.action;
-      if (action != Fileaction.Ignore) {
-        selected.push(datafile)
-      }
-    });
     switch (this.credentials.repo_type) {
       case "github":
         req = {

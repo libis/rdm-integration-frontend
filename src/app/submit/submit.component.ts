@@ -50,7 +50,17 @@ export class SubmitComponent implements OnInit {
   }
 
   submit() {
-    this.dataService.submit().subscribe((data: StoreResult) => {
+    let selected: Datafile[] = [];
+    this.dataService.compare_result.data?.forEach(datafile => {
+      let action = datafile.action === undefined ? Fileaction.Ignore : datafile.action;
+      if (action != Fileaction.Ignore) {
+        selected.push(datafile)
+      }
+    });
+    if (selected.length === 0) {
+      this.router.navigate(['/connect']);
+    }
+    this.dataService.submit(selected).subscribe((data: StoreResult) => {
       if (data.status !== "OK") {
         console.error("store failed: " + data.status);
       }
