@@ -12,8 +12,8 @@ import { NewDatasetResponse } from './models/new-dataset-response';
 })
 export class DataService {
 
-  compare_result: CompareResult = {};
   credentials: Credentials = {};
+  compare_result: CompareResult = {};
 
   github_compare_url = 'api/github/compare';
   github_store_url = 'api/github/store';
@@ -21,7 +21,7 @@ export class DataService {
 
   constructor(private http: HttpClient) { }
 
-  getData(credentials: Credentials) {
+  getData(credentials: Credentials): Observable<CompareResult> {
     this.credentials = credentials;
     var req;
     var url = '';
@@ -42,14 +42,7 @@ export class DataService {
         break;
     }
 
-
-    let res = this.http.post<CompareResult>(url, req);
-    res.subscribe((data: CompareResult) => {
-      data.data = data.data?.sort((o1, o2) =>
-        ((o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id)) ? -1 : 1
-      );
-      this.compare_result = data;
-    });
+    return this.http.post<CompareResult>(url, req);
   }
 
   submit(selected: Datafile[]): Observable<StoreResult> {

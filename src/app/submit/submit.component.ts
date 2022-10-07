@@ -3,6 +3,7 @@ import { DataService } from '../data.service';
 import { Datafile, Fileaction } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
+import { CompareResult } from '../models/compare-result';
 
 @Component({
   selector: 'app-submit',
@@ -11,17 +12,24 @@ import { StoreResult } from '../models/store-result';
 })
 export class SubmitComponent implements OnInit {
 
+  data: CompareResult = {};
+
   constructor(
     private dataService: DataService,
     private router: Router,
   ) { }
 
   ngOnInit(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.data = this.dataService.compare_result;
   }
 
   created() : Datafile[] {
     let result: Datafile[] = [];
-    this.dataService.compare_result.data?.forEach(datafile => {
+    this.data.data?.forEach(datafile => {
       if (datafile.action === Fileaction.Copy) {
         result.push(datafile);
       }
@@ -31,7 +39,7 @@ export class SubmitComponent implements OnInit {
 
   updated() : Datafile[] {
     let result: Datafile[] = [];
-    this.dataService.compare_result.data?.forEach(datafile => {
+    this.data.data?.forEach(datafile => {
       if (datafile.action === Fileaction.Update) {
         result.push(datafile);
       }
@@ -41,7 +49,7 @@ export class SubmitComponent implements OnInit {
 
   deleted() : Datafile[] {
     let result: Datafile[] = [];
-    this.dataService.compare_result.data?.forEach(datafile => {
+    this.data.data?.forEach(datafile => {
       if (datafile.action === Fileaction.Delete) {
         result.push(datafile);
       }
@@ -51,7 +59,7 @@ export class SubmitComponent implements OnInit {
 
   submit() {
     let selected: Datafile[] = [];
-    this.dataService.compare_result.data?.forEach(datafile => {
+    this.data.data?.forEach(datafile => {
       let action = datafile.action === undefined ? Fileaction.Ignore : datafile.action;
       if (action != Fileaction.Ignore) {
         selected.push(datafile)
