@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { DataService } from '../data.service';
-import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction } from '../models/datafile';
+import { Router } from '@angular/router';
+import { StoreResult } from '../models/store-result';
 
 @Component({
   selector: 'app-submit',
@@ -10,23 +11,17 @@ import { Datafile, Fileaction } from '../models/datafile';
 })
 export class SubmitComponent implements OnInit {
 
-  data: CompareResult = {};
-
   constructor(
-    private dataService: DataService
+    private dataService: DataService,
+    private router: Router,
   ) { }
 
   ngOnInit(): void {
-    this.loadData();
-  }
-
-  loadData(): void {
-    this.data = this.dataService.compare_result;
   }
 
   created() : Datafile[] {
     let result: Datafile[] = [];
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       if (datafile.action === Fileaction.Copy) {
         result.push(datafile);
       }
@@ -36,7 +31,7 @@ export class SubmitComponent implements OnInit {
 
   updated() : Datafile[] {
     let result: Datafile[] = [];
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       if (datafile.action === Fileaction.Update) {
         result.push(datafile);
       }
@@ -46,12 +41,21 @@ export class SubmitComponent implements OnInit {
 
   deleted() : Datafile[] {
     let result: Datafile[] = [];
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       if (datafile.action === Fileaction.Delete) {
         result.push(datafile);
       }
     })
     return result;
+  }
+
+  submit() {
+    this.dataService.submit().subscribe((data: StoreResult) => {
+      if (data.status !== "OK") {
+        console.error("store failed: " + data.status);
+      }
+      this.router.navigate(['/connect']);
+    });
   }
 
 }

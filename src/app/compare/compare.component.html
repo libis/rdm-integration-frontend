@@ -49,7 +49,7 @@
       <th width="dataverse_col">Dataverse</th>
     </thead>
     <tbody class="overlow-auto">
-      <tr app-datafile *ngFor="let datafile of data.data" [hidden]="datafile.hidden" [datafile]="datafile"
+      <tr app-datafile *ngFor="let datafile of dataService.compare_result.data" [hidden]="datafile.hidden" [datafile]="datafile"
         [class]="rowClass(datafile)">
     </tbody>
   </table>

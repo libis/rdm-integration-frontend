@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { ConnectService } from '../connect.service';
 import { DataService } from '../data.service';
-import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -12,8 +12,6 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
   styleUrls: ['./compare.component.scss']
 })
 export class CompareComponent implements OnInit {
-
-  data: CompareResult = {};
 
   icon_noaction = faSquare;
   icon_update = faArrowRight;
@@ -31,8 +29,8 @@ export class CompareComponent implements OnInit {
   icon_action = faBolt;
 
   constructor(
-    private route: ActivatedRoute,
-    private dataService: DataService,
+    public dataService: DataService,
+    private connectService: ConnectService,
     private router: Router
   ) { }
 
@@ -41,10 +39,7 @@ export class CompareComponent implements OnInit {
   }
 
   getData(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.data = this.dataService.getData(id);
-    }
+    this.dataService.getData(this.connectService.credentials);
   }
 
   rowClass(datafile: Datafile): string {
@@ -62,7 +57,7 @@ export class CompareComponent implements OnInit {
   }
 
   noActionSelection(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       if (datafile.hidden) {
         return;
       }
@@ -71,7 +66,7 @@ export class CompareComponent implements OnInit {
   }
 
   updateSelection(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       if (datafile.hidden) {
         return;
       }
@@ -93,7 +88,7 @@ export class CompareComponent implements OnInit {
   }
 
   mirrorSelection(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       if (datafile.hidden) {
         return;
       }
@@ -115,31 +110,31 @@ export class CompareComponent implements OnInit {
   }
 
   filterNew(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       datafile.hidden = datafile.status !== Filestatus.New;
     });
   }
 
   filterEqual(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       datafile.hidden = datafile.status !== Filestatus.Equal;
     });
   }
 
   filterUpdated(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       datafile.hidden = datafile.status !== Filestatus.Updated;
     });
   }
 
   filterDeleted(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       datafile.hidden = datafile.status !== Filestatus.Deleted;
     });
   }
 
   filterNone(): void {
-    this.data.data?.forEach(datafile => {
+    this.dataService.compare_result.data?.forEach(datafile => {
       datafile.hidden = false;
     });
   }

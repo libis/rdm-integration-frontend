@@ -9,6 +9,8 @@ import { CompareComponent } from './compare/compare.component';
 import { ConnectComponent } from './connect/connect.component';
 import { DatafileComponent } from './datafile/datafile.component';
 import { SubmitComponent } from './submit/submit.component';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
@@ -22,7 +24,9 @@ import { SubmitComponent } from './submit/submit.component';
     BrowserModule,
     AppRoutingModule,
     NgbModule,
-    FontAwesomeModule
+    FontAwesomeModule,
+    HttpClientModule,
+    FormsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
