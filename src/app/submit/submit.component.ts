@@ -59,6 +59,7 @@ export class SubmitComponent implements OnInit {
     });
     if (selected.length === 0) {
       this.router.navigate(['/connect']);
+      return;
     }
     this.dataService.submit(selected).subscribe((data: StoreResult) => {
       if (data.status !== "OK") {
