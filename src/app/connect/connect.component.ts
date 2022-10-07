@@ -2,7 +2,9 @@ import { Target } from '@angular/compiler';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConnectService } from '../connect.service';
+import { DataService } from '../data.service';
 import { Credentials } from '../models/credentials';
+import { NewDatasetResponse } from '../models/new-dataset-response';
 
 @Component({
   selector: 'app-connect',
@@ -10,8 +12,6 @@ import { Credentials } from '../models/credentials';
   styleUrls: ['./connect.component.scss']
 })
 export class ConnectComponent implements OnInit {
-
-  credentials: Credentials = {};
 
   repoType?: string;
   repoOwner?: string;
@@ -21,7 +21,7 @@ export class ConnectComponent implements OnInit {
   datasetId?: string;
   dataverseToken?: string;
 
-  constructor(private connectService: ConnectService, private router: Router) { }
+  constructor(private connectService: ConnectService, private router: Router, private dataService: DataService) { }
 
   ngOnInit(): void {
     this.repoType = this.connectService.credentials.repo_type;
@@ -64,7 +64,7 @@ export class ConnectComponent implements OnInit {
     if (this.repoToken !== undefined && this.repoType === "gitlab") {
       localStorage.setItem('glToken', this.repoToken);
     }
-    this.credentials = {
+    let credentials = {
       repo_type: this.repoType,
       repo_owner: this.repoOwner,
       repo_name: this.repoName,
@@ -73,8 +73,17 @@ export class ConnectComponent implements OnInit {
       dataset_id: this.datasetId,
       dataverse_token: this.dataverseToken,
     }
-    let connection_id = this.connectService.login(this.credentials);
+    let connection_id = this.connectService.login(credentials);
     this.router.navigate(['/compare', connection_id]);
   }
 
+  newDataset() {
+    if (this.dataverseToken === undefined) {
+      alert("Dataverse API token is missing.");
+      return
+    }
+    this.dataService.newDataset(this.dataverseToken).subscribe(
+      (data: NewDatasetResponse) => this.datasetId = data.persistentId
+    );
+  }
 }

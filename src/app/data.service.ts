@@ -5,6 +5,7 @@ import { Credentials } from './models/credentials';
 import { HttpClient } from '@angular/common/http';
 import { Datafile, Fileaction } from './models/datafile';
 import { Observable } from 'rxjs';
+import { NewDatasetResponse } from './models/new-dataset-response';
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +17,7 @@ export class DataService {
 
   github_compare_url = 'api/github/compare';
   github_store_url = 'api/github/store';
+  new_dataset_url = 'api/common/newdataset';
 
   constructor(private http: HttpClient) { }
 
@@ -72,5 +74,14 @@ export class DataService {
     }
 
     return this.http.post<StoreResult>(url, req);
+  }
+
+  newDataset(apiToken: string): Observable<NewDatasetResponse> {
+    let req = {
+      dataverse: 'rdr',
+      dataverseKey: apiToken,
+    };
+
+    return this.http.post<NewDatasetResponse>(this.new_dataset_url, req);
   }
 }
