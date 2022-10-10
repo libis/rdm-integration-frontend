@@ -69,11 +69,12 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
-    this.dataService.submit(selected).subscribe((data: StoreResult) => {
+    let httpSubscr = this.dataService.submit(selected).subscribe((data: StoreResult) => {
       if (data.status !== "OK") {
         console.error("store failed: " + data.status);
       }
-      this.router.navigate(['/connect']);
+      httpSubscr.unsubscribe(); //should not be needed, http client calls complete()
+      this.router.navigate(['/connect']); //TODO: status page
     });
   }
 

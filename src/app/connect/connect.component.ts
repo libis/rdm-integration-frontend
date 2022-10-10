@@ -1,10 +1,12 @@
 import { Target } from '@angular/compiler';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConnectService } from '../connect.service';
+import { Store } from '@ngrx/store';
+import { Observable, Subscription } from 'rxjs';
 import { DataService } from '../data.service';
 import { Credentials } from '../models/credentials';
 import { NewDatasetResponse } from '../models/new-dataset-response';
+import { credentials } from '../state/credentials.actions';
 
 @Component({
   selector: 'app-connect',
@@ -12,6 +14,10 @@ import { NewDatasetResponse } from '../models/new-dataset-response';
   styleUrls: ['./connect.component.scss']
 })
 export class ConnectComponent implements OnInit {
+
+  credentials: Observable<Credentials>;
+  subscription: Subscription;
+  creds: Credentials = {};
 
   repoType?: string;
   repoOwner?: string;
@@ -21,19 +27,26 @@ export class ConnectComponent implements OnInit {
   datasetId?: string;
   dataverseToken?: string;
 
-  constructor(private connectService: ConnectService, private router: Router, private dataService: DataService) { }
+  constructor(private router: Router, private dataService: DataService, private store: Store<{ creds: Credentials}>) {
+    this.credentials = this.store.select('creds');
+    this.subscription = this.credentials.subscribe(creds => this.creds = creds);
+  }
 
   ngOnInit(): void {
-    this.repoType = this.connectService.credentials.repo_type;
-    this.repoOwner = this.connectService.credentials.repo_owner;
-    this.repoName = this.connectService.credentials.repo_name;
-    this.repoBranch = this.connectService.credentials.repo_branch;
-    this.datasetId = this.connectService.credentials.dataset_id;
+    this.repoType = this.creds.repo_type;
+    this.repoOwner = this.creds.repo_owner;
+    this.repoName = this.creds.repo_name;
+    this.repoBranch = this.creds.repo_branch;
+    this.datasetId = this.creds.dataset_id;
     let token = localStorage.getItem('dataverseToken');
     if (token !== null) {
       this.dataverseToken = token;
     }
     this.changeRepo();
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   changeRepo() {
@@ -64,7 +77,7 @@ export class ConnectComponent implements OnInit {
     if (this.repoToken !== undefined && this.repoType === "gitlab") {
       localStorage.setItem('glToken', this.repoToken);
     }
-    let credentials = {
+    let creds = {
       repo_type: this.repoType,
       repo_owner: this.repoOwner,
       repo_name: this.repoName,
@@ -73,8 +86,8 @@ export class ConnectComponent implements OnInit {
       dataset_id: this.datasetId,
       dataverse_token: this.dataverseToken,
     }
-    let connection_id = this.connectService.login(credentials);
-    this.router.navigate(['/compare', connection_id]);
+    this.store.dispatch(credentials({ creds }));
+    this.router.navigate(['/compare', this.datasetId === undefined ? 'unknown' : this.datasetId]);
   }
 
   newDataset() {
@@ -82,8 +95,11 @@ export class ConnectComponent implements OnInit {
       alert("Dataverse API token is missing.");
       return
     }
-    this.dataService.newDataset(this.dataverseToken).subscribe(
-      (data: NewDatasetResponse) => this.datasetId = data.persistentId
+    let httpSubscr = this.dataService.newDataset(this.dataverseToken).subscribe(
+      (data: NewDatasetResponse) => {
+        this.datasetId = data.persistentId;
+        httpSubscr.unsubscribe(); //should not be needed, http client calls complete()
+      }
     );
   }
 }

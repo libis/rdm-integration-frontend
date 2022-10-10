@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { Observable } from 'rxjs';
-import { ConnectService } from '../connect.service';
+import { Store } from '@ngrx/store';
+import { Observable, Subscription } from 'rxjs';
 import { DataService } from '../data.service';
 import { CompareResult } from '../models/compare-result';
+import { Credentials } from '../models/credentials';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -15,6 +16,9 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 })
 export class CompareComponent implements OnInit {
 
+  credentials: Observable<Credentials>;
+  subscription: Subscription;
+  creds: Credentials = {};
   obs: Observable<CompareResult>|null = null;
   data: CompareResult = {};
 
@@ -35,16 +39,23 @@ export class CompareComponent implements OnInit {
 
   constructor(
     public dataService: DataService,
-    private connectService: ConnectService,
-    private router: Router
-  ) { }
+    private router: Router,
+    private store: Store<{ creds: Credentials}>
+  ) {
+    this.credentials = this.store.select('creds');
+    this.subscription = this.credentials.subscribe(creds => this.creds = creds);
+  }
 
   ngOnInit(): void {
     this.getData();
   }
 
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
   getData(): void {
-    this.obs = this.dataService.getData(this.connectService.credentials);
+    this.obs = this.dataService.getData(this.creds);
   }
 
   sort(toSort: CompareResult | null): Datafile[] {
