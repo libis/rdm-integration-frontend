@@ -12,7 +12,6 @@ import { NewDatasetResponse } from './models/new-dataset-response';
 })
 export class DataService {
 
-  credentials: Credentials = {};
   compare_result: CompareResult = {};
 
   github_compare_url = 'api/github/compare';
@@ -21,8 +20,7 @@ export class DataService {
 
   constructor(private http: HttpClient) { }
 
-  getData(credentials: Credentials): Observable<CompareResult> {
-    this.credentials = credentials;
+  getData(credentials: Credentials, processResult: (res: CompareResult) => void) {
     var req;
     var url = '';
     switch (credentials.repo_type) {
@@ -42,21 +40,26 @@ export class DataService {
         break;
     }
 
-    return this.http.post<CompareResult>(url, req);
+    let subscr = this.http.post<CompareResult>(url, req).subscribe((res: CompareResult) => {
+      res.data = res.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
+      this.compare_result = res;
+      processResult(res);
+      subscr.unsubscribe(); //should not be needed, http client calls complete()
+    });
   }
 
-  submit(selected: Datafile[]): Observable<StoreResult> {
+  submit(credentials: Credentials, selected: Datafile[]): Observable<StoreResult> {
     var req;
     var url = '';
-    switch (this.credentials.repo_type) {
+    switch (credentials.repo_type) {
       case "github":
         req = {
-          ghToken: this.credentials.repo_token,
-          ghUser: this.credentials.repo_owner,
-          repo: this.credentials.repo_name,
-          hash: this.credentials.repo_branch,
-          persistentId: this.credentials.dataset_id,
-          dataverseKey: this.credentials.dataverse_token,
+          ghToken: credentials.repo_token,
+          ghUser: credentials.repo_owner,
+          repo: credentials.repo_name,
+          hash: credentials.repo_branch,
+          persistentId: credentials.dataset_id,
+          dataverseKey: credentials.dataverse_token,
           selectedNodes: selected,
         };
         url = this.github_store_url;

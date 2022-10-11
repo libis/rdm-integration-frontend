@@ -19,7 +19,6 @@ export class CompareComponent implements OnInit {
   credentials: Observable<Credentials>;
   subscription: Subscription;
   creds: Credentials = {};
-  obs: Observable<CompareResult>|null = null;
   data: CompareResult = {};
 
   icon_noaction = faSquare;
@@ -55,17 +54,7 @@ export class CompareComponent implements OnInit {
   }
 
   getData(): void {
-    this.obs = this.dataService.getData(this.creds);
-  }
-
-  sort(toSort: CompareResult | null): Datafile[] {
-    if (toSort === null) {
-      return [];
-    }
-    toSort.data = toSort.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
-    this.data = toSort;
-    this.dataService.compare_result = toSort;
-    return this.data.data == undefined ? [] : this.data.data;
+    this.dataService.getData(this.creds, (res: CompareResult) => this.data = res);
   }
 
   rowClass(datafile: Datafile): string {

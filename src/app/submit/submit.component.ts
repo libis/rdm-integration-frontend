@@ -4,6 +4,9 @@ import { Datafile, Fileaction } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
+import { Observable, Subscription } from 'rxjs';
+import { Credentials } from '../models/credentials';
+import { Store } from '@ngrx/store';
 
 @Component({
   selector: 'app-submit',
@@ -13,14 +16,24 @@ import { CompareResult } from '../models/compare-result';
 export class SubmitComponent implements OnInit {
 
   data: CompareResult = {};
+  credentials: Observable<Credentials>;
+  subscription: Subscription;
+  creds: Credentials = {};
 
   constructor(
     private dataService: DataService,
     private router: Router,
-  ) { }
+    private store: Store<{ creds: Credentials}>) {
+      this.credentials = this.store.select('creds');
+      this.subscription = this.credentials.subscribe(creds => this.creds = creds);
+    }
 
   ngOnInit(): void {
     this.loadData();
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
   }
 
   loadData(): void {
@@ -69,7 +82,7 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
-    let httpSubscr = this.dataService.submit(selected).subscribe((data: StoreResult) => {
+    let httpSubscr = this.dataService.submit(this.creds, selected).subscribe((data: StoreResult) => {
       if (data.status !== "OK") {
         console.error("store failed: " + data.status);
       }
