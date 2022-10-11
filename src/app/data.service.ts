@@ -4,7 +4,7 @@ import { StoreResult } from './models/store-result';
 import { Credentials } from './models/credentials';
 import { HttpClient } from '@angular/common/http';
 import { Datafile, Fileaction } from './models/datafile';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { NewDatasetResponse } from './models/new-dataset-response';
 
 @Injectable({
@@ -20,7 +20,7 @@ export class DataService {
 
   constructor(private http: HttpClient) { }
 
-  getData(credentials: Credentials, processResult: (res: CompareResult) => void) {
+  getData(credentials: Credentials): Observable<CompareResult> {
     var req;
     var url = '';
     switch (credentials.repo_type) {
@@ -40,12 +40,12 @@ export class DataService {
         break;
     }
 
-    let subscr = this.http.post<CompareResult>(url, req).subscribe((res: CompareResult) => {
-      res.data = res.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
-      this.compare_result = res;
-      processResult(res);
-      subscr.unsubscribe(); //should not be needed, http client calls complete()
-    });
+    return this.http.post<CompareResult>(url, req).pipe(
+      map((res: CompareResult) => {
+        res.data = res.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
+        this.compare_result = res;
+        return this.compare_result;
+    }));
   }
 
   submit(credentials: Credentials, selected: Datafile[]): Observable<StoreResult> {

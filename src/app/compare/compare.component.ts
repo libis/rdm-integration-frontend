@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Store } from '@ngrx/store';
-import { Observable, Subscription } from 'rxjs';
+import { interval, Observable, startWith, Subscription, switchMap } from 'rxjs';
 import { DataService } from '../data.service';
 import { CompareResult } from '../models/compare-result';
 import { Credentials } from '../models/credentials';
@@ -20,6 +20,7 @@ export class CompareComponent implements OnInit {
   subscription: Subscription;
   creds: Credentials = {};
   data: CompareResult = {};
+  dataSubscription: Subscription;
 
   icon_noaction = faSquare;
   icon_update = faArrowRight;
@@ -39,22 +40,38 @@ export class CompareComponent implements OnInit {
   constructor(
     public dataService: DataService,
     private router: Router,
-    private store: Store<{ creds: Credentials}>
+    private store: Store<{ creds: Credentials }>
   ) {
     this.credentials = this.store.select('creds');
     this.subscription = this.credentials.subscribe(creds => this.creds = creds);
+    this.dataSubscription = this.getDataSubscripion();
   }
 
   ngOnInit(): void {
-    this.getData();
   }
 
   ngOnDestroy(): void {
+    this.dataSubscription.unsubscribe();
     this.subscription.unsubscribe();
   }
 
-  getData(): void {
-    this.dataService.getData(this.creds, (res: CompareResult) => this.data = res);
+  getDataSubscripion(): Subscription {
+    return interval(1000)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.dataService.getData(this.creds))
+      ).subscribe((res: CompareResult) => {
+        console.log("getting data...");
+        this.data = res;
+        if (!this.hasDataFilesWithUnknownStatus()) {
+          console.log("unsubscribing from data subscription...");
+          this.dataSubscription.unsubscribe();
+        }
+      });
+  }
+
+  hasDataFilesWithUnknownStatus(): boolean {
+    return this.data.data === undefined || this.data.data.some((d) => d.status === Filestatus.Unknown);
   }
 
   rowClass(datafile: Datafile): string {
@@ -76,7 +93,7 @@ export class CompareComponent implements OnInit {
       if (datafile.hidden) {
         return;
       }
-      datafile.action= Fileaction.Ignore
+      datafile.action = Fileaction.Ignore
     });
   }
 
