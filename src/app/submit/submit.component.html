@@ -1,4 +1,4 @@
-<button class="btn btn-primary mb-6" (click)="submit()">Submit</button>
+<button class="btn btn-primary mb-6" (click)="submit()" [attr.disabled]="disabled ? '' : null">Submit</button>
 
 <table class="table">
   <tbody>
@@ -9,8 +9,8 @@
     <tr>
       <table class="table">
         <tbody>
-          <tr *ngFor="let datafile of created()">
-            <td>{{ datafile.path ? datafile.path + '/': '' }}{{ datafile.name }}</td>
+          <tr *ngFor="let datafile of created">
+            <td>{{ renderFile(datafile, false) }}</td>
           </tr>
         </tbody>
       </table>
@@ -22,8 +22,8 @@
     <tr>
       <table class="table">
         <tbody>
-          <tr *ngFor="let datafile of updated()">
-            <td>{{ datafile.path ? datafile.path + '/': '' }}{{ datafile.name }}</td>
+          <tr *ngFor="let datafile of updated">
+            <td>{{ renderFile(datafile, false) }}</td>
           </tr>
         </tbody>
       </table>
@@ -35,8 +35,8 @@
     <tr>
       <table class="table">
         <tbody>
-          <tr *ngFor="let datafile of deleted()">
-            <td>{{ datafile.path ? datafile.path + '/': '' }}{{ datafile.name }}</td>
+          <tr *ngFor="let datafile of deleted">
+            <td>{{ renderFile(datafile, true) }}</td>
           </tr>
         </tbody>
       </table>

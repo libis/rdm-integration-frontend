@@ -4,6 +4,7 @@ export enum Filestatus {
   Updated = 2,
   Deleted = 3,
   Unknown = 4,
+  Removed = 5
 }
 
 export enum Fileaction {
