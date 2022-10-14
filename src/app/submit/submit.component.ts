@@ -58,7 +58,6 @@ export class SubmitComponent implements OnInit {
   }
 
   hasUnfinishedDataFiles(): boolean {
-    this.data.forEach((d) => console.log(d.status));
     return this.created.some((d) => d.status !== Filestatus.Equal) ||
       this.updated.some((d) => d.status !== Filestatus.Equal) ||
       this.deleted.some((d) => d.status !== Filestatus.Unknown);
