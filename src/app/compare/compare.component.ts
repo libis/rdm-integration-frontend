@@ -66,7 +66,7 @@ export class CompareComponent implements OnInit {
   }
 
   getUpdatedDataSubscription(): Subscription {
-    return interval(1000).pipe(
+    return interval(5000).pipe(
       switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
     ).subscribe((data: CompareResult) => {
       if (data.data && data.id) {
