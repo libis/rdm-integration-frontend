@@ -6,7 +6,6 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
 import { interval, Subscription, switchMap } from 'rxjs';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { CompareResult } from '../models/compare-result';
 
 @Component({
@@ -25,10 +24,8 @@ export class SubmitComponent implements OnInit {
   updated: Datafile[] = [];
   deleted: Datafile[] = [];
 
-  icon_check = faCheck;
-  icon_check_html = ` <fa-icon [icon]="icon_check"></fa-icon>`;
-
   disabled = false;
+  submitted = false;
 
   constructor(
     private dataStateService: DataStateService,
@@ -81,14 +78,6 @@ export class SubmitComponent implements OnInit {
     this.data = [...this.created, ...this.updated, ...this.deleted];
   }
 
-  renderFile(datafile: Datafile, isDelete: boolean): string {
-    let res = `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
-    if ((isDelete && datafile.status === Filestatus.Unknown) || (!isDelete && datafile.status === Filestatus.Equal)) {
-        res += ' (ready) ' + this.icon_check_html;
-    }
-    return res;
-  }
-
   toCreate(): Datafile[] {
     let result: Datafile[] = [];
     this.data.forEach(datafile => {
@@ -137,6 +126,7 @@ export class SubmitComponent implements OnInit {
         console.error("store failed: " + data.status);
       } else {
         this.dataSubscription = this.getDataSubscripion();
+        this.submitted = true;
       }
       httpSubscr.unsubscribe(); //should not be needed, http client calls complete()
     });
