@@ -5,38 +5,39 @@
       <ng-template ngbPanelContent>
         <div class="mb-3">
           <label for="repoType" class="form-label">Repository type</label>
-          <select class="form-select">
+          <select class="form-select" id="repoType" [(ngModel)]="repoType" #ctrl="ngModel" (change)="changeRepo()">
             <option value="github">Github</option>
             <option value="gitlab">Gitlab</option>
           </select>
         </div>
         <div class="mb-3">
           <label for="repoOwner" class="form-label">Owner</label>
-          <input type="text" class="form-control" id="repoOwner" placeholder="Owner name">
+          <input type="text" class="form-control" id="repoOwner" placeholder="Owner name" [(ngModel)]="repoOwner" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="repoName" class="form-label">Repository</label>
-          <input type="text" class="form-control" id="repoName" placeholder="Repository name">
+          <input type="text" class="form-control" id="repoName" placeholder="Repository name" [(ngModel)]="repoName" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="repoBranch" class="form-label">Branch</label>
-          <input type="text" class="form-control" id="repoBranch" placeholder="Repository branch or commit">
+          <input type="text" class="form-control" id="repoBranch" placeholder="Repository branch or commit" [(ngModel)]="repoBranch" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="repoToken" class="form-label">Token</label>
-          <input type="password" class="form-control" id="repoToken" placeholder="Repository API token">
+          <input type="password" class="form-control" id="repoToken" placeholder="Repository API token" [(ngModel)]="repoToken" #ctrl="ngModel">
         </div>
       </ng-template>
     </ngb-panel>
     <ngb-panel id="dataverse" title="Dataverse">
       <ng-template ngbPanelContent>
+        <div class="mb-3"><button class="btn btn-primary mb-6" (click)="newDataset()">Create new dataset</button></div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset</label>
-          <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier">
+          <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier" [(ngModel)]="datasetId" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="dataverseToken" class="form-label">Token</label>
-          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token">
+          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel">
         </div>
       </ng-template>
     </ngb-panel>

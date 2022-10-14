@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { DataService } from '../data.service';
-import { CompareResult } from '../models/compare-result';
+import { interval, Subscription, switchMap } from 'rxjs';
+import { DataStateService } from '../data.state.service';
+import { DataUpdatesService } from '../data.updates.service';
+import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -14,6 +16,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 export class CompareComponent implements OnInit {
 
   data: CompareResult = {};
+  updatedDataSubscription?: Subscription;
 
   icon_noaction = faSquare;
   icon_update = faArrowRight;
@@ -30,21 +33,50 @@ export class CompareComponent implements OnInit {
   icon_compare = faCodeCompare;
   icon_action = faBolt;
 
+  disabled = true;
+
   constructor(
-    private route: ActivatedRoute,
-    private dataService: DataService,
-    private router: Router
+    public dataUpdatesService: DataUpdatesService,
+    public dataStateService: DataStateService,
+    private router: Router,
   ) { }
 
   ngOnInit(): void {
-    this.getData();
+    this.setUpdatedDataSubscription();
   }
 
-  getData(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.data = this.dataService.getData(id);
-    }
+  ngOnDestroy(): void {
+    this.updatedDataSubscription?.unsubscribe();
+  }
+
+  setUpdatedDataSubscription() {
+    let initialStateSubscription = this.dataStateService.getObservableState().subscribe((data) => {
+      if (data !== null) {
+        initialStateSubscription.unsubscribe();
+        this.data = data;
+        if (data.data && data.id) {
+          if (this.data.status !== ResultStatus.Updating) {
+            this.disabled = false;
+          } else {
+            this.updatedDataSubscription = this.getUpdatedDataSubscription();
+          }
+        }
+      }
+    });
+  }
+
+  getUpdatedDataSubscription(): Subscription {
+    return interval(5000).pipe(
+      switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
+    ).subscribe((data: CompareResult) => {
+      if (data.data && data.id) {
+        this.data = data;
+      }
+      if (this.data.status !== ResultStatus.Updating) {
+        this.updatedDataSubscription?.unsubscribe();
+        this.disabled = false;
+      }
+    });
   }
 
   rowClass(datafile: Datafile): string {
@@ -66,7 +98,7 @@ export class CompareComponent implements OnInit {
       if (datafile.hidden) {
         return;
       }
-      datafile.action= Fileaction.Ignore
+      datafile.action = Fileaction.Ignore
     });
   }
 
@@ -145,6 +177,8 @@ export class CompareComponent implements OnInit {
   }
 
   submit(): void {
+    console.log("updating state...");
+    this.dataStateService.updateState(this.data);
     this.router.navigate(['/submit']);
   }
 
