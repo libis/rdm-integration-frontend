@@ -58,9 +58,10 @@ export class SubmitComponent implements OnInit {
   }
 
   hasUnfinishedDataFiles(): boolean {
+    this.data.forEach((d) => console.log(d.status));
     return this.created.some((d) => d.status !== Filestatus.Equal) ||
       this.updated.some((d) => d.status !== Filestatus.Equal) ||
-      this.deleted.some((d) => d.status !== Filestatus.Removed && d.status !== Filestatus.New);
+      this.deleted.some((d) => d.status !== Filestatus.Unknown);
   }
 
   loadData(): void {
@@ -82,12 +83,8 @@ export class SubmitComponent implements OnInit {
 
   renderFile(datafile: Datafile, isDelete: boolean): string {
     let res = `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
-    if (isDelete) {
-      if (datafile.status === Filestatus.Removed || datafile.status == Filestatus.New) {
+    if ((isDelete && datafile.status === Filestatus.Unknown) || (!isDelete && datafile.status === Filestatus.Equal)) {
         res += this.icon_check;
-      }
-    } else if (datafile.status === Filestatus.Equal) {
-      res += this.icon_check;
     }
     return res;
   }
