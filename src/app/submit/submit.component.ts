@@ -26,6 +26,7 @@ export class SubmitComponent implements OnInit {
   deleted: Datafile[] = [];
 
   icon_check = faCheck;
+  icon_check_html = ` <fa-icon [icon]="icon_check"></fa-icon>`;
 
   disabled = false;
 
@@ -83,7 +84,7 @@ export class SubmitComponent implements OnInit {
   renderFile(datafile: Datafile, isDelete: boolean): string {
     let res = `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
     if ((isDelete && datafile.status === Filestatus.Unknown) || (!isDelete && datafile.status === Filestatus.Equal)) {
-        res += this.icon_check;
+        res += ' (ready) ' + this.icon_check_html;
     }
     return res;
   }

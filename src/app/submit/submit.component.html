@@ -10,7 +10,7 @@
       <table class="table">
         <tbody>
           <tr *ngFor="let datafile of created">
-            <td>{{ renderFile(datafile, false) }}</td>
+            <td [innerHTML] = "renderFile(datafile, false)"></td>
           </tr>
         </tbody>
       </table>
@@ -23,7 +23,7 @@
       <table class="table">
         <tbody>
           <tr *ngFor="let datafile of updated">
-            <td>{{ renderFile(datafile, false) }}</td>
+            <td [innerHTML] = "renderFile(datafile, false)"></td>
           </tr>
         </tbody>
       </table>
@@ -36,7 +36,7 @@
       <table class="table">
         <tbody>
           <tr *ngFor="let datafile of deleted">
-            <td>{{ renderFile(datafile, true) }}</td>
+            <td [innerHTML] = "renderFile(datafile, true)"></td>
           </tr>
         </tbody>
       </table>
