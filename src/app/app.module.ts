@@ -11,6 +11,7 @@ import { DatafileComponent } from './datafile/datafile.component';
 import { SubmitComponent } from './submit/submit.component';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { SubmittedFileComponent } from './submitted-file/submitted-file.component';
 
 @NgModule({
   declarations: [
@@ -19,6 +20,7 @@ import { FormsModule } from '@angular/forms';
     ConnectComponent,
     DatafileComponent,
     SubmitComponent,
+    SubmittedFileComponent,
   ],
   imports: [
     BrowserModule,
