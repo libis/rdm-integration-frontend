@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { CompareResult } from './models/compare-result';
+import { CachedResponse, CompareResult, Key } from './models/compare-result';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
@@ -10,10 +10,11 @@ import { CredentialsService } from './credentials.service';
 export class DataService {
 
   github_compare_url = 'api/github/compare';
+  common_get_cached_data_url = 'api/common/cached';
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
-  getData(): Observable<CompareResult> {
+  getData(): Observable<Key> {
     let credentials = this.credentialsService.credentials;
     var req;
     var url = '';
@@ -34,11 +35,11 @@ export class DataService {
         break;
     }
 
-    return this.http.post<CompareResult>(url, req).pipe(
-      map((res: CompareResult) => {
-        res.data = res.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
-        return res;
-      }));
+    return this.http.post<Key>(url, req);
+  }
+
+  getCachedData(key: Key): Observable<CachedResponse> {
+    return this.http.post<CachedResponse>(this.common_get_cached_data_url, key);
   }
 
 }
