@@ -9,7 +9,7 @@
     <tr>
       <table class="table">
         <tbody>
-          <app-submitted-file *ngFor="let datafile of created" [datafile]="datafile" [isSubmitted]="submitted"></app-submitted-file>
+          <tr app-submitted-file *ngFor="let datafile of created" [datafile]="datafile" [isSubmitted]="submitted"></tr>
         </tbody>
       </table>
     </tr>
@@ -20,7 +20,7 @@
     <tr>
       <table class="table">
         <tbody>
-          <app-submitted-file *ngFor="let datafile of updated" [datafile]="datafile" [isSubmitted]="submitted"></app-submitted-file>
+          <tr app-submitted-file *ngFor="let datafile of updated" [datafile]="datafile" [isSubmitted]="submitted"></tr>
         </tbody>
       </table>
     </tr>
@@ -31,7 +31,7 @@
     <tr>
       <table class="table">
         <tbody>
-          <app-submitted-file *ngFor="let datafile of deleted" [datafile]="datafile" [isSubmitted]="submitted"></app-submitted-file>
+          <tr app-submitted-file *ngFor="let datafile of deleted" [datafile]="datafile" [isSubmitted]="submitted"></tr>
         </tbody>
       </table>
     </tr>

@@ -5,8 +5,20 @@ export enum ResultStatus {
   Updating = 1,
   Finished = 2
 }
+
 export interface CompareResult {
   id?: string;
   status?: ResultStatus;
   data?: Datafile[];
+}
+
+export interface CachedResponse {
+  key?: string;
+  ready?: boolean;
+  res?: CompareResult;
+  err?: string;
+}
+
+export interface Key {
+  key?: string;
 }
