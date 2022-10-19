@@ -4,7 +4,7 @@ import { faCheck, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
-  selector: 'app-submitted-file',
+  selector: 'tr[app-submitted-file]',
   templateUrl: './submitted-file.component.html',
   styleUrls: ['./submitted-file.component.scss']
 })
