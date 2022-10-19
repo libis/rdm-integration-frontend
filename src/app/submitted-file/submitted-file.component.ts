@@ -1,5 +1,4 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({

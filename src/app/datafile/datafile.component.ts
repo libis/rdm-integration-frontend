@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
-import { faPlus, faMinus, faEquals, faNotEqual, faCopy, faClone, faTrash, faQuestion } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faClone, faTrash, faQuestion } from '@fortawesome/free-solid-svg-icons';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -12,13 +12,16 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 export class DatafileComponent implements OnInit {
 
   @Input() datafile: Datafile = {};
+  @Input("loading") loading: boolean = true;
 
   icon_unknown = faQuestion;
 
-  icon_new = faPlus;
-  icon_deleted = faMinus;
-  icon_equal = faEquals;
-  icon_updated = faNotEqual;
+  icon_new = "pi pi-plus-circle";
+  icon_deleted = "pi pi-minus-circle";
+  icon_equal = "pi pi-check-circle";
+  icon_not_equal = "pi pi-exclamation-circle";
+  icon_spinner = "pi pi-spin pi-spinner"
+  icon_refresh = "pi pi-refresh"
 
   icon_ignore = faSquare;
   icon_copy = faCopy;
@@ -37,18 +40,21 @@ export class DatafileComponent implements OnInit {
     return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
   }
 
-  comparison(): IconDefinition {
+  comparison(): string {
     switch (Number(this.datafile.status)) {
       case Filestatus.New:
         return this.icon_new;
       case Filestatus.Equal:
         return this.icon_equal;
       case Filestatus.Updated:
-        return this.icon_updated;
+        return this.icon_not_equal;
       case Filestatus.Deleted:
         return this.icon_deleted;
     }
-    return this.icon_unknown;
+    if (this.loading) {
+      return this.icon_spinner;
+    }
+    return this.icon_refresh;
   }
 
   action(): IconDefinition {

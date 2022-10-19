@@ -34,6 +34,8 @@ export class CompareComponent implements OnInit {
   icon_action = faBolt;
 
   disabled = true;
+  loading = true;
+  refreshHidden = true;
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
@@ -66,16 +68,37 @@ export class CompareComponent implements OnInit {
   }
 
   getUpdatedDataSubscription(): Subscription {
+    let cnt = 0;
     return interval(5000).pipe(
       switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
     ).subscribe((data: CompareResult) => {
+      cnt++;
       if (data.data && data.id) {
         this.data = data;
       }
       if (this.data.status !== ResultStatus.Updating) {
         this.updatedDataSubscription?.unsubscribe();
         this.disabled = false;
+        this.loading = false;
+      } else if (cnt > 10) {
+        this.updatedDataSubscription?.unsubscribe();
+        this.loading = false;
+        this.refreshHidden = false;
       }
+    });
+  }
+
+  refresh(): void {
+    let subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe((data) => {
+      if (data.data && data.id) {
+        this.data = data;
+      }
+      if (this.data.status !== ResultStatus.Updating) {
+        this.disabled = false;
+      } else {
+        this.refreshHidden = true;
+      }
+      subscription.unsubscribe();
     });
   }
 

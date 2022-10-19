@@ -1,6 +1,9 @@
 <div class="row justify-content-between">
   <span class="col-auto">
     Actions:
+    <button class="btn btn-primary mx-3" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+      <i class="pi pi-refresh"></i> Refresh
+    </button>
     <button class="btn btn-primary mx-3" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_noaction"></fa-icon> No action
     </button>
@@ -52,7 +55,7 @@
     </thead>
     <tbody class="overlow-auto">
       <tr app-datafile *ngFor="let datafile of data.data" [hidden]="datafile.hidden" [datafile]="datafile"
-        [class]="rowClass(datafile)">
+        [class]="rowClass(datafile)" [loading]="loading">
     </tbody>
   </table>
 </div>
