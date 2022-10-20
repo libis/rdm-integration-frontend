@@ -1,4 +1,4 @@
 <td>{{ sourceFile() }}</td>
-<td><i [class]="comparison()"></i></td>
+<td><i [class]="comparison(false)" [style]="'color:'+comparison(true)"></i></td>
 <td><button class="btn btn-primary btn-sm" (click)="toggleAction()"><fa-icon [icon]="action()"></fa-icon></button></td>
 <td [class]="targetFileClass()">{{ targetFile() }}</td>

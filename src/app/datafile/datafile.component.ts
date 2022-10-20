@@ -40,21 +40,21 @@ export class DatafileComponent implements OnInit {
     return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
   }
 
-  comparison(): string {
+  comparison(color: boolean): string {
     switch (Number(this.datafile.status)) {
       case Filestatus.New:
-        return this.icon_new;
+        return color ? "green" : this.icon_new;
       case Filestatus.Equal:
-        return this.icon_equal;
+        return color ? "black" : this.icon_equal;
       case Filestatus.Updated:
-        return this.icon_not_equal;
+        return color ? "blue" : this.icon_not_equal;
       case Filestatus.Deleted:
-        return this.icon_deleted;
+        return color ? "red" : this.icon_deleted;
     }
     if (this.loading) {
-      return this.icon_spinner;
+      return color ? "black" : this.icon_spinner;
     }
-    return this.icon_refresh;
+    return color ? "black" : this.icon_refresh;
   }
 
   action(): IconDefinition {
