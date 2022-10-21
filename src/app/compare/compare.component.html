@@ -41,8 +41,8 @@
   </span>
 </div>
 
-<div class="table-responsive" height="100% - 2em">
-  <p-treeTable [value]="rootNodeChildren" class="table" [loading]="loading">
+<div height="100% - 2em">
+  <p-treeTable [value]="rootNodeChildren" [loading]="loading">
     <ng-template pTemplate="header">
       <tr>
         <th class="repository_col">Repository</th>
@@ -56,8 +56,8 @@
         <th width="dataverse_col">Dataverse</th>
       </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-rowNode let-rowData="rowData" class="overlow-auto">
-      <tr app-datafile [hidden]="rowData.hidden" [datafile]="rowData" [loading]="loading" [rowNode]="rowNode" [class]="rowClass(rowData)">
+    <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+      <tr app-datafile [hidden]="rowData.hidden" [datafile]="rowData" [loading]="loading" [rowNode]="rowNode" [style]="rowClass(rowData)">
     </ng-template>
   </p-treeTable>
 </div>

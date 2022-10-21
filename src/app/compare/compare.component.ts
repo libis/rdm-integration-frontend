@@ -115,11 +115,11 @@ export class CompareComponent implements OnInit {
       case Fileaction.Ignore:
         return '';
       case Fileaction.Copy:
-        return 'table-success';
+        return 'background-color: #c3e6cb';
       case Fileaction.Update:
-        return 'table-primary';
+        return 'background-color: #b8daff';
       case Fileaction.Delete:
-        return 'table-danger';
+        return 'background-color: #f5c6cb';
     }
     return '';
   }
