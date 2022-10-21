@@ -12,6 +12,7 @@ import { SubmitComponent } from './submit/submit.component';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SubmittedFileComponent } from './submitted-file/submitted-file.component';
+import { TreeTableModule } from 'primeng/treetable';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { SubmittedFileComponent } from './submitted-file/submitted-file.componen
     FontAwesomeModule,
     HttpClientModule,
     FormsModule,
+    TreeTableModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

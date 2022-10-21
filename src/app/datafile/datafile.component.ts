@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faCopy, faClone, faTrash, faQuestion } from '@fortawesome/free-solid-svg-icons';
+import { TreeNode } from 'primeng/api';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -13,6 +14,7 @@ export class DatafileComponent implements OnInit {
 
   @Input() datafile: Datafile = {};
   @Input("loading") loading: boolean = true;
+  @Input("rowNode") rowNode: TreeNode = {};
 
   icon_unknown = faQuestion;
 
@@ -37,7 +39,7 @@ export class DatafileComponent implements OnInit {
     if (this.datafile.status == Filestatus.Deleted) {
       return '';
     }
-    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
+    return `${this.datafile.name}`
   }
 
   comparison(color: boolean): string {

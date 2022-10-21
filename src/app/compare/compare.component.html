@@ -42,20 +42,22 @@
 </div>
 
 <div class="table-responsive" height="100% - 2em">
-  <table class="table">
-    <thead>
-      <th class="repository_col">Repository</th>
-      <th class="compare_col">
-        <fa-icon [icon]="icon_compare"></fa-icon>
-      </th>
-      <th class="action_col">
-        <fa-icon [icon]="icon_action"></fa-icon>
-      </th>
-      <th width="dataverse_col">Dataverse</th>
-    </thead>
-    <tbody class="overlow-auto">
-      <tr app-datafile *ngFor="let datafile of data.data" [hidden]="datafile.hidden" [datafile]="datafile"
-        [class]="rowClass(datafile)" [loading]="loading">
-    </tbody>
-  </table>
+  <p-treeTable [value]="rootNodeChildren" class="table"><!-- [loading]="loading" -->
+    <ng-template pTemplate="header">
+      <tr>
+        <th class="repository_col">Repository</th>
+        <!--th class="size_col">Size</th-->
+        <th class="compare_col">
+          <fa-icon [icon]="icon_compare"></fa-icon>
+        </th>
+        <th class="action_col">
+          <fa-icon [icon]="icon_action"></fa-icon>
+        </th>
+        <th width="dataverse_col">Dataverse</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-rowNode let-rowData="rowData" class="overlow-auto">
+      <tr app-datafile [hidden]="rowData.hidden" [datafile]="rowData" [loading]="loading" [rowNode]="rowNode" [class]="rowClass(rowData)">
+    </ng-template>
+  </p-treeTable>
 </div>

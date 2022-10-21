@@ -7,6 +7,7 @@ import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { TreeNode } from 'primeng/api';
 
 @Component({
   selector: 'app-compare',
@@ -37,6 +38,8 @@ export class CompareComponent implements OnInit {
   loading = true;
   refreshHidden = true;
 
+  rootNodeChildren: TreeNode<Datafile>[] = [];
+
   constructor(
     public dataUpdatesService: DataUpdatesService,
     public dataStateService: DataStateService,
@@ -55,7 +58,7 @@ export class CompareComponent implements OnInit {
     let initialStateSubscription = this.dataStateService.getObservableState().subscribe((data) => {
       if (data !== null) {
         initialStateSubscription.unsubscribe();
-        this.data = data;
+        this.setData(data);
         if (data.data && data.id) {
           if (this.data.status !== ResultStatus.Updating) {
             this.disabled = false;
@@ -74,7 +77,7 @@ export class CompareComponent implements OnInit {
     ).subscribe((data: CompareResult) => {
       cnt++;
       if (data.data && data.id) {
-        this.data = data;
+        this.setData(data);
       }
       if (this.data.status !== ResultStatus.Updating) {
         this.updatedDataSubscription?.unsubscribe();
@@ -91,7 +94,7 @@ export class CompareComponent implements OnInit {
   refresh(): void {
     let subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe((data) => {
       if (data.data && data.id) {
-        this.data = data;
+        this.setData(data);
       }
       if (this.data.status !== ResultStatus.Updating) {
         this.disabled = false;
@@ -203,6 +206,71 @@ export class CompareComponent implements OnInit {
     console.log("updating state...");
     this.dataStateService.updateState(this.data);
     this.router.navigate(['/submit']);
+  }
+
+  setData(data: CompareResult): void {
+    this.data = data;
+    if (!data.data || data.data.length === 0) {
+      return;
+    }
+    let rowDataMap = this.mapDatafiles(data.data);
+    rowDataMap.forEach(v => this.addChild(v, rowDataMap));
+    if (rowDataMap.get("")!.children) {
+      this.rootNodeChildren = rowDataMap.get("")!.children!;
+    }
+  }
+
+  addChild(v: TreeNode<Datafile>, rowDataMap: Map<string, TreeNode<Datafile>>): void {
+    if (v.data!.id === "") {
+      return;
+    }
+    let key = v.data!.path;
+    let parent = rowDataMap.get(key!);
+    if (!parent) {
+      console.log("parent not found: " + key);
+      return;
+    }
+    let children = parent.children ? parent.children : [];
+    parent.children = children.concat(v);
+  }
+
+  mapDatafiles(data: Datafile[]): Map<string, TreeNode<Datafile>> {
+    let rootData: Datafile = {
+      path: "",
+      name: "",
+      status: Filestatus.Updated,
+      action: Fileaction.Ignore,
+      hidden: false,
+      id: "",
+    }
+
+    let rowDataMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
+    rowDataMap.set("", {
+      data: rootData,
+    });
+
+    data.forEach((d) => {
+      let path = "";
+      d.path!.split("/").forEach((folder) => {
+        let id = path != "" ? path + "/" + folder : folder;
+        let folderData: Datafile = {
+          path: path,
+          name: folder,
+          status: Filestatus.Updated,
+          action: Fileaction.Ignore,
+          hidden: false,
+          id: id,
+        }
+        rowDataMap.set(id, {
+          data: folderData,
+        });
+        path = id;
+      });
+      rowDataMap.set(d.id!, {
+        data: d,
+      });
+    });
+    return rowDataMap;
   }
 
 }
