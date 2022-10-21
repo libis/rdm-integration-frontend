@@ -39,6 +39,7 @@ export class CompareComponent implements OnInit {
   refreshHidden = true;
 
   rootNodeChildren: TreeNode<Datafile>[] = [];
+  rowDataMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
@@ -124,7 +125,8 @@ export class CompareComponent implements OnInit {
   }
 
   noActionSelection(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
@@ -133,7 +135,8 @@ export class CompareComponent implements OnInit {
   }
 
   updateSelection(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
@@ -155,7 +158,8 @@ export class CompareComponent implements OnInit {
   }
 
   mirrorSelection(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
@@ -177,31 +181,36 @@ export class CompareComponent implements OnInit {
   }
 
   filterNew(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.New;
     });
   }
 
   filterEqual(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Equal;
     });
   }
 
   filterUpdated(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Updated;
     });
   }
 
   filterDeleted(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Deleted;
     });
   }
 
   filterNone(): void {
-    this.data.data?.forEach(datafile => {
+    this.rowDataMap.forEach(rowNode => {
+      let datafile = rowNode.data!;
       datafile.hidden = false;
     });
   }
@@ -220,9 +229,38 @@ export class CompareComponent implements OnInit {
     let rowDataMap = this.mapDatafiles(data.data);
     rowDataMap.forEach(v => this.addChild(v, rowDataMap));
     let rootNode = rowDataMap.get("");
+    rowDataMap.delete("");
+    this.rowDataMap = rowDataMap;
     if (rootNode?.children) {
+      this.updateFoldersStatus(rootNode);
       this.rootNodeChildren = rootNode.children;
     }
+  }
+
+  updateFoldersStatus(node: TreeNode<Datafile>): void {
+    if (node.data?.status !== undefined) {
+      return;
+    }
+    node.children?.forEach(v => this.updateFoldersStatus(v));
+    
+    let allDeleted = true;
+    let allNew = true;
+    let allEqual = true;
+    let anyUnknown = false;
+    node.children?.forEach(v => {
+      allDeleted = allDeleted && v.data?.status === Filestatus.Deleted;
+      allNew = allNew && v.data?.status === Filestatus.New;
+      allEqual = allEqual && v.data?.status === Filestatus.Equal;
+      anyUnknown = anyUnknown || v.data?.status === Filestatus.Unknown;
+    });
+
+    var status;
+    if (anyUnknown) status = Filestatus.Unknown
+    else if (allEqual) status = Filestatus.Equal
+    else if (allDeleted) status = Filestatus.Deleted
+    else if (allNew) status = Filestatus.New
+    else status = Filestatus.Updated;
+    node.data!.status = status;
   }
 
   addChild(v: TreeNode<Datafile>, rowDataMap: Map<string, TreeNode<Datafile>>): void {
@@ -238,7 +276,6 @@ export class CompareComponent implements OnInit {
     let rootData: Datafile = {
       path: "",
       name: "",
-      status: Filestatus.Updated,
       action: Fileaction.Ignore,
       hidden: false,
       id: "",
@@ -256,7 +293,6 @@ export class CompareComponent implements OnInit {
         let folderData: Datafile = {
           path: path,
           name: folder,
-          status: Filestatus.Updated,
           action: Fileaction.Ignore,
           hidden: false,
           id: id,
