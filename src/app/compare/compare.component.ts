@@ -219,8 +219,9 @@ export class CompareComponent implements OnInit {
     }
     let rowDataMap = this.mapDatafiles(data.data);
     rowDataMap.forEach(v => this.addChild(v, rowDataMap));
-    if (rowDataMap.get("")!.children) {
-      this.rootNodeChildren = rowDataMap.get("")!.children!;
+    let rootNode = rowDataMap.get("");
+    if (rootNode?.children) {
+      this.rootNodeChildren = rootNode.children;
     }
   }
 
@@ -228,12 +229,7 @@ export class CompareComponent implements OnInit {
     if (v.data!.id === "") {
       return;
     }
-    let key = v.data!.path;
-    let parent = rowDataMap.get(key!);
-    if (!parent) {
-      console.log("parent not found: " + key);
-      return;
-    }
+    let parent = rowDataMap.get(v.data!.path!)!;
     let children = parent.children ? parent.children : [];
     parent.children = children.concat(v);
   }
