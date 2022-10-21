@@ -1,6 +1,4 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faCheck, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -13,9 +11,6 @@ export class SubmittedFileComponent implements OnInit {
   @Input() datafile: Datafile = {};
   @Input('isSubmitted') isSubmitted: boolean = false;
 
-  icon_check = faCheck;
-  icon_in_progress = faSpinner;
-
   constructor() { }
 
   ngOnInit(): void {
@@ -25,11 +20,11 @@ export class SubmittedFileComponent implements OnInit {
     return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
   }
 
-  icon(): IconDefinition {
+  iconClass(): string {
     if (this.isReady()) {
-      return this.icon_check;
+      return "pi pi-check";
     }
-    return this.icon_in_progress;
+    return "pi pi-spin pi-spinner";
   }
 
   isReady(): boolean {
