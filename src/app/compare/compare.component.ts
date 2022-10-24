@@ -8,6 +8,7 @@ import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
+import { NodeService } from '../node.service';
 
 @Component({
   selector: 'app-compare',
@@ -39,11 +40,12 @@ export class CompareComponent implements OnInit {
   refreshHidden = true;
 
   rootNodeChildren: TreeNode<Datafile>[] = [];
-  rowDataMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
+  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
     public dataStateService: DataStateService,
+    public nodeService: NodeService,
     private router: Router,
   ) { }
 
@@ -111,6 +113,13 @@ export class CompareComponent implements OnInit {
   }
 
   rowClass(datafile: Datafile): string {
+    if (!datafile.attributes?.isFile) {
+      if (this.nodeService.hasNotIgnoredChild(this.rowNodeMap.get(datafile.id!)!)) {
+        return 'background-color: #b8daff';
+      } else {
+        return '';
+      }
+    }
     switch (datafile.action) {
       case Fileaction.Ignore:
         return '';
@@ -125,7 +134,7 @@ export class CompareComponent implements OnInit {
   }
 
   noActionSelection(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
@@ -135,7 +144,7 @@ export class CompareComponent implements OnInit {
   }
 
   updateSelection(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
@@ -158,7 +167,7 @@ export class CompareComponent implements OnInit {
   }
 
   mirrorSelection(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
@@ -181,35 +190,35 @@ export class CompareComponent implements OnInit {
   }
 
   filterNew(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.New;
     });
   }
 
   filterEqual(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Equal;
     });
   }
 
   filterUpdated(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Updated;
     });
   }
 
   filterDeleted(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Deleted;
     });
   }
 
   filterNone(): void {
-    this.rowDataMap.forEach(rowNode => {
+    this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       datafile.hidden = false;
     });
@@ -230,7 +239,7 @@ export class CompareComponent implements OnInit {
     rowDataMap.forEach(v => this.addChild(v, rowDataMap));
     let rootNode = rowDataMap.get("");
     rowDataMap.delete("");
-    this.rowDataMap = rowDataMap;
+    this.rowNodeMap = rowDataMap;
     if (rootNode?.children) {
       this.updateFoldersStatus(rootNode);
       this.rootNodeChildren = rootNode.children;
@@ -242,7 +251,7 @@ export class CompareComponent implements OnInit {
       return;
     }
     node.children?.forEach(v => this.updateFoldersStatus(v));
-    
+
     let allDeleted = true;
     let allNew = true;
     let allEqual = true;
