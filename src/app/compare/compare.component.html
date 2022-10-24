@@ -57,7 +57,7 @@
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-      <tr app-datafile [hidden]="rowData.hidden" [datafile]="rowData" [loading]="loading" [rowNode]="rowNode" [style]="rowClass(rowData)">
+      <tr app-datafile [hidden]="rowData.hidden" [datafile]="rowData" [loading]="loading" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode" [style]="rowClass(rowData)">
     </ng-template>
   </p-treeTable>
 </div>
