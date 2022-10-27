@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { CachedResponse, CompareResult, Key } from './models/compare-result';
+import { CachedResponse, Key } from './models/compare-result';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
 
 @Injectable({
