@@ -4,7 +4,6 @@ import { faSquare } from '@fortawesome/free-regular-svg-icons';
 import { faCopy, faClone, faTrash, faQuestion } from '@fortawesome/free-solid-svg-icons';
 import { TreeNode } from 'primeng/api';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { NodeService } from '../node.service';
 
 @Component({
   selector: 'tr[app-datafile]',
@@ -34,9 +33,7 @@ export class DatafileComponent implements OnInit {
 
   node: TreeNode<Datafile> = {};
 
-  constructor(
-    public nodeService: NodeService,
-  ) { }
+  constructor() { }
 
   ngOnInit(): void {
     this.node = this.rowNodeMap.get(this.datafile.id!)!;
@@ -67,10 +64,6 @@ export class DatafileComponent implements OnInit {
   }
 
   action(): IconDefinition {
-    let isFolder = !this.datafile.attributes?.isFile;
-    if (isFolder && this.datafile.action !== Fileaction.Ignore && !this.nodeService.hasNotIgnoredChild(this.node)) {
-      this.datafile.action = Fileaction.Ignore;
-    }
     switch (Number(this.datafile.action)) {
       case Fileaction.Ignore:
         return this.icon_ignore;
@@ -85,67 +78,48 @@ export class DatafileComponent implements OnInit {
   }
 
   targetFile(): string {
-    if (this.datafile.status === Filestatus.New && this.datafile.action !== Fileaction.Copy && !this.nodeService.hasNotIgnoredChild(this.node)) {
+    if (this.datafile.status === Filestatus.New && this.datafile.action !== Fileaction.Copy) {
       return '';
     }
     return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
   }
 
   toggleAction(): void {
-    switch (this.datafile.status) {
-      case Filestatus.New:
-        switch (this.datafile.action) {
-          case Fileaction.Ignore:
+    switch (this.datafile.action) {
+      case Fileaction.Ignore:
+        switch (this.datafile.status) {
+          case Filestatus.New:
             this.setNodeAction(this.node, Fileaction.Copy);
             break;
-          case Fileaction.Copy:
-            this.setNodeAction(this.node, Fileaction.Ignore);
-            break;
-        }
-        break;
-      case Filestatus.Equal:
-        switch (this.datafile.action) {
-          case Fileaction.Ignore:
-            this.setNodeAction(this.node, Fileaction.Delete);
-            break;
-          case Fileaction.Delete:
-            this.setNodeAction(this.node, Fileaction.Ignore);
-            break;
-        }
-        break;
-      case Filestatus.Updated:
-        switch (this.datafile.action) {
-          case Fileaction.Ignore:
+          case Filestatus.Updated:
             this.setNodeAction(this.node, Fileaction.Update);
             break;
-          case Fileaction.Update:
+          default:
             this.setNodeAction(this.node, Fileaction.Delete);
-            break;
-          case Fileaction.Delete:
-            this.setNodeAction(this.node, Fileaction.Ignore);
             break;
         }
         break;
-      case Filestatus.Deleted:
-        switch (this.datafile.action) {
-          case Fileaction.Ignore:
-            this.setNodeAction(this.node, Fileaction.Delete);
-            break;
-          case Fileaction.Delete:
-            this.setNodeAction(this.node, Fileaction.Ignore);
-            break;
+      case Fileaction.Update:
+        if (this.datafile.attributes?.isFile) {
+          this.setNodeAction(this.node, Fileaction.Delete);
+        } else {
+          this.setNodeAction(this.node, Fileaction.Ignore);
         }
+        break;
+      default:
+        this.setNodeAction(this.node, Fileaction.Ignore);
         break;
     }
+    this.updateFoldersAction();
   }
 
   setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
-    let isFolderUpdate = this.datafile.attributes?.isFile && this.datafile.status == Filestatus.Updated;
-    node.data!.action = isFolderUpdate ? this.getFolderUpdteFileaction(node, action) : action;
+    let isFileFileInFolder = node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
+    node.data!.action = isFileFileInFolder ? this.getFileInFolderAction(node, action) : action;
     node.children?.forEach(v => this.setNodeAction(v, action));
   }
 
-  getFolderUpdteFileaction(node: TreeNode<Datafile>, action: Fileaction): Fileaction {
+  getFileInFolderAction(node: TreeNode<Datafile>, action: Fileaction): Fileaction {
     if (action === Fileaction.Delete && node.data!.status === Filestatus.New) {
       return Fileaction.Ignore;
     }
@@ -165,13 +139,6 @@ export class DatafileComponent implements OnInit {
   }
 
   targetFileClass(): string {
-    if (!this.datafile.attributes?.isFile) {
-      if (this.nodeService.hasNotIgnoredChild(this.node)) {
-        return "fw-bold";
-      } else {
-        return "text-muted";
-      }
-    }
     switch (this.datafile.action) {
       case Fileaction.Delete:
         return "text-decoration-line-through";
@@ -183,6 +150,38 @@ export class DatafileComponent implements OnInit {
         return "text-muted";
     }
     return '';
+  }
+
+  updateFoldersAction(): void {
+    this.rowNodeMap.forEach(v => {
+      if (!v.data?.attributes?.isFile) {
+        v.data!.action = undefined;
+      }
+    });
+    this.doUpdateFoldersAction(this.rowNodeMap.get("")!)
+  }
+
+  doUpdateFoldersAction(node: TreeNode<Datafile>): void {
+    if (node.data?.action !== undefined) {
+      return;
+    }
+    node.children?.forEach(v => this.doUpdateFoldersAction(v));
+
+    let allDeleted = true;
+    let allNew = true;
+    let allEqual = true;
+    node.children?.forEach(v => {
+      allDeleted = allDeleted && v.data?.action === Fileaction.Delete;
+      allNew = allNew && v.data?.action === Fileaction.Copy;
+      allEqual = allEqual && v.data?.action === Fileaction.Ignore;
+    });
+
+    var action;
+    if (allEqual) action = Fileaction.Ignore
+    else if (allDeleted) action = Fileaction.Delete
+    else if (allNew) action = Fileaction.Copy
+    else action = Fileaction.Update;
+    node.data!.action = action;
   }
 
 }

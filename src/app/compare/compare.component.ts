@@ -8,7 +8,6 @@ import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
-import { NodeService } from '../node.service';
 
 @Component({
   selector: 'app-compare',
@@ -45,7 +44,6 @@ export class CompareComponent implements OnInit {
   constructor(
     public dataUpdatesService: DataUpdatesService,
     public dataStateService: DataStateService,
-    public nodeService: NodeService,
     private router: Router,
   ) { }
 
@@ -113,13 +111,6 @@ export class CompareComponent implements OnInit {
   }
 
   rowClass(datafile: Datafile): string {
-    if (!datafile.attributes?.isFile) {
-      if (this.nodeService.hasNotIgnoredChild(this.rowNodeMap.get(datafile.id!)!)) {
-        return 'background-color: #b8daff';
-      } else {
-        return '';
-      }
-    }
     switch (datafile.action) {
       case Fileaction.Ignore:
         return '';
@@ -238,7 +229,6 @@ export class CompareComponent implements OnInit {
     let rowDataMap = this.mapDatafiles(data.data);
     rowDataMap.forEach(v => this.addChild(v, rowDataMap));
     let rootNode = rowDataMap.get("");
-    rowDataMap.delete("");
     this.rowNodeMap = rowDataMap;
     if (rootNode?.children) {
       this.updateFoldersStatus(rootNode);
