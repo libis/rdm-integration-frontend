@@ -62,6 +62,11 @@ export class ConnectComponent implements OnInit {
   }
 
   connect() {
+    let err = this.checkFields();
+    if (err !== undefined) {
+      alert(err);
+      return;
+    }
     console.log('connecting...');
     if (this.dataverseToken !== undefined) {
       localStorage.setItem('dataverseToken', this.dataverseToken);
@@ -82,7 +87,25 @@ export class ConnectComponent implements OnInit {
       dataverse_token: this.dataverseToken,
     }
     this.dataStateService.initializeState(creds);
-    this.router.navigate(['/compare', this.datasetId === undefined ? 'unknown' : this.datasetId]);
+    this.router.navigate(['/compare', this.datasetId]);
+  }
+
+  checkFields(): string | undefined {
+    let strings: (string | undefined)[] = [this.repoType, this.repoOwner, this.repoName, this.repoBranch, this.repoToken, this.datasetId, this.dataverseToken];
+    let names: string[] = ['Repository type', 'Owner', 'Repository', 'Branch', 'Repository token', 'Dataset', 'Dataverse API token'];
+    let cnt = 0;
+    let res = 'One or more mandatory fields are missing:';
+    for (let i = 0; i < strings.length; i++) {
+      let s = strings[i];
+      if (s === undefined || s === '') {
+        cnt++;
+        res = res + '\n- ' + names[i];
+      }
+    }
+    if (cnt === 0) {
+      return undefined
+    }
+    return res;
   }
 
   newDataset() {
