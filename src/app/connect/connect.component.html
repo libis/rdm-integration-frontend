@@ -1,5 +1,3 @@
-  <button class="btn btn-primary mb-6" (click)="connect()">Connect and compare</button>
-
   <ngb-accordion [closeOthers]="true" activeIds="repository">
     <ngb-panel id="repository" title="Repository">
       <ng-template ngbPanelContent>
@@ -30,10 +28,14 @@
     </ngb-panel>
     <ngb-panel id="dataverse" title="Dataverse">
       <ng-template ngbPanelContent>
-        <div class="mb-3"><button class="btn btn-primary mb-6" (click)="newDataset()">Create new dataset</button></div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset</label>
-          <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier" [(ngModel)]="datasetId" #ctrl="ngModel">
+          <div class="input-group">
+            <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier" [(ngModel)]="datasetId" #ctrl="ngModel">
+            <div class="input-group-append">
+              <button class="dataverse-button" (click)="newDataset()">Create new dataset</button>
+            </div>
+          </div>
         </div>
         <div class="mb-3">
           <label for="dataverseToken" class="form-label">Token</label>
@@ -42,3 +44,5 @@
       </ng-template>
     </ngb-panel>
   </ngb-accordion>
+  <br/>
+  <button class="dataverse-button" (click)="connect()">Connect and compare</button>

@@ -1,45 +1,41 @@
 <div class="row justify-content-between">
   <span class="col-auto">
     Actions:
-    <button class="btn btn-primary mx-3" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+    <button class="dataverse-button" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
       <i class="pi pi-refresh"></i> Refresh
     </button>
-    <button class="btn btn-primary mx-3" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_noaction"></fa-icon> No action
     </button>
-    <button class="btn btn-primary mx-3" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_update"></fa-icon> Update
     </button>
-    <button class="btn btn-primary mx-3" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_mirror"></fa-icon> Mirror
     </button>
   </span>
 
   <span class="col-auto">
     Filters:
-    <button class="btn btn-primary mx-3" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_new"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_equal"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_updated"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_deleted"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
+    <button class="dataverse-button" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_all"></fa-icon>
     </button>
   </span>
-
-  <span class="col-auto">
-    <button class="btn btn-primary mx-3 align-right" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_submit"></fa-icon> Submit
-    </button>
-  </span>
 </div>
+
+<br/>
 
 <div height="100% - 2em">
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
@@ -61,3 +57,11 @@
     </ng-template>
   </p-treeTable>
 </div>
+
+<br/>
+
+<span class="col-auto">
+  <button class="dataverse-button align-left" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
+    <fa-icon [icon]="icon_submit"></fa-icon> Submit
+  </button>
+</span>

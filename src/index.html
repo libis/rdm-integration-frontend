@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>Datasync</title>
@@ -7,7 +8,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
+
 <body>
-  <app-root></app-root>
+  <nav class="dataverse-header-block">
+    <div class="dataverse-navbar-fixed">
+      <div class="dataverse-navbar-container">
+        <div class="dataverse-navbar-header">
+          <a href="/" class="dataverse-navbar-logo-ref"><img src="/assets/img/logo_kuleuven_RDR.png"
+              alt="KU Leuven RDR-integration homepage" class="dataverse-navbar-logo" /></a>
+        </div>
+        <div class="dataverse-navbar-collapse">
+          <ul class="dataverse-navbar-right">
+            <li class="dataverse-navbar-right-li"><a href="https://www.kuleuven.be/rdm/en/rdr/support-guidelines"
+                rel="noopener" target="_blank" class="dataverse-navbar-right-ref">User Guide</a></li>
+            <li class="dataverse-navbar-right-li"><a href="/" class="dataverse-navbar-right-ref">Connect</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <app-root class="content"></app-root>
+
+  <footer>
+    <div>
+      <div class="container">
+        <ul style="list-style-type: none;margin-left:-50px">
+          <li style="padding-left:10px;float:left;"><a href="https://www.kuleuven.be"><img
+                src="/assets/img/logo_kuleuven.png"></a></li>
+          <li style="padding-left:10px;padding-top:16px;float:left;"><a
+              href="https://bib.kuleuven.be/english/libis"><img src="/assets/img/logo_libis.png"></a></li>
+          <li style="margin-top:20px;padding-left:10px;float:left;">2022 © KU Leuven</li>
+        </ul>
+      </div>
+    </div>
+  </footer>
 </body>
+
 </html>
