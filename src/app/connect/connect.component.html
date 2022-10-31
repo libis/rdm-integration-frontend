@@ -33,7 +33,7 @@
           <div class="input-group">
             <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier" [(ngModel)]="datasetId" #ctrl="ngModel">
             <div class="input-group-append">
-              <button class="dataverse-button" (click)="newDataset()">Create new dataset</button>
+              <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()">Create new dataset</button>
             </div>
           </div>
         </div>
@@ -45,4 +45,4 @@
     </ngb-panel>
   </ngb-accordion>
   <br/>
-  <button class="dataverse-button" (click)="connect()">Connect and compare</button>
+  <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="connect()">Connect and compare</button>
