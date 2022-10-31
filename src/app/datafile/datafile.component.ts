@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
-import { faCopy, faClone, faTrash, faQuestion } from '@fortawesome/free-solid-svg-icons';
+import { faCopy, faClone, faTrash, faQuestion, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { TreeNode } from 'primeng/api';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
@@ -30,6 +30,7 @@ export class DatafileComponent implements OnInit {
   icon_copy = faCopy;
   icon_update = faClone;
   icon_delete = faTrash;
+  icon_custom = faTriangleExclamation;
 
   node: TreeNode<Datafile> = {};
 
@@ -73,6 +74,8 @@ export class DatafileComponent implements OnInit {
         return this.icon_delete;
       case Fileaction.Update:
         return this.icon_update;
+      case Fileaction.Custom:
+        return this.icon_custom;
     }
     return this.icon_unknown;
   }
@@ -170,17 +173,25 @@ export class DatafileComponent implements OnInit {
     let allDeleted = true;
     let allNew = true;
     let allEqual = true;
+    let allUpdated = true;
     node.children?.forEach(v => {
       allDeleted = allDeleted && v.data?.action === Fileaction.Delete;
       allNew = allNew && v.data?.action === Fileaction.Copy;
       allEqual = allEqual && v.data?.action === Fileaction.Ignore;
+      allUpdated = allUpdated && (
+        (v.data?.status == Filestatus.Equal && v.data?.action === Fileaction.Ignore) ||
+        (v.data?.status == Filestatus.New && v.data?.action === Fileaction.Copy) ||
+        (v.data?.status == Filestatus.Updated && v.data?.action === Fileaction.Update) ||
+        (v.data?.status == Filestatus.Deleted && v.data?.action === Fileaction.Delete)
+      );
     });
 
     var action;
-    if (allEqual) action = Fileaction.Ignore
-    else if (allDeleted) action = Fileaction.Delete
-    else if (allNew) action = Fileaction.Copy
-    else action = Fileaction.Update;
+    if (allEqual) action = Fileaction.Ignore;
+    else if (allDeleted) action = Fileaction.Delete;
+    else if (allNew) action = Fileaction.Copy;
+    else if (allUpdated) action = Fileaction.Update;
+    else action = Fileaction.Custom;
     node.data!.action = action;
   }
 

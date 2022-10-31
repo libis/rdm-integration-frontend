@@ -120,6 +120,8 @@ export class CompareComponent implements OnInit {
         return 'background-color: #b8daff';
       case Fileaction.Delete:
         return 'background-color: #f5c6cb';
+      case Fileaction.Custom:
+        return 'background-color: #F59E0B';
     }
     return '';
   }
