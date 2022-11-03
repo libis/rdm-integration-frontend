@@ -2,17 +2,17 @@
   <span class="col-auto">
     <h4>Actions:</h4>
     <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
-      <i class="pi pi-refresh"></i> Refresh
+      <i class="pi pi-refresh"></i>&nbsp;Refresh
     </button>
     <span class="p-buttonset">
     <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_noaction"></fa-icon> No action
+      <fa-icon [icon]="icon_noaction"></fa-icon>&nbsp;No action
     </button>
     <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_update"></fa-icon> Update
+      <fa-icon [icon]="icon_update"></fa-icon>&nbsp;Update
     </button>
     <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_mirror"></fa-icon> Mirror
+      <fa-icon [icon]="icon_mirror"></fa-icon>&nbsp;Mirror
     </button>
   </span>
   </span>
@@ -66,6 +66,6 @@
 
 <span class="col-auto">
   <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
-    <fa-icon [icon]="icon_submit"></fa-icon> Submit
+    <fa-icon [icon]="icon_submit"></fa-icon>&nbsp;Submit
   </button>
 </span>
