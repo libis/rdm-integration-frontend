@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { BehaviorSubject, interval, Observable, switchMap } from 'rxjs';
 import { CredentialsService } from './credentials.service';
 import { DataService } from './data.service';
@@ -12,22 +13,26 @@ export class DataStateService {
 
   private state: BehaviorSubject<CompareResult | null> = new BehaviorSubject<CompareResult | null>(null);
 
-  constructor(private credentialsService: CredentialsService, private dataService: DataService) { }
+  constructor(
+    private credentialsService: CredentialsService,
+    private dataService: DataService,
+    private router: Router,
+  ) { }
 
   initializeState(creds: Credentials): void {
     this.resetState();
     this.credentialsService.credentials = creds;
-    let subscription = this.dataService.getData().subscribe(
-      (key) => {
-        if (key.key && key.key !== "") {
-          this.getCompareData(key);
-        } else {
-          alert("internal server error: compare failed");
-          this.state.next(null);
-        }
-        subscription.unsubscribe(); //should not be needed, http client calls complete()
+    let subscription = this.dataService.getData().subscribe({
+      next: (key) => {
+        this.getCompareData(key);
+        subscription.unsubscribe();
+      },
+      error: (err) => {
+        alert("getting data failed: " + err.error);
+        subscription.unsubscribe();
+        this.router.navigate(['/connect']);
       }
-    );
+    });
   }
 
   private getCompareData(key: Key): void {
@@ -35,7 +40,8 @@ export class DataStateService {
     let subscription = interval(1000)
       .pipe(
         switchMap(() => this.dataService.getCachedData(key))
-      ).subscribe((res: CachedResponse) => {
+      ).subscribe({
+        next: (res: CachedResponse) => {
         i++;
         if (res.ready === true) {
           if (res.res) {
@@ -51,8 +57,15 @@ export class DataStateService {
         } else if (i > 1000) {
           alert("compare failed: time out");
           subscription.unsubscribe();
+          this.router.navigate(['/connect']);
         }
-      });
+      },
+      error: (err) => {
+        alert("comparing failed: " + err.error);
+        subscription.unsubscribe();
+        this.router.navigate(['/connect']);
+      }
+    });
   }
 
   getObservableState(): Observable<CompareResult | null> {

@@ -45,13 +45,20 @@ export class SubmitComponent implements OnInit {
     return interval(5000)
       .pipe(
         switchMap(() => this.dataUpdatesService.updateData(this.data, this.pid))
-      ).subscribe((res: CompareResult) => {
-        if (res.data !== undefined) {
-          this.setData(res.data);
-        }
-        if (!this.hasUnfinishedDataFiles()) {
+      ).subscribe({
+        next: (res: CompareResult) => {
+          if (res.data !== undefined) {
+            this.setData(res.data);
+          }
+          if (!this.hasUnfinishedDataFiles()) {
+            this.dataSubscription?.unsubscribe();
+          }
+        },
+        error: (err) => {
+          alert("getting status of data failed: " + err.error);
           this.dataSubscription?.unsubscribe();
-        }
+          this.router.navigate(['/connect']);
+        },
       });
   }
 
@@ -121,14 +128,22 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
-    let httpSubscr = this.submitService.submit(selected).subscribe((data: StoreResult) => {
-      if (data.status !== "OK") {
-        console.error("store failed: " + data.status);
-      } else {
-        this.dataSubscription = this.getDataSubscripion();
-        this.submitted = true;
-      }
-      httpSubscr.unsubscribe(); //should not be needed, http client calls complete()
+    let httpSubscr = this.submitService.submit(selected).subscribe({
+      next: (data: StoreResult) => {
+        if (data.status !== "OK") {// this should not happen
+          alert("store failed, status: " + data.status);
+          this.router.navigate(['/connect']);
+        } else {
+          this.dataSubscription = this.getDataSubscripion();
+          this.submitted = true;
+        }
+        httpSubscr.unsubscribe();
+      },
+      error: (err) => {
+        alert("store failed: " + err.error);
+        this.dataSubscription?.unsubscribe();
+        this.router.navigate(['/connect']);
+      },
     });
   }
 

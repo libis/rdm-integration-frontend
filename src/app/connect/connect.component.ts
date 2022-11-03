@@ -20,6 +20,8 @@ export class ConnectComponent implements OnInit {
   datasetId?: string;
   dataverseToken?: string;
 
+  creatingNewDataset: boolean = false;
+
   constructor(
     private router: Router,
     private dataStateService: DataStateService,
@@ -113,11 +115,18 @@ export class ConnectComponent implements OnInit {
       alert("Dataverse API token is missing.");
       return;
     }
-    let httpSubscr = this.datasetService.newDataset(this.dataverseToken).subscribe(
-      (data: NewDatasetResponse) => {
+    this.creatingNewDataset = true;
+    let httpSubscr = this.datasetService.newDataset(this.dataverseToken).subscribe({
+      next: (data: NewDatasetResponse) => {
         this.datasetId = data.persistentId;
-        httpSubscr.unsubscribe(); //should not be needed, http client calls complete()
+        httpSubscr.unsubscribe();
+        this.creatingNewDataset = false;
+      },
+      error: (err) => {
+        alert("creating new dataset failed: " + err.error);
+        httpSubscr.unsubscribe();
+        this.creatingNewDataset = false;
       }
-    );
+    });
   }
 }
