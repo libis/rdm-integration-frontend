@@ -1,45 +1,45 @@
 <div class="row justify-content-between">
   <span class="col-auto">
-    Actions:
-    <button class="btn btn-primary mx-3" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
-      <i class="pi pi-refresh"></i> Refresh
+    <h4>Actions:</h4>
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+      <i class="pi pi-refresh"></i>&nbsp;Refresh
     </button>
-    <button class="btn btn-primary mx-3" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_noaction"></fa-icon> No action
+    <span class="p-buttonset">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
+      <fa-icon [icon]="icon_noaction"></fa-icon>&nbsp;No action
     </button>
-    <button class="btn btn-primary mx-3" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_update"></fa-icon> Update
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
+      <fa-icon [icon]="icon_update"></fa-icon>&nbsp;Update
     </button>
-    <button class="btn btn-primary mx-3" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_mirror"></fa-icon> Mirror
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
+      <fa-icon [icon]="icon_mirror"></fa-icon>&nbsp;Mirror
     </button>
+  </span>
   </span>
 
   <span class="col-auto">
-    Filters:
-    <button class="btn btn-primary mx-3" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
+    <h4>Filters:</h4>
+    <span class="p-buttonset">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_new"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_equal"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_updated"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_deleted"></fa-icon>
     </button>
-    <button class="btn btn-primary mx-3" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
       <fa-icon [icon]="icon_all"></fa-icon>
     </button>
   </span>
-
-  <span class="col-auto">
-    <button class="btn btn-primary mx-3 align-right" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_submit"></fa-icon> Submit
-    </button>
   </span>
 </div>
+
+<br/>
 
 <div height="100% - 2em">
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
@@ -61,3 +61,11 @@
     </ng-template>
   </p-treeTable>
 </div>
+
+<br/>
+
+<span class="col-auto">
+  <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
+    <fa-icon [icon]="icon_submit"></fa-icon>&nbsp;Submit
+  </button>
+</span>

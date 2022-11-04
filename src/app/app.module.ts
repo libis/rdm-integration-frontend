@@ -13,6 +13,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SubmittedFileComponent } from './submitted-file/submitted-file.component';
 import { TreeTableModule } from 'primeng/treetable';
+import { ButtonModule } from 'primeng/button';
+import { RippleModule } from 'primeng/ripple';
 
 @NgModule({
   declarations: [
@@ -31,6 +33,8 @@ import { TreeTableModule } from 'primeng/treetable';
     HttpClientModule,
     FormsModule,
     TreeTableModule,
+    ButtonModule,
+    RippleModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

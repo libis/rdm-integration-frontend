@@ -11,6 +11,7 @@ export enum Fileaction {
   Copy = 1,
   Update = 2,
   Delete = 3,
+  Custom = 4,
 }
 
 export interface Datafile {
