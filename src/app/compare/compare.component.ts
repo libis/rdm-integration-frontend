@@ -42,6 +42,8 @@ export class CompareComponent implements OnInit {
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
+  isInFilterMode = false;
+
   constructor(
     public dataUpdatesService: DataUpdatesService,
     public dataStateService: DataStateService,
@@ -184,51 +186,75 @@ export class CompareComponent implements OnInit {
   }
 
   filterNew(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.New;
+      datafile.hidden = datafile.status !== Filestatus.New || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
     this.background_new = "#b8daff"
     this.background_equal = "transparent"
     this.background_not_equal = "transparent"
     this.background_deleted = "transparent"
     this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterEqual(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Equal;
+      datafile.hidden = datafile.status !== Filestatus.Equal || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
     this.background_new = "transparent"
     this.background_equal = "#b8daff"
     this.background_not_equal = "transparent"
     this.background_deleted = "transparent"
     this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterUpdated(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Updated;
+      datafile.hidden = datafile.status !== Filestatus.Updated || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
     this.background_new = "transparent"
     this.background_equal = "transparent"
     this.background_not_equal = "#b8daff"
     this.background_deleted = "transparent"
     this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterDeleted(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Deleted;
+      datafile.hidden = datafile.status !== Filestatus.Deleted || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
     this.background_new = "transparent"
     this.background_equal = "transparent"
     this.background_not_equal = "transparent"
     this.background_deleted = "#b8daff"
     this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterNone(): void {
@@ -236,11 +262,13 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = false;
     });
+    this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
     this.background_new = "transparent"
     this.background_equal = "transparent"
     this.background_not_equal = "transparent"
     this.background_deleted = "transparent"
     this.background_all = "#b8daff"
+    this.isInFilterMode = false;
   }
 
   submit(): void {

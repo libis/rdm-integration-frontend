@@ -16,6 +16,7 @@ export class DatafileComponent implements OnInit {
   @Input("loading") loading: boolean = true;
   @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
   @Input("rowNode") rowNode: TreeNode<Datafile> = {};
+  @Input("isInFilter") isInFilter: boolean = false;
 
   icon_unknown = faQuestion;
 
@@ -44,7 +45,10 @@ export class DatafileComponent implements OnInit {
     if (this.datafile.status == Filestatus.Deleted) {
       return '';
     }
-    return `${this.datafile.name}`
+    if (this.isInFilter) {
+      return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`;
+    }
+    return `${this.datafile.name}`;
   }
 
   comparison(color: boolean): string {
