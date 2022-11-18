@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
-import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faArrowRightArrowLeft, faBolt, faCheckDouble, faCodeCompare } from '@fortawesome/free-solid-svg-icons';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
@@ -23,12 +23,6 @@ export class CompareComponent implements OnInit {
   icon_update = faArrowRight;
   icon_mirror = faArrowRightArrowLeft;
 
-  icon_new = faPlus;
-  icon_equal = faEquals;
-  icon_updated = faNotEqual;
-  icon_deleted = faMinus;
-  icon_all = faAsterisk;
-
   icon_submit = faCheckDouble;
 
   icon_compare = faCodeCompare;
@@ -37,6 +31,13 @@ export class CompareComponent implements OnInit {
   disabled = true;
   loading = true;
   refreshHidden = true;
+
+
+  background_new = "transparent"
+  background_equal = "transparent"
+  background_not_equal = "transparent"
+  background_deleted = "transparent"
+  background_all = "#b8daff"
 
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
@@ -187,6 +188,11 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.New;
     });
+    this.background_new = "#b8daff"
+    this.background_equal = "transparent"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "transparent"
+    this.background_all = "transparent"
   }
 
   filterEqual(): void {
@@ -194,6 +200,11 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Equal;
     });
+    this.background_new = "transparent"
+    this.background_equal = "#b8daff"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "transparent"
+    this.background_all = "transparent"
   }
 
   filterUpdated(): void {
@@ -201,6 +212,11 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Updated;
     });
+    this.background_new = "transparent"
+    this.background_equal = "transparent"
+    this.background_not_equal = "#b8daff"
+    this.background_deleted = "transparent"
+    this.background_all = "transparent"
   }
 
   filterDeleted(): void {
@@ -208,6 +224,11 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = datafile.status !== Filestatus.Deleted;
     });
+    this.background_new = "transparent"
+    this.background_equal = "transparent"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "#b8daff"
+    this.background_all = "transparent"
   }
 
   filterNone(): void {
@@ -215,6 +236,11 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = false;
     });
+    this.background_new = "transparent"
+    this.background_equal = "transparent"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "transparent"
+    this.background_all = "#b8daff"
   }
 
   submit(): void {

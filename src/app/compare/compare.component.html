@@ -1,41 +1,44 @@
-<div class="row justify-content-between">
+<div class="row justify-content-between sticky-menu">
   <span class="col-auto">
-    <h4>Actions:</h4>
+    <span>Actions: </span>
     <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
       <i class="pi pi-refresh"></i>&nbsp;Refresh
     </button>
     <span class="p-buttonset">
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_noaction"></fa-icon>&nbsp;No action
-    </button>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_update"></fa-icon>&nbsp;Update
-    </button>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_mirror"></fa-icon>&nbsp;Mirror
-    </button>
-  </span>
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
+        <fa-icon [icon]="icon_noaction"></fa-icon>&nbsp;No action
+      </button>
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
+        <fa-icon [icon]="icon_update"></fa-icon>&nbsp;Update
+      </button>
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
+        <fa-icon [icon]="icon_mirror"></fa-icon>&nbsp;Mirror
+      </button>
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
+        <fa-icon [icon]="icon_submit"></fa-icon>&nbsp;Submit
+      </button>
+    </span>
   </span>
 
   <span class="col-auto">
-    <h4>Filters:</h4>
+    <span>Show files: </span>
     <span class="p-buttonset">
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_new"></fa-icon>
-    </button>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_equal"></fa-icon>
-    </button>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_updated"></fa-icon>
-    </button>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_deleted"></fa-icon>
-    </button>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
-      <fa-icon [icon]="icon_all"></fa-icon>
-    </button>
-  </span>
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_new" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
+        <i class="pi pi-plus-circle" style="color: green"></i>
+      </button>
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
+        <i class="pi pi-check-circle" style="color: black"></i>
+      </button>
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_not_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
+        <i class="pi pi-exclamation-circle" style="color: blue"></i>
+      </button>
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_deleted" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
+        <i class="pi pi-minus-circle" style="color: red"></i>
+      </button>
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_all" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
+        <i class="pi pi-filter-slash" style="color: darkgrey"></i>
+      </button>
+    </span>
   </span>
 </div>
 
@@ -63,9 +66,3 @@
 </div>
 
 <br/>
-
-<span class="col-auto">
-  <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
-    <fa-icon [icon]="icon_submit"></fa-icon>&nbsp;Submit
-  </button>
-</span>
