@@ -6,16 +6,16 @@
     </button>
     <span class="p-buttonset">
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-        <fa-icon [icon]="icon_noaction"></fa-icon>&nbsp;No action
+        <i [class]="icon_noaction"></i>&nbsp;No action
       </button>
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
-        <fa-icon [icon]="icon_update"></fa-icon>&nbsp;Update
+        <i [class]="icon_update"></i>&nbsp;Update
       </button>
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-        <fa-icon [icon]="icon_mirror"></fa-icon>&nbsp;Mirror
+        <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
-        <fa-icon [icon]="icon_submit"></fa-icon>&nbsp;Submit
+        <i [class]="icon_submit"></i>&nbsp;Submit
       </button>
     </span>
   </span>
@@ -51,10 +51,10 @@
         <th class="repository_col">Repository</th>
         <!--th class="size_col">Size</th-->
         <th class="compare_col">
-          <fa-icon [icon]="icon_compare"></fa-icon>
+          <i [class]="icon_compare"></i>
         </th>
         <th class="action_col">
-          <fa-icon [icon]="icon_action"></fa-icon>
+          <i [class]="icon_action"></i>
         </th>
         <th width="dataverse_col">Dataverse</th>
       </tr>

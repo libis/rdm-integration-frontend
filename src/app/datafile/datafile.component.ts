@@ -1,7 +1,4 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faSquare } from '@fortawesome/free-regular-svg-icons';
-import { faCopy, faClone, faTrash, faQuestion, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { TreeNode } from 'primeng/api';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
@@ -18,7 +15,7 @@ export class DatafileComponent implements OnInit {
   @Input("rowNode") rowNode: TreeNode<Datafile> = {};
   @Input("isInFilter") isInFilter: boolean = false;
 
-  icon_unknown = faQuestion;
+  icon_unknown = "pi pi-question-circle";
 
   icon_new = "pi pi-plus-circle";
   icon_deleted = "pi pi-minus-circle";
@@ -27,11 +24,11 @@ export class DatafileComponent implements OnInit {
   icon_spinner = "pi pi-spin pi-spinner"
   icon_refresh = "pi pi-refresh"
 
-  icon_ignore = faSquare;
-  icon_copy = faCopy;
-  icon_update = faClone;
-  icon_delete = faTrash;
-  icon_custom = faTriangleExclamation;
+  icon_ignore = "pi pi-stop";
+  icon_copy = "pi pi-copy";
+  icon_update = "pi pi-clone";
+  icon_delete = "pi pi-trash";
+  icon_custom = "pi pi-exclamation-triangle";
 
   node: TreeNode<Datafile> = {};
 

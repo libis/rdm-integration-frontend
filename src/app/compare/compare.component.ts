@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import { faSquare } from '@fortawesome/free-regular-svg-icons';
-import { faArrowRight, faArrowRightArrowLeft, faBolt, faCheckDouble, faCodeCompare } from '@fortawesome/free-solid-svg-icons';
+import { Router } from '@angular/router';i
 import { interval, Subscription, switchMap } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
@@ -19,14 +17,14 @@ export class CompareComponent implements OnInit {
   data: CompareResult = {};
   updatedDataSubscription?: Subscription;
 
-  icon_noaction = faSquare;
-  icon_update = faArrowRight;
-  icon_mirror = faArrowRightArrowLeft;
+  icon_noaction = "pi pi-stop";
+  icon_update = "pi pi-arrow-right";
+  icon_mirror = "pi pi-arrows-h";
 
-  icon_submit = faCheckDouble;
+  icon_submit = "pi pi-save";
 
-  icon_compare = faCodeCompare;
-  icon_action = faBolt;
+  icon_compare = "pi pi-flag";
+  icon_action = "pi pi-bolt";
 
   disabled = true;
   loading = true;
