@@ -14,6 +14,8 @@ import { SubmittedFileComponent } from './submitted-file/submitted-file.componen
 import { TreeTableModule } from 'primeng/treetable';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
+import { AccordionModule } from 'primeng/accordion';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
   declarations: [
@@ -28,11 +30,13 @@ import { RippleModule } from 'primeng/ripple';
     BrowserModule,
     AppRoutingModule,
     NgbModule,
+    AccordionModule,
     HttpClientModule,
     FormsModule,
     TreeTableModule,
     ButtonModule,
     RippleModule,
+    BrowserAnimationsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
