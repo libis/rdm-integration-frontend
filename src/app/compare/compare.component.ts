@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';i
+import { Router } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';

@@ -65,7 +65,7 @@ export class DatafileComponent implements OnInit {
     return color ? "black" : this.icon_refresh;
   }
 
-  action(): IconDefinition {
+  action(): string {
     switch (Number(this.datafile.action)) {
       case Fileaction.Ignore:
         return this.icon_ignore;

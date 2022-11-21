@@ -4,7 +4,6 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { CompareComponent } from './compare/compare.component';
 import { ConnectComponent } from './connect/connect.component';
 import { DatafileComponent } from './datafile/datafile.component';
@@ -29,7 +28,6 @@ import { RippleModule } from 'primeng/ripple';
     BrowserModule,
     AppRoutingModule,
     NgbModule,
-    FontAwesomeModule,
     HttpClientModule,
     FormsModule,
     TreeTableModule,
