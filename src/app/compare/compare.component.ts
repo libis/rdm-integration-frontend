@@ -6,6 +6,7 @@ import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
+import { CredentialsService } from '../credentials.service';
 
 @Component({
   selector: 'app-compare',
@@ -45,10 +46,14 @@ export class CompareComponent implements OnInit {
   constructor(
     public dataUpdatesService: DataUpdatesService,
     public dataStateService: DataStateService,
+    private credentialsService: CredentialsService,
     private router: Router,
   ) { }
 
   ngOnInit(): void {
+    if (this.dataStateService.getCurrentValue() != null) {
+      this.dataStateService.initializeState(this.credentialsService.credentials);
+    }
     this.setUpdatedDataSubscription();
   }
 
