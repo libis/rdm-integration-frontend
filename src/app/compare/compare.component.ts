@@ -1,13 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { faSquare } from '@fortawesome/free-regular-svg-icons';
-import { faArrowRight, faArrowRightArrowLeft, faAsterisk, faBolt, faCheckDouble, faCodeCompare, faEquals, faMinus, faNotEqual, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
+import { CredentialsService } from '../credentials.service';
 
 @Component({
   selector: 'app-compare',
@@ -19,35 +18,42 @@ export class CompareComponent implements OnInit {
   data: CompareResult = {};
   updatedDataSubscription?: Subscription;
 
-  icon_noaction = faSquare;
-  icon_update = faArrowRight;
-  icon_mirror = faArrowRightArrowLeft;
+  icon_noaction = "pi pi-stop";
+  icon_update = "pi pi-arrow-right";
+  icon_mirror = "pi pi-arrows-h";
 
-  icon_new = faPlus;
-  icon_equal = faEquals;
-  icon_updated = faNotEqual;
-  icon_deleted = faMinus;
-  icon_all = faAsterisk;
+  icon_submit = "pi pi-save";
 
-  icon_submit = faCheckDouble;
-
-  icon_compare = faCodeCompare;
-  icon_action = faBolt;
+  icon_compare = "pi pi-flag";
+  icon_action = "pi pi-bolt";
 
   disabled = true;
   loading = true;
   refreshHidden = true;
 
+
+  background_new = "transparent"
+  background_equal = "transparent"
+  background_not_equal = "transparent"
+  background_deleted = "transparent"
+  background_all = "#b8daff"
+
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
+
+  isInFilterMode = false;
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
     public dataStateService: DataStateService,
+    private credentialsService: CredentialsService,
     private router: Router,
   ) { }
 
   ngOnInit(): void {
+    if (this.dataStateService.getCurrentValue() != null) {
+      this.dataStateService.initializeState(this.credentialsService.credentials);
+    }
     this.setUpdatedDataSubscription();
   }
 
@@ -183,31 +189,75 @@ export class CompareComponent implements OnInit {
   }
 
   filterNew(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.New;
+      datafile.hidden = datafile.status !== Filestatus.New || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
+    this.background_new = "#b8daff"
+    this.background_equal = "transparent"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "transparent"
+    this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterEqual(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Equal;
+      datafile.hidden = datafile.status !== Filestatus.Equal || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
+    this.background_new = "transparent"
+    this.background_equal = "#b8daff"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "transparent"
+    this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterUpdated(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Updated;
+      datafile.hidden = datafile.status !== Filestatus.Updated || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
+    this.background_new = "transparent"
+    this.background_equal = "transparent"
+    this.background_not_equal = "#b8daff"
+    this.background_deleted = "transparent"
+    this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterDeleted(): void {
+    let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Deleted;
+      datafile.hidden = datafile.status !== Filestatus.Deleted || !datafile.attributes?.isFile;
+      if (!datafile.hidden) {
+        nodes.push(rowNode);
+      }
     });
+    this.rootNodeChildren = nodes;
+    this.background_new = "transparent"
+    this.background_equal = "transparent"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "#b8daff"
+    this.background_all = "transparent"
+    this.isInFilterMode = true;
   }
 
   filterNone(): void {
@@ -215,6 +265,13 @@ export class CompareComponent implements OnInit {
       let datafile = rowNode.data!;
       datafile.hidden = false;
     });
+    this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
+    this.background_new = "transparent"
+    this.background_equal = "transparent"
+    this.background_not_equal = "transparent"
+    this.background_deleted = "transparent"
+    this.background_all = "#b8daff"
+    this.isInFilterMode = false;
   }
 
   submit(): void {

@@ -18,3 +18,14 @@
 .dataverse_col {
   width: 44%;
 }
+
+.sticky-menu {
+  font-size: 1.8rem;
+  font-weight: 100;
+  position: sticky;
+  top: 51px;
+  padding: 5px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  z-index: 1;
+}

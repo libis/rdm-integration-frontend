@@ -1,6 +1,6 @@
-  <ngb-accordion [closeOthers]="true" activeIds="repository">
-    <ngb-panel id="repository" title="Repository">
-      <ng-template ngbPanelContent>
+  <p-accordion>
+    <p-accordionTab header="Repository" [selected]="true">
+      <div>
         <div class="mb-3">
           <label for="repoType" class="form-label">Repository type</label>
           <select class="form-select" id="repoType" [(ngModel)]="repoType" #ctrl="ngModel" (change)="changeRepo()">
@@ -24,16 +24,17 @@
           <label for="repoToken" class="form-label">Token</label>
           <input type="password" class="form-control" id="repoToken" placeholder="Repository API token" [(ngModel)]="repoToken" #ctrl="ngModel">
         </div>
-      </ng-template>
-    </ngb-panel>
-    <ngb-panel id="dataverse" title="Dataverse">
-      <ng-template ngbPanelContent>
+      </div>
+    </p-accordionTab>
+    <p-accordionTab header="Dataverse">
+      <div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset</label>
           <div class="input-group">
             <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier" [(ngModel)]="datasetId" #ctrl="ngModel">
             <div class="input-group-append">
-              <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button>
+              <!--button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button-->
+              <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>
             </div>
           </div>
         </div>
@@ -41,8 +42,8 @@
           <label for="dataverseToken" class="form-label">Token</label>
           <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel">
         </div>
-      </ng-template>
-    </ngb-panel>
-  </ngb-accordion>
+      </div>
+    </p-accordionTab>
+  </p-accordion>
   <br/>
   <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="connect()">Connect and compare</button>
