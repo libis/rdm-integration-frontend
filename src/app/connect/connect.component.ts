@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CredentialsService } from '../credentials.service';
+import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
@@ -12,6 +13,7 @@ import { NewDatasetResponse } from '../models/new-dataset-response';
 })
 export class ConnectComponent implements OnInit {
 
+  base?: string = "https://gitlab.kuleuven.be";
   repoType?: string;
   repoOwner?: string;
   repoName?: string;
@@ -79,7 +81,8 @@ export class ConnectComponent implements OnInit {
     if (this.repoToken !== undefined && this.repoType === "gitlab") {
       localStorage.setItem('glToken', this.repoToken);
     }
-    let creds = {
+    let creds: Credentials = {
+      base: this.base,
       repo_type: this.repoType,
       repo_owner: this.repoOwner,
       repo_name: this.repoName,

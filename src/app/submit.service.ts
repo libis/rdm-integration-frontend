@@ -10,32 +10,47 @@ import { CredentialsService } from './credentials.service';
 })
 export class SubmitService {
 
-  github_store_url = 'api/github/store';
+  store_url = 'api/common/store';
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
   submit(selected: Datafile[]): Observable<StoreResult> {
     let credentials = this.credentialsService.credentials;
     var req;
-    var url = '';
     switch (credentials.repo_type) {
       case "github":
         req = {
-          ghToken: credentials.repo_token,
-          ghUser: credentials.repo_owner,
-          repo: credentials.repo_name,
-          hash: credentials.repo_branch,
+          streamType: "github",
+          streamParams: {
+            token: credentials.repo_token,
+            user: credentials.repo_owner,
+            repo: credentials.repo_name,
+          },
           persistentId: credentials.dataset_id,
           dataverseKey: credentials.dataverse_token,
           selectedNodes: selected,
         };
-        url = this.github_store_url;
         break;
+
+        case "gitlab":
+          req = {
+            streamType: "gitlab",
+            streamParams: {
+              base: credentials.base,
+              token: credentials.repo_token,
+              group: credentials.repo_owner,
+              project: credentials.repo_name,
+            },
+            persistentId: credentials.dataset_id,
+            dataverseKey: credentials.dataverse_token,
+            selectedNodes: selected,
+          };
+          break;
 
       default:
         break;
     }
 
-    return this.http.post<StoreResult>(url, req);
+    return this.http.post<StoreResult>(this.store_url, req);
   }
 }
