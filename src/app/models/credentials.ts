@@ -1,5 +1,6 @@
 export interface Credentials {
 
+  base?: string;
   repo_type?: string;
   repo_owner?: string;
   repo_name?: string;

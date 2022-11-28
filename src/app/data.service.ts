@@ -10,6 +10,7 @@ import { CredentialsService } from './credentials.service';
 export class DataService {
 
   github_compare_url = 'api/github/compare';
+  gitlab_compare_url = 'api/gitlab/compare';
   common_get_cached_data_url = 'api/common/cached';
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
@@ -29,6 +30,19 @@ export class DataService {
           dataverseKey: credentials.dataverse_token,
         };
         url = this.github_compare_url;
+        break;
+
+      case "gitlab":
+        req = {
+          base: credentials.base,
+          token: credentials.repo_token,
+          group: credentials.repo_owner,
+          project: credentials.repo_name,
+          hash: credentials.repo_branch,
+          persistentId: credentials.dataset_id,
+          dataverseKey: credentials.dataverse_token,
+        };
+        url = this.gitlab_compare_url;
         break;
 
       default:

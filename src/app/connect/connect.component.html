@@ -8,13 +8,17 @@
             <option value="gitlab">Gitlab</option>
           </select>
         </div>
-        <div class="mb-3">
-          <label for="repoOwner" class="form-label">Owner</label>
-          <input type="text" class="form-control" id="repoOwner" placeholder="Owner name" [(ngModel)]="repoOwner" #ctrl="ngModel">
+        <div class="mb-3" [hidden]="repoType !== 'gitlab'">
+          <label for="base" class="form-label">Base</label>
+          <input type="text" class="form-control" id="base" placeholder="Base" [(ngModel)]="base" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="repoName" class="form-label">Repository</label>
-          <input type="text" class="form-control" id="repoName" placeholder="Repository name" [(ngModel)]="repoName" #ctrl="ngModel">
+          <label for="repoOwner" class="form-label">{{ repoType == 'gitlab' ? 'Group' : 'Owner'}}</label>
+          <input type="text" class="form-control" id="repoOwner" placeholder="{{ repoType == 'gitlab' ? 'group/subgroup' : 'Owner name'}}" [(ngModel)]="repoOwner" #ctrl="ngModel">
+        </div>
+        <div class="mb-3">
+          <label for="repoName" class="form-label">{{ repoType == 'gitlab' ? 'Project' : 'Repository'}}</label>
+          <input type="text" class="form-control" id="repoName" placeholder="{{ repoType == 'gitlab' ? 'Project name' : 'Repository name'}}" [(ngModel)]="repoName" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="repoBranch" class="form-label">Branch</label>
