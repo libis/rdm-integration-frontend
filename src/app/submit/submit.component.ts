@@ -52,7 +52,7 @@ export class SubmitComponent implements OnInit {
           }
           if (!this.hasUnfinishedDataFiles()) {
             this.dataSubscription?.unsubscribe();
-            alert('All actions are finished for the dataset ' + this.pid);
+            alert('All actions are finished for the dataset https://rdr.kuleuven.be/dataset.xhtml?persistentId=' + this.pid);
           }
         },
         error: (err) => {
