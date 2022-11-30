@@ -1,5 +1,5 @@
   <p-accordion>
-    <p-accordionTab header="Repository" [selected]="true">
+    <p-accordionTab header="Data/code source" [selected]="true">
       <div>
         <div class="mb-3">
           <label for="repoType" class="form-label">Repository type</label>
@@ -17,7 +17,7 @@
           <input type="text" class="form-control" id="repoOwner" placeholder="{{ repoType == 'gitlab' ? 'group/subgroup' : 'Owner name'}}" [(ngModel)]="repoOwner" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="repoName" class="form-label">{{ repoType == 'gitlab' ? 'Project' : 'Data/code source'}}</label>
+          <label for="repoName" class="form-label">{{ repoType == 'gitlab' ? 'Project' : 'Repository'}}</label>
           <input type="text" class="form-control" id="repoName" placeholder="{{ repoType == 'gitlab' ? 'Project name' : 'Repository name'}}" [(ngModel)]="repoName" #ctrl="ngModel">
         </div>
         <div class="mb-3">
