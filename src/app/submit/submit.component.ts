@@ -116,6 +116,7 @@ export class SubmitComponent implements OnInit {
   }
 
   submit() {
+    alert('Transfer request submitted successfully. You can close the window and the transfer will continue.');
     this.disabled = true;
     let selected: Datafile[] = [];
     this.data.forEach(datafile => {
