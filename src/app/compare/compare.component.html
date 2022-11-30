@@ -26,11 +26,11 @@
       <button pButton pRipple type="button" [style]="'background-color: ' + background_new" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that aren't in the dataset yet" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-plus-circle" style="color: green"></i>
       </button>
-      <button pButton pRipple type="button" [style]="'background-color: ' + background_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are the same in the dataset and the active data repository" [attr.disabled]="disabled ? '' : null">
-        <i class="pi pi-check-circle" style="color: black"></i>
-      </button>
       <button pButton pRipple type="button" [style]="'background-color: ' + background_not_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterUpdated()" title="Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-exclamation-circle" style="color: blue"></i>
+      </button>
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are the same in the dataset and the active data repository" [attr.disabled]="disabled ? '' : null">
+        <i class="pi pi-check-circle" style="color: black"></i>
       </button>
       <button pButton pRipple type="button" [style]="'background-color: ' + background_deleted" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterDeleted()" title="Files that are only in the dataset, but not in the active data repository" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-minus-circle" style="color: red"></i>
