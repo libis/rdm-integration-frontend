@@ -52,6 +52,7 @@ export class SubmitComponent implements OnInit {
           }
           if (!this.hasUnfinishedDataFiles()) {
             this.dataSubscription?.unsubscribe();
+            alert('All actions are finished for the dataset ' + this.pid);
           }
         },
         error: (err) => {
