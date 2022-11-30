@@ -17,7 +17,7 @@
           <input type="text" class="form-control" id="repoOwner" placeholder="{{ repoType == 'gitlab' ? 'group/subgroup' : 'Owner name'}}" [(ngModel)]="repoOwner" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="repoName" class="form-label">{{ repoType == 'gitlab' ? 'Project' : 'Repository'}}</label>
+          <label for="repoName" class="form-label">{{ repoType == 'gitlab' ? 'Project' : 'Data/code source'}}</label>
           <input type="text" class="form-control" id="repoName" placeholder="{{ repoType == 'gitlab' ? 'Project name' : 'Repository name'}}" [(ngModel)]="repoName" #ctrl="ngModel">
         </div>
         <div class="mb-3">
@@ -33,9 +33,9 @@
     <p-accordionTab header="Dataverse">
       <div>
         <div class="mb-3">
-          <label for="datasetId" class="form-label">Dataset</label>
+          <label for="datasetId" class="form-label">Dataset DOI</label>
           <div class="input-group">
-            <input type="text" class="form-control" id="datasetId" placeholder="Dataset identifier" [(ngModel)]="datasetId" #ctrl="ngModel">
+            <input type="text" class="form-control" id="datasetId" placeholder="Dataset DOI" [(ngModel)]="datasetId" #ctrl="ngModel">
             <div class="input-group-append">
               <!--button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button-->
               <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>

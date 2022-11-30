@@ -19,7 +19,7 @@ export class ConnectComponent implements OnInit {
   repoName?: string;
   repoBranch?: string;
   repoToken?: string;
-  datasetId?: string;
+  datasetId?: string = "doi:";
   dataverseToken?: string;
 
   creatingNewDataset: boolean = false;
@@ -32,12 +32,6 @@ export class ConnectComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    let credentials = this.credentialsService.credentials
-    this.repoType = credentials.repo_type;
-    this.repoOwner = credentials.repo_owner;
-    this.repoName = credentials.repo_name;
-    this.repoBranch = credentials.repo_branch;
-    this.datasetId = credentials.dataset_id;
     let token = localStorage.getItem('dataverseToken');
     if (token !== null) {
       this.dataverseToken = token;

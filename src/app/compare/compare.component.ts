@@ -7,6 +7,7 @@ import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
+import { Location } from '@angular/common'
 
 @Component({
   selector: 'app-compare',
@@ -48,6 +49,7 @@ export class CompareComponent implements OnInit {
     public dataStateService: DataStateService,
     private credentialsService: CredentialsService,
     private router: Router,
+    private location: Location,
   ) { }
 
   ngOnInit(): void {
@@ -367,4 +369,7 @@ export class CompareComponent implements OnInit {
     return rowDataMap;
   }
 
+  back(): void {
+    this.location.back();
+  }
 }
