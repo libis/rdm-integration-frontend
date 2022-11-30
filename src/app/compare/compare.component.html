@@ -14,7 +14,7 @@
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
-      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Submit the selection for processing" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_submit"></i>&nbsp;Submit
       </button>
     </span>
@@ -23,19 +23,19 @@
   <span class="col-auto">
     <span>Show files: </span>
     <span class="p-buttonset">
-      <button pButton pRipple type="button" [style]="'background-color: ' + background_new" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that are only in the repository" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_new" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that aren't in the dataset yet" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-plus-circle" style="color: green"></i>
       </button>
-      <button pButton pRipple type="button" [style]="'background-color: ' + background_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are equal" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterEqual()" title="Files that are the same in the dataset and the active data repository" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-check-circle" style="color: black"></i>
       </button>
-      <button pButton pRipple type="button" [style]="'background-color: ' + background_not_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterUpdated()" title="Files that have changed" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_not_equal" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterUpdated()" title="Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-exclamation-circle" style="color: blue"></i>
       </button>
-      <button pButton pRipple type="button" [style]="'background-color: ' + background_deleted" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterDeleted()" title="Files that are only in Dataverse" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_deleted" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterDeleted()" title="Files that are only in the dataset, but not in the active data repository" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-minus-circle" style="color: red"></i>
       </button>
-      <button pButton pRipple type="button" [style]="'background-color: ' + background_all" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNone()" title="All files" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" [style]="'background-color: ' + background_all" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNone()" title="Show all files" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-filter-slash" style="color: darkgrey"></i>
       </button>
     </span>
