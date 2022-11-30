@@ -52,6 +52,7 @@ export class SubmitComponent implements OnInit {
           }
           if (!this.hasUnfinishedDataFiles()) {
             this.dataSubscription?.unsubscribe();
+            alert('All actions are finished for the dataset ' + this.pid);
           }
         },
         error: (err) => {
@@ -116,6 +117,7 @@ export class SubmitComponent implements OnInit {
   }
 
   submit() {
+    alert('Transfer request submitted successfully. You can close the window and the transfer will continue.');
     this.disabled = true;
     let selected: Datafile[] = [];
     this.data.forEach(datafile => {
