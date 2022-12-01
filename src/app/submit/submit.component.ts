@@ -27,6 +27,7 @@ export class SubmitComponent implements OnInit {
 
   disabled = false;
   submitted = false;
+  done = false;
 
   constructor(
     private dataStateService: DataStateService,
@@ -54,7 +55,7 @@ export class SubmitComponent implements OnInit {
           }
           if (!this.hasUnfinishedDataFiles()) {
             this.dataSubscription?.unsubscribe();
-            alert('All actions are finished for the dataset https://rdr.kuleuven.be/dataset.xhtml?persistentId=' + this.pid + '&version=DRAFT');
+            this.done = true;
           }
         },
         error: (err) => {
@@ -154,4 +155,8 @@ export class SubmitComponent implements OnInit {
   back(): void {
     this.location.back();
   }
+
+  goToDataset(){
+    location.href = 'https://rdr.kuleuven.be/dataset.xhtml?version=DRAFT&persistentId=' + this.pid;
+ }
 }
