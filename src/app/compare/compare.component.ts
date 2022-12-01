@@ -372,4 +372,20 @@ export class CompareComponent implements OnInit {
   back(): void {
     this.location.back();
   }
+
+  repo(): string {
+    switch (this.credentialsService.credentials.repo_type) {
+      case "github":
+        return "GitHub"
+        break;
+
+      case "gitlab":
+        return "GitLab"
+        break;
+
+      default:
+        return "Unknown repository type";
+        break;
+    }
+  }
 }
