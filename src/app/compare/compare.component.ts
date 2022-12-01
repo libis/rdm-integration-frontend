@@ -22,7 +22,7 @@ export class CompareComponent implements OnInit {
 
   icon_noaction = "pi pi-stop";
   icon_update = "pi pi-arrow-right";
-  icon_mirror = "pi pi-arrows-h";
+  icon_mirror = "pi pi-sync";
 
   icon_submit = "pi pi-save";
 

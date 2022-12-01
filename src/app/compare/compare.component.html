@@ -9,10 +9,10 @@
         <i [class]="icon_noaction"></i>&nbsp;No action
       </button>
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_update"></i>&nbsp;Update
+        <i [class]="icon_update"></i>&nbsp;Copy
       </button>
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_mirror"></i>&nbsp;Mirror
+        <i [class]="icon_mirror"></i>&nbsp;Sync
       </button>
     </span>
   </span>
@@ -36,7 +36,7 @@
         <th class="compare_col" style="text-align: center;">
           <span title="Comparison status">
             <p-menu #menu [popup]="true" [model]="filterItems" appendTo="body"></p-menu>
-            <button pButton pRipple type="button" class="p-button-rounded p-button-secondary" icon="pi pi-filter" (click)="menu.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
+            <button pButton pRipple type="button" class="p-button-text p-button-plain" icon="pi pi-filter" (click)="menu.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
           </span>
         </th>
         <th class="action_col" style="text-align: center;">
