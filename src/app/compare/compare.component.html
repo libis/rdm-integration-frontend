@@ -1,9 +1,5 @@
 <div class="row justify-content-between sticky-menu">
   <span class="col-auto">
-    <span>Apply action to selection: </span>
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
-      <i class="pi pi-refresh"></i>&nbsp;Refresh
-    </button>
     <span class="p-buttonset">
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_noaction"></i>&nbsp;No action
@@ -18,7 +14,9 @@
   </span>
 
   <span class="col-auto">
-    <span>Selection options: </span>
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+      <i class="pi pi-refresh"></i>&nbsp;Refresh
+    </button>
     <span class="p-buttonset">
       <button pButton pRipple type="button" [style]="'background-color: ' + background_new" class="p-button-sm p-button-outlined p-button-secondary" (click)="filterNew()" title="Files that aren't in the dataset yet" [attr.disabled]="disabled ? '' : null">
         <i class="pi pi-plus-circle" style="color: green"></i>
@@ -68,5 +66,7 @@
 
 <br/>
 
-<button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
-<button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+<div>
+  <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+  <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+</div>>
