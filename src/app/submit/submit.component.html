@@ -1,3 +1,15 @@
+<div class="row justify-content-between sticky-menu">
+  <span class="col-auto">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+  </span>
+
+  <span class="col-auto">
+    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  </span>
+</div>
+
+<br/>
+
 <table class="table">
   <tbody>
     <tr>
@@ -35,9 +47,3 @@
     </tr>
   </tbody>
 </table>
-<br/>
-
-<div>
-  <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
-  <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
-</div>
