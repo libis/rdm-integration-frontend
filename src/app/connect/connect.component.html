@@ -9,6 +9,10 @@
           </select>
         </div>
         <div class="mb-3">
+          <label for="repoToken" class="form-label">Token</label>
+          <input type="password" class="form-control" id="repoToken" placeholder="Repository API token" [(ngModel)]="repoToken" #ctrl="ngModel">
+        </div>
+        <div class="mb-3">
           <label for="baseUrl" class="form-label">Source URL</label>
           <input type="text" class="form-control" id="baseUrl" placeholder="Source URL" [(ngModel)]="baseUrl" #ctrl="ngModel">
         </div>
@@ -16,14 +20,14 @@
           <label for="repoBranch" class="form-label">Branch</label>
           <input type="text" class="form-control" id="repoBranch" placeholder="Repository branch or commit" [(ngModel)]="repoBranch" #ctrl="ngModel">
         </div>
-        <div class="mb-3">
-          <label for="repoToken" class="form-label">Token</label>
-          <input type="password" class="form-control" id="repoToken" placeholder="Repository API token" [(ngModel)]="repoToken" #ctrl="ngModel">
-        </div>
       </div>
     </p-accordionTab>
     <p-accordionTab header="Dataverse">
       <div>
+        <div class="mb-3">
+          <label for="dataverseToken" class="form-label">Token</label>
+          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel">
+        </div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>
           <div class="input-group">
@@ -33,10 +37,6 @@
               <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>
             </div>
           </div>
-        </div>
-        <div class="mb-3">
-          <label for="dataverseToken" class="form-label">Token</label>
-          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel">
         </div>
       </div>
     </p-accordionTab>
