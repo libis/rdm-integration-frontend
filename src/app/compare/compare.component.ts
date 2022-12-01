@@ -8,6 +8,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { Location } from '@angular/common'
+import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'app-compare',
@@ -33,16 +34,49 @@ export class CompareComponent implements OnInit {
   refreshHidden = true;
 
 
-  background_new = "transparent"
-  background_equal = "transparent"
-  background_not_equal = "transparent"
-  background_deleted = "transparent"
-  background_all = "#b8daff"
+  background_transparent = { 'background-color': "transparent" };
+  background_blue = { 'background-color': "#b8daff" };
 
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
   isInFilterMode = false;
+
+  filterItems: MenuItem[] = [
+    {
+      label: '(Show all)',
+      style: this.background_blue,
+      command: (_: any) => this.filterNone(),
+      title: 'Show all files',
+    }, {
+      label: '(New files)',
+      icon: 'pi pi-plus-circle',
+      iconStyle: { 'color': 'green' },
+      style: this.background_transparent,
+      command: (_: any) => this.filterNew(),
+      title: "Files that aren't in the dataset yet",
+    }, {
+      label: '(Changed files)',
+      icon: 'pi pi-exclamation-circle',
+      iconStyle: { 'color': 'blue' },
+      style: this.background_transparent,
+      command: (_: any) => this.filterUpdated(),
+      title: 'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
+    },{
+      label: '(Unhanged files)',
+      icon: 'pi pi-check-circle',
+      iconStyle: { 'color': 'black' },
+      style: this.background_transparent,
+      command: (_: any) => this.filterEqual(),
+      title: 'Files that are the same in the dataset and the active data repository',
+    },{
+      label: '(Files only in RDR)',
+      icon: 'pi pi-minus-circle',
+      iconStyle: { 'color': 'red' },
+      style: this.background_transparent,
+      command: (_: any) => this.filterDeleted(),
+      title: 'Files that are only in the dataset, but not in the active data repository',
+    }];
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
@@ -200,11 +234,8 @@ export class CompareComponent implements OnInit {
       }
     });
     this.rootNodeChildren = nodes;
-    this.background_new = "#b8daff"
-    this.background_equal = "transparent"
-    this.background_not_equal = "transparent"
-    this.background_deleted = "transparent"
-    this.background_all = "transparent"
+    this.filterItems.forEach(i => i.style = this.background_transparent);
+    this.filterItems[1].style = this.background_blue;
     this.isInFilterMode = true;
   }
 
@@ -218,11 +249,8 @@ export class CompareComponent implements OnInit {
       }
     });
     this.rootNodeChildren = nodes;
-    this.background_new = "transparent"
-    this.background_equal = "#b8daff"
-    this.background_not_equal = "transparent"
-    this.background_deleted = "transparent"
-    this.background_all = "transparent"
+    this.filterItems.forEach(i => i.style = this.background_transparent);
+    this.filterItems[3].style = this.background_blue;
     this.isInFilterMode = true;
   }
 
@@ -236,11 +264,8 @@ export class CompareComponent implements OnInit {
       }
     });
     this.rootNodeChildren = nodes;
-    this.background_new = "transparent"
-    this.background_equal = "transparent"
-    this.background_not_equal = "#b8daff"
-    this.background_deleted = "transparent"
-    this.background_all = "transparent"
+    this.filterItems.forEach(i => i.style = this.background_transparent);
+    this.filterItems[2].style = this.background_blue;
     this.isInFilterMode = true;
   }
 
@@ -254,11 +279,8 @@ export class CompareComponent implements OnInit {
       }
     });
     this.rootNodeChildren = nodes;
-    this.background_new = "transparent"
-    this.background_equal = "transparent"
-    this.background_not_equal = "transparent"
-    this.background_deleted = "#b8daff"
-    this.background_all = "transparent"
+    this.filterItems.forEach(i => i.style = this.background_transparent);
+    this.filterItems[4].style = this.background_blue;
     this.isInFilterMode = true;
   }
 
@@ -268,11 +290,8 @@ export class CompareComponent implements OnInit {
       datafile.hidden = false;
     });
     this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
-    this.background_new = "transparent"
-    this.background_equal = "transparent"
-    this.background_not_equal = "transparent"
-    this.background_deleted = "transparent"
-    this.background_all = "#b8daff"
+    this.filterItems.forEach(i => i.style = this.background_transparent);
+    this.filterItems[0].style = this.background_blue;
     this.isInFilterMode = false;
   }
 

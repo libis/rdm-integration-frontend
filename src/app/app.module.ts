@@ -15,6 +15,7 @@ import { TreeTableModule } from 'primeng/treetable';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { AccordionModule } from 'primeng/accordion';
+import { MenuModule } from 'primeng/menu';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
@@ -37,6 +38,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     ButtonModule,
     RippleModule,
     BrowserAnimationsModule,
+    MenuModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
