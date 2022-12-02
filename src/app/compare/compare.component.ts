@@ -8,7 +8,6 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { Location } from '@angular/common'
-import { MenuItem } from 'primeng/api';
 
 @Component({
   selector: 'app-compare',
@@ -41,42 +40,40 @@ export class CompareComponent implements OnInit {
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
   isInFilterMode = false;
+  showAllFilterStyle = this.background_blue;
 
-  filterItems: MenuItem[] = [
+  filterItems: any[] = [
     {
-      label: '(Show all)',
-      style: this.background_blue,
-      command: (_: any) => this.filterNone(),
-      title: 'Show all files',
-    }, {
       label: '(New files)',
       icon: 'pi pi-plus-circle',
       iconStyle: { 'color': 'green' },
       style: this.background_transparent,
-      command: (_: any) => this.filterNew(),
       title: "Files that aren't in the dataset yet",
+      fileStatus: Filestatus.New,
     }, {
       label: '(Changed files)',
       icon: 'pi pi-exclamation-circle',
       iconStyle: { 'color': 'blue' },
       style: this.background_transparent,
-      command: (_: any) => this.filterUpdated(),
       title: 'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
+      fileStatus: Filestatus.Updated,
     },{
       label: '(Unhanged files)',
       icon: 'pi pi-check-circle',
       iconStyle: { 'color': 'black' },
       style: this.background_transparent,
-      command: (_: any) => this.filterEqual(),
       title: 'Files that are the same in the dataset and the active data repository',
+      fileStatus: Filestatus.Equal,
     },{
       label: '(Files only in RDR)',
       icon: 'pi pi-minus-circle',
       iconStyle: { 'color': 'red' },
       style: this.background_transparent,
-      command: (_: any) => this.filterDeleted(),
       title: 'Files that are only in the dataset, but not in the active data repository',
+      fileStatus: Filestatus.Deleted,
     }];
+
+  selectedFilterItems: any[] = [this.filterItems[0], this.filterItems[1], this.filterItems[2], this.filterItems[3]];
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
@@ -224,74 +221,44 @@ export class CompareComponent implements OnInit {
     });
   }
 
-  filterNew(): void {
+  updateFilters(): void {
+    if (this.selectedFilterItems.length < 4) {
+      this.filterOn(this.selectedFilterItems);
+    } else {
+      this.filterOff();
+    }
+  }
+
+  showAll(): void {
+    this.selectedFilterItems = [];
+    this.selectedFilterItems.push(...this.filterItems);
+    this.filterOff();
+  }
+
+  filterOn(filters: any[]): void {
     let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.New || !datafile.attributes?.isFile;
+      datafile.hidden =  !datafile.attributes?.isFile || !filters.some(i => datafile.status === i.fileStatus);
       if (!datafile.hidden) {
         nodes.push(rowNode);
       }
     });
     this.rootNodeChildren = nodes;
     this.filterItems.forEach(i => i.style = this.background_transparent);
-    this.filterItems[1].style = this.background_blue;
+    filters.forEach(i => i.style = this.background_blue);
+    this.showAllFilterStyle = this.background_transparent;
     this.isInFilterMode = true;
   }
 
-  filterEqual(): void {
-    let nodes: TreeNode<Datafile>[] = [];
-    this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Equal || !datafile.attributes?.isFile;
-      if (!datafile.hidden) {
-        nodes.push(rowNode);
-      }
-    });
-    this.rootNodeChildren = nodes;
-    this.filterItems.forEach(i => i.style = this.background_transparent);
-    this.filterItems[3].style = this.background_blue;
-    this.isInFilterMode = true;
-  }
-
-  filterUpdated(): void {
-    let nodes: TreeNode<Datafile>[] = [];
-    this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Updated || !datafile.attributes?.isFile;
-      if (!datafile.hidden) {
-        nodes.push(rowNode);
-      }
-    });
-    this.rootNodeChildren = nodes;
-    this.filterItems.forEach(i => i.style = this.background_transparent);
-    this.filterItems[2].style = this.background_blue;
-    this.isInFilterMode = true;
-  }
-
-  filterDeleted(): void {
-    let nodes: TreeNode<Datafile>[] = [];
-    this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
-      datafile.hidden = datafile.status !== Filestatus.Deleted || !datafile.attributes?.isFile;
-      if (!datafile.hidden) {
-        nodes.push(rowNode);
-      }
-    });
-    this.rootNodeChildren = nodes;
-    this.filterItems.forEach(i => i.style = this.background_transparent);
-    this.filterItems[4].style = this.background_blue;
-    this.isInFilterMode = true;
-  }
-
-  filterNone(): void {
+  filterOff(): void {
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
       datafile.hidden = false;
     });
     this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
     this.filterItems.forEach(i => i.style = this.background_transparent);
-    this.filterItems[0].style = this.background_blue;
+    this.showAllFilterStyle = this.background_blue;
     this.isInFilterMode = false;
   }
 

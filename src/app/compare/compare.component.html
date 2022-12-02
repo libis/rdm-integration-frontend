@@ -35,8 +35,28 @@
         <!--th class="size_col">Size</th-->
         <th class="compare_col" style="text-align: center;">
           <span title="Comparison status">
-            <p-menu #menu [popup]="true" [model]="filterItems" appendTo="body"></p-menu>
-            <button pButton pRipple type="button" class="p-button-text p-button-plain" icon="pi pi-filter" (click)="menu.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
+            <p-overlayPanel #op appendTo="body">
+              <p-table [value]="filterItems" [(selection)]="selectedFilterItems" dataKey="label">
+                <ng-template pTemplate="header">
+                  <tr>
+                      <th title="Show all files">
+                          <p-tableHeaderCheckbox (click)="updateFilters()"></p-tableHeaderCheckbox>
+                      </th>
+                      <th>Comparison status</th>
+                  </tr>
+              </ng-template>
+                <ng-template pTemplate="body" let-product>
+                    <tr [title]="product.title">
+                        <td>
+                            <p-tableCheckbox [value]="product" (click)="updateFilters()"></p-tableCheckbox>
+                        </td>
+                        <td><i [style]="product.iconStyle" [class]="product.icon"></i>&nbsp;{{product.label}}</td>
+                    </tr>
+                </ng-template>
+              </p-table>
+              <button pButton type="button" class="p-button-link" (click)="showAll()" title="Show all">Show all...</button>
+            </p-overlayPanel>
+            <button pButton pRipple type="button" class="p-button-text p-button-plain" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
           </span>
         </th>
         <th class="action_col" style="text-align: center;">
