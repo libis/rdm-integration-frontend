@@ -8,6 +8,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeNode } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { Location } from '@angular/common'
+import { FolderActionUpdateService } from '../folder.action.update.service';
 
 @Component({
   selector: 'app-compare',
@@ -32,43 +33,34 @@ export class CompareComponent implements OnInit {
   loading = true;
   refreshHidden = true;
 
-
-  background_transparent = { 'background-color': "transparent" };
-  background_blue = { 'background-color': "#b8daff" };
-
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
   isInFilterMode = false;
-  showAllFilterStyle = this.background_blue;
 
   filterItems: any[] = [
     {
       label: '(New files)',
       icon: 'pi pi-plus-circle',
       iconStyle: { 'color': 'green' },
-      style: this.background_transparent,
       title: "Files that aren't in the dataset yet",
       fileStatus: Filestatus.New,
     }, {
       label: '(Changed files)',
       icon: 'pi pi-exclamation-circle',
       iconStyle: { 'color': 'blue' },
-      style: this.background_transparent,
       title: 'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
       fileStatus: Filestatus.Updated,
     },{
       label: '(Unhanged files)',
       icon: 'pi pi-check-circle',
       iconStyle: { 'color': 'black' },
-      style: this.background_transparent,
       title: 'Files that are the same in the dataset and the active data repository',
       fileStatus: Filestatus.Equal,
     },{
       label: '(Files only in RDR)',
       icon: 'pi pi-minus-circle',
       iconStyle: { 'color': 'red' },
-      style: this.background_transparent,
       title: 'Files that are only in the dataset, but not in the active data repository',
       fileStatus: Filestatus.Deleted,
     }];
@@ -81,6 +73,7 @@ export class CompareComponent implements OnInit {
     private credentialsService: CredentialsService,
     private router: Router,
     private location: Location,
+    private folderActionUpdateService: FolderActionUpdateService,
   ) { }
 
   ngOnInit(): void {
@@ -245,10 +238,8 @@ export class CompareComponent implements OnInit {
       }
     });
     this.rootNodeChildren = nodes;
-    this.filterItems.forEach(i => i.style = this.background_transparent);
-    filters.forEach(i => i.style = this.background_blue);
-    this.showAllFilterStyle = this.background_transparent;
     this.isInFilterMode = true;
+    
   }
 
   filterOff(): void {
@@ -257,9 +248,8 @@ export class CompareComponent implements OnInit {
       datafile.hidden = false;
     });
     this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
-    this.filterItems.forEach(i => i.style = this.background_transparent);
-    this.showAllFilterStyle = this.background_blue;
     this.isInFilterMode = false;
+    this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
   }
 
   submit(): void {
@@ -363,15 +353,10 @@ export class CompareComponent implements OnInit {
     switch (this.credentialsService.credentials.repo_type) {
       case "github":
         return "GitHub"
-        break;
-
       case "gitlab":
         return "GitLab"
-        break;
-
       default:
         return "Unknown repository type";
-        break;
     }
   }
 }
