@@ -1,10 +1,7 @@
-/* You can add global styles to this file, and also import other style files */
-
-/* Importing Bootstrap SCSS file. */
-@import '~bootstrap/scss/bootstrap';
-@import '~primeicons/primeicons.css';
-@import '~primeng/resources/themes/lara-light-blue/theme.css';
-@import '~primeng/resources/primeng.min.css';
+@import 'bootstrap/scss/bootstrap';
+@import 'primeicons/primeicons.css';
+@import 'primeng/resources/themes/lara-light-blue/theme.css';
+@import 'primeng/resources/primeng.min.css';
 
 :root {
     -webkit-locale: "en";
@@ -413,4 +410,15 @@ footer>div {
     border-radius: 4px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
     border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+}
+
+.sticky-menu {
+  font-size: 1.8rem;
+  font-weight: 100;
+  position: sticky;
+  top: 51px;
+  padding: 5px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  z-index: 1;
 }

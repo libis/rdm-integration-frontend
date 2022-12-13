@@ -12,9 +12,11 @@ import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SubmittedFileComponent } from './submitted-file/submitted-file.component';
 import { TreeTableModule } from 'primeng/treetable';
+import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { AccordionModule } from 'primeng/accordion';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
@@ -34,9 +36,11 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     HttpClientModule,
     FormsModule,
     TreeTableModule,
+    TableModule,
     ButtonModule,
     RippleModule,
     BrowserAnimationsModule,
+    OverlayPanelModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

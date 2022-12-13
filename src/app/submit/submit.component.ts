@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { CompareResult } from '../models/compare-result';
+import { Location } from '@angular/common'
 
 @Component({
   selector: 'app-submit',
@@ -26,11 +27,13 @@ export class SubmitComponent implements OnInit {
 
   disabled = false;
   submitted = false;
+  done = false;
 
   constructor(
     private dataStateService: DataStateService,
     private dataUpdatesService: DataUpdatesService,
     private submitService: SubmitService,
+    private location: Location,
     private router: Router) { }
 
   ngOnInit(): void {
@@ -52,7 +55,7 @@ export class SubmitComponent implements OnInit {
           }
           if (!this.hasUnfinishedDataFiles()) {
             this.dataSubscription?.unsubscribe();
-            alert('All actions are finished for the dataset ' + this.pid);
+            this.done = true;
           }
         },
         error: (err) => {
@@ -149,4 +152,11 @@ export class SubmitComponent implements OnInit {
     });
   }
 
+  back(): void {
+    this.location.back();
+  }
+
+  goToDataset(){
+    location.href = 'https://rdr.kuleuven.be/dataset.xhtml?version=DRAFT&persistentId=' + this.pid;
+ }
 }

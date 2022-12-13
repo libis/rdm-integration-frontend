@@ -20,7 +20,6 @@
     "@angular/platform-browser-dynamic": "^14.0.0",
     "@angular/router": "^14.0.0",
     "@ng-bootstrap/ng-bootstrap": "^13.1.1",
-    "@popperjs/core": "^2.10.2",
     "bootstrap": "^5.2.0",
     "primeicons": "^6.0.1",
     "primeng": "^14.1.2",

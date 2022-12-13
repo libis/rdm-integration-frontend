@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { CredentialsService } from '../credentials.service';
 import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -13,13 +12,14 @@ import { NewDatasetResponse } from '../models/new-dataset-response';
 })
 export class ConnectComponent implements OnInit {
 
-  base?: string = "https://gitlab.kuleuven.be";
+  baseUrl?: string;
+  base?: string;
   repoType?: string;
   repoOwner?: string;
   repoName?: string;
   repoBranch?: string;
   repoToken?: string;
-  datasetId?: string;
+  datasetId?: string = "doi:";
   dataverseToken?: string;
 
   creatingNewDataset: boolean = false;
@@ -28,16 +28,10 @@ export class ConnectComponent implements OnInit {
     private router: Router,
     private dataStateService: DataStateService,
     private datasetService: DatasetService,
-    private credentialsService: CredentialsService) {
+    ) {
   }
 
   ngOnInit(): void {
-    let credentials = this.credentialsService.credentials
-    this.repoType = credentials.repo_type;
-    this.repoOwner = credentials.repo_owner;
-    this.repoName = credentials.repo_name;
-    this.repoBranch = credentials.repo_branch;
-    this.datasetId = credentials.dataset_id;
     let token = localStorage.getItem('dataverseToken');
     if (token !== null) {
       this.dataverseToken = token;
@@ -53,9 +47,11 @@ export class ConnectComponent implements OnInit {
     switch (this.repoType) {
       case 'github':
         token = localStorage.getItem('ghToken');
+        this.baseUrl = 'https://github.com/<owner>/<repository>';
         break;
       case 'gitlab':
         token = localStorage.getItem('glToken');
+        this.baseUrl = 'https://gitlab.kuleuven.be/<group>/<project>';
         break;
     }
     if (token !== null) {
@@ -66,6 +62,15 @@ export class ConnectComponent implements OnInit {
   }
 
   connect() {
+    var splitted = this.baseUrl?.split('://');
+    if (splitted?.length == 2) {
+      splitted = splitted[1].split('/');
+      if (splitted?.length > 2) {
+        this.base = splitted[0];
+        this.repoOwner = splitted.slice(1, splitted.length - 1).join('/');
+        this.repoName = splitted[splitted.length - 1];
+      }
+    }
     let err = this.checkFields();
     if (err !== undefined) {
       alert(err);
@@ -108,7 +113,7 @@ export class ConnectComponent implements OnInit {
       }
     }
     if (cnt === 0) {
-      return undefined
+      return undefined;
     }
     return res;
   }
