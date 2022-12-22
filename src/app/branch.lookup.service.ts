@@ -12,12 +12,7 @@ export class BranchLookupService {
 
   constructor(private http: HttpClient) { }
 
-  getItems(repoTpe: string, token: string): Observable<SelectItem<string>[]> {
-    var req = {
-      repoTpe: repoTpe,
-      token: token,
-    };
-
+  getItems(req: any): Observable<SelectItem<string>[]> {
     return this.http.post<SelectItem<string>[]>(this.url, req);
   }
 }

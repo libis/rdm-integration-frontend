@@ -32,7 +32,7 @@ export class ConnectComponent implements OnInit {
     { label: "GitLab", value: "gitlab" },
   ];
 
-  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading'}
+  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   branchItems: SelectItem<string>[] = [this.loadingItem];
   doiItems: SelectItem<string>[] = [this.loadingItem];
 
@@ -80,16 +80,20 @@ export class ConnectComponent implements OnInit {
     this.branchItems = [this.loadingItem];
   }
 
-  connect() {
+  parseUrl() {
     var splitted = this.baseUrl?.split('://');
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
-        this.base = splitted[0];
+        this.base = 'https://' + splitted[0];
         this.repoOwner = splitted.slice(1, splitted.length - 1).join('/');
         this.repoName = splitted[splitted.length - 1];
       }
     }
+  }
+
+  connect() {
+    this.parseUrl();
     let err = this.checkFields();
     if (err !== undefined) {
       alert(err);
@@ -106,7 +110,7 @@ export class ConnectComponent implements OnInit {
       localStorage.setItem('glToken', this.repoToken);
     }
     let creds: Credentials = {
-      base: 'https://' + this.base,
+      base: this.base,
       repo_type: this.repoType,
       repo_owner: this.repoOwner,
       repo_name: this.repoName,
@@ -172,7 +176,27 @@ export class ConnectComponent implements OnInit {
       return;
     }
 
-    let httpSubscr = this.branchLookupService.getItems(this.repoType, this.repoToken).subscribe({
+    this.parseUrl();
+    let req = {};
+    if (this.repoType === 'github') {
+      req = {
+        user: this.repoOwner,
+        repo: this.repoName,
+        token: this.repoToken,
+      }
+
+    } else if (this.repoType === 'github') {
+      req = {
+        base: this.base,
+        group: this.repoOwner,
+        project: this.repoName,
+        token: this.repoToken,
+      }
+    } else {
+      alert("Unknown repo type: " + this.repoType);
+      return;
+    }
+    let httpSubscr = this.branchLookupService.getItems(req).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {
           this.branchItems = items;
