@@ -130,7 +130,7 @@ export class ConnectComponent implements OnInit {
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
       let s = strings[i];
-      if (s === undefined || s === '' || ((names[i] === 'Dataset DOI' || names[i] === 'Branch') && s === 'loading')) {
+      if (s === undefined || s === '' || ((names[i] === 'Dataset DOI' || names[i] === 'Branch') && s === 'loading') || s === 'https://github.com/<owner>/<repository>') {
         cnt++;
         res = res + '\n- ' + names[i];
       }
@@ -171,7 +171,7 @@ export class ConnectComponent implements OnInit {
       alert('Branch lookup failed: token is missing');
       return;
     }
-    if (this.baseUrl === undefined || this.baseUrl === '') {
+    if (this.baseUrl === undefined || this.baseUrl === '' || this.baseUrl === 'https://github.com/<owner>/<repository>') {
       alert('Branch lookup failed: URL is missing');
       return;
     }
@@ -180,6 +180,7 @@ export class ConnectComponent implements OnInit {
     let req = {};
     if (this.repoType === 'github') {
       req = {
+        repoType: this.repoType,
         user: this.repoOwner,
         repo: this.repoName,
         token: this.repoToken,
@@ -187,6 +188,7 @@ export class ConnectComponent implements OnInit {
 
     } else if (this.repoType === 'github') {
       req = {
+        repoType: this.repoType,
         base: this.base,
         group: this.repoOwner,
         project: this.repoName,
