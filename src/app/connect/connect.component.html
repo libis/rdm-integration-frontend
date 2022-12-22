@@ -21,7 +21,7 @@
         </div>
         <div class="mb-3">
           <label for="baseUrl" class="form-label">Source URL</label>
-          <input type="text" class="form-control" id="baseUrl" placeholder="Source URL" [(ngModel)]="baseUrl" #ctrl="ngModel">
+          <input type="text" class="form-control" id="baseUrl" placeholder="Source URL" [(ngModel)]="baseUrl" #ctrl="ngModel" (change)="onRepoChange()">
         </div>
         <div class="mb-3">
           <label for="repoBranch" class="form-label">Branch</label><br/>

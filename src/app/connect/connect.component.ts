@@ -215,9 +215,11 @@ export class ConnectComponent implements OnInit {
   }
 
   getDoiOptions() {
-    console.log('click datasets');
     if (this.dataverseToken === undefined || this.dataverseToken === '') {
       alert('DOI lookup failed: Dataverse API token is missing');
+      return;
+    }
+    if (this.doiItems.length !== 1 || this.doiItems[0] !== this.loadingItem) {
       return;
     }
 
@@ -231,7 +233,7 @@ export class ConnectComponent implements OnInit {
         httpSubscr.unsubscribe();
       },
       error: (err) => {
-        alert("branch lookup failed: " + err.error);
+        alert("doi lookup failed: " + err.error);
         this.doiItems = [this.loadingItem];
       },
     });
@@ -239,5 +241,9 @@ export class ConnectComponent implements OnInit {
 
   onUserChange() {
     this.doiItems = [this.loadingItem];
+  }
+
+  onRepoChange() {
+    this.branchItems = [this.loadingItem];
   }
 }
