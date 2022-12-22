@@ -12,11 +12,8 @@
     <p-accordionTab header="Data/code source" [selected]="true">
       <div>
         <div class="mb-3">
-          <label for="repoType" class="form-label">Repository type</label>
-          <select class="form-select" id="repoType" [(ngModel)]="repoType" #ctrl="ngModel" (change)="changeRepo()">
-            <option value="github">Github</option>
-            <option value="gitlab">Gitlab</option>
-          </select>
+          <label for="repoType" class="form-label">Repository type</label><br/>
+          <p-dropdown id="repoType" [options]="repoTypes" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepo()"></p-dropdown>
         </div>
         <div class="mb-3">
           <label for="repoToken" class="form-label">Token</label>
@@ -27,8 +24,14 @@
           <input type="text" class="form-control" id="baseUrl" placeholder="Source URL" [(ngModel)]="baseUrl" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="repoBranch" class="form-label">Branch</label>
-          <input type="text" class="form-control" id="repoBranch" placeholder="Repository branch or commit" [(ngModel)]="repoBranch" #ctrl="ngModel">
+          <label for="repoBranch" class="form-label">Branch</label><br/>
+          <p-dropdown id="repoBranch" [options]="branchItems" [(ngModel)]="repoBranch" [editable]="true" placeholder="Select branch or provide hash reference" (onClick)="getBranchOptions()">
+            <ng-template pTemplate="loader" let-options="options">
+                <div class="flex align-items-center py-2 px-3" style="height: 38px">
+                    <p-skeleton [width]="options.even ? '60%' : '50%'" height="1rem"></p-skeleton>
+                </div>
+            </ng-template>
+          </p-dropdown>
         </div>
       </div>
     </p-accordionTab>
@@ -36,15 +39,15 @@
       <div>
         <div class="mb-3">
           <label for="dataverseToken" class="form-label">Token</label>
-          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel">
+          <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel" (change)="onUserChange()">
         </div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>
           <div class="input-group">
-            <input type="text" class="form-control" id="datasetId" placeholder="Dataset DOI" [(ngModel)]="datasetId" #ctrl="ngModel">
+            <p-dropdown [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
             <div class="input-group-append">
               <!--button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button-->
-              <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>
+              <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>
             </div>
           </div>
         </div>

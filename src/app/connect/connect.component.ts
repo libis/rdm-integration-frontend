@@ -3,7 +3,11 @@ import { Router } from '@angular/router';
 import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
+import { DoiLookupService } from '../doi.lookup.service';
+import { BranchLookupService } from '../branch.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
+import { SelectItem } from 'primeng/api';
+import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 
 @Component({
   selector: 'app-connect',
@@ -21,6 +25,16 @@ export class ConnectComponent implements OnInit {
   repoToken?: string;
   datasetId?: string = "doi:";
   dataverseToken?: string;
+  doiDropdownWidth: SafeStyle;
+
+  repoTypes: SelectItem<string>[] = [
+    { label: "GitHub", value: "github" },
+    { label: "GitLab", value: "gitlab" },
+  ];
+
+  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading'}
+  branchItems: SelectItem<string>[] = [this.loadingItem];
+  doiItems: SelectItem<string>[] = [this.loadingItem];
 
   creatingNewDataset: boolean = false;
 
@@ -28,7 +42,11 @@ export class ConnectComponent implements OnInit {
     private router: Router,
     private dataStateService: DataStateService,
     private datasetService: DatasetService,
-    ) {
+    private sanitizer: DomSanitizer,
+    private doiLookupService: DoiLookupService,
+    private branchLookupService: BranchLookupService,
+  ) {
+    this.doiDropdownWidth = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
   }
 
   ngOnInit(): void {
@@ -59,6 +77,7 @@ export class ConnectComponent implements OnInit {
     } else {
       this.repoToken = undefined;
     }
+    this.branchItems = [this.loadingItem];
   }
 
   connect() {
@@ -87,7 +106,7 @@ export class ConnectComponent implements OnInit {
       localStorage.setItem('glToken', this.repoToken);
     }
     let creds: Credentials = {
-      base: this.base,
+      base: 'https://' + this.base,
       repo_type: this.repoType,
       repo_owner: this.repoOwner,
       repo_name: this.repoName,
@@ -102,12 +121,12 @@ export class ConnectComponent implements OnInit {
 
   checkFields(): string | undefined {
     let strings: (string | undefined)[] = [this.repoType, this.repoOwner, this.repoName, this.repoBranch, this.repoToken, this.datasetId, this.dataverseToken];
-    let names: string[] = ['Repository type', 'Owner', 'Repository', 'Branch', 'Repository token', 'Dataset', 'Dataverse API token'];
+    let names: string[] = ['Repository type', 'Owner', 'Repository', 'Branch', 'Repository token', 'Dataset DOI', 'Dataverse token'];
     let cnt = 0;
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
       let s = strings[i];
-      if (s === undefined || s === '') {
+      if (s === undefined || s === '' || ((names[i] === 'Dataset DOI' || names[i] === 'Branch') && s === 'loading')) {
         cnt++;
         res = res + '\n- ' + names[i];
       }
@@ -136,5 +155,63 @@ export class ConnectComponent implements OnInit {
         this.creatingNewDataset = false;
       }
     });
+  }
+
+  getBranchOptions(): void {
+    console.log('click branches');
+    if (this.repoType === undefined) {
+      alert('Branch lookup failed: repository type is missing');
+      return;
+    }
+    if (this.repoToken === undefined || this.repoToken === '') {
+      alert('Branch lookup failed: token is missing');
+      return;
+    }
+    if (this.baseUrl === undefined || this.baseUrl === '') {
+      alert('Branch lookup failed: URL is missing');
+      return;
+    }
+
+    let httpSubscr = this.branchLookupService.getItems(this.repoType, this.repoToken).subscribe({
+      next: (items: SelectItem<string>[]) => {
+        if (items !== undefined && items.length > 0) {
+          this.branchItems = items;
+        } else {
+          this.branchItems = [];
+        }
+        httpSubscr.unsubscribe();
+      },
+      error: (err) => {
+        alert("branch lookup failed: " + err.error);
+        this.branchItems = [this.loadingItem];
+      },
+    });
+  }
+
+  getDoiOptions() {
+    console.log('click datasets');
+    if (this.dataverseToken === undefined || this.dataverseToken === '') {
+      alert('DOI lookup failed: Dataverse API token is missing');
+      return;
+    }
+
+    let httpSubscr = this.doiLookupService.getItems(this.dataverseToken).subscribe({
+      next: (items: SelectItem<string>[]) => {
+        if (items !== undefined && items.length > 0) {
+          this.doiItems = items;
+        } else {
+          this.doiItems = [];
+        }
+        httpSubscr.unsubscribe();
+      },
+      error: (err) => {
+        alert("branch lookup failed: " + err.error);
+        this.doiItems = [this.loadingItem];
+      },
+    });
+  }
+
+  onUserChange() {
+    this.doiItems = [this.loadingItem];
   }
 }
