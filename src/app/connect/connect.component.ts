@@ -186,7 +186,7 @@ export class ConnectComponent implements OnInit {
         token: this.repoToken,
       }
 
-    } else if (this.repoType === 'github') {
+    } else if (this.repoType === 'gitlab') {
       req = {
         repoType: this.repoType,
         base: this.base,
