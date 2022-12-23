@@ -60,16 +60,24 @@ export class ConnectComponent implements OnInit {
   ngOnDestroy() {
   }
 
+  repoTypePlaceHolder(): string {
+    switch (this.repoType) {
+      case 'github':
+        return 'https://github.com/<owner>/<repository>';
+      case 'gitlab':
+        return 'https://gitlab.kuleuven.be/<group>/<project>';
+    }
+    return "URL"
+  }
+
   changeRepo() {
     let token = null;
     switch (this.repoType) {
       case 'github':
         token = localStorage.getItem('ghToken');
-        this.baseUrl = 'https://github.com/<owner>/<repository>';
         break;
       case 'gitlab':
         token = localStorage.getItem('glToken');
-        this.baseUrl = 'https://gitlab.kuleuven.be/<group>/<project>';
         break;
     }
     if (token !== null) {
