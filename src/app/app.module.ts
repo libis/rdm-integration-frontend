@@ -18,6 +18,8 @@ import { RippleModule } from 'primeng/ripple';
 import { AccordionModule } from 'primeng/accordion';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DropdownModule } from 'primeng/dropdown';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @NgModule({
   declarations: [
@@ -41,6 +43,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     RippleModule,
     BrowserAnimationsModule,
     OverlayPanelModule,
+    DropdownModule,
+    SkeletonModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
