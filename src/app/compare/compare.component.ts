@@ -52,7 +52,7 @@ export class CompareComponent implements OnInit {
       title: 'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
       fileStatus: Filestatus.Updated,
     },{
-      label: '(Unhanged files)',
+      label: '(Unchanged files)',
       icon: 'pi pi-check-circle',
       iconStyle: { 'color': 'black' },
       title: 'Files that are the same in the dataset and the active data repository',
