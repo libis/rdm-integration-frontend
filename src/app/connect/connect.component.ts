@@ -124,16 +124,24 @@ export class ConnectComponent implements OnInit {
   }
 
   checkFields(): string | undefined {
-    let strings: (string | undefined)[] = [this.repoType, this.repoOwner, this.repoName, this.repoBranch, this.repoToken, this.datasetId, this.dataverseToken];
-    let names: string[] = ['Repository type', 'Owner', 'Repository', 'Branch', 'Repository token', 'Dataset DOI', 'Dataverse token'];
+    let strings: (string | undefined)[] = [this.repoType, this.repoToken, this.datasetId, this.dataverseToken];
+    let names: string[] = ['Repository type', 'Repository token', 'Dataset DOI', 'Dataverse token'];
     let cnt = 0;
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
       let s = strings[i];
-      if (s === undefined || s === '' || ((names[i] === 'Dataset DOI' || names[i] === 'Branch') && s === 'loading') || s === 'https://github.com/<owner>/<repository>') {
+      if (s === undefined || s === '') {
         cnt++;
         res = res + '\n- ' + names[i];
       }
+    }
+    if (this.repoName == undefined || this.repoName === '' || ((this.repoOwner == undefined || this.repoOwner === '') && this.repoType === 'github')) {
+      cnt++;
+      res = res + '\n- ' + 'Source URL';
+    }
+    if ((this.repoType === 'github' || this.repoType === 'gitlab') && (this.repoBranch == undefined || this.repoBranch === '' || this.repoBranch === 'loading')) {
+      cnt++;
+      res = res + '\n- ' + 'Branch';
     }
     if (cnt === 0) {
       return undefined;
