@@ -9,7 +9,6 @@ import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 import { HttpClient } from '@angular/common/http';
-import { IrodsInfo } from '../models/irods-info';
 
 @Component({
   selector: 'app-connect',
@@ -28,6 +27,8 @@ export class ConnectComponent implements OnInit {
   datasetId?: string;
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
+  username?: string;
+  zone?: string;
 
   repoTypes: SelectItem<string>[] = [
     { label: "GitHub", value: "github" },
@@ -48,7 +49,6 @@ export class ConnectComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private doiLookupService: DoiLookupService,
     private branchLookupService: BranchLookupService,
-    private http: HttpClient,
   ) {
     this.doiDropdownWidth = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
   }
@@ -71,7 +71,7 @@ export class ConnectComponent implements OnInit {
       case 'gitlab':
         return 'https://gitlab.kuleuven.be/<group>/<project>';
       case 'irods':
-        return 'u-number';
+        return 'PAM://ghum.irods.icts.kuleuven.be:1247';
     }
     return "URL"
   }
@@ -86,16 +86,6 @@ export class ConnectComponent implements OnInit {
         token = localStorage.getItem('glToken');
         break;
       case 'irods':
-        this.http.get<IrodsInfo>('https://ghum.irods.icts.kuleuven.be/api/irods/info', { withCredentials: true }).subscribe({
-          next: (info) => {
-            this.repoToken = info.Token;
-            this.repoOwner = info.Username;
-          },
-          error: (err) => {
-            alert("Log in to the IRODS and copy-paste the username and password.")
-            window.open("https://ghum.irods.icts.kuleuven.be/", "_blank")
-          }
-        });
         break;
     }
     if (token !== null) {
@@ -108,7 +98,9 @@ export class ConnectComponent implements OnInit {
 
   parseUrl() {
     if (this.repoType === "irods") {
-      this.repoOwner = this.baseUrl;
+      this.repoOwner = this.username;
+      this.repoName = this.zone;
+      this.base = this.baseUrl;
       return;
     }
     var splitted = this.baseUrl?.split('://');
@@ -175,11 +167,7 @@ export class ConnectComponent implements OnInit {
     }
     if (this.baseUrl == undefined || this.baseUrl === '') {
       cnt++;
-      if (this.repoType === 'irods') {
-        res = res + '\n- ' + 'Username';
-      } else {
-        res = res + '\n- ' + 'Source URL';
-      }
+      res = res + '\n- ' + 'Source URL';
     } else if (this.repoType !== 'irods' && (this.repoName == undefined || this.repoName === '' || ((this.repoOwner == undefined || this.repoOwner === '') && this.repoType === 'github'))) {
       cnt++;
       res = res + '\n- ' + 'Source URL';
@@ -192,6 +180,17 @@ export class ConnectComponent implements OnInit {
         res = res + '\n- ' + 'Branch';
       }
     }
+    if (this.repoType === 'irods') {
+      if (this.username === undefined || this.username === '') {
+        cnt++;
+        res = res + '\n- Username';
+      }
+      if (this.zone === undefined || this.zone === '') {
+        cnt++;
+        res = res + '\n- Zone'
+      }
+    }
+    
     if (cnt === 0) {
       return undefined;
     }
@@ -233,12 +232,18 @@ export class ConnectComponent implements OnInit {
       return;
     }
     if (this.baseUrl === undefined || this.baseUrl === '' || this.baseUrl === 'https://github.com/<owner>/<repository>') {
-      if (this.repoType === 'irods') {
-        alert('Folder lookup failed: username is missing');
-      } else {
-        alert('Branch lookup failed: URL is missing');
-      }
+      alert('Branch lookup failed: URL is missing');
       return;
+    }
+    if (this.repoType === 'irods') {
+      if (this.username === undefined || this.username === '') {
+        alert('Folder lookup failed: Username is missing');
+        return;
+      }
+      if (this.zone === undefined || this.zone === '') {
+        alert('Folder lookup failed: Zone is missing');
+        return;
+      }
     }
 
     this.parseUrl();
@@ -264,6 +269,8 @@ export class ConnectComponent implements OnInit {
         repoType: this.repoType,
         user: this.repoOwner,
         password: this.repoToken,
+        server: this.base,
+        zone: this.repoName,
       }
     } else {
       alert("Unknown repo type: " + this.repoType);

@@ -15,17 +15,25 @@
           <label for="repoType" class="form-label">Repository type</label><br/>
           <p-dropdown id="repoType" [options]="repoTypes" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepo()"></p-dropdown>
         </div>
+        <div class="mb-3" [hidden]="repoType !== 'irods'">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" class="form-control" id="username" placeholder="u-number" [(ngModel)]="username" #ctrl="ngModel">
+        </div>
         <div class="mb-3">
           <label for="repoToken" class="form-label">{{ repoType === 'irods' ? 'Password' : 'Token' }}</label>
           <input type="password" class="form-control" id="repoToken" [placeholder]="repoType === 'irods' ? 'Password' : 'Repository API token'" [(ngModel)]="repoToken" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="baseUrl" class="form-label">{{ repoType === 'irods' ? 'Username' : 'Source URL' }}</label>
+          <label for="baseUrl" class="form-label">Source URL</label>
           <input type="text" class="form-control" id="baseUrl" [placeholder]="repoTypePlaceHolder()" [(ngModel)]="baseUrl" #ctrl="ngModel" (change)="onRepoChange()">
+        </div>
+        <div class="mb-3" [hidden]="repoType !== 'irods'">
+          <label for="zone" class="form-label">Zone</label>
+          <input type="text" class="form-control" id="zone" placeholder="ghum" [(ngModel)]="zone" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="repoBranch" class="form-label">{{ repoType === 'irods' ? 'Folder' : 'Branch' }}</label><br/>
-          <p-dropdown id="repoBranch" [options]="branchItems" [(ngModel)]="repoBranch" [editable]="true" [placeholder]="repoType === 'irods' ? 'Select folder' : 'Select branch or provide hash reference'" (onClick)="getBranchOptions()">
+          <p-dropdown id="repoBranch" [options]="branchItems" [(ngModel)]="repoBranch" [editable]="false" [filter]="true" filterBy="label" [placeholder]="repoType === 'irods' ? 'Select folder' : 'Select branch'" (onClick)="getBranchOptions()">
             <ng-template pTemplate="loader" let-options="options">
                 <div class="flex align-items-center py-2 px-3" style="height: 38px">
                     <p-skeleton [width]="options.even ? '60%' : '50%'" height="1rem"></p-skeleton>
@@ -44,7 +52,7 @@
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>
           <div class="input-group">
-            <p-dropdown [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
+            <p-dropdown [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
             <div class="input-group-append">
               <!--button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button-->
               <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>
