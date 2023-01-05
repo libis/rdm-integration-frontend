@@ -355,6 +355,8 @@ export class CompareComponent implements OnInit {
         return "GitHub"
       case "gitlab":
         return "GitLab"
+      case "irods":
+        return "IRODS"
       default:
         return "Unknown repository type";
     }

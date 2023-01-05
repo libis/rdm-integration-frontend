@@ -11,6 +11,7 @@ export class DataService {
 
   github_compare_url = 'api/github/compare';
   gitlab_compare_url = 'api/gitlab/compare';
+  irods_compare_url = 'api/irods/compare';
   common_get_cached_data_url = 'api/common/cached';
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
@@ -44,6 +45,19 @@ export class DataService {
         };
         url = this.gitlab_compare_url;
         break;
+
+        case "irods":
+          req = {
+            server: credentials.base,
+            password: credentials.repo_token,
+            user: credentials.repo_owner,
+            zone: credentials.repo_name,
+            folder: credentials.repo_branch,
+            persistentId: credentials.dataset_id,
+            dataverseKey: credentials.dataverse_token,
+          };
+          url = this.irods_compare_url;
+          break;
 
       default:
         break;
