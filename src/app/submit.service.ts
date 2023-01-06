@@ -47,6 +47,22 @@ export class SubmitService {
           };
           break;
 
+          case "irods":
+            req = {
+              streamType: "irods",
+              streamParams: {
+                server: credentials.base,
+                password: credentials.repo_token,
+                user: credentials.repo_owner,
+                zone: credentials.repo_name,
+                folder: credentials.repo_branch,
+              },
+              persistentId: credentials.dataset_id,
+              dataverseKey: credentials.dataverse_token,
+              selectedNodes: selected,
+            };
+            break;
+
       default:
         break;
     }

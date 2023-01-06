@@ -8,6 +8,7 @@ import { BranchLookupService } from '../branch.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-connect',
@@ -23,13 +24,16 @@ export class ConnectComponent implements OnInit {
   repoName?: string;
   repoBranch?: string;
   repoToken?: string;
-  datasetId?: string = "doi:";
+  datasetId?: string;
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
+  username?: string;
+  zone?: string;
 
   repoTypes: SelectItem<string>[] = [
     { label: "GitHub", value: "github" },
     { label: "GitLab", value: "gitlab" },
+    { label: "IRODS", value: "irods" },
   ];
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
@@ -66,6 +70,8 @@ export class ConnectComponent implements OnInit {
         return 'https://github.com/<owner>/<repository>';
       case 'gitlab':
         return 'https://gitlab.kuleuven.be/<group>/<project>';
+      case 'irods':
+        return 'PAM://ghum.irods.icts.kuleuven.be:1247';
     }
     return "URL"
   }
@@ -79,6 +85,8 @@ export class ConnectComponent implements OnInit {
       case 'gitlab':
         token = localStorage.getItem('glToken');
         break;
+      case 'irods':
+        break;
     }
     if (token !== null) {
       this.repoToken = token;
@@ -89,6 +97,12 @@ export class ConnectComponent implements OnInit {
   }
 
   parseUrl() {
+    if (this.repoType === "irods") {
+      this.repoOwner = this.username;
+      this.repoName = this.zone;
+      this.base = this.baseUrl;
+      return;
+    }
     var splitted = this.baseUrl?.split('://');
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
@@ -132,8 +146,8 @@ export class ConnectComponent implements OnInit {
   }
 
   checkFields(): string | undefined {
-    let strings: (string | undefined)[] = [this.repoType, this.repoToken, this.datasetId, this.dataverseToken];
-    let names: string[] = ['Repository type', 'Repository token', 'Dataset DOI', 'Dataverse token'];
+    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken];
+    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token'];
     let cnt = 0;
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
@@ -143,14 +157,40 @@ export class ConnectComponent implements OnInit {
         res = res + '\n- ' + names[i];
       }
     }
-    if (this.repoName == undefined || this.repoName === '' || ((this.repoOwner == undefined || this.repoOwner === '') && this.repoType === 'github')) {
+    if (this.repoToken == undefined || this.repoToken === '') {
+      cnt++;
+      if (this.repoType === 'irods') {
+        res = res + '\n- ' + 'Password';
+      } else {
+        res = res + '\n- ' + 'Repository token';
+      }
+    }
+    if (this.baseUrl == undefined || this.baseUrl === '') {
+      cnt++;
+      res = res + '\n- ' + 'Source URL';
+    } else if (this.repoType !== 'irods' && (this.repoName == undefined || this.repoName === '' || ((this.repoOwner == undefined || this.repoOwner === '') && this.repoType === 'github'))) {
       cnt++;
       res = res + '\n- ' + 'Source URL';
     }
-    if ((this.repoType === 'github' || this.repoType === 'gitlab') && (this.repoBranch == undefined || this.repoBranch === '' || this.repoBranch === 'loading')) {
+    if (this.repoBranch == undefined || this.repoBranch === '' || this.repoBranch === 'loading') {
       cnt++;
-      res = res + '\n- ' + 'Branch';
+      if (this.repoType === 'irods') {
+        res = res + '\n- ' + 'Folder';
+      } else {
+        res = res + '\n- ' + 'Branch';
+      }
     }
+    if (this.repoType === 'irods') {
+      if (this.username === undefined || this.username === '') {
+        cnt++;
+        res = res + '\n- Username';
+      }
+      if (this.zone === undefined || this.zone === '') {
+        cnt++;
+        res = res + '\n- Zone'
+      }
+    }
+    
     if (cnt === 0) {
       return undefined;
     }
@@ -184,15 +224,30 @@ export class ConnectComponent implements OnInit {
       return;
     }
     if (this.repoToken === undefined || this.repoToken === '') {
-      alert('Branch lookup failed: token is missing');
+      if (this.repoType === 'irods') {
+        alert('Branch lookup failed: password is missing');
+      } else {
+        alert('Branch lookup failed: token is missing');
+      }
       return;
     }
     if (this.baseUrl === undefined || this.baseUrl === '' || this.baseUrl === 'https://github.com/<owner>/<repository>') {
       alert('Branch lookup failed: URL is missing');
       return;
     }
+    if (this.repoType === 'irods') {
+      if (this.username === undefined || this.username === '') {
+        alert('Folder lookup failed: Username is missing');
+        return;
+      }
+      if (this.zone === undefined || this.zone === '') {
+        alert('Folder lookup failed: Zone is missing');
+        return;
+      }
+    }
 
     this.parseUrl();
+    
     let req = {};
     if (this.repoType === 'github') {
       req = {
@@ -201,7 +256,6 @@ export class ConnectComponent implements OnInit {
         repo: this.repoName,
         token: this.repoToken,
       }
-
     } else if (this.repoType === 'gitlab') {
       req = {
         repoType: this.repoType,
@@ -209,6 +263,14 @@ export class ConnectComponent implements OnInit {
         group: this.repoOwner,
         project: this.repoName,
         token: this.repoToken,
+      }
+    } else if (this.repoType === 'irods') {
+      req = {
+        repoType: this.repoType,
+        user: this.repoOwner,
+        password: this.repoToken,
+        server: this.base,
+        zone: this.repoName,
       }
     } else {
       alert("Unknown repo type: " + this.repoType);
