@@ -20,7 +20,7 @@
           <input type="text" class="form-control" id="username" placeholder="u-number" [(ngModel)]="username" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="repoToken" class="form-label">{{ repoType === 'irods' ? 'Password' : 'Token' }}</label>
+          <label for="repoToken" class="form-label">{{ repoType === 'irods' ? 'Token (IRODS password)' : 'Token' }}</label>
           <input type="password" class="form-control" id="repoToken" [placeholder]="repoType === 'irods' ? 'Password' : 'Repository API token'" [(ngModel)]="repoToken" #ctrl="ngModel">
         </div>
         <div class="mb-3">
