@@ -71,7 +71,7 @@ export class ConnectComponent implements OnInit {
       case 'gitlab':
         return 'https://gitlab.kuleuven.be/<group>/<project>';
       case 'irods':
-        return 'PAM://ghum.irods.icts.kuleuven.be:1247';
+        return 'Hostname';
     }
     return "URL"
   }
