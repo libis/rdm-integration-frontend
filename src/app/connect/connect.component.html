@@ -29,7 +29,7 @@
         </div>
         <div class="mb-3" [hidden]="repoType !== 'irods'">
           <label for="zone" class="form-label">Zone</label>
-          <input type="text" class="form-control" id="zone" placeholder="ghum" [(ngModel)]="zone" #ctrl="ngModel">
+          <input type="text" class="form-control" id="zone" placeholder="Zone" [(ngModel)]="zone" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="repoBranch" class="form-label">{{ repoType === 'irods' ? 'Folder' : 'Branch' }}</label><br/>
