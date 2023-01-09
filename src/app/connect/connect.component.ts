@@ -8,6 +8,7 @@ import { BranchLookupService } from '../branch.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
+import { PluginService } from '../plugin.service';
 
 @Component({
   selector: 'app-connect',
@@ -16,24 +17,16 @@ import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 })
 export class ConnectComponent implements OnInit {
 
-  baseUrl?: string;
-  base?: string;
+  sourceUrl?: string;
+  url?: string;
   repoType?: string;
-  repoOwner?: string;
   repoName?: string;
-  repoBranch?: string;
-  repoToken?: string;
+  user?: string;
+  token?: string;
+  option?: string;
   datasetId?: string;
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
-  username?: string;
-  zone?: string;
-
-  repoTypes: SelectItem<string>[] = [
-    { label: "GitHub", value: "github" },
-    { label: "GitLab", value: "gitlab" },
-    { label: "IRODS", value: "irods" },
-  ];
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   branchItems: SelectItem<string>[] = [this.loadingItem];
@@ -48,6 +41,7 @@ export class ConnectComponent implements OnInit {
     private sanitizer: DomSanitizer,
     private doiLookupService: DoiLookupService,
     private branchLookupService: BranchLookupService,
+    private pluginService: PluginService,
   ) {
     this.doiDropdownWidth = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
   }
@@ -63,80 +57,53 @@ export class ConnectComponent implements OnInit {
   ngOnDestroy() {
   }
 
-  repoTypePlaceHolder(): string {
-    switch (this.repoType) {
-      case 'github':
-        return 'https://github.com/<owner>/<repository>';
-      case 'gitlab':
-        return 'https://gitlab.kuleuven.be/<group>/<project>';
-      case 'irods':
-        return 'Hostname';
-    }
-    return "URL"
-  }
-
   changeRepo() {
-    let token = null;
-    switch (this.repoType) {
-      case 'github':
-        token = localStorage.getItem('ghToken');
-        break;
-      case 'gitlab':
-        token = localStorage.getItem('glToken');
-        break;
-      case 'irods':
-        break;
-    }
+    let token = this.pluginService.getPlugin(this.repoType).getToken();
     if (token !== null) {
-      this.repoToken = token;
+      this.token = token;
     } else {
-      this.repoToken = undefined;
+      this.token = undefined;
     }
     this.branchItems = [this.loadingItem];
   }
 
-  parseUrl() {
-    if (this.repoType === "irods") {
-      this.repoOwner = this.username;
-      this.repoName = this.zone;
-      this.base = this.baseUrl;
+  parseUrl(): string | undefined {
+    if (!this.pluginService.getPlugin(this.repoType).parseSourceUrlField) {
       return;
     }
-    var splitted = this.baseUrl?.split('://');
+    var splitted = this.sourceUrl?.split('://');
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
-        this.base = 'https://' + splitted[0];
-        this.repoOwner = splitted.slice(1, splitted.length - 1).join('/');
+        this.url = 'https://' + splitted[0];
+        this.user = splitted.slice(1, splitted.length - 1).join('/');
         this.repoName = splitted[splitted.length - 1];
+      } else {
+        return "Malformed source url";
       }
+    } else {
+      return "Malformed source url";
     }
+    return;
   }
 
   connect() {
-    this.parseUrl();
-    let err = this.checkFields();
+    let err = this.parseAndCheckFields();
     if (err !== undefined) {
       alert(err);
       return;
     }
-    console.log('connecting...');
     if (this.dataverseToken !== undefined) {
       localStorage.setItem('dataverseToken', this.dataverseToken);
     }
-    if (this.repoToken !== undefined && this.repoType === "github") {
-      localStorage.setItem('ghToken', this.repoToken);
-    }
-    if (this.repoToken !== undefined && this.repoType === "gitlab") {
-      localStorage.setItem('glToken', this.repoToken);
-    }
+    this.pluginService.getPlugin(this.repoType).setToken(this.token);
     let creds: Credentials = {
       repo_type: this.repoType,
       repo_name: this.repoName,
-      url: this.base,
-      option: this.repoBranch,
-      user: this.repoOwner,
-      token: this.repoToken,
+      url: this.url,
+      option: this.option,
+      user: this.user,
+      token: this.token,
       dataset_id: this.datasetId,
       dataverse_token: this.dataverseToken,
     }
@@ -144,9 +111,9 @@ export class ConnectComponent implements OnInit {
     this.router.navigate(['/compare', this.datasetId]);
   }
 
-  checkFields(): string | undefined {
-    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken];
-    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token'];
+  parseAndCheckFields(): string | undefined {
+    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken, this.token, this.sourceUrl];
+    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token', 'Token', 'Source URL'];
     let cnt = 0;
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
@@ -156,40 +123,27 @@ export class ConnectComponent implements OnInit {
         res = res + '\n- ' + names[i];
       }
     }
-    if (this.repoToken == undefined || this.repoToken === '') {
+
+    if (this.option == undefined || this.option === '' || this.option === 'loading') {
       cnt++;
-      if (this.repoType === 'irods') {
-        res = res + '\n- ' + 'Password';
-      } else {
-        res = res + '\n- ' + 'Repository token';
-      }
+      res = res + '\n- ' + this.pluginService.getPlugin(this.repoType).optionFieldName;
     }
-    if (this.baseUrl == undefined || this.baseUrl === '') {
+
+    let err = this.parseUrl();
+    if (err) {
       cnt++;
-      res = res + '\n- ' + 'Source URL';
-    } else if (this.repoType !== 'irods' && (this.repoName == undefined || this.repoName === '' || ((this.repoOwner == undefined || this.repoOwner === '') && this.repoType === 'github'))) {
-      cnt++;
-      res = res + '\n- ' + 'Source URL';
-    }
-    if (this.repoBranch == undefined || this.repoBranch === '' || this.repoBranch === 'loading') {
-      cnt++;
-      if (this.repoType === 'irods') {
-        res = res + '\n- ' + 'Folder';
-      } else {
-        res = res + '\n- ' + 'Branch';
-      }
-    }
-    if (this.repoType === 'irods') {
-      if (this.username === undefined || this.username === '') {
+      res = res + '\n\n' + err;
+    } else {
+      if (this.user === undefined || this.user === '') {
         cnt++;
-        res = res + '\n- Username';
+        res = res + '\n- ' + 'Username';
       }
-      if (this.zone === undefined || this.zone === '') {
+      if (this.repoName === undefined || this.repoName === '') {
         cnt++;
-        res = res + '\n- Zone'
+        res = res + '\n- ' + 'Zone';
       }
     }
-    
+
     if (cnt === 0) {
       return undefined;
     }
@@ -216,43 +170,35 @@ export class ConnectComponent implements OnInit {
     });
   }
 
-  getBranchOptions(): void {
-    console.log('click branches');
+  getRepoOptions(): void {
     if (this.repoType === undefined) {
-      alert('Branch lookup failed: repository type is missing');
+      alert('Repository type is missing');
       return;
     }
-    if (this.repoToken === undefined || this.repoToken === '') {
-      if (this.repoType === 'irods') {
-        alert('Branch lookup failed: password is missing');
-      } else {
-        alert('Branch lookup failed: token is missing');
-      }
+    if (this.sourceUrl === undefined || this.sourceUrl === '') {
+      alert('Source URL is missing');
       return;
     }
-    if (this.baseUrl === undefined || this.baseUrl === '' || this.baseUrl === 'https://github.com/<owner>/<repository>') {
-      alert('Branch lookup failed: URL is missing');
+    let err = this.parseUrl();
+    if (err) {
+      alert(err);
       return;
     }
-    if (this.repoType === 'irods') {
-      if (this.username === undefined || this.username === '') {
-        alert('Folder lookup failed: Username is missing');
-        return;
-      }
-      if (this.zone === undefined || this.zone === '') {
-        alert('Folder lookup failed: Zone is missing');
-        return;
-      }
+    if (this.user === undefined || this.user === '') {
+      alert('Username is missing');
+      return;
+    }
+    if (this.repoName === undefined || this.repoName === '') {
+      alert('Zone is missing');
+      return;
     }
 
-    this.parseUrl();
-    
     let req = {
       repoType: this.repoType,
       repoName: this.repoName,
-      url: this.base,
-      user: this.repoOwner,
-      token: this.repoToken,
+      url: this.url,
+      user: this.user,
+      token: this.token,
     };
 
     let httpSubscr = this.branchLookupService.getItems(req).subscribe({
@@ -294,6 +240,34 @@ export class ConnectComponent implements OnInit {
         this.doiItems = [this.loadingItem];
       },
     });
+  }
+
+  getRepoTypes(): SelectItem<string>[] {
+    return this.pluginService.getRepoTypes();
+  }
+
+  getTokenName(): string {
+    return this.pluginService.getPlugin(this.repoType).tokenFieldName;
+  }
+
+  getOptionName(): string {
+    return this.pluginService.getPlugin(this.repoType).optionFieldName;
+  }
+
+  getTokenPlaceholder(): string {
+    return this.pluginService.getPlugin(this.repoType).tokenFieldPlaceholder;
+  }
+
+  getSourceUrlPlaceholder(): string {
+    return this.pluginService.getPlugin(this.repoType).sourceUrlFieldPlaceholder;
+  }
+
+  usernameHidden(): boolean {
+    return this.pluginService.getPlugin(this.repoType).usernameFieldHidden;
+  }
+
+  zoneHidden(): boolean {
+    return this.pluginService.getPlugin(this.repoType).zoneFieldHidden;
   }
 
   onUserChange() {
