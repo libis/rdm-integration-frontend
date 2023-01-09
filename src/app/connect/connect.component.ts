@@ -8,7 +8,6 @@ import { BranchLookupService } from '../branch.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
-import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-connect',
@@ -132,12 +131,12 @@ export class ConnectComponent implements OnInit {
       localStorage.setItem('glToken', this.repoToken);
     }
     let creds: Credentials = {
-      base: this.base,
       repo_type: this.repoType,
-      repo_owner: this.repoOwner,
       repo_name: this.repoName,
-      repo_branch: this.repoBranch,
-      repo_token: this.repoToken,
+      url: this.base,
+      option: this.repoBranch,
+      user: this.repoOwner,
+      token: this.repoToken,
       dataset_id: this.datasetId,
       dataverse_token: this.dataverseToken,
     }
@@ -248,34 +247,14 @@ export class ConnectComponent implements OnInit {
 
     this.parseUrl();
     
-    let req = {};
-    if (this.repoType === 'github') {
-      req = {
-        repoType: this.repoType,
-        user: this.repoOwner,
-        repo: this.repoName,
-        token: this.repoToken,
-      }
-    } else if (this.repoType === 'gitlab') {
-      req = {
-        repoType: this.repoType,
-        base: this.base,
-        group: this.repoOwner,
-        project: this.repoName,
-        token: this.repoToken,
-      }
-    } else if (this.repoType === 'irods') {
-      req = {
-        repoType: this.repoType,
-        user: this.repoOwner,
-        password: this.repoToken,
-        server: this.base,
-        zone: this.repoName,
-      }
-    } else {
-      alert("Unknown repo type: " + this.repoType);
-      return;
-    }
+    let req = {
+      repoType: this.repoType,
+      repoName: this.repoName,
+      url: this.base,
+      user: this.repoOwner,
+      token: this.repoToken,
+    };
+
     let httpSubscr = this.branchLookupService.getItems(req).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {

@@ -1,11 +1,11 @@
 export interface Credentials {
 
-  base?: string;
   repo_type?: string;
-  repo_owner?: string;
   repo_name?: string;
-  repo_branch?: string;
-  repo_token?: string;
+  url?: string;
+  option?: string;
+  user?: string;
+  token?: string;
   dataset_id?: string;
   dataverse_token?: string;
 
