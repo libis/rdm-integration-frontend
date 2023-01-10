@@ -16,56 +16,19 @@ export class SubmitService {
 
   submit(selected: Datafile[]): Observable<StoreResult> {
     let credentials = this.credentialsService.credentials;
-    var req;
-    switch (credentials.repo_type) {
-      case "github":
-        req = {
-          streamType: "github",
-          streamParams: {
-            token: credentials.repo_token,
-            user: credentials.repo_owner,
-            repo: credentials.repo_name,
-          },
-          persistentId: credentials.dataset_id,
-          dataverseKey: credentials.dataverse_token,
-          selectedNodes: selected,
-        };
-        break;
-
-        case "gitlab":
-          req = {
-            streamType: "gitlab",
-            streamParams: {
-              base: credentials.base,
-              token: credentials.repo_token,
-              group: credentials.repo_owner,
-              project: credentials.repo_name,
-            },
-            persistentId: credentials.dataset_id,
-            dataverseKey: credentials.dataverse_token,
-            selectedNodes: selected,
-          };
-          break;
-
-          case "irods":
-            req = {
-              streamType: "irods",
-              streamParams: {
-                server: credentials.base,
-                password: credentials.repo_token,
-                user: credentials.repo_owner,
-                zone: credentials.repo_name,
-                folder: credentials.repo_branch,
-              },
-              persistentId: credentials.dataset_id,
-              dataverseKey: credentials.dataverse_token,
-              selectedNodes: selected,
-            };
-            break;
-
-      default:
-        break;
-    }
+    let req = {
+      streamType: credentials.repo_type,
+      streamParams: {
+        repoName: credentials.repo_name,
+        url: credentials.url,
+        option: credentials.option,
+        user: credentials.user,
+        token: credentials.token,
+      },
+      persistentId: credentials.dataset_id,
+      dataverseKey: credentials.dataverse_token,
+      selectedNodes: selected,
+    };
 
     return this.http.post<StoreResult>(this.store_url, req);
   }

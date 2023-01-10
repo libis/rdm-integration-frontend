@@ -8,7 +8,7 @@ import { SelectItem } from 'primeng/api';
 })
 export class BranchLookupService {
 
-  url = 'api/common/branches';
+  url = 'api/plugin/options';
 
   constructor(private http: HttpClient) { }
 

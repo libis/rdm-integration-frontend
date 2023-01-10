@@ -9,6 +9,7 @@ import { TreeNode } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { Location } from '@angular/common'
 import { FolderActionUpdateService } from '../folder.action.update.service';
+import { PluginService } from '../plugin.service';
 
 @Component({
   selector: 'app-compare',
@@ -74,6 +75,7 @@ export class CompareComponent implements OnInit {
     private router: Router,
     private location: Location,
     private folderActionUpdateService: FolderActionUpdateService,
+    private pluginService: PluginService,
   ) { }
 
   ngOnInit(): void {
@@ -350,15 +352,6 @@ export class CompareComponent implements OnInit {
   }
 
   repo(): string {
-    switch (this.credentialsService.credentials.repo_type) {
-      case "github":
-        return "GitHub"
-      case "gitlab":
-        return "GitLab"
-      case "irods":
-        return "IRODS"
-      default:
-        return "Unknown repository type";
-    }
+    return this.pluginService.getPlugin(this.credentialsService.credentials.repo_type).name
   }
 }
