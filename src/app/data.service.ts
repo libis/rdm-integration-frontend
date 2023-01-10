@@ -23,7 +23,7 @@ export class DataService {
       option: credentials.option,
       user: credentials.user,
       token: credentials.token,
-      datasetId: credentials.dataset_id,
+      persistentId: credentials.dataset_id,
       dataverseKey: credentials.dataverse_token,
     };
 

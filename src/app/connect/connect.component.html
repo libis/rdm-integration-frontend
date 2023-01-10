@@ -13,7 +13,7 @@
       <div>
         <div class="mb-3">
           <label for="repoType" class="form-label">Repository type</label><br/>
-          <p-dropdown id="repoType" [options]="getRepoTypes()" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepo()"></p-dropdown>
+          <p-dropdown id="repoType" [options]="repoTypes" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepo()"></p-dropdown>
         </div>
         <div class="mb-3" [hidden]="usernameHidden()">
           <label for="username" class="form-label">Username</label>
@@ -21,7 +21,7 @@
         </div>
         <div class="mb-3">
           <label for="repoToken" class="form-label">{{ getTokenName() }}</label>
-          <input type="password" class="form-control" id="repoToken" [placeholder]="getTokenPlaceholder" [(ngModel)]="token" #ctrl="ngModel">
+          <input type="password" class="form-control" id="repoToken" [placeholder]="getTokenPlaceholder()" [(ngModel)]="token" #ctrl="ngModel">
         </div>
         <div class="mb-3">
           <label for="baseUrl" class="form-label">Source URL</label>

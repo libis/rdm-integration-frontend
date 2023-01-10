@@ -31,6 +31,7 @@ export class ConnectComponent implements OnInit {
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   branchItems: SelectItem<string>[] = [this.loadingItem];
   doiItems: SelectItem<string>[] = [this.loadingItem];
+  repoTypes: SelectItem<string>[] = [];
 
   creatingNewDataset: boolean = false;
 
@@ -51,6 +52,7 @@ export class ConnectComponent implements OnInit {
     if (token !== null) {
       this.dataverseToken = token;
     }
+    this.repoTypes = this.getRepoTypes();
     this.changeRepo();
   }
 
@@ -69,6 +71,7 @@ export class ConnectComponent implements OnInit {
 
   parseUrl(): string | undefined {
     if (!this.pluginService.getPlugin(this.repoType).parseSourceUrlField) {
+      this.url = this.sourceUrl;
       return;
     }
     var splitted = this.sourceUrl?.split('://');
