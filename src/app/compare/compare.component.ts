@@ -22,7 +22,7 @@ export class CompareComponent implements OnInit {
   updatedDataSubscription?: Subscription;
 
   icon_noaction = "pi pi-stop";
-  icon_update = "pi pi-arrow-right";
+  icon_update = "pi pi-copy";
   icon_mirror = "pi pi-sync";
 
   icon_submit = "pi pi-save";

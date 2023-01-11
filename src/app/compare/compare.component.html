@@ -4,15 +4,16 @@
   </span>
   
   <span class="col-auto">
+    <span><i [class]="icon_action"></i>&nbsp;Bulk select to:&nbsp;</span>
     <span class="p-buttonset">
-      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_noaction"></i>&nbsp;No action
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
+        <i [class]="icon_mirror"></i>&nbsp;Sync
       </button>
       <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_update"></i>&nbsp;Copy
       </button>
-      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_mirror"></i>&nbsp;Sync
+      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
+        <i [class]="icon_noaction"></i>&nbsp;Clear selection
       </button>
     </span>
   </span>
