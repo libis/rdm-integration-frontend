@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DoiLookupService } from './doi.lookup.service';
+import { DoiLookupService } from './dvobject.lookup.service';
 
 describe('DoiLookupService', () => {
   let service: DoiLookupService;

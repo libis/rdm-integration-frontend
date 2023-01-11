@@ -12,9 +12,9 @@ export class DatasetService {
 
   constructor(private http: HttpClient) { }
 
-  newDataset(apiToken: string): Observable<NewDatasetResponse> {
+  newDataset(collectionId: string, apiToken: string): Observable<NewDatasetResponse> {
     let req = {
-      dataverse: 'rdr',
+      collectionId: collectionId,
       dataverseKey: apiToken,
     };
 

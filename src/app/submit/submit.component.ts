@@ -19,6 +19,7 @@ export class SubmitComponent implements OnInit {
   data: Datafile[] = [];// this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
   dataSubscription?: Subscription;// monitors the progress of the job
   pid = "";
+  datasetUrl = "";
 
   // local state derived from this.data:
   created: Datafile[] = [];
@@ -145,6 +146,7 @@ export class SubmitComponent implements OnInit {
         } else {
           this.dataSubscription = this.getDataSubscripion();
           this.submitted = true;
+          this.datasetUrl = data.datasetUrl!;
         }
         httpSubscr.unsubscribe();
       },
@@ -161,6 +163,6 @@ export class SubmitComponent implements OnInit {
   }
 
   goToDataset(){
-    location.href = 'https://rdr.kuleuven.be/dataset.xhtml?version=DRAFT&persistentId=' + this.pid;
+    location.href = this.datasetUrl;
  }
 }
