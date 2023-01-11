@@ -43,11 +43,15 @@
         </div>
       </div>
     </p-accordionTab>
-    <p-accordionTab header="KU Leuven RDR">
+    <p-accordionTab [header]=dataverseHeader()>
       <div>
         <div class="mb-3">
           <label for="dataverseToken" class="form-label">Token</label>
           <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel" (change)="onUserChange()">
+        </div>
+        <div class="mb-3" [hidden]="collectionOptionsHidden()">
+          <label for="collectionId" class="form-label">Dataverse collection</label>
+          <p-dropdown id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (change)="onUserChange()"></p-dropdown>
         </div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>

@@ -352,6 +352,10 @@ export class CompareComponent implements OnInit {
   }
 
   repo(): string {
-    return this.pluginService.getPlugin(this.credentialsService.credentials.repo_type).name
+    return this.pluginService.getPlugin(this.credentialsService.credentials.repo_type).name;
+  }
+
+  dataverseHeader(): string {
+    return this.pluginService.dataverseHeader();
   }
 }

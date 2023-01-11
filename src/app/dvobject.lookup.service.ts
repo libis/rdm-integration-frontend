@@ -6,15 +6,17 @@ import { SelectItem } from 'primeng/api';
 @Injectable({
   providedIn: 'root'
 })
-export class DoiLookupService {
+export class DvObjectLookupService {
 
-  url = 'api/common/datasets';
+  url = 'api/common/dvobjects';
 
   constructor(private http: HttpClient) { }
 
-  getItems(token: string): Observable<SelectItem<string>[]> {
+  getItems(collectionId: string, objectType: string, token: string): Observable<SelectItem<string>[]> {
     var req = {
       token: token,
+      collectionId: collectionId,
+      objectType: objectType,
     };
 
     return this.http.post<SelectItem<string>[]>(this.url, req);

@@ -64,7 +64,7 @@
             <i [class]="icon_action"></i>
           </span>
         </th>
-        <th width="dataverse_col">KU Leuven RDR (<a href="https://rdr.kuleuven.be/dataset.xhtml?persistentId={{ data!.id }}">{{ data!.id }}</a>)</th>
+        <th width="dataverse_col">{{dataverseHeader()}} (<a href="https://rdr.kuleuven.be/dataset.xhtml?persistentId={{ data!.id }}">{{ data!.id }}</a>)</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">

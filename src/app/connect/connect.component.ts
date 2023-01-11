@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
-import { DoiLookupService } from '../doi.lookup.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { BranchLookupService } from '../branch.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
@@ -25,12 +25,14 @@ export class ConnectComponent implements OnInit {
   token?: string;
   option?: string;
   datasetId?: string;
+  collectionId: string = "";
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   branchItems: SelectItem<string>[] = [this.loadingItem];
   doiItems: SelectItem<string>[] = [this.loadingItem];
+  collectionItems: SelectItem<string>[] = [this.loadingItem];
   repoTypes: SelectItem<string>[] = [];
 
   creatingNewDataset: boolean = false;
@@ -40,7 +42,7 @@ export class ConnectComponent implements OnInit {
     private dataStateService: DataStateService,
     private datasetService: DatasetService,
     private sanitizer: DomSanitizer,
-    private doiLookupService: DoiLookupService,
+    private dvObjectLookupService: DvObjectLookupService,
     private branchLookupService: BranchLookupService,
     private pluginService: PluginService,
   ) {
@@ -159,7 +161,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     this.creatingNewDataset = true;
-    let httpSubscr = this.datasetService.newDataset(this.dataverseToken).subscribe({
+    let httpSubscr = this.datasetService.newDataset(this.collectionId, this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {
         this.datasetId = data.persistentId;
         httpSubscr.unsubscribe();
@@ -220,27 +222,43 @@ export class ConnectComponent implements OnInit {
     });
   }
 
-  getDoiOptions() {
+  setDoiItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
+    comp.doiItems = items;
+  }
+
+  setCollectionItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
+    comp.collectionItems = items;
+  }
+
+  getDoiOptions(): void {
+    this.getDvObjectOptions("Dataset", this.doiItems, this.setDoiItems)
+  }
+
+  getCollectionOptions(): void {
+    this.getDvObjectOptions("Dataverse", this.collectionItems, this.setCollectionItems)
+  }
+
+  getDvObjectOptions(objectType: string, dvItems: SelectItem<string>[], setter: (comp: ConnectComponent, items: SelectItem<string>[]) => void): void {
     if (this.dataverseToken === undefined || this.dataverseToken === '') {
-      alert('DOI lookup failed: Dataverse API token is missing');
+      alert('Dataverse object lookup failed: Dataverse API token is missing');
       return;
     }
-    if (this.doiItems.length !== 1 || this.doiItems[0] !== this.loadingItem) {
+    if (dvItems.length !== 1 || dvItems[0] !== this.loadingItem) {
       return;
     }
 
-    let httpSubscr = this.doiLookupService.getItems(this.dataverseToken).subscribe({
+    let httpSubscr = this.dvObjectLookupService.getItems(this.collectionId, objectType, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {
-          this.doiItems = items;
+          setter(this, items);
         } else {
-          this.doiItems = [];
+          setter(this, []);
         }
         httpSubscr.unsubscribe();
       },
       error: (err) => {
         alert("doi lookup failed: " + err.error);
-        this.doiItems = [this.loadingItem];
+        setter(this, [this.loadingItem]);
       },
     });
   }
@@ -273,8 +291,17 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.repoType).zoneFieldHidden;
   }
 
+  dataverseHeader(): string {
+    return this.pluginService.dataverseHeader();
+  }
+
+  collectionOptionsHidden(): boolean {
+    return this.pluginService.collectionOptionsHidden();
+  }
+
   onUserChange() {
     this.doiItems = [this.loadingItem];
+    this.collectionItems = [this.loadingItem];
   }
 
   onRepoChange() {

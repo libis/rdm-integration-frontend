@@ -75,4 +75,12 @@ export class PluginService {
     }
     return this.defaultPlugin
   }
+
+  dataverseHeader(): string {
+    return "KU Leuven RDR";
+  }
+
+  collectionOptionsHidden(): boolean {
+    return true;
+  }
 }
