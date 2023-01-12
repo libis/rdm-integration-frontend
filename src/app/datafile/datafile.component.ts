@@ -36,7 +36,7 @@ export class DatafileComponent implements OnInit {
   constructor(private folderActionUpdateService: FolderActionUpdateService) { }
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(this.datafile.id!)!;
+    this.node = this.rowNodeMap.get(this.datafile.id! + (this.datafile.attributes?.isFile ? ":file" : ""))!; // avoid collisions between folders and files having the same path and name
   }
 
   sourceFile(): string {
