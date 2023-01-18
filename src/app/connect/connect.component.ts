@@ -83,6 +83,9 @@ export class ConnectComponent implements OnInit {
         this.url = 'https://' + splitted[0];
         this.user = splitted.slice(1, splitted.length - 1).join('/');
         this.repoName = splitted[splitted.length - 1];
+        if (this.repoName.endsWith(".git")) {
+          this.repoName = this.repoName.substring(0, this.repoName.length - 4);
+        }
       } else {
         return "Malformed source url";
       }
