@@ -1,4 +1,5 @@
 export interface RepoPlugin {
+    id: string;
     name: string;
     optionFieldName: string;
     tokenFieldName: string;
@@ -7,6 +8,5 @@ export interface RepoPlugin {
     usernameFieldHidden: boolean;
     zoneFieldHidden: boolean;
     parseSourceUrlField: boolean;
-    getToken(): string | null;
-    setToken(token: string | undefined): void;
+    tokenName?: string;
 }

@@ -9,6 +9,7 @@ export class PluginService {
 
   private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>([
     ["github", {
+      id: 'github',
       name: "GitHub",
       optionFieldName: "Branch",
       tokenFieldName: "Token",
@@ -17,10 +18,10 @@ export class PluginService {
       usernameFieldHidden: true,
       zoneFieldHidden: true,
       parseSourceUrlField: true,
-      getToken() { return localStorage.getItem('ghToken') },
-      setToken(token: string | undefined) { if (token) localStorage.setItem('ghToken', token) },
+      tokenName: 'ghToken',
     }],
     ["gitlab", {
+      id: 'gitlab',
       name: "GitLab",
       optionFieldName: "Branch",
       tokenFieldName: "Token",
@@ -29,10 +30,10 @@ export class PluginService {
       usernameFieldHidden: true,
       zoneFieldHidden: true,
       parseSourceUrlField: true,
-      getToken() { return localStorage.getItem('glToken') },
-      setToken(token: string | undefined) { if (token) localStorage.setItem('glToken', token) },
+      tokenName: 'glToken',
     }],
     ["irods", {
+      id: 'irods',
       name: "IRODS",
       optionFieldName: "Folder",
       tokenFieldName: "Token (IRODS password)",
@@ -41,12 +42,12 @@ export class PluginService {
       usernameFieldHidden: false,
       zoneFieldHidden: false,
       parseSourceUrlField: false,
-      getToken() { return null },
-      setToken() { },
+      tokenName: undefined,
     }],
   ]);
 
   private defaultPlugin: RepoPlugin = {
+    id: 'defaultPlugin',
     name: "Unknown repository type",
     optionFieldName: "Branch",
     tokenFieldName: "Token",
@@ -55,8 +56,7 @@ export class PluginService {
     usernameFieldHidden: true,
     zoneFieldHidden: true,
     parseSourceUrlField: false,
-    getToken() { return null },
-    setToken() { },
+    tokenName: undefined,
   };
 
   constructor() { }
@@ -74,6 +74,20 @@ export class PluginService {
       return plugin;
     }
     return this.defaultPlugin
+  }
+
+  getToken(p?: string): (string | null) { 
+    let tokenName = this.getPlugin(p).tokenName
+    if (tokenName) {
+      return localStorage.getItem(tokenName)
+    } else {
+      return null
+    }
+  }
+
+  setToken(p?: string, token?: string) {
+    let tokenName = this.getPlugin(p).tokenName
+    if (token && tokenName) localStorage.setItem(tokenName, token);
   }
 
   dataverseHeader(): string {

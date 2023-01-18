@@ -62,7 +62,7 @@ export class ConnectComponent implements OnInit {
   }
 
   changeRepo() {
-    let token = this.pluginService.getPlugin(this.repoType).getToken();
+    let token = this.pluginService.getToken(this.repoType);
     if (token !== null) {
       this.token = token;
     } else {
@@ -104,7 +104,7 @@ export class ConnectComponent implements OnInit {
     if (this.dataverseToken !== undefined) {
       localStorage.setItem('dataverseToken', this.dataverseToken);
     }
-    this.pluginService.getPlugin(this.repoType).setToken(this.token);
+    this.pluginService.setToken(this.repoType, this.token);
     let creds: Credentials = {
       repo_type: this.repoType,
       repo_name: this.repoName,
