@@ -11,6 +11,8 @@ export class PluginService {
   private config: Config = {
     dataverseHeader: "Unknown header: configuration failed",
     collectionOptionsHidden: true,
+    createNewDatasetEnabled: false,
+    datasetFieldEditable: false,
     plugins: [],
   };
 
@@ -21,14 +23,9 @@ export class PluginService {
   private defaultPlugin: RepoPlugin = {
     id: 'defaultPlugin',
     name: "Unknown repository type",
-    optionFieldName: "Branch",
-    tokenFieldName: "Token",
+    sourceUrlFieldName: "Source URL",
     sourceUrlFieldPlaceholder: "URL",
-    tokenFieldPlaceholder: "Repository API token",
-    usernameFieldHidden: true,
-    zoneFieldHidden: true,
     parseSourceUrlField: false,
-    tokenName: undefined,
   };
 
   constructor(private http: HttpClient) {
@@ -83,5 +80,13 @@ export class PluginService {
 
   collectionOptionsHidden(): boolean {
     return this.config!.collectionOptionsHidden;
+  }
+
+  createNewDatasetEnabled(): boolean {
+    return this.config!.createNewDatasetEnabled;
+  }
+
+  datasetFieldEditable(): boolean {
+    return this.config!.datasetFieldEditable;
   }
 }

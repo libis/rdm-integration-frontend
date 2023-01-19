@@ -29,7 +29,7 @@ export interface Attributes {
 	parentId?: string;
 	localHash?: string;
 	remoteHash?: string;
-	RemoteHashType?: string;
+	remoteHashType?: string;
 	isFile?: boolean;
 	metadata?: Metadata;
 }

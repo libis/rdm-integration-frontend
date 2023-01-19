@@ -25,14 +25,15 @@ export class ConnectComponent implements OnInit {
   token?: string;
   option?: string;
   datasetId?: string;
-  collectionId: string = "";
+  collectionId?: string;
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
-  branchItems: SelectItem<string>[] = [this.loadingItem];
-  doiItems: SelectItem<string>[] = [this.loadingItem];
-  collectionItems: SelectItem<string>[] = [this.loadingItem];
+  loadingItems: SelectItem<string>[] = [this.loadingItem];
+  branchItems: SelectItem<string>[] = this.loadingItems;
+  doiItems: SelectItem<string>[] = this.loadingItems;
+  collectionItems: SelectItem<string>[] = this.loadingItems;
   repoTypes: SelectItem<string>[] = [];
 
   creatingNewDataset: boolean = false;
@@ -55,20 +56,25 @@ export class ConnectComponent implements OnInit {
       this.dataverseToken = token;
     }
     this.repoTypes = this.getRepoTypes();
-    this.changeRepo();
+    this.changeRepoType();
   }
 
   ngOnDestroy() {
   }
 
-  changeRepo() {
+  changeRepoType() {
     let token = this.pluginService.getToken(this.repoType);
     if (token !== null) {
       this.token = token;
     } else {
       this.token = undefined;
     }
-    this.branchItems = [this.loadingItem];
+    this.sourceUrl = undefined;
+    this.branchItems = this.loadingItems;
+    this.option = undefined;
+    this.url = undefined;
+    this.user = undefined;
+    this.repoName = undefined;
   }
 
   parseUrl(): string | undefined {
@@ -120,36 +126,39 @@ export class ConnectComponent implements OnInit {
   }
 
   parseAndCheckFields(): string | undefined {
-    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken, this.token, this.sourceUrl];
-    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token', 'Token', 'Source URL'];
+    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken, this.sourceUrl];
+    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token', this.getSourceUrlFieldName()];
+    if (this.getTokenFieldName()) {
+      strings.push(this.token);
+      names.push(this.getTokenFieldName()!);
+    }
+    if (this.getOptionFieldName()) {
+      strings.push(this.option);
+      names.push(this.getOptionFieldName()!);
+    }
+    if (this.getUsernameFieldName()) {
+      strings.push(this.user);
+      names.push(this.getUsernameFieldName()!);
+    }
+    if (this.getZoneFieldName()) {
+      strings.push(this.repoName);
+      names.push(this.getZoneFieldName()!);
+    }
+
     let cnt = 0;
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
       let s = strings[i];
-      if (s === undefined || s === '') {
+      if (s === undefined || s === '' || s === 'loading') {
         cnt++;
         res = res + '\n- ' + names[i];
       }
-    }
-
-    if (this.option == undefined || this.option === '' || this.option === 'loading') {
-      cnt++;
-      res = res + '\n- ' + this.pluginService.getPlugin(this.repoType).optionFieldName;
     }
 
     let err = this.parseUrl();
     if (err) {
       cnt++;
       res = res + '\n\n' + err;
-    } else {
-      if (this.user === undefined || this.user === '') {
-        cnt++;
-        res = res + '\n- ' + 'Username';
-      }
-      if (this.repoName === undefined || this.repoName === '') {
-        cnt++;
-        res = res + '\n- ' + 'Zone';
-      }
     }
 
     if (cnt === 0) {
@@ -164,7 +173,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     this.creatingNewDataset = true;
-    let httpSubscr = this.datasetService.newDataset(this.collectionId, this.dataverseToken).subscribe({
+    let httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {
         this.datasetId = data.persistentId;
         httpSubscr.unsubscribe();
@@ -192,12 +201,12 @@ export class ConnectComponent implements OnInit {
       alert(err);
       return;
     }
-    if (this.user === undefined || this.user === '') {
-      alert('Username is missing');
+    if (this.getUsernameFieldName() && (this.user === undefined || this.user === '')) {
+      alert(this.getUsernameFieldName() + ' is missing');
       return;
     }
-    if (this.repoName === undefined || this.repoName === '') {
-      alert('Zone is missing');
+    if (this.getZoneFieldName() && (this.repoName === undefined || this.repoName === '')) {
+      alert(this.getZoneFieldName() + ' is missing');
       return;
     }
 
@@ -220,17 +229,20 @@ export class ConnectComponent implements OnInit {
       },
       error: (err) => {
         alert("branch lookup failed: " + err.error);
-        this.branchItems = [this.loadingItem];
+        this.branchItems = this.loadingItems;
+        this.option = undefined;
       },
     });
   }
 
   setDoiItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
     comp.doiItems = items;
+    comp.datasetId = undefined;
   }
 
   setCollectionItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
     comp.collectionItems = items;
+    comp.collectionId = undefined;
   }
 
   getDoiOptions(): void {
@@ -250,7 +262,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
 
-    let httpSubscr = this.dvObjectLookupService.getItems(this.collectionId, objectType, this.dataverseToken).subscribe({
+    let httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {
           setter(this, items);
@@ -261,7 +273,7 @@ export class ConnectComponent implements OnInit {
       },
       error: (err) => {
         alert("doi lookup failed: " + err.error);
-        setter(this, [this.loadingItem]);
+        setter(this, this.loadingItems);
       },
     });
   }
@@ -270,28 +282,44 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getRepoTypes();
   }
 
-  getTokenName(): string {
+  getTokenFieldName(): string | undefined {
     return this.pluginService.getPlugin(this.repoType).tokenFieldName;
   }
 
-  getOptionName(): string {
+  getTokenPlaceholder(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).tokenFieldPlaceholder;
+  }
+
+  getOptionFieldName(): string | undefined {
     return this.pluginService.getPlugin(this.repoType).optionFieldName;
   }
 
-  getTokenPlaceholder(): string {
-    return this.pluginService.getPlugin(this.repoType).tokenFieldPlaceholder;
+  getOptionPlaceholder(): string {
+    return this.pluginService.getPlugin(this.repoType).optionFieldPlaceholder ? this.pluginService.getPlugin(this.repoType).optionFieldPlaceholder! : "";
+  }
+
+  getSourceUrlFieldName(): string {
+    return this.pluginService.getPlugin(this.repoType).sourceUrlFieldName;
   }
 
   getSourceUrlPlaceholder(): string {
     return this.pluginService.getPlugin(this.repoType).sourceUrlFieldPlaceholder;
   }
 
-  usernameHidden(): boolean {
-    return this.pluginService.getPlugin(this.repoType).usernameFieldHidden;
+  getUsernameFieldName(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).usernameFieldName;
   }
 
-  zoneHidden(): boolean {
-    return this.pluginService.getPlugin(this.repoType).zoneFieldHidden;
+  getUsernamePlaceholder(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).usernameFieldPlaceholder;
+  }
+
+  getZoneFieldName(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).zoneFieldName;
+  }
+
+  getZonePlaceholder(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).zoneFieldPlaceholder;
   }
 
   dataverseHeader(): string {
@@ -302,12 +330,26 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.collectionOptionsHidden();
   }
 
+  createNewDatasetEnabled(): boolean {
+    return !this.creatingNewDataset && this.pluginService.createNewDatasetEnabled()
+  }
+
+  datasetFieldEditable(): boolean {
+    return this.pluginService.datasetFieldEditable()
+  }
+
   onUserChange() {
-    this.doiItems = [this.loadingItem];
-    this.collectionItems = [this.loadingItem];
+    this.doiItems = this.loadingItems;
+    this.collectionItems = this.loadingItems;
+    this.datasetId = undefined;
+    this.collectionId = undefined;
   }
 
   onRepoChange() {
-    this.branchItems = [this.loadingItem];
+    this.branchItems = this.loadingItems;
+    this.option = undefined;
+    this.url = undefined;
+    this.user = undefined;
+    this.repoName = undefined;
   }
 }
