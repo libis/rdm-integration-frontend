@@ -1,50 +1,22 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SelectItem } from 'primeng/api';
-import { RepoPlugin } from './models/plugin';
+import { Config, RepoPlugin } from './models/plugin';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PluginService {
 
-  private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>([
-    ["github", {
-      id: 'github',
-      name: "GitHub",
-      optionFieldName: "Branch",
-      tokenFieldName: "Token",
-      sourceUrlFieldPlaceholder: "https://github.com/<owner>/<repository>",
-      tokenFieldPlaceholder: "Repository API token",
-      usernameFieldHidden: true,
-      zoneFieldHidden: true,
-      parseSourceUrlField: true,
-      tokenName: 'ghToken',
-    }],
-    ["gitlab", {
-      id: 'gitlab',
-      name: "GitLab",
-      optionFieldName: "Branch",
-      tokenFieldName: "Token",
-      sourceUrlFieldPlaceholder: "https://gitlab.kuleuven.be/<group>/<project>",
-      tokenFieldPlaceholder: "Repository API token",
-      usernameFieldHidden: true,
-      zoneFieldHidden: true,
-      parseSourceUrlField: true,
-      tokenName: 'glToken',
-    }],
-    ["irods", {
-      id: 'irods',
-      name: "IRODS",
-      optionFieldName: "Folder",
-      tokenFieldName: "Token (IRODS password)",
-      sourceUrlFieldPlaceholder: "Hostname",
-      tokenFieldPlaceholder: "Password",
-      usernameFieldHidden: false,
-      zoneFieldHidden: false,
-      parseSourceUrlField: false,
-      tokenName: undefined,
-    }],
-  ]);
+  private config: Config = {
+    dataverseHeader: "Unknown header: configuration failed",
+    collectionOptionsHidden: true,
+    plugins: [],
+  };
+
+  private pluginIds: SelectItem<string>[] = [];
+
+  private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>();
 
   private defaultPlugin: RepoPlugin = {
     id: 'defaultPlugin',
@@ -59,10 +31,25 @@ export class PluginService {
     tokenName: undefined,
   };
 
-  constructor() { }
+  constructor(private http: HttpClient) {
+    this.setConfig();
+  }
+
+  private setConfig(): void {
+    let subscr = this.http.get<Config>(`/api/frontend/config`).subscribe(
+      c => {
+        this.config = c;
+        this.config.plugins.forEach(p => {
+          this.allPlugins.set(p.id, p);
+          this.pluginIds.push({ label: p.name, value: p.id });
+          subscr.unsubscribe();
+        });
+      }
+    );
+  }
 
   getRepoTypes(): SelectItem<string>[] {
-    return Array.from(this.allPlugins).map(([k, v]) => ({ label: v.name, value: k }));
+    return this.pluginIds
   }
 
   getPlugin(p?: string): RepoPlugin {
@@ -76,7 +63,7 @@ export class PluginService {
     return this.defaultPlugin
   }
 
-  getToken(p?: string): (string | null) { 
+  getToken(p?: string): (string | null) {
     let tokenName = this.getPlugin(p).tokenName
     if (tokenName) {
       return localStorage.getItem(tokenName)
@@ -91,10 +78,10 @@ export class PluginService {
   }
 
   dataverseHeader(): string {
-    return "KU Leuven RDR";
+    return this.config!.dataverseHeader;
   }
 
   collectionOptionsHidden(): boolean {
-    return true;
+    return this.config!.collectionOptionsHidden;
   }
 }

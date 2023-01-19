@@ -10,3 +10,9 @@ export interface RepoPlugin {
     parseSourceUrlField: boolean;
     tokenName?: string;
 }
+
+export interface Config {
+    dataverseHeader: string;
+    collectionOptionsHidden: boolean;
+    plugins: RepoPlugin[];
+}
