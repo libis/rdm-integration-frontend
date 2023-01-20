@@ -5,7 +5,7 @@
   
   <span class="col-auto">
     <span class="p-buttonset">
-      <span style="font-size: 1.2rem"><i [class]="icon_action"></i>&nbsp;Bulk select to:&nbsp;</span>
+      <span style="font-size: 1.2rem;position:relative;top:-0.25rem;"><i [class]="icon_action"></i>&nbsp;Bulk select to:&nbsp;</span>
       <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
@@ -32,9 +32,8 @@
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
     <ng-template pTemplate="header">
       <tr>
-        <th class="repository_col">{{ repo() }}</th>
-        <!--th class="size_col">Size</th-->
-        <th class="compare_col" style="text-align: center;">
+        <th>{{ repo() }}</th>
+        <th class="icon_col" style="text-align: center;">
           <span title="Comparison status">
             <p-overlayPanel #op appendTo="body">
               <p-table [value]="filterItems" [(selection)]="selectedFilterItems" dataKey="label">
@@ -60,12 +59,12 @@
             <button pButton pRipple type="button" class="p-button-sm p-button-raised" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
           </span>
         </th>
-        <th class="action_col" style="text-align: center;">
+        <th class="icon_col" style="text-align: center;">
           <span title="Action">
             <i [class]="icon_action"></i>
           </span>
         </th>
-        <th width="dataverse_col">{{dataverseHeader()}} (<a [href]="data!.url">{{ data!.id }}</a>)</th>
+        <th style="text-align:right;">{{dataverseHeader()}} (<a [href]="data!.url">{{ data!.id }}</a>)</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
