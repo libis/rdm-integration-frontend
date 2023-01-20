@@ -2,7 +2,7 @@
   <span class="col-auto"></span>
   
   <span class="col-auto">
-    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
@@ -58,8 +58,7 @@
           <div class="input-group">
             <p-dropdown [editable]="datasetFieldEditable()" [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
             <div class="input-group-append">
-              <!--button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button-->
-              <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" [disabled]="!createNewDatasetEnabled()">Create new dataset</button>
+              <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-raised" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" [disabled]="!createNewDatasetEnabled()">Create new dataset</button>
             </div>
           </div>
         </div>

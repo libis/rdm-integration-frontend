@@ -18,8 +18,8 @@ export class DatafileComponent implements OnInit {
 
   icon_unknown = "pi pi-question-circle";
 
-  icon_new = "pi pi-cloud-download";
-  icon_deleted = "pi pi-delete-left";
+  icon_new = "pi pi-plus-circle";
+  icon_deleted = "pi pi-minus-circle";
   icon_equal = "pi pi-check-circle";
   icon_not_equal = "pi pi-exclamation-circle";
   icon_spinner = "pi pi-spin pi-spinner"

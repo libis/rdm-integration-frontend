@@ -42,7 +42,7 @@ export class CompareComponent implements OnInit {
   filterItems: any[] = [
     {
       label: '(New files)',
-      icon: 'pi pi-cloud-download',
+      icon: 'pi pi-plus-circle',
       iconStyle: { 'color': 'green' },
       title: "Files that aren't in the dataset yet",
       fileStatus: Filestatus.New,
@@ -60,7 +60,7 @@ export class CompareComponent implements OnInit {
       fileStatus: Filestatus.Equal,
     }, {
       label: '(Files only in RDR)',
-      icon: 'pi pi-delete-left',
+      icon: 'pi pi-minus-circle',
       iconStyle: { 'color': 'red' },
       title: 'Files that are only in the dataset, but not in the active data repository',
       fileStatus: Filestatus.Deleted,
