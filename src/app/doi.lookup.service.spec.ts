@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DoiLookupService } from './dvobject.lookup.service';
+import { DvObjectLookupService } from './dvobject.lookup.service';
 
 describe('DoiLookupService', () => {
-  let service: DoiLookupService;
+  let service: DvObjectLookupService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(DoiLookupService);
+    service = TestBed.inject(DvObjectLookupService);
   });
 
   it('should be created', () => {
