@@ -35,7 +35,7 @@
           <label for="repoBranch" class="form-label">{{ getOptionFieldName() }}</label><br/>
           <p-dropdown id="repoBranch" [options]="branchItems" [(ngModel)]="option" [editable]="false" [filter]="true" filterBy="label" [placeholder]="getOptionPlaceholder()" (onClick)="getRepoOptions()">
             <ng-template pTemplate="loader" let-options="options">
-                <div class="flex align-items-center py-2 px-3" style="height: 38px">
+                <div class="flex align-items-center py-2 px-3" style="height: 2.375rem">
                     <p-skeleton [width]="options.even ? '60%' : '50%'" height="1rem"></p-skeleton>
                 </div>
             </ng-template>
