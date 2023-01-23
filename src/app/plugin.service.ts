@@ -33,7 +33,7 @@ export class PluginService {
   }
 
   private setConfig(): void {
-    let subscr = this.http.get<Config>(`/api/frontend/config`).subscribe(
+    let subscr = this.http.get<Config>(`api/frontend/config`).subscribe(
       c => {
         this.config = c;
         this.config.plugins.forEach(p => {
