@@ -1,68 +1,53 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SelectItem } from 'primeng/api';
-import { RepoPlugin } from './models/plugin';
+import { Config, RepoPlugin } from './models/plugin';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PluginService {
 
-  private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>([
-    ["github", {
-      name: "GitHub",
-      optionFieldName: "Branch",
-      tokenFieldName: "Token",
-      sourceUrlFieldPlaceholder: "https://github.com/<owner>/<repository>",
-      tokenFieldPlaceholder: "Repository API token",
-      usernameFieldHidden: true,
-      zoneFieldHidden: true,
-      parseSourceUrlField: true,
-      getToken() { return localStorage.getItem('ghToken') },
-      setToken(token: string | undefined) { if (token) localStorage.setItem('ghToken', token) },
-    }],
-    ["gitlab", {
-      name: "GitLab",
-      optionFieldName: "Branch",
-      tokenFieldName: "Token",
-      sourceUrlFieldPlaceholder: "https://gitlab.kuleuven.be/<group>/<project>",
-      tokenFieldPlaceholder: "Repository API token",
-      usernameFieldHidden: true,
-      zoneFieldHidden: true,
-      parseSourceUrlField: true,
-      getToken() { return localStorage.getItem('glToken') },
-      setToken(token: string | undefined) { if (token) localStorage.setItem('glToken', token) },
-    }],
-    ["irods", {
-      name: "IRODS",
-      optionFieldName: "Folder",
-      tokenFieldName: "Token (IRODS password)",
-      sourceUrlFieldPlaceholder: "Hostname",
-      tokenFieldPlaceholder: "Password",
-      usernameFieldHidden: false,
-      zoneFieldHidden: false,
-      parseSourceUrlField: false,
-      getToken() { return null },
-      setToken() { },
-    }],
-  ]);
-
-  private defaultPlugin: RepoPlugin = {
-    name: "Unknown repository type",
-    optionFieldName: "Branch",
-    tokenFieldName: "Token",
-    sourceUrlFieldPlaceholder: "URL",
-    tokenFieldPlaceholder: "Repository API token",
-    usernameFieldHidden: true,
-    zoneFieldHidden: true,
-    parseSourceUrlField: false,
-    getToken() { return null },
-    setToken() { },
+  private config: Config = {
+    dataverseHeader: "Unknown header: configuration failed",
+    collectionOptionsHidden: true,
+    createNewDatasetEnabled: false,
+    datasetFieldEditable: false,
+    collectionFieldEditable: false,
+    plugins: [],
   };
 
-  constructor() { }
+  private pluginIds: SelectItem<string>[] = [];
+
+  private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>();
+
+  private defaultPlugin: RepoPlugin = {
+    id: 'defaultPlugin',
+    name: "Unknown repository type",
+    sourceUrlFieldName: "Source URL",
+    sourceUrlFieldPlaceholder: "URL",
+    parseSourceUrlField: false,
+  };
+
+  constructor(private http: HttpClient) {
+    this.setConfig();
+  }
+
+  private setConfig(): void {
+    let subscr = this.http.get<Config>(`api/frontend/config`).subscribe(
+      c => {
+        this.config = c;
+        this.config.plugins.forEach(p => {
+          this.allPlugins.set(p.id, p);
+          this.pluginIds.push({ label: p.name, value: p.id });
+          subscr.unsubscribe();
+        });
+      }
+    );
+  }
 
   getRepoTypes(): SelectItem<string>[] {
-    return Array.from(this.allPlugins).map(([k, v]) => ({ label: v.name, value: k }));
+    return this.pluginIds
   }
 
   getPlugin(p?: string): RepoPlugin {
@@ -76,11 +61,37 @@ export class PluginService {
     return this.defaultPlugin
   }
 
+  getToken(p?: string): (string | null) {
+    let tokenName = this.getPlugin(p).tokenName
+    if (tokenName) {
+      return localStorage.getItem(tokenName)
+    } else {
+      return null
+    }
+  }
+
+  setToken(p?: string, token?: string) {
+    let tokenName = this.getPlugin(p).tokenName
+    if (token && tokenName) localStorage.setItem(tokenName, token);
+  }
+
   dataverseHeader(): string {
-    return "KU Leuven RDR";
+    return this.config!.dataverseHeader;
   }
 
   collectionOptionsHidden(): boolean {
-    return true;
+    return this.config!.collectionOptionsHidden;
+  }
+
+  createNewDatasetEnabled(): boolean {
+    return this.config!.createNewDatasetEnabled;
+  }
+
+  datasetFieldEditable(): boolean {
+    return this.config!.datasetFieldEditable;
+  }
+
+  collectionFieldEditable(): boolean {
+    return this.config!.collectionFieldEditable;
   }
 }

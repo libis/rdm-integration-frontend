@@ -46,7 +46,7 @@ export class SubmitComponent implements OnInit {
   }
 
   getDataSubscripion(): Subscription {
-    return interval(5000)
+    return interval(1000)
       .pipe(
         switchMap(() => this.dataUpdatesService.updateData(this.data, this.pid))
       ).subscribe({
@@ -114,8 +114,8 @@ export class SubmitComponent implements OnInit {
     let result: Datafile[] = [];
     this.data.forEach(datafile => {
       if (datafile.action === Fileaction.Delete) {
-        if (datafile.attributes?.RemoteHashType === undefined || datafile.attributes?.RemoteHashType === '') { // file from unknown origin, by setting the hashtype to not empty value we can detect in comparison that the file got deleted
-          datafile.attributes!.RemoteHashType = 'unknown'
+        if (datafile.attributes?.remoteHashType === undefined || datafile.attributes?.remoteHashType === '') { // file from unknown origin, by setting the hashtype to not empty value we can detect in comparison that the file got deleted
+          datafile.attributes!.remoteHashType = 'unknown'
           datafile.attributes!.remoteHash = 'unknown'
         }
         result.push(datafile);

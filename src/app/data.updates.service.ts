@@ -18,6 +18,7 @@ export class DataUpdatesService {
         var req = {
             data: data,
             persistentId: pid,
+            dataverseKey: this.credentialsService.credentials.dataverse_token,
         };
 
         return this.http.post<CompareResult>(this.common_compare_url, req).pipe(

@@ -2,7 +2,7 @@
   <span class="col-auto"></span>
   
   <span class="col-auto">
-    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
@@ -13,29 +13,29 @@
       <div>
         <div class="mb-3">
           <label for="repoType" class="form-label">Repository type</label><br/>
-          <p-dropdown id="repoType" [options]="repoTypes" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepo()"></p-dropdown>
+          <p-dropdown id="repoType" [options]="repoTypes" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepoType()"></p-dropdown>
         </div>
-        <div class="mb-3" [hidden]="usernameHidden()">
-          <label for="username" class="form-label">Username</label>
-          <input type="text" class="form-control" id="username" placeholder="u-number" [(ngModel)]="user" #ctrl="ngModel">
+        <div class="mb-3" [hidden]="getUsernameFieldName() === undefined">
+          <label for="username" class="form-label">{{ getUsernameFieldName() }}</label>
+          <input type="text" class="form-control" id="username" [placeholder]="getUsernamePlaceholder()" [(ngModel)]="user" #ctrl="ngModel">
         </div>
-        <div class="mb-3">
-          <label for="repoToken" class="form-label">{{ getTokenName() }}</label>
+        <div class="mb-3" [hidden]="getTokenFieldName() === undefined">
+          <label for="repoToken" class="form-label">{{ getTokenFieldName() }}</label>
           <input type="password" class="form-control" id="repoToken" [placeholder]="getTokenPlaceholder()" [(ngModel)]="token" #ctrl="ngModel">
         </div>
         <div class="mb-3">
-          <label for="baseUrl" class="form-label">Source URL</label>
+          <label for="baseUrl" class="form-label">{{ getSourceUrlFieldName() }}</label>
           <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()" [(ngModel)]="sourceUrl" #ctrl="ngModel" (change)="onRepoChange()">
         </div>
-        <div class="mb-3" [hidden]="zoneHidden()">
-          <label for="zone" class="form-label">Zone</label>
-          <input type="text" class="form-control" id="zone" placeholder="Zone" [(ngModel)]="repoName" #ctrl="ngModel">
+        <div class="mb-3" [hidden]="getZoneFieldName() === undefined">
+          <label for="zone" class="form-label">{{ getZoneFieldName() }}</label>
+          <input type="text" class="form-control" id="zone" [placeholder]="getZonePlaceholder()" [(ngModel)]="repoName" #ctrl="ngModel">
         </div>
-        <div class="mb-3">
-          <label for="repoBranch" class="form-label">{{ getOptionName() }}</label><br/>
-          <p-dropdown id="repoBranch" [options]="branchItems" [(ngModel)]="option" [editable]="false" [filter]="true" filterBy="label" [placeholder]="repoType === 'irods' ? 'Select folder' : 'Select branch'" (onClick)="getRepoOptions()">
+        <div class="mb-3" [hidden]="getOptionFieldName() === undefined">
+          <label for="repoBranch" class="form-label">{{ getOptionFieldName() }}</label><br/>
+          <p-dropdown id="repoBranch" [options]="branchItems" [(ngModel)]="option" [editable]="false" [filter]="true" filterBy="label" [placeholder]="getOptionPlaceholder()" (onClick)="getRepoOptions()">
             <ng-template pTemplate="loader" let-options="options">
-                <div class="flex align-items-center py-2 px-3" style="height: 38px">
+                <div class="flex align-items-center py-2 px-3" style="height: 2.375rem">
                     <p-skeleton [width]="options.even ? '60%' : '50%'" height="1rem"></p-skeleton>
                 </div>
             </ng-template>
@@ -51,15 +51,14 @@
         </div>
         <div class="mb-3" [hidden]="collectionOptionsHidden()">
           <label for="collectionId" class="form-label">Dataverse collection</label>
-          <p-dropdown id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (change)="onUserChange()"></p-dropdown>
+          <p-dropdown [editable]="collectionFieldEditable()" id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (change)="onUserChange()"></p-dropdown>
         </div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>
           <div class="input-group">
-            <p-dropdown [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
+            <p-dropdown [editable]="datasetFieldEditable()" [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
             <div class="input-group-append">
-              <!--button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="newDataset()" [attr.disabled]="creatingNewDataset ? '' : null">Create new dataset</button-->
-              <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-outlined p-button-secondary" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" disabled>Create new dataset</button>
+              <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-raised" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" [disabled]="!createNewDatasetEnabled()">Create new dataset</button>
             </div>
           </div>
         </div>

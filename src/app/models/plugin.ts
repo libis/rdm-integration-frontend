@@ -1,12 +1,25 @@
 export interface RepoPlugin {
+    id: string;
     name: string;
-    optionFieldName: string;
-    tokenFieldName: string;
+    optionFieldName?: string;
+    optionFieldPlaceholder?: string;
+    tokenFieldName?: string;
+    tokenFieldPlaceholder?: string;
+    sourceUrlFieldName: string;
     sourceUrlFieldPlaceholder: string;
-    tokenFieldPlaceholder: string;
-    usernameFieldHidden: boolean;
-    zoneFieldHidden: boolean;
+    usernameFieldName?: string;
+    usernameFieldPlaceholder?: string;
+    zoneFieldName?: string;
+    zoneFieldPlaceholder?: string;
     parseSourceUrlField: boolean;
-    getToken(): string | null;
-    setToken(token: string | undefined): void;
+    tokenName?: string;
+}
+
+export interface Config {
+    dataverseHeader: string;
+    collectionOptionsHidden: boolean;
+    createNewDatasetEnabled: boolean;
+    datasetFieldEditable: boolean;
+    collectionFieldEditable: boolean;
+    plugins: RepoPlugin[];
 }

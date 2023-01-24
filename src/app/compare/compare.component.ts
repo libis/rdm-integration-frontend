@@ -22,7 +22,7 @@ export class CompareComponent implements OnInit {
   updatedDataSubscription?: Subscription;
 
   icon_noaction = "pi pi-stop";
-  icon_update = "pi pi-arrow-right";
+  icon_update = "pi pi-copy";
   icon_mirror = "pi pi-sync";
 
   icon_submit = "pi pi-save";
@@ -52,13 +52,13 @@ export class CompareComponent implements OnInit {
       iconStyle: { 'color': 'blue' },
       title: 'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
       fileStatus: Filestatus.Updated,
-    },{
+    }, {
       label: '(Unchanged files)',
       icon: 'pi pi-check-circle',
       iconStyle: { 'color': 'black' },
       title: 'Files that are the same in the dataset and the active data repository',
       fileStatus: Filestatus.Equal,
-    },{
+    }, {
       label: '(Files only in RDR)',
       icon: 'pi pi-minus-circle',
       iconStyle: { 'color': 'red' },
@@ -109,7 +109,7 @@ export class CompareComponent implements OnInit {
 
   getUpdatedDataSubscription(): Subscription {
     let cnt = 0;
-    return interval(5000).pipe(
+    return interval(1000).pipe(
       switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
     ).subscribe((data: CompareResult) => {
       cnt++;
@@ -234,14 +234,13 @@ export class CompareComponent implements OnInit {
     let nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
       let datafile = rowNode.data!;
-      datafile.hidden =  !datafile.attributes?.isFile || !filters.some(i => datafile.status === i.fileStatus);
+      datafile.hidden = !datafile.attributes?.isFile || !filters.some(i => datafile.status === i.fileStatus);
       if (!datafile.hidden) {
         nodes.push(rowNode);
       }
     });
     this.rootNodeChildren = nodes;
     this.isInFilterMode = true;
-    
   }
 
   filterOff(): void {
@@ -340,7 +339,7 @@ export class CompareComponent implements OnInit {
         });
         path = id;
       });
-      rowDataMap.set(d.id!, {
+      rowDataMap.set(d.id! + ":file", { // avoid collisions between folders and files having the same path and name
         data: d,
       });
     });

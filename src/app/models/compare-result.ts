@@ -10,6 +10,7 @@ export interface CompareResult {
   id?: string;
   status?: ResultStatus;
   data?: Datafile[];
+  url?: string;
 }
 
 export interface CachedResponse {

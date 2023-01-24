@@ -1,27 +1,28 @@
 <div class="row justify-content-between sticky-menu">
   <span class="col-auto">
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+    <button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
   </span>
   
   <span class="col-auto">
     <span class="p-buttonset">
-      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_noaction"></i>&nbsp;No action
+      <span style="font-size: 1.2rem;position:relative;top:-0.275rem;"><i [class]="icon_action"></i>&nbsp;Bulk select to:&nbsp;</span>
+      <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
+        <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
-      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
+      <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_update"></i>&nbsp;Copy
       </button>
-      <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_mirror"></i>&nbsp;Sync
+      <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
+        <i [class]="icon_noaction"></i>&nbsp;Clear selection
       </button>
     </span>
   </span>
 
   <span class="col-auto">
-    <button pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+    <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
       <i class="pi pi-refresh"></i>&nbsp;Refresh
     </button>
-    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
@@ -31,9 +32,8 @@
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
     <ng-template pTemplate="header">
       <tr>
-        <th class="repository_col">{{ repo() }}</th>
-        <!--th class="size_col">Size</th-->
-        <th class="compare_col" style="text-align: center;">
+        <th>{{ repo() }}</th>
+        <th class="icon_col" style="text-align: center;">
           <span title="Comparison status">
             <p-overlayPanel #op appendTo="body">
               <p-table [value]="filterItems" [(selection)]="selectedFilterItems" dataKey="label">
@@ -56,15 +56,15 @@
               </p-table>
               <button pButton type="button" class="p-button-link" (click)="showAll()" title="Show all">Show all...</button>
             </p-overlayPanel>
-            <button pButton pRipple type="button" class="p-button-text p-button-plain" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
+            <button pButton pRipple type="button" class="p-button-sm p-button-raised" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
           </span>
         </th>
-        <th class="action_col" style="text-align: center;">
+        <th class="icon_col" style="text-align: center;">
           <span title="Action">
             <i [class]="icon_action"></i>
           </span>
         </th>
-        <th width="dataverse_col">{{dataverseHeader()}} (<a href="https://rdr.kuleuven.be/dataset.xhtml?persistentId={{ data!.id }}">{{ data!.id }}</a>)</th>
+        <th style="text-align:right;">{{dataverseHeader()}} (<a [href]="data!.url">{{ data!.id }}</a>)</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
