@@ -109,7 +109,7 @@ export class CompareComponent implements OnInit {
 
   getUpdatedDataSubscription(): Subscription {
     let cnt = 0;
-    return interval(5000).pipe(
+    return interval(1000).pipe(
       switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
     ).subscribe((data: CompareResult) => {
       cnt++;
