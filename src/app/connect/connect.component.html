@@ -51,7 +51,7 @@
         </div>
         <div class="mb-3" [hidden]="collectionOptionsHidden()">
           <label for="collectionId" class="form-label">Dataverse collection</label>
-          <p-dropdown id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (change)="onUserChange()"></p-dropdown>
+          <p-dropdown [editable]="collectionFieldEditable()" id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (change)="onUserChange()"></p-dropdown>
         </div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>

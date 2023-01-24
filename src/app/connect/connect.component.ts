@@ -331,11 +331,15 @@ export class ConnectComponent implements OnInit {
   }
 
   createNewDatasetEnabled(): boolean {
-    return !this.creatingNewDataset && this.pluginService.createNewDatasetEnabled()
+    return !this.creatingNewDataset && this.pluginService.createNewDatasetEnabled();
   }
 
   datasetFieldEditable(): boolean {
-    return this.pluginService.datasetFieldEditable()
+    return this.pluginService.datasetFieldEditable();
+  }
+
+  collectionFieldEditable(): boolean {
+    return this.pluginService.collectionFieldEditable();
   }
 
   onUserChange() {

@@ -20,5 +20,6 @@ export interface Config {
     collectionOptionsHidden: boolean;
     createNewDatasetEnabled: boolean;
     datasetFieldEditable: boolean;
+    collectionFieldEditable: boolean;
     plugins: RepoPlugin[];
 }

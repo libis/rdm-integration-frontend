@@ -13,6 +13,7 @@ export class PluginService {
     collectionOptionsHidden: true,
     createNewDatasetEnabled: false,
     datasetFieldEditable: false,
+    collectionFieldEditable: false,
     plugins: [],
   };
 
@@ -88,5 +89,9 @@ export class PluginService {
 
   datasetFieldEditable(): boolean {
     return this.config!.datasetFieldEditable;
+  }
+
+  collectionFieldEditable(): boolean {
+    return this.config!.collectionFieldEditable;
   }
 }
