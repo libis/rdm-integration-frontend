@@ -1,3 +1,5 @@
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SelectItem } from 'primeng/api';

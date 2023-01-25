@@ -1,3 +1,6 @@
+// Author: Kris Dekeyser @ KU Leuven (2023). Apache 2.0 License
+// Changed by: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 import { Component, Input, OnInit } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { FolderActionUpdateService } from '../folder.action.update.service';

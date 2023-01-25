@@ -1,3 +1,6 @@
+// Author: Kris Dekeyser @ KU Leuven (2023). Apache 2.0 License
+// Changed by: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { interval, Subscription, switchMap } from 'rxjs';
