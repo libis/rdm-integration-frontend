@@ -1,3 +1,5 @@
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 import { Component, Input, OnInit } from '@angular/core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 

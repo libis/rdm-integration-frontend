@@ -1,3 +1,5 @@
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CompareComponent } from './compare/compare.component';

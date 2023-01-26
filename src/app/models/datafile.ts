@@ -1,3 +1,5 @@
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 export enum Filestatus {
   Equal = 0,
   New = 1,
