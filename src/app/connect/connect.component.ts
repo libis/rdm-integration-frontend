@@ -71,7 +71,6 @@ export class ConnectComponent implements OnInit {
     this.route.queryParams
       .subscribe(params => {
         let stateString = params['state'];
-        console.log(stateString);
         if (stateString === undefined || stateString === null || stateString === '') {
           return;
         }
@@ -112,7 +111,6 @@ export class ConnectComponent implements OnInit {
             if (this.collectionId === this.loadingItem.value) {
               this.collectionId = undefined;
             }
-            console.log(x)
             this.token = x.access_token;
             tokenSubscr.unsubscribe();
           });
