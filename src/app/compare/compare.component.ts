@@ -100,7 +100,6 @@ export class CompareComponent implements OnInit {
           if (this.data.status !== ResultStatus.Updating) {
             this.disabled = false;
             this.loading = false;
-            console.log("loaded; no hashing needed")
           } else {
             this.updatedDataSubscription = this.getUpdatedDataSubscription();
           }
@@ -122,12 +121,10 @@ export class CompareComponent implements OnInit {
         this.updatedDataSubscription?.unsubscribe();
         this.disabled = false;
         this.loading = false;
-        console.log("loaded")
       } else if (cnt > 10) {
         this.updatedDataSubscription?.unsubscribe();
         this.loading = false;
         this.refreshHidden = false;
-        console.log("timeout, stopped loading")
       }
     });
   }
@@ -256,7 +253,6 @@ export class CompareComponent implements OnInit {
   }
 
   submit(): void {
-    console.log("updating state...");
     this.dataStateService.updateState(this.data);
     this.router.navigate(['/submit']);
   }
@@ -353,7 +349,7 @@ export class CompareComponent implements OnInit {
   }
 
   repo(): string {
-    return this.pluginService.getPlugin(this.credentialsService.credentials.repo_type).name;
+    return this.pluginService.getPlugin(this.credentialsService.credentials.plugin).name;
   }
 
   dataverseHeader(): string {

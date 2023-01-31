@@ -1,8 +1,8 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 export interface Credentials {
-
-  repo_type?: string;
+  pluginId?: string;
+  plugin?: string;
   repo_name?: string;
   url?: string;
   option?: string;
@@ -10,5 +10,4 @@ export interface Credentials {
   token?: string;
   dataset_id?: string;
   dataverse_token?: string;
-
 }

@@ -16,6 +16,9 @@ export class PluginService {
     createNewDatasetEnabled: false,
     datasetFieldEditable: false,
     collectionFieldEditable: false,
+    externalURL: '',
+    showDvTokenGetter: false,
+    redirect_uri: '',
     plugins: [],
   };
 
@@ -25,10 +28,12 @@ export class PluginService {
 
   private defaultPlugin: RepoPlugin = {
     id: 'defaultPlugin',
+    plugin: 'defaultPlugin',
     name: "Unknown repository type",
     sourceUrlFieldName: "Source URL",
     sourceUrlFieldPlaceholder: "URL",
     parseSourceUrlField: false,
+    showTokenGetter: false,
   };
 
   constructor(private http: HttpClient) {
@@ -40,6 +45,7 @@ export class PluginService {
       c => {
         this.config = c;
         this.config.plugins.forEach(p => {
+          p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
           this.allPlugins.set(p.id, p);
           this.pluginIds.push({ label: p.name, value: p.id });
           subscr.unsubscribe();
@@ -49,7 +55,7 @@ export class PluginService {
   }
 
   getRepoTypes(): SelectItem<string>[] {
-    return this.pluginIds
+    return [...this.pluginIds]
   }
 
   getPlugin(p?: string): RepoPlugin {
@@ -72,11 +78,6 @@ export class PluginService {
     }
   }
 
-  setToken(p?: string, token?: string) {
-    let tokenName = this.getPlugin(p).tokenName
-    if (token && tokenName) localStorage.setItem(tokenName, token);
-  }
-
   dataverseHeader(): string {
     return this.config!.dataverseHeader;
   }
@@ -95,5 +96,17 @@ export class PluginService {
 
   collectionFieldEditable(): boolean {
     return this.config!.collectionFieldEditable;
+  }
+
+  getExternalURL(): string {
+    return this.config!.externalURL;
+  }
+
+  showDVTokenGetter(): boolean {
+    return this.config!.showDvTokenGetter;
+  }
+
+  getRedirectUri(): string {
+    return this.config!.redirect_uri;
   }
 }
