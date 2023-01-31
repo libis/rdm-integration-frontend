@@ -59,59 +59,63 @@ export class ConnectComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    let token = localStorage.getItem("dataverseToken");
-    if (token !== null) {
-      this.dataverseToken = token;
+    let dvToken = localStorage.getItem("dataverseToken");
+    if (dvToken !== null) {
+      this.dataverseToken = dvToken;
+    }
+    let repoToken = localStorage.getItem("repoToken");
+    if (repoToken !== null) {
+      this.token = repoToken;
+      localStorage.removeItem("repoToken");
     }
     this.route.queryParams
       .subscribe(params => {
         let stateString = params['state'];
+        console.log(stateString);
         if (stateString === undefined || stateString === null || stateString === '') {
           return;
         }
         let loginState: LoginState = JSON.parse(params['state']);
-        if (this.getNounce() === loginState.nounce) {
-          this.sourceUrl = loginState.sourceUrl;
-          this.url = loginState.url;
-          this.repoName = loginState.repoName;
-          this.user = loginState.user;
+        this.sourceUrl = loginState.sourceUrl;
+        this.url = loginState.url;
+        this.repoName = loginState.repoName;
+        this.user = loginState.user;
 
-          if (loginState.repoType !== undefined && loginState.repoType.value !== undefined) {
-            if (this.repoTypes.length === 0) {
-              this.repoTypes = [{ label: loginState.repoType.label, value: loginState.repoType.value! }];
+        if (loginState.repoType !== undefined && loginState.repoType.value !== undefined) {
+          if (this.repoTypes.length === 0) {
+            this.repoTypes = [{ label: loginState.repoType.label, value: loginState.repoType.value! }];
+          }
+          this.repoType = loginState.repoType.value;
+        }
+        if (loginState.option !== undefined && loginState.option.value !== undefined) {
+          this.branchItems = [{ label: loginState.option.label, value: loginState.option.value! }, this.loadingItem];
+          this.option = loginState.option?.value;
+        }
+        if (loginState.datasetId !== undefined && loginState.datasetId.value !== undefined) {
+          this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
+          this.datasetId = loginState.datasetId?.value;
+        }
+        if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
+          this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
+          this.collectionId = loginState.collectionId?.value;
+        }
+
+        let code = params['code'];
+        if (this.getNounce() === loginState.nounce && this.repoType !== undefined && code !== undefined) {
+          var tokenSubscr = this.oauth.getToken(this.repoType, code, loginState.nounce).subscribe(x => {
+            if (this.option === this.loadingItem.value) {
+              this.option = undefined;
             }
-            this.repoType = loginState.repoType.value;
-          }
-          if (loginState.option !== undefined && loginState.option.value !== undefined) {
-            this.branchItems = [{ label: loginState.option.label, value: loginState.option.value! }, this.loadingItem];
-            this.option = loginState.option?.value;
-          }
-          if (loginState.datasetId !== undefined && loginState.datasetId.value !== undefined) {
-            this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
-            this.datasetId = loginState.datasetId?.value;
-          }
-          if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
-            this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
-            this.collectionId = loginState.collectionId?.value;
-          }
-
-          let code = params['code'];
-          if (this.repoType !== undefined && code !== undefined) {
-            var tokenSubscr = this.oauth.getToken(this.repoType, code, loginState.nounce).subscribe(x => {
-              if (this.option === this.loadingItem.value) {
-                this.option = undefined;
-              }
-              if (this.datasetId === this.loadingItem.value) {
-                this.datasetId = undefined;
-              }
-              if (this.collectionId === this.loadingItem.value) {
-                this.collectionId = undefined;
-              }
-              console.log(x)
-              this.token = x.access_token;
-              tokenSubscr.unsubscribe();
-            });
-          }
+            if (this.datasetId === this.loadingItem.value) {
+              this.datasetId = undefined;
+            }
+            if (this.collectionId === this.loadingItem.value) {
+              this.collectionId = undefined;
+            }
+            console.log(x)
+            this.token = x.access_token;
+            tokenSubscr.unsubscribe();
+          });
         }
       });
   }
@@ -454,6 +458,9 @@ export class ConnectComponent implements OnInit {
   }
 
   getDataverseToken(): void {
+    if (this.token !== undefined) {
+      localStorage.setItem("repoToken", this.token!);
+    }
     location.href = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
   }
 
@@ -490,7 +497,7 @@ export class ConnectComponent implements OnInit {
       url = url + '?client_id=' + tg.oauth_client_id +
         '&redirect_uri=' + this.pluginService.getRedirectUri() +
         '&response_type=code&state=' + JSON.stringify(looginState);
-        // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
+      // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
     }
     location.href = url;
   }
@@ -520,9 +527,5 @@ export class ConnectComponent implements OnInit {
     }
     let label = items.find(x => x.value === value)?.label
     return { label: label, value: value }
-  }
-
-  setToken(comp: ConnectComponent, tokenResp: TokenResponse): void {
-    comp.token = tokenResp.access_token;
   }
 }
