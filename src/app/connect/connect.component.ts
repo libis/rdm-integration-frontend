@@ -97,7 +97,7 @@ export class ConnectComponent implements OnInit {
 
           let code = params['code'];
           if (this.repoType !== undefined && code !== undefined) {
-            var tokenSubscr = this.oauth.getToken(this.repoType, code).subscribe(x => {
+            var tokenSubscr = this.oauth.getToken(this.repoType, code, loginState.nounce).subscribe(x => {
               if (this.option === this.loadingItem.value) {
                 this.option = undefined;
               }
@@ -475,7 +475,7 @@ export class ConnectComponent implements OnInit {
       url = tg.URL;
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
-      let nounce = this.newNounce(20);
+      let nounce = this.newNounce(44);
       let looginState: LoginState = {
         sourceUrl: this.sourceUrl,
         url: this.url,
@@ -487,7 +487,10 @@ export class ConnectComponent implements OnInit {
         collectionId: this.getItem(this.collectionItems, this.collectionId),
         nounce: nounce,
       }
-      url = url + '?client_id=' + tg.oauth_client_id + '&redirect_uri=' + this.pluginService.getRedirectUri() + '&state=' + JSON.stringify(looginState);
+      url = url + '?client_id=' + tg.oauth_client_id +
+        '&redirect_uri=' + this.pluginService.getRedirectUri() +
+        '&response_type=code&state=' + JSON.stringify(looginState);
+        // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
     }
     location.href = url;
   }
