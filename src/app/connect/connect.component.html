@@ -14,7 +14,7 @@
       <div>
         <div class="mb-3">
           <label for="pluginId" class="form-label">Repository type</label><br/>
-          <p-dropdown id="pluginId" [options]="pluginIds" [(ngModel)]="pluginId" placeholder="Select the source" (onChange)="changepluginId()" (onClick)="getpluginIds()"></p-dropdown>
+          <p-dropdown id="pluginId" [options]="pluginIds" [(ngModel)]="pluginId" placeholder="Select the source" (onChange)="changePluginId()" (onClick)="getPluginIds()"></p-dropdown>
         </div>
         <div class="mb-3" [hidden]="getUsernameFieldName() === undefined">
           <label for="username" class="form-label">{{ getUsernameFieldName() }}</label>

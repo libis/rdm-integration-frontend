@@ -119,7 +119,7 @@ export class ConnectComponent implements OnInit {
   ngOnDestroy() {
   }
 
-  changepluginId() {
+  changePluginId() {
     this.token = undefined;
     let tokenName = this.pluginService.getPlugin(this.pluginId).tokenName;
     if (tokenName !== undefined && tokenName !== '') {
@@ -351,8 +351,8 @@ export class ConnectComponent implements OnInit {
     });
   }
 
-  getpluginIds() {
-    this.pluginIds = this.pluginService.getpluginIds();
+  getPluginIds() {
+    this.pluginIds = this.pluginService.getPluginIds();
   }
 
   getTokenFieldName(): string | undefined {

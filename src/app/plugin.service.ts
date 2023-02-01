@@ -54,7 +54,7 @@ export class PluginService {
     );
   }
 
-  getpluginIds(): SelectItem<string>[] {
+  getPluginIds(): SelectItem<string>[] {
     return [...this.pluginIds]
   }
 
