@@ -29,7 +29,9 @@ export class ConnectComponent implements OnInit {
   token?: string;
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
+  pluginIdSelectHidden = true;
 
+  plugin?: string;
   pluginId?: string;
   option?: string;
   collectionId?: string;
@@ -41,6 +43,7 @@ export class ConnectComponent implements OnInit {
   doiItems: SelectItem<string>[] = this.loadingItems;
   collectionItems: SelectItem<string>[] = this.loadingItems;
   pluginIds: SelectItem<string>[] = [];
+  plugins: SelectItem<string>[] = [];
 
   creatingNewDataset: boolean = false;
 
@@ -75,37 +78,50 @@ export class ConnectComponent implements OnInit {
         this.repoName = loginState.repoName;
         this.user = loginState.user;
 
+        if (loginState.plugin !== undefined && loginState.plugin.value !== undefined) {
+          if (this.plugins.length === 0) {
+            [{ label: loginState.plugin.label, value: loginState.plugin.value! }];
+          }
+          this.plugin = loginState.plugin.value;
+        } else {
+          this.plugin = undefined;
+        }
+        
         if (loginState.pluginId !== undefined && loginState.pluginId.value !== undefined) {
           if (this.pluginIds.length === 0) {
             this.pluginIds = [{ label: loginState.pluginId.label, value: loginState.pluginId.value! }];
           }
           this.pluginId = loginState.pluginId.value;
+          this.pluginIdSelectHidden = false;
+        } else {
+          this.pluginId = undefined;
+          this.pluginIdSelectHidden = true;
         }
+
         if (loginState.option !== undefined && loginState.option.value !== undefined) {
           this.branchItems = [{ label: loginState.option.label, value: loginState.option.value! }, this.loadingItem];
           this.option = loginState.option?.value;
+        } else {
+          this.option = undefined;
         }
+
         if (loginState.datasetId !== undefined && loginState.datasetId.value !== undefined) {
           this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
           this.datasetId = loginState.datasetId?.value;
+        } else {
+          this.datasetId = undefined;
         }
+        
         if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
           this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
           this.collectionId = loginState.collectionId?.value;
+        } else {
+          this.collectionId = undefined;
         }
 
         let code = params['code'];
         if (this.getNounce() === loginState.nounce && this.pluginId !== undefined && code !== undefined) {
           var tokenSubscr = this.oauth.getToken(this.pluginId, code, loginState.nounce).subscribe(x => {
-            if (this.option === this.loadingItem.value) {
-              this.option = undefined;
-            }
-            if (this.datasetId === this.loadingItem.value) {
-              this.datasetId = undefined;
-            }
-            if (this.collectionId === this.loadingItem.value) {
-              this.collectionId = undefined;
-            }
             this.token = x.access_token;
             if (!this.pluginService.isStoreDvToken()) {
               localStorage.removeItem("dataverseToken");
@@ -177,7 +193,7 @@ export class ConnectComponent implements OnInit {
     }
     let creds: Credentials = {
       pluginId: this.pluginId,
-      plugin: this.getPluginName(),
+      plugin: this.plugin,
       repo_name: this.repoName,
       url: this.url,
       option: this.option,
@@ -284,7 +300,7 @@ export class ConnectComponent implements OnInit {
 
     let req = {
       pluginId: this.pluginId,
-      plugin: this.getPluginName(),
+      plugin: this.plugin,
       repoName: this.repoName,
       url: this.url,
       user: this.user,
@@ -351,8 +367,23 @@ export class ConnectComponent implements OnInit {
     });
   }
 
+  getPlugins() {
+    this.plugins = this.pluginService.getPlugins();
+  }
+
+  changePlugin() {
+    let pluginIds = this.pluginService.getPluginIds(this.plugin);
+    if (pluginIds.length === 1) {
+      this.pluginId = pluginIds[0].value;
+    } else {
+      this.pluginId = undefined;
+    }
+    this.pluginIdSelectHidden = pluginIds.length < 2;
+    this.changePluginId();
+  }
+
   getPluginIds() {
-    this.pluginIds = this.pluginService.getPluginIds();
+    this.pluginIds = this.pluginService.getPluginIds(this.plugin);
   }
 
   getTokenFieldName(): string | undefined {
@@ -454,10 +485,6 @@ export class ConnectComponent implements OnInit {
     this.repoName = undefined;
   }
 
-  getPluginName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).plugin;;
-  }
-
   showDVTokenGetter(): boolean {
     return this.pluginService.showDVTokenGetter();
   }
@@ -489,6 +516,7 @@ export class ConnectComponent implements OnInit {
       let looginState: LoginState = {
         sourceUrl: this.sourceUrl,
         url: this.url,
+        plugin: this.getItem(this.plugins, this.plugin),
         pluginId: this.getItem(this.pluginIds, this.pluginId),
         repoName: this.repoName,
         user: this.user,

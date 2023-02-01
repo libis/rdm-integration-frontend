@@ -13,7 +13,11 @@
     <p-accordionTab header="Data/code source" [selected]="true">
       <div>
         <div class="mb-3">
-          <label for="pluginId" class="form-label">Repository type</label><br/>
+          <label for="plugin" class="form-label">Repository type</label><br/>
+          <p-dropdown id="plugin" [options]="plugins" [(ngModel)]="plugin" placeholder="Select the source" (onChange)="changePlugin()" (onClick)="getPlugins()"></p-dropdown>
+        </div>
+        <div class="mb-3" [hidden]="pluginIdSelectHidden">
+          <label for="pluginId" class="form-label">Repository instance</label><br/>
           <p-dropdown id="pluginId" [options]="pluginIds" [(ngModel)]="pluginId" placeholder="Select the source" (onChange)="changePluginId()" (onClick)="getPluginIds()"></p-dropdown>
         </div>
         <div class="mb-3" [hidden]="getUsernameFieldName() === undefined">
@@ -31,7 +35,7 @@
         </div>
         <div class="mb-3" [hidden]="getSourceUrlFieldName() === undefined">
           <label for="baseUrl" class="form-label">{{ getSourceUrlFieldName() }}</label>
-          <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()" [(ngModel)]="sourceUrl" #ctrl="ngModel" (change)="onRepoChange()">
+          <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()" [(ngModel)]="sourceUrl" #ctrl="ngModel" (onChange)="onRepoChange()">
         </div>
         <div class="mb-3" [hidden]="getZoneFieldName() === undefined || getZones().length > 0">
           <label for="zone" class="form-label">{{ getZoneFieldName() }}</label>
@@ -58,7 +62,7 @@
         <div class="mb-3">
           <label for="dataverseToken" class="form-label">Token</label>
           <div class="input-group">
-            <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel" (change)="onUserChange()">
+            <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel" (onChange)="onUserChange()">
             <div class="input-group-append">
               <button [style.width]="'12rem'" pButton pRipple type="button" class="p-button p-button-raised" (click)="getDataverseToken()" title="Get API token" [hidden]="!showDVTokenGetter()">Get token</button>
             </div>
