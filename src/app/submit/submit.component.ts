@@ -165,6 +165,6 @@ export class SubmitComponent implements OnInit {
   }
 
   goToDataset(){
-    location.href = this.datasetUrl;
+    window.open(this.datasetUrl, "_blank");
  }
 }
