@@ -54,7 +54,7 @@ export class PluginService {
     );
   }
 
-  getRepoTypes(): SelectItem<string>[] {
+  getpluginIds(): SelectItem<string>[] {
     return [...this.pluginIds]
   }
 

@@ -13,8 +13,8 @@
     <p-accordionTab header="Data/code source" [selected]="true">
       <div>
         <div class="mb-3">
-          <label for="repoType" class="form-label">Repository type</label><br/>
-          <p-dropdown id="repoType" [options]="repoTypes" [(ngModel)]="repoType" placeholder="Select the source" (onChange)="changeRepoType()" (onClick)="getRepoTypes()"></p-dropdown>
+          <label for="pluginId" class="form-label">Repository type</label><br/>
+          <p-dropdown id="pluginId" [options]="pluginIds" [(ngModel)]="pluginId" placeholder="Select the source" (onChange)="changepluginId()" (onClick)="getpluginIds()"></p-dropdown>
         </div>
         <div class="mb-3" [hidden]="getUsernameFieldName() === undefined">
           <label for="username" class="form-label">{{ getUsernameFieldName() }}</label>

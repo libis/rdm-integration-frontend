@@ -3,7 +3,7 @@
 export interface LoginState {
   sourceUrl?: string;
   url?: string;
-  repoType?: Item;
+  pluginId?: Item;
   repoName?: string;
   user?: string;
   nounce?: string;
