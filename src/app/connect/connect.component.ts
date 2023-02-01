@@ -39,9 +39,9 @@ export class ConnectComponent implements OnInit {
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   loadingItems: SelectItem<string>[] = [this.loadingItem];
-  branchItems: SelectItem<string>[] = this.loadingItems;
-  doiItems: SelectItem<string>[] = this.loadingItems;
-  collectionItems: SelectItem<string>[] = this.loadingItems;
+  branchItems: SelectItem<string>[] = [];
+  doiItems: SelectItem<string>[] = [];
+  collectionItems: SelectItem<string>[] = [];
   pluginIds: SelectItem<string>[] = [];
   plugins: SelectItem<string>[] = [];
 
@@ -79,44 +79,31 @@ export class ConnectComponent implements OnInit {
         this.user = loginState.user;
 
         if (loginState.plugin !== undefined && loginState.plugin.value !== undefined) {
-          if (this.plugins.length === 0) {
-            [{ label: loginState.plugin.label, value: loginState.plugin.value! }];
-          }
+          this.plugins = [{ label: loginState.plugin.label, value: loginState.plugin.value! }];
           this.plugin = loginState.plugin.value;
-        } else {
-          this.plugin = undefined;
         }
         
         if (loginState.pluginId !== undefined && loginState.pluginId.value !== undefined) {
-          if (this.pluginIds.length === 0) {
-            this.pluginIds = [{ label: loginState.pluginId.label, value: loginState.pluginId.value! }];
-          }
+          this.pluginIds = [{ label: loginState.pluginId.label, value: loginState.pluginId.value! }];
           this.pluginId = loginState.pluginId.value;
           this.pluginIdSelectHidden = false;
         } else {
-          this.pluginId = undefined;
           this.pluginIdSelectHidden = true;
         }
 
         if (loginState.option !== undefined && loginState.option.value !== undefined) {
           this.branchItems = [{ label: loginState.option.label, value: loginState.option.value! }, this.loadingItem];
           this.option = loginState.option?.value;
-        } else {
-          this.option = undefined;
         }
 
         if (loginState.datasetId !== undefined && loginState.datasetId.value !== undefined) {
           this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
           this.datasetId = loginState.datasetId?.value;
-        } else {
-          this.datasetId = undefined;
         }
         
         if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
           this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
           this.collectionId = loginState.collectionId?.value;
-        } else {
-          this.collectionId = undefined;
         }
 
         let code = params['code'];
@@ -146,7 +133,7 @@ export class ConnectComponent implements OnInit {
     }
 
     this.sourceUrl = this.getSourceUrlValue();
-    this.branchItems = this.loadingItems;
+    this.branchItems = [];
     this.option = undefined;
     this.url = undefined;
     this.user = undefined;
@@ -294,9 +281,11 @@ export class ConnectComponent implements OnInit {
       alert(this.getZoneFieldName() + ' is missing');
       return;
     }
-    if (this.branchItems.find(x => x === this.loadingItem) === undefined) {
+    if (this.branchItems.length !== 0 && this.branchItems.find(x => x === this.loadingItem) === undefined) {
       return;
     }
+
+    this.branchItems = this.loadingItems;
 
     let req = {
       pluginId: this.pluginId,
@@ -318,7 +307,7 @@ export class ConnectComponent implements OnInit {
       },
       error: (err) => {
         alert("branch lookup failed: " + err.error);
-        this.branchItems = this.loadingItems;
+        this.branchItems = [];
         this.option = undefined;
       },
     });
@@ -345,11 +334,13 @@ export class ConnectComponent implements OnInit {
   getDvObjectOptions(objectType: string, dvItems: SelectItem<string>[], setter: (comp: ConnectComponent, items: SelectItem<string>[]) => void): void {
     if (this.dataverseToken === undefined || this.dataverseToken === '') {
       alert('Dataverse object lookup failed: Dataverse API token is missing');
+      setter(this, []);
       return;
     }
-    if (dvItems.find(x => x === this.loadingItem) === undefined) {
+    if (dvItems.length !== 0 && dvItems.find(x => x === this.loadingItem) === undefined) {
       return;
     }
+    setter(this, this.loadingItems);
 
     let httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
@@ -362,13 +353,14 @@ export class ConnectComponent implements OnInit {
       },
       error: (err) => {
         alert("doi lookup failed: " + err.error);
-        setter(this, this.loadingItems);
+        setter(this, []);
       },
     });
   }
 
   getPlugins() {
     this.plugins = this.pluginService.getPlugins();
+    console.log(this.plugins)
   }
 
   changePlugin() {
@@ -463,8 +455,8 @@ export class ConnectComponent implements OnInit {
   }
 
   onUserChange() {
-    this.doiItems = this.loadingItems;
-    this.collectionItems = this.loadingItems;
+    this.doiItems = [];
+    this.collectionItems = [];
     this.datasetId = undefined;
     this.collectionId = undefined;
     if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
@@ -473,12 +465,12 @@ export class ConnectComponent implements OnInit {
   }
 
   onCollectionChange() {
-    this.doiItems = this.loadingItems;
+    this.doiItems = [];
     this.datasetId = undefined;
   }
 
   onRepoChange() {
-    this.branchItems = this.loadingItems;
+    this.branchItems = [];
     this.option = undefined;
     this.url = undefined;
     this.user = undefined;
