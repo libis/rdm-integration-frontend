@@ -62,9 +62,6 @@ export class ConnectComponent implements OnInit {
     let dvToken = localStorage.getItem("dataverseToken");
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
-      if (!this.pluginService.isStoreDvToken()) {
-        localStorage.removeItem("dataverseToken");
-      }
     }
     this.route.queryParams
       .subscribe(params => {
@@ -110,6 +107,9 @@ export class ConnectComponent implements OnInit {
               this.collectionId = undefined;
             }
             this.token = x.access_token;
+            if (!this.pluginService.isStoreDvToken()) {
+              localStorage.removeItem("dataverseToken");
+            }
             tokenSubscr.unsubscribe();
           });
         }
@@ -129,7 +129,7 @@ export class ConnectComponent implements OnInit {
         this.token = undefined;
       }
     }
-    
+
     this.sourceUrl = this.getSourceUrlValue();
     this.branchItems = this.loadingItems;
     this.option = undefined;
