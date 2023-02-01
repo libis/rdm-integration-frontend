@@ -120,13 +120,12 @@ export class ConnectComponent implements OnInit {
   }
 
   changeRepoType() {
+    this.token = undefined;
     let tokenName = this.pluginService.getPlugin(this.repoType).tokenName;
-    if (tokenName !== undefined) {
+    if (tokenName !== undefined && tokenName !== '') {
       let token = localStorage.getItem(tokenName);
       if (token !== null) {
         this.token = token;
-      } else {
-        this.token = undefined;
       }
     }
 
@@ -173,7 +172,9 @@ export class ConnectComponent implements OnInit {
       return;
     }
     let tokenName = this.pluginService.getPlugin(this.repoType).tokenName
-    if (this.token !== undefined && tokenName !== undefined) localStorage.setItem(tokenName, this.token);
+    if (this.token !== undefined && tokenName !== undefined && tokenName !== '') {
+      localStorage.setItem(tokenName, this.token);
+    }
     let creds: Credentials = {
       pluginId: this.repoType,
       plugin: this.getPluginName(),
