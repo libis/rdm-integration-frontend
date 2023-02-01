@@ -69,15 +69,6 @@ export class PluginService {
     return this.defaultPlugin
   }
 
-  getToken(p?: string): (string | null) {
-    let tokenName = this.getPlugin(p).tokenName
-    if (tokenName) {
-      return localStorage.getItem(tokenName)
-    } else {
-      return null
-    }
-  }
-
   dataverseHeader(): string {
     return this.config!.dataverseHeader;
   }
@@ -104,6 +95,11 @@ export class PluginService {
 
   showDVTokenGetter(): boolean {
     return this.config!.showDvTokenGetter;
+  }
+
+  isStoreDvToken(): boolean {
+    let v = this.config!.storeDvToken;
+    return v === undefined ? false : v;
   }
 
   getRedirectUri(): string {

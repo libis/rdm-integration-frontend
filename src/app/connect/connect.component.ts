@@ -12,7 +12,7 @@ import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
-import { Item, LoginState, TokenResponse } from '../models/oauth';
+import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 
 @Component({
@@ -62,11 +62,9 @@ export class ConnectComponent implements OnInit {
     let dvToken = localStorage.getItem("dataverseToken");
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
-    }
-    let repoToken = localStorage.getItem("repoToken");
-    if (repoToken !== null) {
-      this.token = repoToken;
-      localStorage.removeItem("repoToken");
+      if (!this.pluginService.isStoreDvToken()) {
+        localStorage.removeItem("dataverseToken");
+      }
     }
     this.route.queryParams
       .subscribe(params => {
@@ -122,12 +120,16 @@ export class ConnectComponent implements OnInit {
   }
 
   changeRepoType() {
-    let token = this.pluginService.getToken(this.repoType);
-    if (token !== null) {
-      this.token = token;
-    } else {
-      this.token = undefined;
+    let tokenName = this.pluginService.getPlugin(this.repoType).tokenName;
+    if (tokenName !== undefined) {
+      let token = localStorage.getItem(tokenName);
+      if (token !== null) {
+        this.token = token;
+      } else {
+        this.token = undefined;
+      }
     }
+    
     this.sourceUrl = this.getSourceUrlValue();
     this.branchItems = this.loadingItems;
     this.option = undefined;
@@ -166,11 +168,8 @@ export class ConnectComponent implements OnInit {
       alert(err);
       return;
     }
-    if (this.dataverseToken !== undefined) {
-      localStorage.setItem("dataverseToken", this.dataverseToken!);
-    }
     let tokenName = this.pluginService.getPlugin(this.repoType).tokenName
-    if (this.token && tokenName) localStorage.setItem(tokenName, this.token);
+    if (this.token !== undefined && tokenName !== undefined) localStorage.setItem(tokenName, this.token);
     let creds: Credentials = {
       pluginId: this.repoType,
       plugin: this.getPluginName(),
@@ -432,6 +431,9 @@ export class ConnectComponent implements OnInit {
     this.collectionItems = this.loadingItems;
     this.datasetId = undefined;
     this.collectionId = undefined;
+    if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
+      localStorage.setItem("dataverseToken", this.dataverseToken!);
+    }
   }
 
   onCollectionChange() {
@@ -456,10 +458,8 @@ export class ConnectComponent implements OnInit {
   }
 
   getDataverseToken(): void {
-    if (this.token !== undefined) {
-      localStorage.setItem("repoToken", this.token!);
-    }
-    location.href = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
+    let url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
+    window.open(url, "_blank");
   }
 
   showRepoTokenGetter(): boolean {
@@ -496,8 +496,10 @@ export class ConnectComponent implements OnInit {
         '&redirect_uri=' + this.pluginService.getRedirectUri() +
         '&response_type=code&state=' + JSON.stringify(looginState);
       // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
+      location.href = url;
+    } else {
+      window.open(url, "_blank");
     }
-    location.href = url;
   }
 
   newNounce(length: number): string {

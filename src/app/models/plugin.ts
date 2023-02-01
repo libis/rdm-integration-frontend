@@ -37,5 +37,6 @@ export interface Config {
     externalURL: string;
     showDvTokenGetter: boolean;
 	redirect_uri: string;
+    storeDvToken?: boolean;
     plugins: RepoPlugin[];
 }
