@@ -11,6 +11,9 @@ import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 import { PluginService } from '../plugin.service';
+import { ActivatedRoute } from '@angular/router';
+import { Item, LoginState } from '../models/oauth';
+import { OauthService } from '../oauth.service';
 
 @Component({
   selector: 'app-connect',
@@ -21,15 +24,16 @@ export class ConnectComponent implements OnInit {
 
   sourceUrl?: string;
   url?: string;
-  repoType?: string;
   repoName?: string;
   user?: string;
   token?: string;
-  option?: string;
-  datasetId?: string;
-  collectionId?: string;
   dataverseToken?: string;
   doiDropdownWidth: SafeStyle;
+
+  repoType?: string;
+  option?: string;
+  collectionId?: string;
+  datasetId?: string;
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   loadingItems: SelectItem<string>[] = [this.loadingItem];
@@ -48,30 +52,85 @@ export class ConnectComponent implements OnInit {
     private dvObjectLookupService: DvObjectLookupService,
     private branchLookupService: BranchLookupService,
     private pluginService: PluginService,
+    private route: ActivatedRoute,
+    private oauth: OauthService,
   ) {
     this.doiDropdownWidth = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
   }
 
   ngOnInit(): void {
-    let token = localStorage.getItem('dataverseToken');
-    if (token !== null) {
-      this.dataverseToken = token;
+    let dvToken = localStorage.getItem("dataverseToken");
+    if (dvToken !== null) {
+      this.dataverseToken = dvToken;
     }
-    this.repoTypes = this.getRepoTypes();
-    this.changeRepoType();
+    this.route.queryParams
+      .subscribe(params => {
+        let stateString = params['state'];
+        if (stateString === undefined || stateString === null || stateString === '') {
+          return;
+        }
+        let loginState: LoginState = JSON.parse(params['state']);
+        this.sourceUrl = loginState.sourceUrl;
+        this.url = loginState.url;
+        this.repoName = loginState.repoName;
+        this.user = loginState.user;
+
+        if (loginState.repoType !== undefined && loginState.repoType.value !== undefined) {
+          if (this.repoTypes.length === 0) {
+            this.repoTypes = [{ label: loginState.repoType.label, value: loginState.repoType.value! }];
+          }
+          this.repoType = loginState.repoType.value;
+        }
+        if (loginState.option !== undefined && loginState.option.value !== undefined) {
+          this.branchItems = [{ label: loginState.option.label, value: loginState.option.value! }, this.loadingItem];
+          this.option = loginState.option?.value;
+        }
+        if (loginState.datasetId !== undefined && loginState.datasetId.value !== undefined) {
+          this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
+          this.datasetId = loginState.datasetId?.value;
+        }
+        if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
+          this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
+          this.collectionId = loginState.collectionId?.value;
+        }
+
+        let code = params['code'];
+        if (this.getNounce() === loginState.nounce && this.repoType !== undefined && code !== undefined) {
+          var tokenSubscr = this.oauth.getToken(this.repoType, code, loginState.nounce).subscribe(x => {
+            if (this.option === this.loadingItem.value) {
+              this.option = undefined;
+            }
+            if (this.datasetId === this.loadingItem.value) {
+              this.datasetId = undefined;
+            }
+            if (this.collectionId === this.loadingItem.value) {
+              this.collectionId = undefined;
+            }
+            this.token = x.access_token;
+            if (!this.pluginService.isStoreDvToken()) {
+              localStorage.removeItem("dataverseToken");
+            }
+            tokenSubscr.unsubscribe();
+          });
+        }
+      });
   }
 
   ngOnDestroy() {
   }
 
   changeRepoType() {
-    let token = this.pluginService.getToken(this.repoType);
-    if (token !== null) {
-      this.token = token;
-    } else {
-      this.token = undefined;
+    let tokenName = this.pluginService.getPlugin(this.repoType).tokenName;
+    if (tokenName !== undefined) {
+      let token = localStorage.getItem(tokenName);
+      if (token !== null) {
+        this.token = token;
+      } else {
+        this.token = undefined;
+      }
     }
-    this.sourceUrl = undefined;
+
+    this.sourceUrl = this.getSourceUrlValue();
     this.branchItems = this.loadingItems;
     this.option = undefined;
     this.url = undefined;
@@ -109,12 +168,11 @@ export class ConnectComponent implements OnInit {
       alert(err);
       return;
     }
-    if (this.dataverseToken !== undefined) {
-      localStorage.setItem('dataverseToken', this.dataverseToken);
-    }
-    this.pluginService.setToken(this.repoType, this.token);
+    let tokenName = this.pluginService.getPlugin(this.repoType).tokenName
+    if (this.token !== undefined && tokenName !== undefined) localStorage.setItem(tokenName, this.token);
     let creds: Credentials = {
-      repo_type: this.repoType,
+      pluginId: this.repoType,
+      plugin: this.getPluginName(),
       repo_name: this.repoName,
       url: this.url,
       option: this.option,
@@ -128,8 +186,12 @@ export class ConnectComponent implements OnInit {
   }
 
   parseAndCheckFields(): string | undefined {
-    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken, this.sourceUrl];
-    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token', this.getSourceUrlFieldName()];
+    let strings: (string | undefined)[] = [this.repoType, this.datasetId, this.dataverseToken];
+    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token'];
+    if (this.getSourceUrlFieldName()) {
+      strings.push(this.sourceUrl);
+      names.push(this.getSourceUrlFieldName()!);
+    }
     if (this.getTokenFieldName()) {
       strings.push(this.token);
       names.push(this.getTokenFieldName()!);
@@ -211,9 +273,13 @@ export class ConnectComponent implements OnInit {
       alert(this.getZoneFieldName() + ' is missing');
       return;
     }
+    if (this.branchItems.find(x => x === this.loadingItem) === undefined) {
+      return;
+    }
 
     let req = {
-      repoType: this.repoType,
+      pluginId: this.repoType,
+      plugin: this.getPluginName(),
       repoName: this.repoName,
       url: this.url,
       user: this.user,
@@ -260,7 +326,7 @@ export class ConnectComponent implements OnInit {
       alert('Dataverse object lookup failed: Dataverse API token is missing');
       return;
     }
-    if (dvItems.length !== 1 || dvItems[0] !== this.loadingItem) {
+    if (dvItems.find(x => x === this.loadingItem) === undefined) {
       return;
     }
 
@@ -280,8 +346,8 @@ export class ConnectComponent implements OnInit {
     });
   }
 
-  getRepoTypes(): SelectItem<string>[] {
-    return this.pluginService.getRepoTypes();
+  getRepoTypes() {
+    this.repoTypes = this.pluginService.getRepoTypes();
   }
 
   getTokenFieldName(): string | undefined {
@@ -297,15 +363,20 @@ export class ConnectComponent implements OnInit {
   }
 
   getOptionPlaceholder(): string {
-    return this.pluginService.getPlugin(this.repoType).optionFieldPlaceholder ? this.pluginService.getPlugin(this.repoType).optionFieldPlaceholder! : "";
+    let v = this.pluginService.getPlugin(this.repoType).optionFieldPlaceholder;
+    return v === undefined ? "" : v;
   }
 
-  getSourceUrlFieldName(): string {
+  getSourceUrlFieldName(): string | undefined {
     return this.pluginService.getPlugin(this.repoType).sourceUrlFieldName;
   }
 
-  getSourceUrlPlaceholder(): string {
+  getSourceUrlPlaceholder(): string | undefined {
     return this.pluginService.getPlugin(this.repoType).sourceUrlFieldPlaceholder;
+  }
+
+  getSourceUrlValue(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).sourceUrlFieldValue;
   }
 
   getUsernameFieldName(): string | undefined {
@@ -320,8 +391,19 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.repoType).zoneFieldName;
   }
 
-  getZonePlaceholder(): string | undefined {
-    return this.pluginService.getPlugin(this.repoType).zoneFieldPlaceholder;
+  getZonePlaceholder(): string {
+    let v = this.pluginService.getPlugin(this.repoType).zoneFieldPlaceholder;
+    return v === undefined ? "" : v;
+  }
+
+  zoneFieldEditable(): boolean {
+    let v = this.pluginService.getPlugin(this.repoType).zoneFieldEditable;
+    return v === undefined ? false : v;
+  }
+
+  getZones(): string[] {
+    let v = this.pluginService.getPlugin(this.repoType).zoneFieldValues;
+    return v === undefined ? [] : v;
   }
 
   dataverseHeader(): string {
@@ -349,6 +431,14 @@ export class ConnectComponent implements OnInit {
     this.collectionItems = this.loadingItems;
     this.datasetId = undefined;
     this.collectionId = undefined;
+    if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
+      localStorage.setItem("dataverseToken", this.dataverseToken!);
+    }
+  }
+
+  onCollectionChange() {
+    this.doiItems = this.loadingItems;
+    this.datasetId = undefined;
   }
 
   onRepoChange() {
@@ -357,5 +447,85 @@ export class ConnectComponent implements OnInit {
     this.url = undefined;
     this.user = undefined;
     this.repoName = undefined;
+  }
+
+  getPluginName(): string | undefined {
+    return this.pluginService.getPlugin(this.repoType).plugin;;
+  }
+
+  showDVTokenGetter(): boolean {
+    return this.pluginService.showDVTokenGetter();
+  }
+
+  getDataverseToken(): void {
+    let url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
+    window.open(url, "_blank");
+  }
+
+  showRepoTokenGetter(): boolean {
+    return this.pluginService.getPlugin(this.repoType).showTokenGetter!;
+  }
+
+  getRepoToken() {
+    if (this.repoType === undefined) {
+      alert('Repository type is missing');
+      return;
+    }
+    if (this.dataverseToken !== undefined) {
+      localStorage.setItem("dataverseToken", this.dataverseToken!);
+    }
+    let tg = this.pluginService.getPlugin(this.repoType).tokenGetter!;
+    let url = this.url + (tg.URL === undefined ? '' : tg.URL);
+    if (tg.URL?.includes('://')) {
+      url = tg.URL;
+    }
+    if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
+      let nounce = this.newNounce(44);
+      let looginState: LoginState = {
+        sourceUrl: this.sourceUrl,
+        url: this.url,
+        repoType: this.getItem(this.repoTypes, this.repoType),
+        repoName: this.repoName,
+        user: this.user,
+        option: this.getItem(this.branchItems, this.option),
+        datasetId: this.getItem(this.doiItems, this.datasetId),
+        collectionId: this.getItem(this.collectionItems, this.collectionId),
+        nounce: nounce,
+      }
+      url = url + '?client_id=' + tg.oauth_client_id +
+        '&redirect_uri=' + this.pluginService.getRedirectUri() +
+        '&response_type=code&state=' + JSON.stringify(looginState);
+      // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
+      location.href = url;
+    } else {
+      window.open(url, "_blank");
+    }
+  }
+
+  newNounce(length: number): string {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    localStorage.setItem("nounce", result);
+    return result;
+  }
+
+  getNounce(): string | null {
+    let result = localStorage.getItem("nounce");
+    localStorage.removeItem("nounce");
+    return result;
+  }
+
+  getItem(items: SelectItem<string>[], value?: string): Item | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+    let label = items.find(x => x.value === value)?.label
+    return { label: label, value: value }
   }
 }

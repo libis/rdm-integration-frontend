@@ -19,8 +19,9 @@ export class SubmitService {
   submit(selected: Datafile[]): Observable<StoreResult> {
     let credentials = this.credentialsService.credentials;
     let req = {
-      streamType: credentials.repo_type,
+      plugin: credentials.plugin,
       streamParams: {
+        pluginId: credentials.pluginId,
         repoName: credentials.repo_name,
         url: credentials.url,
         option: credentials.option,

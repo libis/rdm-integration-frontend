@@ -19,7 +19,8 @@ export class DataService {
   getData(): Observable<Key> {
     let credentials = this.credentialsService.credentials;
     let req = {
-      repoType: credentials.repo_type,
+      pluginId: credentials.pluginId,
+      plugin: credentials.plugin,
       repoName: credentials.repo_name,
       url: credentials.url,
       option: credentials.option,
