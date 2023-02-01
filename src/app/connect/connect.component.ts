@@ -143,7 +143,11 @@ export class ConnectComponent implements OnInit {
       this.url = this.sourceUrl;
       return;
     }
-    var splitted = this.sourceUrl?.split('://');
+    let toSplit = this.sourceUrl!;
+    if (toSplit.endsWith("/")) {
+      toSplit = toSplit.substring(0, toSplit.length - 1);
+    }
+    var splitted = toSplit.split('://');
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
