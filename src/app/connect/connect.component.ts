@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
@@ -14,6 +14,7 @@ import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
 import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
+import { Dropdown } from 'primeng/dropdown';
 
 @Component({
   selector: 'app-connect',
@@ -46,6 +47,8 @@ export class ConnectComponent implements OnInit {
   plugins: SelectItem<string>[] = [];
 
   creatingNewDataset: boolean = false;
+
+  @ViewChild('zd') zoneDropdown!: Dropdown;
 
   constructor(
     private router: Router,
@@ -360,7 +363,6 @@ export class ConnectComponent implements OnInit {
 
   getPlugins() {
     this.plugins = this.pluginService.getPlugins();
-    console.log(this.plugins)
   }
 
   changePlugin() {
@@ -429,9 +431,14 @@ export class ConnectComponent implements OnInit {
     return v === undefined ? false : v;
   }
 
-  getZones(): string[] {
-    let v = this.pluginService.getPlugin(this.pluginId).zoneFieldValues;
-    return v === undefined ? [] : v;
+  getZones(): SelectItem<string>[] {
+    let res: SelectItem<string>[] = [];
+    this.pluginService.getPlugin(this.pluginId).zoneFieldValues?.forEach(x => res.push({label: x, value: x}));
+    return res;
+  }
+
+  showZone() {
+    this.zoneDropdown.show();
   }
 
   dataverseHeader(): string {
