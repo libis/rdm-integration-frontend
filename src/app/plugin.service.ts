@@ -29,8 +29,6 @@ export class PluginService {
     plugin: 'defaultPlugin',
     pluginName: "Unknown plugin",
     name: "Unknown repository type",
-    sourceUrlFieldName: "Source URL",
-    sourceUrlFieldPlaceholder: "URL",
     parseSourceUrlField: false,
     showTokenGetter: false,
   };
