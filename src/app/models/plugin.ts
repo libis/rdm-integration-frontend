@@ -18,6 +18,7 @@ export interface RepoPlugin {
     repoNameFieldPlaceholder?: string;
     repoNameFieldEditable?: boolean;
     repoNameFieldValues?: string[];
+    repoNameFieldHasSearch: boolean;
     parseSourceUrlField: boolean;
     tokenName?: string;
     tokenGetter?: TokenGetter;
