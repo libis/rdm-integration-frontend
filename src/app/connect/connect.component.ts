@@ -85,7 +85,7 @@ export class ConnectComponent implements OnInit {
           this.plugins = [{ label: loginState.plugin.label, value: loginState.plugin.value! }];
           this.plugin = loginState.plugin.value;
         }
-        
+
         if (loginState.pluginId !== undefined && loginState.pluginId.value !== undefined) {
           this.pluginIds = [{ label: loginState.pluginId.label, value: loginState.pluginId.value! }];
           this.pluginId = loginState.pluginId.value;
@@ -103,7 +103,7 @@ export class ConnectComponent implements OnInit {
           this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
           this.datasetId = loginState.datasetId?.value;
         }
-        
+
         if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
           this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
           this.collectionId = loginState.collectionId?.value;
@@ -433,7 +433,7 @@ export class ConnectComponent implements OnInit {
 
   getZones(): SelectItem<string>[] {
     let res: SelectItem<string>[] = [];
-    this.pluginService.getPlugin(this.pluginId).zoneFieldValues?.forEach(x => res.push({label: x, value: x}));
+    this.pluginService.getPlugin(this.pluginId).zoneFieldValues?.forEach(x => res.push({ label: x, value: x }));
     return res;
   }
 
@@ -559,5 +559,13 @@ export class ConnectComponent implements OnInit {
     }
     let label = items.find(x => x.value === value)?.label
     return { label: label, value: value }
+  }
+
+  hasOauthConfig(): boolean {
+    return this.pluginService.getPlugin(this.pluginId).tokenGetter?.oauth_client_id !== undefined;
+  }
+
+  isAuthorized(): boolean {
+    return this.token !== undefined;
   }
 }
