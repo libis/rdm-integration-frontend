@@ -2,9 +2,9 @@
 
 export interface RepoPlugin {
     id: string;
+    name: string;
     plugin: string;
     pluginName: string;
-    name: string;
     optionFieldName?: string;
     optionFieldPlaceholder?: string;
     tokenFieldName?: string;

@@ -27,8 +27,8 @@ export class PluginService {
   private defaultPlugin: RepoPlugin = {
     id: 'defaultPlugin',
     plugin: 'defaultPlugin',
-    pluginName: "Unknown plugin",
     name: "Unknown repository type",
+    pluginName: "Unknown plugin",
     parseSourceUrlField: false,
     showTokenGetter: false,
   };
