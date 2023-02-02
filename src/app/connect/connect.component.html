@@ -45,7 +45,7 @@
           </div>
           <div class="mb-3" [hidden]="getRepoNameFieldName() === undefined || getRepoNames().length === 0">
             <label for="repoNameSelect" class="form-label">{{ getRepoNameFieldName() }}</label>
-            <p-dropdown #zd [editable]="repoNameFieldEditable()" id="repoNameSelect" [options]="getRepoNames()" [(ngModel)]="repoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label" (onFocus)="showRepoName()"></p-dropdown>
+            <p-dropdown #zd [editable]="repoNameFieldEditable()" id="repoNameSelect" [options]="getRepoNames()" [(ngModel)]="selectedRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label" (onFocus)="showRepoName()"></p-dropdown>
           </div>
           <div class="mb-3" [hidden]="getOptionFieldName() === undefined">
             <label for="repoBranch" class="form-label">{{ getOptionFieldName() }}</label><br/>

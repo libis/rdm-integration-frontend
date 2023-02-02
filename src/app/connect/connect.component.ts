@@ -26,6 +26,7 @@ export class ConnectComponent implements OnInit {
   sourceUrl?: string;
   url?: string;
   repoName?: string;
+  selectedRepoName?: string;
   user?: string;
   token?: string;
   dataverseToken?: string;
@@ -79,6 +80,7 @@ export class ConnectComponent implements OnInit {
         this.sourceUrl = loginState.sourceUrl;
         this.url = loginState.url;
         this.repoName = loginState.repoName;
+        this.selectedRepoName = loginState.repoName;
         this.user = loginState.user;
 
         if (loginState.plugin !== undefined && loginState.plugin.value !== undefined) {
@@ -141,6 +143,7 @@ export class ConnectComponent implements OnInit {
     this.url = undefined;
     this.user = undefined;
     this.repoName = undefined;
+    this.selectedRepoName = undefined;
   }
 
   parseUrl(): string | undefined {
@@ -183,7 +186,7 @@ export class ConnectComponent implements OnInit {
     let creds: Credentials = {
       pluginId: this.pluginId,
       plugin: this.plugin,
-      repo_name: this.repoName,
+      repo_name: this.repoName === undefined ? this.selectedRepoName: this.repoName,
       url: this.url,
       option: this.option,
       user: this.user,
@@ -215,7 +218,7 @@ export class ConnectComponent implements OnInit {
       names.push(this.getUsernameFieldName()!);
     }
     if (this.getRepoNameFieldName()) {
-      strings.push(this.repoName);
+      strings.push(this.repoName === undefined ? this.selectedRepoName: this.repoName);
       names.push(this.getRepoNameFieldName()!);
     }
 
@@ -279,7 +282,7 @@ export class ConnectComponent implements OnInit {
       alert(this.getUsernameFieldName() + ' is missing');
       return;
     }
-    if (this.getRepoNameFieldName() && (this.repoName === undefined || this.repoName === '')) {
+    if (this.getRepoNameFieldName() && (this.repoName === undefined || this.repoName === '') && (this.selectedRepoName === undefined || this.selectedRepoName === '')) {
       alert(this.getRepoNameFieldName() + ' is missing');
       return;
     }
@@ -292,7 +295,7 @@ export class ConnectComponent implements OnInit {
     let req = {
       pluginId: this.pluginId,
       plugin: this.plugin,
-      repoName: this.repoName,
+      repoName: this.repoName === undefined ? this.selectedRepoName: this.repoName,
       url: this.url,
       user: this.user,
       token: this.token,
@@ -481,6 +484,7 @@ export class ConnectComponent implements OnInit {
     this.url = undefined;
     this.user = undefined;
     this.repoName = undefined;
+    this.selectedRepoName = undefined;
   }
 
   showDVTokenGetter(): boolean {
@@ -520,7 +524,7 @@ export class ConnectComponent implements OnInit {
         url: this.url,
         plugin: this.getItem(this.plugins, this.plugin),
         pluginId: pluginId,
-        repoName: this.repoName,
+        repoName: this.repoName === undefined ? this.selectedRepoName : this.repoName,
         user: this.user,
         option: this.getItem(this.branchItems, this.option),
         datasetId: this.getItem(this.doiItems, this.datasetId),
