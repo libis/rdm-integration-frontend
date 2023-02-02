@@ -37,15 +37,15 @@
           </div>
           <div class="mb-3" [hidden]="getSourceUrlFieldName() === undefined">
             <label for="baseUrl" class="form-label">{{ getSourceUrlFieldName() }}</label>
-            <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()" [(ngModel)]="sourceUrl" #ctrl="ngModel" (onChange)="onRepoChange()">
+            <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()" [(ngModel)]="sourceUrl" #ctrl="ngModel" (change)="onRepoChange()">
           </div>
           <div class="mb-3" [hidden]="getRepoNameFieldName() === undefined || getRepoNames().length > 0">
             <label for="repoName" class="form-label">{{ getRepoNameFieldName() }}</label>
-            <input type="text" class="form-control" id="repoName" [placeholder]="getRepoNamePlaceholder()" [(ngModel)]="repoName" #ctrl="ngModel">
+            <input type="text" class="form-control" id="repoName" [placeholder]="getRepoNamePlaceholder()" [(ngModel)]="repoName" #ctrl="ngModel" (change)="onRepoChange()">
           </div>
           <div class="mb-3" [hidden]="getRepoNameFieldName() === undefined || getRepoNames().length === 0">
             <label for="repoNameSelect" class="form-label">{{ getRepoNameFieldName() }}</label>
-            <p-dropdown #zd [editable]="repoNameFieldEditable()" id="repoNameSelect" [options]="getRepoNames()" [(ngModel)]="selectedRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label" (onFocus)="showRepoName()"></p-dropdown>
+            <p-dropdown #zd [editable]="repoNameFieldEditable()" id="repoNameSelect" [options]="getRepoNames()" [(ngModel)]="selectedRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label" (onFocus)="showRepoName()" (onChange)="onRepoChange()"></p-dropdown>
           </div>
           <div class="mb-3" [hidden]="getOptionFieldName() === undefined">
             <label for="repoBranch" class="form-label">{{ getOptionFieldName() }}</label><br/>
@@ -73,7 +73,7 @@
         </div>
         <div class="mb-3" [hidden]="collectionOptionsHidden()">
           <label for="collectionId" class="form-label">Dataverse collection</label>
-          <p-dropdown [editable]="collectionFieldEditable()" id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (change)="onCollectionChange()"></p-dropdown>
+          <p-dropdown [editable]="collectionFieldEditable()" id="collectionId" [options]="collectionItems" [filter]="true" filterBy="label" [(ngModel)]="collectionId" placeholder="Select Dataverse collection" (onClick)="getCollectionOptions()" (onChange)="onCollectionChange()"></p-dropdown>
         </div>
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>
