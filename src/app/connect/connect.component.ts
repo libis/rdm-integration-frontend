@@ -48,7 +48,7 @@ export class ConnectComponent implements OnInit {
 
   creatingNewDataset: boolean = false;
 
-  @ViewChild('zd') zoneDropdown!: Dropdown;
+  @ViewChild('zd') repoNameDropdown!: Dropdown;
 
   constructor(
     private router: Router,
@@ -215,9 +215,9 @@ export class ConnectComponent implements OnInit {
       strings.push(this.user);
       names.push(this.getUsernameFieldName()!);
     }
-    if (this.getZoneFieldName()) {
+    if (this.getRepoNameFieldName()) {
       strings.push(this.repoName);
-      names.push(this.getZoneFieldName()!);
+      names.push(this.getRepoNameFieldName()!);
     }
 
     let cnt = 0;
@@ -280,8 +280,8 @@ export class ConnectComponent implements OnInit {
       alert(this.getUsernameFieldName() + ' is missing');
       return;
     }
-    if (this.getZoneFieldName() && (this.repoName === undefined || this.repoName === '')) {
-      alert(this.getZoneFieldName() + ' is missing');
+    if (this.getRepoNameFieldName() && (this.repoName === undefined || this.repoName === '')) {
+      alert(this.getRepoNameFieldName() + ' is missing');
       return;
     }
     if (this.branchItems.length !== 0 && this.branchItems.find(x => x === this.loadingItem) === undefined) {
@@ -417,28 +417,28 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.pluginId).usernameFieldPlaceholder;
   }
 
-  getZoneFieldName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).zoneFieldName;
+  getRepoNameFieldName(): string | undefined {
+    return this.pluginService.getPlugin(this.pluginId).repoNameFieldName;
   }
 
-  getZonePlaceholder(): string {
-    let v = this.pluginService.getPlugin(this.pluginId).zoneFieldPlaceholder;
+  getRepoNamePlaceholder(): string {
+    let v = this.pluginService.getPlugin(this.pluginId).repoNameFieldPlaceholder;
     return v === undefined ? "" : v;
   }
 
-  zoneFieldEditable(): boolean {
-    let v = this.pluginService.getPlugin(this.pluginId).zoneFieldEditable;
+  repoNameFieldEditable(): boolean {
+    let v = this.pluginService.getPlugin(this.pluginId).repoNameFieldEditable;
     return v === undefined ? false : v;
   }
 
-  getZones(): SelectItem<string>[] {
+  getRepoNames(): SelectItem<string>[] {
     let res: SelectItem<string>[] = [];
-    this.pluginService.getPlugin(this.pluginId).zoneFieldValues?.forEach(x => res.push({ label: x, value: x }));
+    this.pluginService.getPlugin(this.pluginId).repoNameFieldValues?.forEach(x => res.push({ label: x, value: x }));
     return res;
   }
 
-  showZone() {
-    this.zoneDropdown.show();
+  showRepoName() {
+    this.repoNameDropdown.show();
   }
 
   dataverseHeader(): string {

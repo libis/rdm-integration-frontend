@@ -14,10 +14,10 @@ export interface RepoPlugin {
     sourceUrlFieldValue?: string;
     usernameFieldName?: string;
     usernameFieldPlaceholder?: string;
-    zoneFieldName?: string;
-    zoneFieldPlaceholder?: string;
-    zoneFieldEditable?: boolean;
-    zoneFieldValues?: string[];
+    repoNameFieldName?: string;
+    repoNameFieldPlaceholder?: string;
+    repoNameFieldEditable?: boolean;
+    repoNameFieldValues?: string[];
     parseSourceUrlField: boolean;
     tokenName?: string;
     tokenGetter?: TokenGetter;

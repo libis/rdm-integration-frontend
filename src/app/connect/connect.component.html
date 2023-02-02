@@ -39,13 +39,13 @@
             <label for="baseUrl" class="form-label">{{ getSourceUrlFieldName() }}</label>
             <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()" [(ngModel)]="sourceUrl" #ctrl="ngModel" (onChange)="onRepoChange()">
           </div>
-          <div class="mb-3" [hidden]="getZoneFieldName() === undefined || getZones().length > 0">
-            <label for="zone" class="form-label">{{ getZoneFieldName() }}</label>
-            <input type="text" class="form-control" id="zone" [placeholder]="getZonePlaceholder()" [(ngModel)]="repoName" #ctrl="ngModel">
+          <div class="mb-3" [hidden]="getRepoNameFieldName() === undefined || getRepoNames().length > 0">
+            <label for="repoName" class="form-label">{{ getRepoNameFieldName() }}</label>
+            <input type="text" class="form-control" id="repoName" [placeholder]="getRepoNamePlaceholder()" [(ngModel)]="repoName" #ctrl="ngModel">
           </div>
-          <div class="mb-3" [hidden]="getZoneFieldName() === undefined || getZones().length === 0">
-            <label for="zoneSelect" class="form-label">{{ getZoneFieldName() }}</label>
-            <p-dropdown #zd [editable]="zoneFieldEditable()" id="zoneSelect" [options]="getZones()" [(ngModel)]="repoName" [placeholder]="getZonePlaceholder()" [filter]="true" filterBy="label" (onFocus)="showZone()"></p-dropdown>
+          <div class="mb-3" [hidden]="getRepoNameFieldName() === undefined || getRepoNames().length === 0">
+            <label for="repoNameSelect" class="form-label">{{ getRepoNameFieldName() }}</label>
+            <p-dropdown #zd [editable]="repoNameFieldEditable()" id="repoNameSelect" [options]="getRepoNames()" [(ngModel)]="repoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label" (onFocus)="showRepoName()"></p-dropdown>
           </div>
           <div class="mb-3" [hidden]="getOptionFieldName() === undefined">
             <label for="repoBranch" class="form-label">{{ getOptionFieldName() }}</label><br/>
