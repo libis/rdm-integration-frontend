@@ -22,17 +22,15 @@ export class PluginService {
     plugins: [],
   };
 
-  private pluginIds: SelectItem<string>[] = [];
-
   private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>();
 
   private defaultPlugin: RepoPlugin = {
     id: 'defaultPlugin',
     plugin: 'defaultPlugin',
     name: "Unknown repository type",
-    sourceUrlFieldName: "Source URL",
-    sourceUrlFieldPlaceholder: "URL",
+    pluginName: "Unknown plugin",
     parseSourceUrlField: false,
+    repoNameFieldHasSearch: false,
     showTokenGetter: false,
   };
 
@@ -47,15 +45,32 @@ export class PluginService {
         this.config.plugins.forEach(p => {
           p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
           this.allPlugins.set(p.id, p);
-          this.pluginIds.push({ label: p.name, value: p.id });
           subscr.unsubscribe();
         });
       }
     );
   }
 
-  getRepoTypes(): SelectItem<string>[] {
-    return [...this.pluginIds]
+  getPlugins(): SelectItem<string>[] {
+    let res: SelectItem<string>[] = [];
+    const added = new Set<string>();
+    this.config.plugins.forEach(x => {
+      if (!added.has(x.plugin)) {
+        added.add(x.plugin);
+        res.push({value: x.plugin, label: x.pluginName});
+      }
+    });
+    return res;
+  }
+
+  getPluginIds(plugin?: string): SelectItem<string>[] {
+    let res: SelectItem<string>[] = [];
+    this.config.plugins.forEach(x => {
+      if (x.plugin == plugin) {
+        res.push({value: x.id, label: x.name});
+      }
+    });
+    return res;
   }
 
   getPlugin(p?: string): RepoPlugin {
