@@ -157,8 +157,7 @@ export class ConnectComponent implements OnInit {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
         this.url = 'https://' + splitted[0];
-        this.user = splitted.slice(1, splitted.length - 1).join('/');
-        this.repoName = splitted[splitted.length - 1];
+        this.repoName = splitted.slice(1, splitted.length).join('/');
         if (this.repoName.endsWith(".git")) {
           this.repoName = this.repoName.substring(0, this.repoName.length - 4);
         }
