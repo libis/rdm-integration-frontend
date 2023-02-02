@@ -17,6 +17,7 @@ export interface LoginState {
 export interface Item {
   label?: string;
   value?: string;
+  hidden?: boolean;
 }
 
 export interface TokenResponse {

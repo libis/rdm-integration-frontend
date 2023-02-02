@@ -89,7 +89,7 @@ export class ConnectComponent implements OnInit {
         if (loginState.pluginId !== undefined && loginState.pluginId.value !== undefined) {
           this.pluginIds = [{ label: loginState.pluginId.label, value: loginState.pluginId.value! }];
           this.pluginId = loginState.pluginId.value;
-          this.pluginIdSelectHidden = false;
+          this.pluginIdSelectHidden = loginState.pluginId.hidden!;
         } else {
           this.pluginIdSelectHidden = true;
         }
@@ -512,11 +512,15 @@ export class ConnectComponent implements OnInit {
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       let nounce = this.newNounce(44);
+      let pluginId = this.getItem(this.pluginIds, this.pluginId);
+      if (pluginId !== undefined) {
+        pluginId.hidden = this.pluginIdSelectHidden;
+      }
       let looginState: LoginState = {
         sourceUrl: this.sourceUrl,
         url: this.url,
         plugin: this.getItem(this.plugins, this.plugin),
-        pluginId: this.getItem(this.pluginIds, this.pluginId),
+        pluginId: pluginId,
         repoName: this.repoName,
         user: this.user,
         option: this.getItem(this.branchItems, this.option),
