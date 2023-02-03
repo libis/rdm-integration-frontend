@@ -18,6 +18,11 @@ import { Location } from '@angular/common'
 })
 export class SubmitComponent implements OnInit {
 
+  icon_warning = "pi pi-exclamation-triangle";
+  icon_copy = "pi pi-copy";
+  icon_update = "pi pi-clone";
+  icon_delete = "pi pi-trash";
+
   data: Datafile[] = [];// this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
   dataSubscription?: Subscription;// monitors the progress of the job
   pid = "";
