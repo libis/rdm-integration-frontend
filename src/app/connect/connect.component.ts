@@ -320,7 +320,8 @@ export class ConnectComponent implements OnInit {
 
   parseUrl(): string | undefined {
     if (!this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
-      this.url = this.sourceUrl;
+      this.url = this.getSourceUrlValue();
+      console.log(this.url)
       return;
     }
     let toSplit = this.sourceUrl!;
@@ -378,7 +379,7 @@ export class ConnectComponent implements OnInit {
       }
     }
 
-    this.sourceUrl = this.getSourceUrlValue();
+    this.sourceUrl = undefined;
     this.branchItems = [];
     this.option = undefined;
     this.url = undefined;
@@ -424,13 +425,13 @@ export class ConnectComponent implements OnInit {
       alert('Repository type is missing');
       return;
     }
-    if (this.sourceUrl === undefined || this.sourceUrl === '') {
-      alert('Source URL is missing');
-      return;
-    }
     let err = this.parseUrl();
     if (err) {
       alert(err);
+      return;
+    }
+    if (this.url === undefined || this.url === '') {
+      alert('URL is missing');
       return;
     }
     if (this.getUsernameFieldName() && (this.user === undefined || this.user === '')) {
@@ -461,9 +462,9 @@ export class ConnectComponent implements OnInit {
     this.branchItems = [];
     this.option = undefined;
     this.url = undefined;
-    this.user = undefined;
-    this.repoName = undefined;
-    this.selectedRepoName = undefined;
+    if (this.getRepoNameFieldName() === undefined) {
+      this.repoName = undefined;
+    }
   }
 
   // REPO VIA SEARCH
@@ -510,7 +511,19 @@ export class ConnectComponent implements OnInit {
   }
 
   getSourceUrlValue(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValue;
+    let repoName = this.getRepoName();
+    let valueMap = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValueMap;
+    if (repoName !== undefined && valueMap !== undefined) {
+      let res = valueMap[repoName];
+      if (res !== undefined && res !== null) {
+        return res;
+      }
+    }
+    let res = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValue;
+    if (res !== undefined) {
+      return res;
+    }
+    return this.sourceUrl;
   }
 
   // REPO VIA DROPDOWN

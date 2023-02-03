@@ -12,6 +12,7 @@ export interface RepoPlugin {
     sourceUrlFieldName?: string;
     sourceUrlFieldPlaceholder?: string;
     sourceUrlFieldValue?: string;
+    sourceUrlFieldValueMap?: { [repoName: string]: string };
     usernameFieldName?: string;
     usernameFieldPlaceholder?: string;
     repoNameFieldName?: string;
@@ -26,8 +27,8 @@ export interface RepoPlugin {
 }
 
 export interface TokenGetter {
-	URL?: string;
-	oauth_client_id?: string;
+    URL?: string;
+    oauth_client_id?: string;
 }
 
 export interface Config {
@@ -38,7 +39,7 @@ export interface Config {
     collectionFieldEditable: boolean;
     externalURL: string;
     showDvTokenGetter: boolean;
-	redirect_uri: string;
+    redirect_uri: string;
     storeDvToken?: boolean;
     plugins: RepoPlugin[];
 }
