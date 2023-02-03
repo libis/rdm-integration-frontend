@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { BranchLookupService } from './branch.lookup.service';
+import { RepoLookupService } from './repo.lookup.service';
 
 describe('BranchLookupService', () => {
-  let service: BranchLookupService;
+  let service: RepoLookupService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(BranchLookupService);
+    service = TestBed.inject(RepoLookupService);
   });
 
   it('should be created', () => {
