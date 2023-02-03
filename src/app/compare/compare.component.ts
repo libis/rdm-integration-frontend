@@ -19,26 +19,22 @@ import { PluginService } from '../plugin.service';
 })
 export class CompareComponent implements OnInit {
 
-  data: CompareResult = {};
-  updatedDataSubscription?: Subscription;
-
   icon_noaction = "pi pi-stop";
   icon_update = "pi pi-copy";
   icon_mirror = "pi pi-sync";
-
   icon_submit = "pi pi-save";
-
   icon_compare = "pi pi-flag";
   icon_action = "pi pi-bolt";
 
   disabled = true;
   loading = true;
   refreshHidden = true;
+  isInFilterMode = false;
 
+  data: CompareResult = {};
+  updatedDataSubscription?: Subscription;
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
-
-  isInFilterMode = false;
 
   filterItems: any[] = [
     {

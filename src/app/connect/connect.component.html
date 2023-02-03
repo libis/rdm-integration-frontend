@@ -83,7 +83,7 @@
         <div class="mb-3">
           <label for="datasetId" class="form-label">Dataset DOI</label>
           <div class="input-group">
-            <p-dropdown [editable]="datasetFieldEditable()" [style.width]="doiDropdownWidth" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
+            <p-dropdown [editable]="datasetFieldEditable()" [style.width]="DOI_DROPDOWN_WIDTH" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-dropdown>
             <div class="input-group-append">
               <button style="width: 12rem; align-items: center; justify-content: center;" pButton pRipple type="button" class="p-button p-button-raised" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" [disabled]="!createNewDatasetEnabled()">Create new dataset</button>
             </div>
