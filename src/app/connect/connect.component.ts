@@ -461,9 +461,6 @@ export class ConnectComponent implements OnInit {
     this.branchItems = [];
     this.option = undefined;
     this.url = undefined;
-    if (this.getUsernameFieldName() === undefined) {
-      this.user = undefined;
-    }
     if (this.getRepoNameFieldName() === undefined) {
       this.repoName = undefined;
     }
