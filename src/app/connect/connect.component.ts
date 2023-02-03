@@ -6,7 +6,7 @@ import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { BranchLookupService } from '../branch.lookup.service';
+import { RepoLookupService } from '../repo.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
@@ -15,6 +15,8 @@ import { ActivatedRoute } from '@angular/router';
 import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { Dropdown } from 'primeng/dropdown';
+import { debounceTime, map, merge, mergeMap, Observable, Subject, Subscription } from 'rxjs';
+import { RepoLookupRequest } from '../models/repo-lookup';
 
 @Component({
   selector: 'app-connect',
@@ -23,33 +25,39 @@ import { Dropdown } from 'primeng/dropdown';
 })
 export class ConnectComponent implements OnInit {
 
-  sourceUrl?: string;
-  url?: string;
-  repoName?: string;
-  selectedRepoName?: string;
-  user?: string;
-  token?: string;
-  dataverseToken?: string;
-  doiDropdownWidth: SafeStyle;
-  pluginIdSelectHidden = true;
+  @ViewChild('repoDropdown') repoNameDropdown!: Dropdown;
+
+  DEBOUNCE_TIME = 750;
 
   plugin?: string;
   pluginId?: string;
+  user?: string;
+  token?: string;
+  sourceUrl?: string;
+  repoName?: string;
+  selectedRepoName?: string;
+  foundRepoName?: string;
   option?: string;
+  dataverseToken?: string;
   collectionId?: string;
   datasetId?: string;
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   loadingItems: SelectItem<string>[] = [this.loadingItem];
-  branchItems: SelectItem<string>[] = [];
-  doiItems: SelectItem<string>[] = [];
-  collectionItems: SelectItem<string>[] = [];
-  pluginIds: SelectItem<string>[] = [];
   plugins: SelectItem<string>[] = [];
+  pluginIds: SelectItem<string>[] = [];
+  repoNames: SelectItem<string>[] = [];
+  branchItems: SelectItem<string>[] = [];
+  collectionItems: SelectItem<string>[] = [];
+  doiItems: SelectItem<string>[] = [];
 
+  url?: string;
+  pluginIdSelectHidden: boolean = true;
   creatingNewDataset: boolean = false;
-
-  @ViewChild('zd') repoNameDropdown!: Dropdown;
+  doiDropdownWidth: SafeStyle;
+  repoSearchSubject: Subject<string> = new Subject();
+  searchResultsObservable: Observable<SelectItem<string>[]>;
+  searchResultsSubscription?: Subscription;
 
   constructor(
     private router: Router,
@@ -57,12 +65,16 @@ export class ConnectComponent implements OnInit {
     private datasetService: DatasetService,
     private sanitizer: DomSanitizer,
     private dvObjectLookupService: DvObjectLookupService,
-    private branchLookupService: BranchLookupService,
+    private repoLookupService: RepoLookupService,
     private pluginService: PluginService,
     private route: ActivatedRoute,
     private oauth: OauthService,
   ) {
     this.doiDropdownWidth = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
+    this.searchResultsObservable = this.repoSearchSubject.pipe<string, Observable<SelectItem<string>[]>>(
+      debounceTime(this.DEBOUNCE_TIME),
+      map(searchText => this.repoNameSearch(searchText)),
+    ).pipe(mergeMap(x => merge(x)));
   }
 
   ngOnInit(): void {
@@ -70,6 +82,7 @@ export class ConnectComponent implements OnInit {
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
     }
+    this.searchResultsObservable.subscribe(x => this.repoNames = x);
     this.route.queryParams
       .subscribe(params => {
         let stateString = params['state'];
@@ -81,6 +94,7 @@ export class ConnectComponent implements OnInit {
         this.url = loginState.url;
         this.repoName = loginState.repoName;
         this.selectedRepoName = loginState.repoName;
+        this.foundRepoName = loginState.repoName;
         this.user = loginState.user;
 
         if (loginState.plugin !== undefined && loginState.plugin.value !== undefined) {
@@ -125,6 +139,17 @@ export class ConnectComponent implements OnInit {
   }
 
   ngOnDestroy() {
+    this.searchResultsSubscription?.unsubscribe();
+  }
+
+  getRepoName(): string | undefined {
+    if (this.repoName !== undefined) {
+      return this.repoName;
+    }
+    if (this.selectedRepoName !== undefined) {
+      return this.selectedRepoName;
+    }
+    return this.foundRepoName;
   }
 
   changePluginId() {
@@ -142,8 +167,10 @@ export class ConnectComponent implements OnInit {
     this.option = undefined;
     this.url = undefined;
     this.user = undefined;
+    this.repoNames = [];
     this.repoName = undefined;
     this.selectedRepoName = undefined;
+    this.foundRepoName = undefined;
   }
 
   parseUrl(): string | undefined {
@@ -186,7 +213,7 @@ export class ConnectComponent implements OnInit {
     let creds: Credentials = {
       pluginId: this.pluginId,
       plugin: this.plugin,
-      repo_name: this.repoName === undefined ? this.selectedRepoName: this.repoName,
+      repo_name: this.getRepoName(),
       url: this.url,
       option: this.option,
       user: this.user,
@@ -218,7 +245,7 @@ export class ConnectComponent implements OnInit {
       names.push(this.getUsernameFieldName()!);
     }
     if (this.getRepoNameFieldName()) {
-      strings.push(this.repoName === undefined ? this.selectedRepoName: this.repoName);
+      strings.push(this.getRepoName());
       names.push(this.getRepoNameFieldName()!);
     }
 
@@ -264,7 +291,7 @@ export class ConnectComponent implements OnInit {
     });
   }
 
-  getRepoOptions(): void {
+  getRepoLookupRequest(): RepoLookupRequest | undefined {
     if (this.pluginId === undefined) {
       alert('Repository type is missing');
       return;
@@ -282,7 +309,7 @@ export class ConnectComponent implements OnInit {
       alert(this.getUsernameFieldName() + ' is missing');
       return;
     }
-    if (this.getRepoNameFieldName() && (this.repoName === undefined || this.repoName === '') && (this.selectedRepoName === undefined || this.selectedRepoName === '')) {
+    if (this.getRepoNameFieldName() && (this.getRepoName() === undefined || this.getRepoName() === '') && !this.repoNameSearchEnabled()) {
       alert(this.getRepoNameFieldName() + ' is missing');
       return;
     }
@@ -292,16 +319,23 @@ export class ConnectComponent implements OnInit {
 
     this.branchItems = this.loadingItems;
 
-    let req = {
+    return {
       pluginId: this.pluginId,
       plugin: this.plugin,
-      repoName: this.repoName === undefined ? this.selectedRepoName: this.repoName,
+      repoName: this.getRepoName(),
       url: this.url,
       user: this.user,
       token: this.token,
     };
+  }
 
-    let httpSubscr = this.branchLookupService.getItems(req).subscribe({
+  getOptions(): void {
+    let req = this.getRepoLookupRequest();
+    if (req === undefined) {
+      return;
+    }
+
+    let httpSubscr = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {
           this.branchItems = items;
@@ -433,7 +467,7 @@ export class ConnectComponent implements OnInit {
     return v === undefined ? false : v;
   }
 
-  getRepoNames(): SelectItem<string>[] {
+  getPluginRepoNames(): SelectItem<string>[] {
     let res: SelectItem<string>[] = [];
     this.pluginService.getPlugin(this.pluginId).repoNameFieldValues?.forEach(x => res.push({ label: x, value: x }));
     return res;
@@ -524,7 +558,7 @@ export class ConnectComponent implements OnInit {
         url: this.url,
         plugin: this.getItem(this.plugins, this.plugin),
         pluginId: pluginId,
-        repoName: this.repoName === undefined ? this.selectedRepoName : this.repoName,
+        repoName: this.getRepoName(),
         user: this.user,
         option: this.getItem(this.branchItems, this.option),
         datasetId: this.getItem(this.doiItems, this.datasetId),
@@ -574,5 +608,36 @@ export class ConnectComponent implements OnInit {
 
   isAuthorized(): boolean {
     return this.token !== undefined;
+  }
+
+  repoNameSearchEnabled(): boolean {
+    return this.pluginService.getPlugin(this.pluginId).repoNameFieldHasSearch!;
+  }
+
+  repoNameSearch(searchTerm: string): Observable<SelectItem<string>[]> {
+    this.repoNames = this.loadingItems;
+    let req = this.getRepoLookupRequest();
+    if (req === undefined) {
+      let subj = new Subject<SelectItem<string>[]>();
+      subj.next([]);
+      return subj;
+    }
+    req.repoName = searchTerm;
+    return this.repoLookupService.search(req);
+  }
+
+  onRepoNameSearch(searchTerm: string | null) {
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.repoNames = [{label: 'start typeing to search (at least 3 letters)', value: ''}];
+      return;
+    }
+    this.repoSearchSubject.next(searchTerm);
+  }
+
+  startRepoSearch() {
+    if (this.foundRepoName !== undefined) {
+      return;
+    }
+    this.repoNames = [{label: 'start typeing to search (at least 3 letters)', value: ''}];
   }
 }
