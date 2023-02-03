@@ -461,9 +461,12 @@ export class ConnectComponent implements OnInit {
     this.branchItems = [];
     this.option = undefined;
     this.url = undefined;
-    this.user = undefined;
-    this.repoName = undefined;
-    this.selectedRepoName = undefined;
+    if (this.getUsernameFieldName() === undefined) {
+      this.user = undefined;
+    }
+    if (this.getRepoNameFieldName() === undefined) {
+      this.repoName = undefined;
+    }
   }
 
   // REPO VIA SEARCH
