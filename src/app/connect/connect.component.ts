@@ -89,7 +89,10 @@ export class ConnectComponent implements OnInit {
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
     }
-    this.searchResultsObservable.subscribe(x => this.repoNames = x);
+    this.searchResultsObservable.subscribe({
+      next: (x) => this.repoNames = x,
+      error: (err) => this.repoNames = [{ value: err.toString() }],
+    });
     this.route.queryParams
       .subscribe(params => {
         let stateString = params['state'];
