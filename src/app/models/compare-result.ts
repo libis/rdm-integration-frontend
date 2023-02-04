@@ -13,6 +13,8 @@ export interface CompareResult {
   status?: ResultStatus;
   data?: Datafile[];
   url?: string;
+	maxFileSize?: number;
+	tooLarge?: string[];
 }
 
 export interface CachedResponse {

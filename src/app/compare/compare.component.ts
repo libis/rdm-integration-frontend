@@ -25,11 +25,14 @@ export class CompareComponent implements OnInit {
   icon_submit = "pi pi-save";
   icon_compare = "pi pi-flag";
   icon_action = "pi pi-bolt";
+  icon_warning = "pi pi-exclamation-triangle";
 
   disabled = true;
   loading = true;
   refreshHidden = true;
   isInFilterMode = false;
+	maxFileSize?: number;
+	tooLarge?: string[];
 
   data: CompareResult = {};
   updatedDataSubscription?: Subscription;
@@ -91,6 +94,8 @@ export class CompareComponent implements OnInit {
         initialStateSubscription.unsubscribe();
         this.setData(data);
         if (data.data && data.id) {
+          this.maxFileSize = data.maxFileSize;
+          this.tooLarge = data.tooLarge;
           if (this.data.status !== ResultStatus.Updating) {
             this.disabled = false;
             this.loading = false;
