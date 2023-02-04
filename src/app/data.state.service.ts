@@ -24,7 +24,7 @@ export class DataStateService {
   initializeState(creds: Credentials): void {
     this.resetState();
     this.credentialsService.credentials = creds;
-    let subscription = this.dataService.getData().subscribe({
+    const subscription = this.dataService.getData().subscribe({
       next: (key) => {
         this.getCompareData(key);
         subscription.unsubscribe();
@@ -39,7 +39,7 @@ export class DataStateService {
 
   private getCompareData(key: Key): void {
     let i = 0;
-    let subscription = interval(1000)
+    const subscription = interval(1000)
       .pipe(
         switchMap(() => this.dataService.getCachedData(key))
       ).subscribe({

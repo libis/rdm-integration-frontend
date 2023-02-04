@@ -11,7 +11,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 export class SubmittedFileComponent implements OnInit {
 
   @Input() datafile: Datafile = {};
-  @Input('isSubmitted') isSubmitted: boolean = false;
+  @Input('isSubmitted') isSubmitted = false;
 
   constructor() { }
 
@@ -30,7 +30,7 @@ export class SubmittedFileComponent implements OnInit {
   }
 
   isReady(): boolean {
-    let isDelete = this.datafile.action === Fileaction.Delete;
+    const isDelete = this.datafile.action === Fileaction.Delete;
     return (isDelete && this.datafile.status === Filestatus.Unknown) || (!isDelete && this.datafile.status === Filestatus.Equal);
   }
 

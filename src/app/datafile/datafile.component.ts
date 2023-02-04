@@ -13,10 +13,10 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 export class DatafileComponent implements OnInit {
 
   @Input("datafile") datafile: Datafile = {};
-  @Input("loading") loading: boolean = true;
+  @Input("loading") loading = true;
   @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
   @Input("rowNode") rowNode: TreeNode<Datafile> = {};
-  @Input("isInFilter") isInFilter: boolean = false;
+  @Input("isInFilter") isInFilter = false;
 
   icon_unknown = "pi pi-question-circle";
 
@@ -121,7 +121,7 @@ export class DatafileComponent implements OnInit {
   }
 
   setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
-    let isFileFileInFolder = node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
+    const isFileFileInFolder = node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
     node.data!.action = isFileFileInFolder ? this.getFileInFolderAction(node, action) : action;
     node.children?.forEach(v => this.setNodeAction(v, action));
   }

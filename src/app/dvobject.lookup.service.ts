@@ -15,7 +15,7 @@ export class DvObjectLookupService {
   constructor(private http: HttpClient) { }
 
   getItems(collectionId: string, objectType: string, token: string): Observable<SelectItem<string>[]> {
-    var req = {
+    const req = {
       token: token,
       collectionId: collectionId,
       objectType: objectType,

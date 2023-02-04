@@ -25,11 +25,14 @@ export class CompareComponent implements OnInit {
   icon_submit = "pi pi-save";
   icon_compare = "pi pi-flag";
   icon_action = "pi pi-bolt";
+  icon_warning = "pi pi-exclamation-triangle";
 
   disabled = true;
   loading = true;
   refreshHidden = true;
   isInFilterMode = false;
+	maxFileSize?: number;
+	tooLarge?: string[];
 
   data: CompareResult = {};
   updatedDataSubscription?: Subscription;
@@ -86,11 +89,13 @@ export class CompareComponent implements OnInit {
   }
 
   setUpdatedDataSubscription() {
-    let initialStateSubscription = this.dataStateService.getObservableState().subscribe((data) => {
+    const initialStateSubscription = this.dataStateService.getObservableState().subscribe((data) => {
       if (data !== null) {
         initialStateSubscription.unsubscribe();
         this.setData(data);
         if (data.data && data.id) {
+          this.maxFileSize = data.maxFileSize;
+          this.tooLarge = data.tooLarge;
           if (this.data.status !== ResultStatus.Updating) {
             this.disabled = false;
             this.loading = false;
@@ -124,7 +129,7 @@ export class CompareComponent implements OnInit {
   }
 
   refresh(): void {
-    let subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe((data) => {
+    const subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe((data) => {
       if (data.data && data.id) {
         this.setData(data);
       }
@@ -155,7 +160,7 @@ export class CompareComponent implements OnInit {
 
   noActionSelection(): void {
     this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
+      const datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
@@ -165,7 +170,7 @@ export class CompareComponent implements OnInit {
 
   updateSelection(): void {
     this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
+      const datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
@@ -188,7 +193,7 @@ export class CompareComponent implements OnInit {
 
   mirrorSelection(): void {
     this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
+      const datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
@@ -224,9 +229,9 @@ export class CompareComponent implements OnInit {
   }
 
   filterOn(filters: any[]): void {
-    let nodes: TreeNode<Datafile>[] = [];
+    const nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
+      const datafile = rowNode.data!;
       datafile.hidden = !datafile.attributes?.isFile || !filters.some(i => datafile.status === i.fileStatus);
       if (!datafile.hidden) {
         nodes.push(rowNode);
@@ -238,7 +243,7 @@ export class CompareComponent implements OnInit {
 
   filterOff(): void {
     this.rowNodeMap.forEach(rowNode => {
-      let datafile = rowNode.data!;
+      const datafile = rowNode.data!;
       datafile.hidden = false;
     });
     this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
@@ -256,9 +261,9 @@ export class CompareComponent implements OnInit {
     if (!data.data || data.data.length === 0) {
       return;
     }
-    let rowDataMap = this.mapDatafiles(data.data);
+    const rowDataMap = this.mapDatafiles(data.data);
     rowDataMap.forEach(v => this.addChild(v, rowDataMap));
-    let rootNode = rowDataMap.get("");
+    const rootNode = rowDataMap.get("");
     this.rowNodeMap = rowDataMap;
     if (rootNode?.children) {
       this.updateFoldersStatus(rootNode);
@@ -283,7 +288,7 @@ export class CompareComponent implements OnInit {
       anyUnknown = anyUnknown || v.data?.status === Filestatus.Unknown;
     });
 
-    var status;
+    let status;
     if (anyUnknown) status = Filestatus.Unknown
     else if (allEqual) status = Filestatus.Equal
     else if (allDeleted) status = Filestatus.Deleted
@@ -296,13 +301,13 @@ export class CompareComponent implements OnInit {
     if (v.data!.id === "") {
       return;
     }
-    let parent = rowDataMap.get(v.data!.path!)!;
-    let children = parent.children ? parent.children : [];
+    const parent = rowDataMap.get(v.data!.path!)!;
+    const children = parent.children ? parent.children : [];
     parent.children = children.concat(v);
   }
 
   mapDatafiles(data: Datafile[]): Map<string, TreeNode<Datafile>> {
-    let rootData: Datafile = {
+    const rootData: Datafile = {
       path: "",
       name: "",
       action: Fileaction.Ignore,
@@ -310,7 +315,7 @@ export class CompareComponent implements OnInit {
       id: "",
     }
 
-    let rowDataMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
+    const rowDataMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
     rowDataMap.set("", {
       data: rootData,
     });
@@ -318,8 +323,8 @@ export class CompareComponent implements OnInit {
     data.forEach((d) => {
       let path = "";
       d.path!.split("/").forEach((folder) => {
-        let id = path != "" ? path + "/" + folder : folder;
-        let folderData: Datafile = {
+        const id = path != "" ? path + "/" + folder : folder;
+        const folderData: Datafile = {
           path: path,
           name: folder,
           action: Fileaction.Ignore,

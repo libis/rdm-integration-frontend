@@ -17,8 +17,8 @@ export class DataService {
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
   getData(): Observable<Key> {
-    let credentials = this.credentialsService.credentials;
-    let req = {
+    const credentials = this.credentialsService.credentials;
+    const req = {
       pluginId: credentials.pluginId,
       plugin: credentials.plugin,
       repoName: credentials.repo_name,

@@ -17,8 +17,8 @@ export class SubmitService {
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
   submit(selected: Datafile[]): Observable<StoreResult> {
-    let credentials = this.credentialsService.credentials;
-    let req = {
+    const credentials = this.credentialsService.credentials;
+    const req = {
       plugin: credentials.plugin,
       streamParams: {
         pluginId: credentials.pluginId,
