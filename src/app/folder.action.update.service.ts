@@ -42,7 +42,7 @@ export class FolderActionUpdateService {
       );
     });
 
-    var action;
+    let action;
     if (allEqual) action = Fileaction.Ignore;
     else if (allDeleted) action = Fileaction.Delete;
     else if (allNew) action = Fileaction.Copy;

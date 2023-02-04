@@ -17,7 +17,7 @@ export class OauthService {
   ) { }
 
   getToken(pluginId: string, code: string, nounce: string): Observable<TokenResponse> {
-    let req = {
+    const req = {
       pluginId: pluginId,
       code: code,
       nounce: nounce,

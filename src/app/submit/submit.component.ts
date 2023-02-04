@@ -81,9 +81,9 @@ export class SubmitComponent implements OnInit {
   }
 
   loadData(): void {
-    let value = this.dataStateService.getCurrentValue();
+    const value = this.dataStateService.getCurrentValue();
     this.pid = (value && value.id) ? value.id : "";
-    let data = value?.data;
+    const data = value?.data;
     if (data) {
       this.setData(data);
     }
@@ -98,7 +98,7 @@ export class SubmitComponent implements OnInit {
   }
 
   toCreate(): Datafile[] {
-    let result: Datafile[] = [];
+    const result: Datafile[] = [];
     this.data.forEach(datafile => {
       if (datafile.action === Fileaction.Copy) {
         result.push(datafile);
@@ -108,7 +108,7 @@ export class SubmitComponent implements OnInit {
   }
 
   toUpdate(): Datafile[] {
-    let result: Datafile[] = [];
+    const result: Datafile[] = [];
     this.data.forEach(datafile => {
       if (datafile.action === Fileaction.Update) {
         result.push(datafile);
@@ -118,7 +118,7 @@ export class SubmitComponent implements OnInit {
   }
 
   toDelete(): Datafile[] {
-    let result: Datafile[] = [];
+    const result: Datafile[] = [];
     this.data.forEach(datafile => {
       if (datafile.action === Fileaction.Delete) {
         if (datafile.attributes?.remoteHashType === undefined || datafile.attributes?.remoteHashType === '') { // file from unknown origin, by setting the hashtype to not empty value we can detect in comparison that the file got deleted
@@ -134,9 +134,9 @@ export class SubmitComponent implements OnInit {
   submit() {
     alert('Transfer request submitted successfully. You can close the window and the transfer will continue.');
     this.disabled = true;
-    let selected: Datafile[] = [];
+    const selected: Datafile[] = [];
     this.data.forEach(datafile => {
-      let action = datafile.action === undefined ? Fileaction.Ignore : datafile.action;
+      const action = datafile.action === undefined ? Fileaction.Ignore : datafile.action;
       if (action != Fileaction.Ignore) {
         selected.push(datafile)
       }
@@ -145,7 +145,7 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
-    let httpSubscr = this.submitService.submit(selected).subscribe({
+    const httpSubscr = this.submitService.submit(selected).subscribe({
       next: (data: StoreResult) => {
         if (data.status !== "OK") {// this should not happen
           alert("store failed, status: " + data.status);

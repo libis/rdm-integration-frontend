@@ -61,8 +61,8 @@ export class ConnectComponent implements OnInit {
   // INTERNAL STATE VARIABLES
 
   url?: string;
-  pluginIdSelectHidden: boolean = true;
-  creatingNewDataset: boolean = false;
+  pluginIdSelectHidden = true;
+  creatingNewDataset = false;
   repoSearchSubject: Subject<string> = new Subject();
   searchResultsObservable: Observable<SelectItem<string>[]>;
   searchResultsSubscription?: Subscription;
@@ -85,7 +85,7 @@ export class ConnectComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    let dvToken = localStorage.getItem("dataverseToken");
+    const dvToken = localStorage.getItem("dataverseToken");
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
     }
@@ -95,11 +95,11 @@ export class ConnectComponent implements OnInit {
     });
     this.route.queryParams
       .subscribe(params => {
-        let stateString = params['state'];
+        const stateString = params['state'];
         if (stateString === undefined || stateString === null || stateString === '') {
           return;
         }
-        let loginState: LoginState = JSON.parse(params['state']);
+        const loginState: LoginState = JSON.parse(params['state']);
         this.sourceUrl = loginState.sourceUrl;
         this.url = loginState.url;
         this.repoName = loginState.repoName;
@@ -135,9 +135,9 @@ export class ConnectComponent implements OnInit {
           this.collectionId = loginState.collectionId?.value;
         }
 
-        let code = params['code'];
+        const code = params['code'];
         if (this.getNounce() === loginState.nounce && this.pluginId !== undefined && code !== undefined) {
-          var tokenSubscr = this.oauth.getToken(this.pluginId, code, loginState.nounce).subscribe(x => {
+          const tokenSubscr = this.oauth.getToken(this.pluginId, code, loginState.nounce).subscribe(x => {
             this.token = x.access_token;
             if (!this.pluginService.isStoreDvToken()) {
               localStorage.removeItem("dataverseToken");
@@ -176,18 +176,18 @@ export class ConnectComponent implements OnInit {
     if (this.dataverseToken !== undefined) {
       localStorage.setItem("dataverseToken", this.dataverseToken!);
     }
-    let tg = this.pluginService.getPlugin(this.pluginId).tokenGetter!;
+    const tg = this.pluginService.getPlugin(this.pluginId).tokenGetter!;
     let url = this.url + (tg.URL === undefined ? '' : tg.URL);
     if (tg.URL?.includes('://')) {
       url = tg.URL;
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
-      let nounce = this.newNounce(44);
-      let pluginId = this.getItem(this.pluginIds, this.pluginId);
+      const nounce = this.newNounce(44);
+      const pluginId = this.getItem(this.pluginIds, this.pluginId);
       if (pluginId !== undefined) {
         pluginId.hidden = this.pluginIdSelectHidden;
       }
-      let looginState: LoginState = {
+      const looginState: LoginState = {
         sourceUrl: this.sourceUrl,
         url: this.url,
         plugin: this.getItem(this.plugins, this.plugin),
@@ -223,7 +223,7 @@ export class ConnectComponent implements OnInit {
   }
 
   getNounce(): string | null {
-    let result = localStorage.getItem("nounce");
+    const result = localStorage.getItem("nounce");
     localStorage.removeItem("nounce");
     return result;
   }
@@ -232,7 +232,7 @@ export class ConnectComponent implements OnInit {
     if (value === undefined) {
       return undefined;
     }
-    let label = items.find(x => x.value === value)?.label
+    const label = items.find(x => x.value === value)?.label
     return { label: label, value: value }
   }
 
@@ -251,16 +251,16 @@ export class ConnectComponent implements OnInit {
    ***********/
 
   connect() {
-    let err = this.parseAndCheckFields();
+    const err = this.parseAndCheckFields();
     if (err !== undefined) {
       alert(err);
       return;
     }
-    let tokenName = this.pluginService.getPlugin(this.pluginId).tokenName
+    const tokenName = this.pluginService.getPlugin(this.pluginId).tokenName
     if (this.token !== undefined && tokenName !== undefined && tokenName !== '') {
       localStorage.setItem(tokenName, this.token);
     }
-    let creds: Credentials = {
+    const creds: Credentials = {
       pluginId: this.pluginId,
       plugin: this.plugin,
       repo_name: this.getRepoName(),
@@ -276,8 +276,8 @@ export class ConnectComponent implements OnInit {
   }
 
   parseAndCheckFields(): string | undefined {
-    let strings: (string | undefined)[] = [this.pluginId, this.datasetId, this.dataverseToken];
-    let names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token'];
+    const strings: (string | undefined)[] = [this.pluginId, this.datasetId, this.dataverseToken];
+    const names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token'];
     if (this.getSourceUrlFieldName()) {
       strings.push(this.sourceUrl);
       names.push(this.getSourceUrlFieldName()!);
@@ -302,14 +302,14 @@ export class ConnectComponent implements OnInit {
     let cnt = 0;
     let res = 'One or more mandatory fields are missing:';
     for (let i = 0; i < strings.length; i++) {
-      let s = strings[i];
+      const s = strings[i];
       if (s === undefined || s === '' || s === 'loading') {
         cnt++;
         res = res + '\n- ' + names[i];
       }
     }
 
-    let err = this.parseUrl();
+    const err = this.parseUrl();
     if (err) {
       cnt++;
       res = res + '\n\n' + err;
@@ -331,7 +331,7 @@ export class ConnectComponent implements OnInit {
     if (toSplit.endsWith("/")) {
       toSplit = toSplit.substring(0, toSplit.length - 1);
     }
-    var splitted = toSplit.split('://');
+    let splitted = toSplit.split('://');
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
@@ -358,7 +358,7 @@ export class ConnectComponent implements OnInit {
   }
 
   changePlugin() {
-    let pluginIds = this.pluginService.getPluginIds(this.plugin);
+    const pluginIds = this.pluginService.getPluginIds(this.plugin);
     if (pluginIds.length === 1) {
       this.pluginId = pluginIds[0].value;
     } else {
@@ -374,9 +374,9 @@ export class ConnectComponent implements OnInit {
 
   changePluginId() {
     this.token = undefined;
-    let tokenName = this.pluginService.getPlugin(this.pluginId).tokenName;
+    const tokenName = this.pluginService.getPlugin(this.pluginId).tokenName;
     if (tokenName !== undefined && tokenName !== '') {
-      let token = localStorage.getItem(tokenName);
+      const token = localStorage.getItem(tokenName);
       if (token !== null) {
         this.token = token;
       }
@@ -404,12 +404,12 @@ export class ConnectComponent implements OnInit {
   }
 
   getRepoNamePlaceholder(): string {
-    let v = this.pluginService.getPlugin(this.pluginId).repoNameFieldPlaceholder;
+    const v = this.pluginService.getPlugin(this.pluginId).repoNameFieldPlaceholder;
     return v === undefined ? "" : v;
   }
 
   repoNameFieldEditable(): boolean {
-    let v = this.pluginService.getPlugin(this.pluginId).repoNameFieldEditable;
+    const v = this.pluginService.getPlugin(this.pluginId).repoNameFieldEditable;
     return v === undefined ? false : v;
   }
 
@@ -428,7 +428,7 @@ export class ConnectComponent implements OnInit {
       alert('Repository type is missing');
       return;
     }
-    let err = this.parseUrl();
+    const err = this.parseUrl();
     if (err) {
       alert(err);
       return;
@@ -478,9 +478,9 @@ export class ConnectComponent implements OnInit {
 
   repoNameSearch(searchTerm: string): Observable<SelectItem<string>[]> {
     this.repoNames = this.loadingItems;
-    let req = this.getRepoLookupRequest();
+    const req = this.getRepoLookupRequest();
     if (req === undefined) {
-      let subj = new Subject<SelectItem<string>[]>();
+      const subj = new Subject<SelectItem<string>[]>();
       subj.next([]);
       return subj;
     }
@@ -514,15 +514,15 @@ export class ConnectComponent implements OnInit {
   }
 
   getSourceUrlValue(): string | undefined {
-    let repoName = this.getRepoName();
-    let valueMap = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValueMap;
+    const repoName = this.getRepoName();
+    const valueMap = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValueMap;
     if (repoName !== undefined && valueMap !== undefined) {
-      let res = valueMap[repoName];
+      const res = valueMap[repoName];
       if (res !== undefined && res !== null) {
         return res;
       }
     }
-    let res = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValue;
+    const res = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValue;
     if (res !== undefined) {
       return res;
     }
@@ -532,7 +532,7 @@ export class ConnectComponent implements OnInit {
   // REPO VIA DROPDOWN
 
   getPluginRepoNames(): SelectItem<string>[] {
-    let res: SelectItem<string>[] = [];
+    const res: SelectItem<string>[] = [];
     this.pluginService.getPlugin(this.pluginId).repoNameFieldValues?.forEach(x => res.push({ label: x, value: x }));
     return res;
   }
@@ -548,17 +548,17 @@ export class ConnectComponent implements OnInit {
   }
 
   getOptionPlaceholder(): string {
-    let v = this.pluginService.getPlugin(this.pluginId).optionFieldPlaceholder;
+    const v = this.pluginService.getPlugin(this.pluginId).optionFieldPlaceholder;
     return v === undefined ? "" : v;
   }
 
   getOptions(): void {
-    let req = this.getRepoLookupRequest();
+    const req = this.getRepoLookupRequest();
     if (req === undefined) {
       return;
     }
 
-    let httpSubscr = this.repoLookupService.getOptions(req).subscribe({
+    const httpSubscr = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {
           this.branchItems = items;
@@ -600,7 +600,7 @@ export class ConnectComponent implements OnInit {
   }
 
   getDataverseToken(): void {
-    let url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
+    const url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
     window.open(url, "_blank");
   }
 
@@ -627,7 +627,7 @@ export class ConnectComponent implements OnInit {
     }
     setter(this, this.loadingItems);
 
-    let httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, this.dataverseToken).subscribe({
+    const httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items !== undefined && items.length > 0) {
           setter(this, items);
@@ -694,7 +694,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     this.creatingNewDataset = true;
-    let httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
+    const httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {
         this.datasetId = data.persistentId;
         httpSubscr.unsubscribe();

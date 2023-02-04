@@ -1,3 +1,5 @@
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
@@ -12,10 +14,10 @@ export class DataUpdatesService {
 
     common_compare_url = 'api/common/compare';
 
-    constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
+    constructor(private http: HttpClient, private credentialsService: CredentialsService) {}
 
     updateData(data: Datafile[], pid: string): Observable<CompareResult> {
-        var req = {
+        const req = {
             data: data,
             persistentId: pid,
             dataverseKey: this.credentialsService.credentials.dataverse_token,

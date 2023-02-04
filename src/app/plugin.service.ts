@@ -39,7 +39,7 @@ export class PluginService {
   }
 
   private setConfig(): void {
-    let subscr = this.http.get<Config>(`api/frontend/config`).subscribe(
+    const subscr = this.http.get<Config>(`api/frontend/config`).subscribe(
       c => {
         this.config = c;
         this.config.plugins.forEach(p => {
@@ -52,7 +52,7 @@ export class PluginService {
   }
 
   getPlugins(): SelectItem<string>[] {
-    let res: SelectItem<string>[] = [];
+    const res: SelectItem<string>[] = [];
     const added = new Set<string>();
     this.config.plugins.forEach(x => {
       if (!added.has(x.plugin)) {
@@ -64,7 +64,7 @@ export class PluginService {
   }
 
   getPluginIds(plugin?: string): SelectItem<string>[] {
-    let res: SelectItem<string>[] = [];
+    const res: SelectItem<string>[] = [];
     this.config.plugins.forEach(x => {
       if (x.plugin == plugin) {
         res.push({value: x.id, label: x.name});
@@ -74,7 +74,7 @@ export class PluginService {
   }
 
   getPlugin(p?: string): RepoPlugin {
-    var plugin: RepoPlugin | undefined;
+    let plugin: RepoPlugin | undefined;
     if (p !== undefined) {
       plugin = this.allPlugins.get(p);
     }
@@ -113,7 +113,7 @@ export class PluginService {
   }
 
   isStoreDvToken(): boolean {
-    let v = this.config!.storeDvToken;
+    const v = this.config!.storeDvToken;
     return v === undefined ? false : v;
   }
 
