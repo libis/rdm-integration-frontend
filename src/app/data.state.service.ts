@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, interval, Observable, switchMap } from 'rxjs';
 import { CredentialsService } from './credentials.service';
 import { DataService } from './data.service';
-import { CachedResponse, CompareResult, Key, ResultStatus } from './models/compare-result';
+import { CachedResponse, CompareResult, Key } from './models/compare-result';
 import { Credentials } from './models/credentials';
 
 @Injectable({

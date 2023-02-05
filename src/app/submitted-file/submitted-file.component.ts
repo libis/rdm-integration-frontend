@@ -13,9 +13,12 @@ export class SubmittedFileComponent implements OnInit {
   @Input() datafile: Datafile = {};
   @Input('isSubmitted') isSubmitted = false;
 
-  constructor() { }
+  constructor() {
+    // empty
+  }
 
   ngOnInit(): void {
+    // empty
   }
 
   file(): string {

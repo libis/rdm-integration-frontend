@@ -85,39 +85,39 @@ export class PluginService {
   }
 
   dataverseHeader(): string {
-    return this.config!.dataverseHeader;
+    return this.config.dataverseHeader;
   }
 
   collectionOptionsHidden(): boolean {
-    return this.config!.collectionOptionsHidden;
+    return this.config.collectionOptionsHidden;
   }
 
   createNewDatasetEnabled(): boolean {
-    return this.config!.createNewDatasetEnabled;
+    return this.config.createNewDatasetEnabled;
   }
 
   datasetFieldEditable(): boolean {
-    return this.config!.datasetFieldEditable;
+    return this.config.datasetFieldEditable;
   }
 
   collectionFieldEditable(): boolean {
-    return this.config!.collectionFieldEditable;
+    return this.config.collectionFieldEditable;
   }
 
   getExternalURL(): string {
-    return this.config!.externalURL;
+    return this.config.externalURL;
   }
 
   showDVTokenGetter(): boolean {
-    return this.config!.showDvTokenGetter;
+    return this.config.showDvTokenGetter;
   }
 
   isStoreDvToken(): boolean {
-    const v = this.config!.storeDvToken;
+    const v = this.config.storeDvToken;
     return v === undefined ? false : v;
   }
 
   getRedirectUri(): string {
-    return this.config!.redirect_uri;
+    return this.config.redirect_uri;
   }
 }
