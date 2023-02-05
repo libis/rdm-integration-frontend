@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Injectable } from '@angular/core';
@@ -9,7 +10,9 @@ import { Datafile, Fileaction, Filestatus } from './models/datafile';
 })
 export class FolderActionUpdateService {
 
-  constructor() { }
+  constructor() {
+    // empty
+  }
 
   updateFoldersAction(rowNodeMap: Map<string, TreeNode<Datafile>>): void {
     rowNodeMap.forEach(v => {
