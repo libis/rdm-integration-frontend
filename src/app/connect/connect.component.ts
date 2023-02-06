@@ -79,10 +79,11 @@ export class ConnectComponent implements OnInit {
     private route: ActivatedRoute,
     private oauth: OauthService,
   ) {
-    this.searchResultsObservable = this.repoSearchSubject.pipe<string, Observable<SelectItem<string>[]>>(
+    this.searchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map(searchText => this.repoNameSearch(searchText)),
-    ).pipe(mergeMap(x => merge(x)));
+      mergeMap(x => merge(x)),
+    );
   }
 
   ngOnInit(): void {
@@ -92,7 +93,7 @@ export class ConnectComponent implements OnInit {
     }
     this.searchResultsObservable.subscribe({
       next: (x) => this.repoNames = x,
-      error: (err) => this.repoNames = [{ value: err.toString() }],
+      error: (err) => this.repoNames = [{ value: String(err) }],
     });
     this.route.queryParams
       .subscribe(params => {
