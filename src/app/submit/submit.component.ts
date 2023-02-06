@@ -54,7 +54,7 @@ export class SubmitComponent implements OnInit {
   }
 
   getDataSubscripion(): Subscription {
-    return interval(1000)
+    return interval(5000)
       .pipe(
         switchMap(() => this.dataUpdatesService.updateData(this.data, this.pid))
       ).subscribe({
@@ -78,7 +78,7 @@ export class SubmitComponent implements OnInit {
   hasUnfinishedDataFiles(): boolean {
     return this.created.some((d) => d.status !== Filestatus.Equal) ||
       this.updated.some((d) => d.status !== Filestatus.Equal) ||
-      this.deleted.some((d) => d.status !== Filestatus.Unknown);
+      this.deleted.some((d) => d.status !== Filestatus.New);
   }
 
   loadData(): void {

@@ -34,7 +34,7 @@ export class SubmittedFileComponent implements OnInit {
 
   isReady(): boolean {
     const isDelete = this.datafile.action === Fileaction.Delete;
-    return (isDelete && this.datafile.status === Filestatus.Unknown) || (!isDelete && this.datafile.status === Filestatus.Equal);
+    return (isDelete && (this.datafile.status === Filestatus.New)) || (!isDelete && this.datafile.status === Filestatus.Equal);
   }
 
 }
