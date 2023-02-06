@@ -54,7 +54,7 @@ export class SubmitComponent implements OnInit {
   }
 
   getDataSubscripion(): Subscription {
-    return interval(1000)
+    return interval(5000)
       .pipe(
         switchMap(() => this.dataUpdatesService.updateData(this.data, this.pid))
       ).subscribe({
