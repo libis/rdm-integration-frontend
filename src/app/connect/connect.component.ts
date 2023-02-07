@@ -16,7 +16,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { Dropdown } from 'primeng/dropdown';
-import { debounceTime, map, merge, mergeMap, Observable, Subject, Subscription } from 'rxjs';
+import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { RepoLookupRequest } from '../models/repo-lookup';
 
 @Component({
@@ -65,7 +65,7 @@ export class ConnectComponent implements OnInit {
   pluginIdSelectHidden = true;
   creatingNewDataset = false;
   repoSearchSubject: Subject<string> = new Subject();
-  searchResultsObservable: Observable<SelectItem<string>[]>;
+  searchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   searchResultsSubscription?: Subscription;
 
   constructor(
@@ -82,7 +82,6 @@ export class ConnectComponent implements OnInit {
     this.searchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map(searchText => this.repoNameSearch(searchText)),
-      mergeMap(x => merge(x)),
     );
   }
 
@@ -91,9 +90,10 @@ export class ConnectComponent implements OnInit {
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
     }
-    this.searchResultsObservable.subscribe({
-      next: (x) => this.repoNames = x,
-      error: (err) => this.repoNames = [{ value: String(err) }],
+    this.searchResultsSubscription = this.searchResultsObservable.subscribe({
+      next: x => x.then(v => this.repoNames = v)
+        .catch(err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }]),
+      error: err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }],
     });
     this.route.queryParams
       .subscribe(params => {
@@ -326,7 +326,6 @@ export class ConnectComponent implements OnInit {
   parseUrl(): string | undefined {
     if (!this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
       this.url = this.getSourceUrlValue();
-      console.log(this.url)
       return;
     }
     let toSplit = this.sourceUrl!;
@@ -425,7 +424,7 @@ export class ConnectComponent implements OnInit {
     return this.foundRepoName;
   }
 
-  getRepoLookupRequest(): RepoLookupRequest | undefined {
+  getRepoLookupRequest(isSearch: boolean): RepoLookupRequest | undefined {
     if (this.pluginId === undefined) {
       alert('Repository type is missing');
       return;
@@ -443,8 +442,12 @@ export class ConnectComponent implements OnInit {
       alert(this.getUsernameFieldName() + ' is missing');
       return;
     }
-    if (this.getRepoNameFieldName() && (this.getRepoName() === undefined || this.getRepoName() === '') && !this.repoNameSearchEnabled()) {
+    if (this.getRepoNameFieldName() && (this.getRepoName() === undefined || this.getRepoName() === '') && !isSearch) {
       alert(this.getRepoNameFieldName() + ' is missing');
+      return;
+    }
+    if (this.getTokenFieldName() && (this.token === undefined || this.token === '')) {
+      alert(this.getTokenFieldName() + ' is missing');
       return;
     }
     if (this.branchItems.length !== 0 && this.branchItems.find(x => x === this.loadingItem) === undefined) {
@@ -478,23 +481,21 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.pluginId).repoNameFieldHasSearch!;
   }
 
-  repoNameSearch(searchTerm: string): Observable<SelectItem<string>[]> {
-    this.repoNames = this.loadingItems;
-    const req = this.getRepoLookupRequest();
+  async repoNameSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    const req = this.getRepoLookupRequest(true);
     if (req === undefined) {
-      const subj = new Subject<SelectItem<string>[]>();
-      subj.next([]);
-      return subj;
+      return [{ label: 'error', value: "error" }];
     }
     req.repoName = searchTerm;
-    return this.repoLookupService.search(req);
+    return await firstValueFrom(this.repoLookupService.search(req));
   }
 
   onRepoNameSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames = [{ label: 'start typeing to search (at least 3 letters)', value: '' }];
+      this.repoNames = [{ label: 'start typeing to search (at least 3 letters)', value: 'start' }];
       return;
     }
+    this.repoNames = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
     this.repoSearchSubject.next(searchTerm);
   }
 
@@ -502,7 +503,7 @@ export class ConnectComponent implements OnInit {
     if (this.foundRepoName !== undefined) {
       return;
     }
-    this.repoNames = [{ label: 'start typeing to search (at least 3 letters)', value: '' }];
+    this.repoNames = [{ label: 'start typeing to search (at least 3 letters)', value: 'start' }];
   }
 
   // REPO VIA URL
@@ -555,7 +556,7 @@ export class ConnectComponent implements OnInit {
   }
 
   getOptions(): void {
-    const req = this.getRepoLookupRequest();
+    const req = this.getRepoLookupRequest(false);
     if (req === undefined) {
       return;
     }
