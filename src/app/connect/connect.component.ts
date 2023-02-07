@@ -492,7 +492,7 @@ export class ConnectComponent implements OnInit {
 
   onRepoNameSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames = [{ label: 'start typeing to search (at least 3 letters)', value: 'start' }];
+      this.repoNames = [{ label: 'start typing to search (at least 3 letters)', value: 'start' }];
       return;
     }
     this.repoNames = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
@@ -503,7 +503,7 @@ export class ConnectComponent implements OnInit {
     if (this.foundRepoName !== undefined) {
       return;
     }
-    this.repoNames = [{ label: 'start typeing to search (at least 3 letters)', value: 'start' }];
+    this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
   }
 
   // REPO VIA URL
