@@ -14,7 +14,7 @@ export class DatasetService {
 
   constructor(private http: HttpClient) { }
 
-  newDataset(collectionId: string, apiToken: string): Observable<NewDatasetResponse> {
+  newDataset(collectionId: string, apiToken?: string): Observable<NewDatasetResponse> {
     const req = {
       collectionId: collectionId,
       dataverseKey: apiToken,

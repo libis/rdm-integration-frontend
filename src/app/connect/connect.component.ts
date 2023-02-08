@@ -602,6 +602,10 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.showDVTokenGetter();
   }
 
+  showDVToken(): boolean {
+    return this.pluginService.showDVToken();
+  }
+
   getDataverseToken(): void {
     const url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
     window.open(url, "_blank");
@@ -620,11 +624,6 @@ export class ConnectComponent implements OnInit {
   // DV OBJECTS: COMMON
 
   getDvObjectOptions(objectType: string, dvItems: SelectItem<string>[], setter: (comp: ConnectComponent, items: SelectItem<string>[]) => void): void {
-    if (this.dataverseToken === undefined || this.dataverseToken === '') {
-      alert('Dataverse object lookup failed: Dataverse API token is missing');
-      setter(this, []);
-      return;
-    }
     if (dvItems.length !== 0 && dvItems.find(x => x === this.loadingItem) === undefined) {
       return;
     }
@@ -692,10 +691,6 @@ export class ConnectComponent implements OnInit {
   }
 
   newDataset() {
-    if (this.dataverseToken === undefined) {
-      alert("Dataverse API token is missing.");
-      return;
-    }
     this.creatingNewDataset = true;
     const httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {

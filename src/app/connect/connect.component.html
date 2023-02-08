@@ -67,7 +67,7 @@
     </p-accordionTab>
     <p-accordionTab [header]=dataverseHeader()>
       <div>
-        <div class="mb-3">
+        <div class="mb-3" [hidden]="!showDVToken()">
           <label for="dataverseToken" class="form-label">Token</label>
           <div class="input-group">
             <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel" (onChange)="onUserChange()">

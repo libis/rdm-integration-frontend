@@ -18,6 +18,7 @@ export class PluginService {
     collectionFieldEditable: false,
     externalURL: '',
     showDvTokenGetter: false,
+    showDvToken: true,
     redirect_uri: '',
     plugins: [],
   };
@@ -110,6 +111,10 @@ export class PluginService {
 
   showDVTokenGetter(): boolean {
     return this.config.showDvTokenGetter;
+  }
+
+  showDVToken(): boolean {
+    return this.config.showDvToken;
   }
 
   isStoreDvToken(): boolean {
