@@ -28,41 +28,17 @@ export interface Datafile {
 
 export interface Attributes {
 	url?: string;
-	parentId?: string;
-	localHash?: string;
 	remoteHash?: string;
 	remoteHashType?: string;
+	remoteFilesize?: number;
 	isFile?: boolean;
-	metadata?: Metadata;
+	destinatinFile?: DestinatinFile;
 }
 
-export interface Metadata {
-	description?: string;
-	label?: string;
-	restricted?: boolean;
-	directoryLabel?: string;
-	version?: number;
-	datasetVersionId?: number;
-	categories?: string[];
-	dataFile?: DVDataFile;
-}
-
-export interface DVDataFile {
+export interface DestinatinFile {
 	id?: number;
-	persistentId?: string;
-	pidURL?: string;
-	filename?: string;
-	contentType ?: string;
 	filesize?: number;
-	description?: string;
+	hash?: string;
+	hashType?: string;
 	storageIdentifier?: string;
-	rootDataFileId?: number;
-	md5?: string;
-	checksum?: Checksum;
-	creationDate?: string;
-}
-
-export interface Checksum {
-	type?: string;
-	value?: string;
 }
