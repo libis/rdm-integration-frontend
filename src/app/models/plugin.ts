@@ -42,5 +42,6 @@ export interface Config {
     showDvToken: boolean;
     redirect_uri: string;
     storeDvToken?: boolean;
+    sendMails: boolean;
     plugins: RepoPlugin[];
 }

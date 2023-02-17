@@ -16,7 +16,7 @@ export class SubmitService {
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
-  submit(selected: Datafile[]): Observable<StoreResult> {
+  submit(selected: Datafile[], sendEmailOnSucces: boolean): Observable<StoreResult> {
     const credentials = this.credentialsService.credentials;
     const req = {
       plugin: credentials.plugin,
@@ -31,6 +31,7 @@ export class SubmitService {
       persistentId: credentials.dataset_id,
       dataverseKey: credentials.dataverse_token,
       selectedNodes: selected,
+      sendEmailOnSucces: sendEmailOnSucces,
     };
 
     return this.http.post<StoreResult>(this.store_url, req);

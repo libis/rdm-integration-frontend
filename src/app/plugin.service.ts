@@ -20,6 +20,7 @@ export class PluginService {
     showDvTokenGetter: false,
     showDvToken: true,
     redirect_uri: '',
+    sendMails: false,
     plugins: [],
   };
 
@@ -125,4 +126,9 @@ export class PluginService {
   getRedirectUri(): string {
     return this.config.redirect_uri;
   }
+
+  sendMails(): boolean {
+    return this.config.sendMails;
+  }
+
 }
