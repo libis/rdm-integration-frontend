@@ -201,9 +201,13 @@ export class ConnectComponent implements OnInit {
         collectionId: this.getItem(this.collectionItems, this.collectionId),
         nounce: nounce,
       }
-      url = url + '?client_id=' + tg.oauth_client_id +
-        '&redirect_uri=' + this.pluginService.getRedirectUri() +
-        '&response_type=code&state=' + JSON.stringify(looginState);
+      let clId = '?client_id='
+      if (url.includes("?")) {
+        clId = '&client_id='
+      }
+      url = url + clId + encodeURIComponent(tg.oauth_client_id) +
+        '&redirect_uri=' + encodeURIComponent(this.pluginService.getRedirectUri()) +
+        '&response_type=code&state=' + encodeURIComponent(JSON.stringify(looginState));
       // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
       location.href = url;
     } else {
