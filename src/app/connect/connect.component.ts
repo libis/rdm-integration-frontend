@@ -201,9 +201,13 @@ export class ConnectComponent implements OnInit {
         collectionId: this.getItem(this.collectionItems, this.collectionId),
         nounce: nounce,
       }
-      url = url + '?client_id=' + tg.oauth_client_id +
-        '&redirect_uri=' + this.pluginService.getRedirectUri() +
-        '&response_type=code&state=' + JSON.stringify(looginState);
+      let clId = '?client_id='
+      if (url.includes("?")) {
+        clId = '&client_id='
+      }
+      url = url + clId + encodeURIComponent(tg.oauth_client_id) +
+        '&redirect_uri=' + encodeURIComponent(this.pluginService.getRedirectUri()) +
+        '&response_type=code&state=' + encodeURIComponent(JSON.stringify(looginState));
       // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
       location.href = url;
     } else {
@@ -492,7 +496,7 @@ export class ConnectComponent implements OnInit {
 
   onRepoNameSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames = [{ label: 'start typing to search (at least 3 letters)', value: 'start' }];
+      this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
       return;
     }
     this.repoNames = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
@@ -602,6 +606,10 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.showDVTokenGetter();
   }
 
+  showDVToken(): boolean {
+    return this.pluginService.showDVToken();
+  }
+
   getDataverseToken(): void {
     const url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
     window.open(url, "_blank");
@@ -620,11 +628,6 @@ export class ConnectComponent implements OnInit {
   // DV OBJECTS: COMMON
 
   getDvObjectOptions(objectType: string, dvItems: SelectItem<string>[], setter: (comp: ConnectComponent, items: SelectItem<string>[]) => void): void {
-    if (this.dataverseToken === undefined || this.dataverseToken === '') {
-      alert('Dataverse object lookup failed: Dataverse API token is missing');
-      setter(this, []);
-      return;
-    }
     if (dvItems.length !== 0 && dvItems.find(x => x === this.loadingItem) === undefined) {
       return;
     }
@@ -692,10 +695,6 @@ export class ConnectComponent implements OnInit {
   }
 
   newDataset() {
-    if (this.dataverseToken === undefined) {
-      alert("Dataverse API token is missing.");
-      return;
-    }
     this.creatingNewDataset = true;
     const httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {

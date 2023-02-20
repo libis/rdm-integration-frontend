@@ -13,6 +13,20 @@
 <br/>
 
 <h4 style="margin: 3rem; text-align: center;"><i [class]="icon_warning" style="color:red"></i> Make sure not to openly publish sensitive information, copyrighted materials or third-party libraries.</h4>
+<p-dialog header="Submit" position="top-right" [modal]="true" [(visible)]="popup">
+  <p class="m-0">Click on "OK" to start the update/transfer. You can close the window and the transfer will continue.</p>
+  <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the update/transfer has been unsuccessful."</p>
+  <br><br>
+  <div style="text-align: right;">
+    <div class="field-checkbox" [hidden]="!sendMails()">
+      <p-checkbox [(ngModel)]="sendEmailOnSucces" [binary]="true" inputId="sendEmailOnSuccesCB"></p-checkbox>
+      <label for="sendEmailOnSuccesCB">Email me when the update/transfer is completed</label>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button (click)="continueSubmit()" styleClass="p-button-sm p-button-raised p-button-primary">OK</p-button>
+  </ng-template>
+</p-dialog>
 
 <table class="table">
   <tbody>

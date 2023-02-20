@@ -11,6 +11,7 @@ import { StoreResult } from '../models/store-result';
 import { interval, Subscription, switchMap } from 'rxjs';
 import { CompareResult } from '../models/compare-result';
 import { Location } from '@angular/common'
+import { PluginService } from '../plugin.service';
 
 @Component({
   selector: 'app-submit',
@@ -37,12 +38,15 @@ export class SubmitComponent implements OnInit {
   disabled = false;
   submitted = false;
   done = false;
+  sendEmailOnSucces = false;
+  popup = false;
 
   constructor(
     private dataStateService: DataStateService,
     private dataUpdatesService: DataUpdatesService,
     private submitService: SubmitService,
     private location: Location,
+    private pluginService: PluginService,
     private router: Router) { }
 
   ngOnInit(): void {
@@ -133,7 +137,11 @@ export class SubmitComponent implements OnInit {
   }
 
   submit() {
-    alert('Transfer request submitted successfully. You can close the window and the transfer will continue.');
+    this.popup = true;
+  }
+
+  continueSubmit() {
+    this.popup = false;
     this.disabled = true;
     const selected: Datafile[] = [];
     this.data.forEach(datafile => {
@@ -146,7 +154,7 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
-    const httpSubscr = this.submitService.submit(selected).subscribe({
+    const httpSubscr = this.submitService.submit(selected, this.sendEmailOnSucces).subscribe({
       next: (data: StoreResult) => {
         if (data.status !== "OK") {// this should not happen
           alert("store failed, status: " + data.status);
@@ -170,7 +178,12 @@ export class SubmitComponent implements OnInit {
     this.location.back();
   }
 
-  goToDataset(){
+  goToDataset() {
     window.open(this.datasetUrl, "_blank");
- }
+  }
+
+  sendMails(): boolean {
+    return this.pluginService.sendMails();
+  }
+
 }

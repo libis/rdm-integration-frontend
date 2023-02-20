@@ -18,7 +18,9 @@ export class PluginService {
     collectionFieldEditable: false,
     externalURL: '',
     showDvTokenGetter: false,
+    showDvToken: true,
     redirect_uri: '',
+    sendMails: false,
     plugins: [],
   };
 
@@ -112,6 +114,10 @@ export class PluginService {
     return this.config.showDvTokenGetter;
   }
 
+  showDVToken(): boolean {
+    return this.config.showDvToken;
+  }
+
   isStoreDvToken(): boolean {
     const v = this.config.storeDvToken;
     return v === undefined ? false : v;
@@ -120,4 +126,9 @@ export class PluginService {
   getRedirectUri(): string {
     return this.config.redirect_uri;
   }
+
+  sendMails(): boolean {
+    return this.config.sendMails;
+  }
+
 }

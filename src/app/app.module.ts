@@ -22,6 +22,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
+import {DialogModule} from 'primeng/dialog';
+import {CheckboxModule} from 'primeng/checkbox';
 
 @NgModule({
   declarations: [
@@ -47,6 +49,8 @@ import { SkeletonModule } from 'primeng/skeleton';
     OverlayPanelModule,
     DropdownModule,
     SkeletonModule,
+    DialogModule,
+    CheckboxModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

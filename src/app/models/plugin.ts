@@ -39,7 +39,9 @@ export interface Config {
     collectionFieldEditable: boolean;
     externalURL: string;
     showDvTokenGetter: boolean;
+    showDvToken: boolean;
     redirect_uri: string;
     storeDvToken?: boolean;
+    sendMails: boolean;
     plugins: RepoPlugin[];
 }
