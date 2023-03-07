@@ -278,6 +278,11 @@ export class ConnectComponent implements OnInit {
       dataverse_token: this.dataverseToken,
     }
     this.dataStateService.initializeState(creds);
+    
+    if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
+      localStorage.setItem("dataverseToken", this.dataverseToken!);
+    }
+    
     this.router.navigate(['/compare', this.datasetId]);
   }
 
