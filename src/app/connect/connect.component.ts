@@ -140,7 +140,7 @@ export class ConnectComponent implements OnInit {
         const code = params['code'];
         if (this.getNounce() === loginState.nounce && this.pluginId !== undefined && code !== undefined) {
           const tokenSubscr = this.oauth.getToken(this.pluginId, code, loginState.nounce).subscribe(x => {
-            this.token = x.access_token;
+            this.token = x.session_id;
             if (!this.pluginService.isStoreDvToken()) {
               localStorage.removeItem("dataverseToken");
             }
