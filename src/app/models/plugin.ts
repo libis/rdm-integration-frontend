@@ -7,6 +7,7 @@ export interface RepoPlugin {
     pluginName: string;
     optionFieldName?: string;
     optionFieldPlaceholder?: string;
+    optionFieldInteractive?: boolean;
     tokenFieldName?: string;
     tokenFieldPlaceholder?: string;
     sourceUrlFieldName?: string;

@@ -4,6 +4,7 @@ export interface RepoLookupRequest {
     pluginId?: string;
     plugin?: string;
     repoName?: string;
+    option?: string;
     url?: string;
     user?: string;
     token?: string;

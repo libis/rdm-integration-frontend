@@ -27,6 +27,7 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 export class ConnectComponent implements OnInit {
 
   @ViewChild('repoDropdown') repoNameDropdown!: Dropdown;
+  @ViewChild('optionDropdown') optionDropdown!: Dropdown;
 
   // CONSTANTS
 
@@ -564,15 +565,16 @@ export class ConnectComponent implements OnInit {
     return v === undefined ? "" : v;
   }
 
-  getOptions(): void {
+  retrieveOptions(v?: string): void {
     const req = this.getRepoLookupRequest(false);
     if (req === undefined) {
       return;
     }
+    req.option = v;
 
     const httpSubscr = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
-        if (items !== undefined && items.length > 0) {
+        if (items && items.length > 0) {
           this.branchItems = items;
         } else {
           this.branchItems = [];
@@ -585,6 +587,17 @@ export class ConnectComponent implements OnInit {
         this.option = undefined;
       },
     });
+  }
+
+  getOptions(): void {
+    const interactive = this.pluginService.getPlugin(this.pluginId).optionFieldInteractive;
+    if (interactive) {
+      //TODO
+      //this.retrieveOptions(this.option)
+      this.retrieveOptions()
+    } else {
+      this.retrieveOptions()
+    }
   }
 
   // USER FIELD
@@ -640,7 +653,7 @@ export class ConnectComponent implements OnInit {
 
     const httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
-        if (items !== undefined && items.length > 0) {
+        if (items && items.length > 0) {
           setter(this, items);
         } else {
           setter(this, []);
