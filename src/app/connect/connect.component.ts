@@ -17,7 +17,7 @@ import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { Dropdown } from 'primeng/dropdown';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
-import { RepoLookupRequest, TreeEvent } from '../models/repo-lookup';
+import { RepoLookupRequest } from '../models/repo-lookup';
 
 @Component({
   selector: 'app-connect',
@@ -68,8 +68,14 @@ export class ConnectComponent implements OnInit {
   creatingNewDataset = false;
   optionsLoading = false;
   repoSearchSubject: Subject<string> = new Subject();
-  searchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
-  searchResultsSubscription?: Subscription;
+  collectionSearchSubject: Subject<string> = new Subject();
+  datasetSearchSubject: Subject<string> = new Subject();
+  repoSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+  collectionSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+  datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+  repoSearchResultsSubscription?: Subscription;
+  collectionSearchResultsSubscription?: Subscription;
+  datasetSearchResultsSubscription?: Subscription;
 
   constructor(
     private router: Router,
@@ -82,9 +88,17 @@ export class ConnectComponent implements OnInit {
     private route: ActivatedRoute,
     private oauth: OauthService,
   ) {
-    this.searchResultsObservable = this.repoSearchSubject.pipe(
+    this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map(searchText => this.repoNameSearch(searchText)),
+    );
+    this.collectionSearchResultsObservable = this.collectionSearchSubject.pipe(
+      debounceTime(this.DEBOUNCE_TIME),
+      map(searchText => this.collectionSearch(searchText)),
+    );
+    this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
+      debounceTime(this.DEBOUNCE_TIME),
+      map(searchText => this.datasetSearch(searchText)),
     );
   }
 
@@ -93,10 +107,20 @@ export class ConnectComponent implements OnInit {
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
     }
-    this.searchResultsSubscription = this.searchResultsObservable.subscribe({
+    this.repoSearchResultsSubscription = this.repoSearchResultsObservable.subscribe({
       next: x => x.then(v => this.repoNames = v)
         .catch(err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }]),
       error: err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }],
+    });
+    this.collectionSearchResultsSubscription = this.collectionSearchResultsObservable.subscribe({
+      next: x => x.then(v => this.collectionItems = v)
+        .catch(err => this.collectionItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
+      error: err => this.collectionItems = [{ label: 'search failed: ' + err.message, value: err.message }],
+    });
+    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
+      next: x => x.then(v => this.doiItems = v)
+        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
+      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
     });
     this.route.queryParams
       .subscribe(params => {
@@ -154,7 +178,9 @@ export class ConnectComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    this.searchResultsSubscription?.unsubscribe();
+    this.repoSearchResultsSubscription?.unsubscribe();
+    this.collectionSearchResultsSubscription?.unsubscribe();
+    this.datasetSearchResultsSubscription?.unsubscribe();
   }
 
   /***********************
@@ -567,22 +593,22 @@ export class ConnectComponent implements OnInit {
     return v === undefined ? "" : v;
   }
 
-  getOptions(event?: TreeEvent): void {
+  getOptions(node?: TreeNode<string>): void {
     const req = this.getRepoLookupRequest(false);
     if (req === undefined) {
       return;
     }
-    if (event) {
-      req.option = event.node.data;
+    if (node) {
+      req.option = node.data;
       this.optionsLoading = true;
     }
 
     const httpSubscr = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
-        if (items && event) {
+        if (items && node) {
           const nodes: TreeNode<string>[] = [];
           items.forEach(i => nodes.push({ label: i.label, data: i.value, leaf: false, selectable: true }))
-          event.node.children = nodes;
+          node.children = nodes;
           this.optionsLoading = false;
         } else if (items && items.length > 0) {
           this.branchItems = items;
@@ -604,14 +630,14 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.pluginId).optionFieldInteractive ? true : false;
   }
 
-  optionSelected(event: TreeEvent): void {
-    const v = event.node.data;
+  optionSelected(node: TreeNode<string>): void {
+    const v = node.data;
     if (!v || v === '') {
       this.selectedOption = undefined;
       this.option = undefined;
     } else {
       this.option = v;
-      this.selectedOption = event.node;
+      this.selectedOption = node;
     }
   }
 
@@ -666,7 +692,7 @@ export class ConnectComponent implements OnInit {
     }
     setter(this, this.loadingItems);
 
-    const httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, this.dataverseToken).subscribe({
+    const httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, undefined, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items && items.length > 0) {
           setter(this, items);
@@ -706,6 +732,19 @@ export class ConnectComponent implements OnInit {
     this.datasetId = undefined;
   }
 
+  onCollectionSearch(searchTerm: string | null) {
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.collectionItems = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+      return;
+    }
+    this.collectionItems = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+    this.collectionSearchSubject.next(searchTerm);
+  }
+
+  async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    return await firstValueFrom(this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), "Dataverse", searchTerm, this.dataverseToken));
+  }
+
   // DATASETS
 
   getDoiOptions(): void {
@@ -741,5 +780,18 @@ export class ConnectComponent implements OnInit {
         this.creatingNewDataset = false;
       }
     });
+  }
+
+  onDatasetSearch(searchTerm: string | null) {
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.doiItems = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+      return;
+    }
+    this.doiItems = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+    this.datasetSearchSubject.next(searchTerm);
+  }
+
+  async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    return await firstValueFrom(this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), "Dataset", searchTerm, this.dataverseToken));
   }
 }
