@@ -9,7 +9,7 @@ import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NewDatasetResponse } from '../models/new-dataset-response';
-import { SelectItem } from 'primeng/api';
+import { SelectItem, TreeNode } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
@@ -17,7 +17,7 @@ import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { Dropdown } from 'primeng/dropdown';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
-import { RepoLookupRequest } from '../models/repo-lookup';
+import { RepoLookupRequest, TreeEvent } from '../models/repo-lookup';
 
 @Component({
   selector: 'app-connect',
@@ -27,7 +27,6 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 export class ConnectComponent implements OnInit {
 
   @ViewChild('repoDropdown') repoNameDropdown!: Dropdown;
-  @ViewChild('optionDropdown') optionDropdown!: Dropdown;
 
   // CONSTANTS
 
@@ -59,12 +58,15 @@ export class ConnectComponent implements OnInit {
   branchItems: SelectItem<string>[] = [];
   collectionItems: SelectItem<string>[] = [];
   doiItems: SelectItem<string>[] = [];
+  rootOptions: TreeNode<string>[] = [{ label: 'Expand and select', data: '', leaf: false, selectable: true }];
+  selectedOption?: TreeNode<string>;
 
   // INTERNAL STATE VARIABLES
 
   url?: string;
   pluginIdSelectHidden = true;
   creatingNewDataset = false;
+  optionsLoading = false;
   repoSearchSubject: Subject<string> = new Subject();
   searchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   searchResultsSubscription?: Subscription;
@@ -279,11 +281,11 @@ export class ConnectComponent implements OnInit {
       dataverse_token: this.dataverseToken,
     }
     this.dataStateService.initializeState(creds);
-    
+
     if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
       localStorage.setItem("dataverseToken", this.dataverseToken!);
     }
-    
+
     this.router.navigate(['/compare', this.datasetId]);
   }
 
@@ -565,16 +567,24 @@ export class ConnectComponent implements OnInit {
     return v === undefined ? "" : v;
   }
 
-  retrieveOptions(v?: string): void {
+  getOptions(event?: TreeEvent): void {
     const req = this.getRepoLookupRequest(false);
     if (req === undefined) {
       return;
     }
-    req.option = v;
+    if (event) {
+      req.option = event.node.data;
+      this.optionsLoading = true;
+    }
 
     const httpSubscr = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
-        if (items && items.length > 0) {
+        if (items && event) {
+          const nodes: TreeNode<string>[] = [];
+          items.forEach(i => nodes.push({ label: i.label, data: i.value, leaf: false, selectable: true }))
+          event.node.children = nodes;
+          this.optionsLoading = false;
+        } else if (items && items.length > 0) {
           this.branchItems = items;
         } else {
           this.branchItems = [];
@@ -585,18 +595,23 @@ export class ConnectComponent implements OnInit {
         alert("branch lookup failed: " + err.error);
         this.branchItems = [];
         this.option = undefined;
+        this.optionsLoading = false;
       },
     });
   }
 
-  getOptions(): void {
-    const interactive = this.pluginService.getPlugin(this.pluginId).optionFieldInteractive;
-    if (interactive) {
-      //TODO
-      //this.retrieveOptions(this.option)
-      this.retrieveOptions()
+  isOptionFieldInteractive(): boolean {
+    return this.pluginService.getPlugin(this.pluginId).optionFieldInteractive ? true : false;
+  }
+
+  optionSelected(event: TreeEvent): void {
+    const v = event.node.data;
+    if (!v || v === '') {
+      this.selectedOption = undefined;
+      this.option = undefined;
     } else {
-      this.retrieveOptions()
+      this.option = v;
+      this.selectedOption = event.node;
     }
   }
 

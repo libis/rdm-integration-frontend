@@ -52,7 +52,7 @@
             <p-dropdown [editable]="repoNameFieldEditable()" id="repoNameSearch" [options]="repoNames" [(ngModel)]="foundRepoName" [placeholder]="getRepoNamePlaceholder()" 
               [filter]="true" [resetFilterOnHide]="true" filterBy="label" (onFilter)="onRepoNameSearch($event.filter)" (onClick)="startRepoSearch()" (onChange)="onRepoChange()"></p-dropdown>
           </div>
-          <div class="mb-3" [hidden]="getOptionFieldName() === undefined">
+          <div class="mb-3" [hidden]="getOptionFieldName() === undefined || isOptionFieldInteractive()">
             <label for="repoBranch" class="form-label">{{ getOptionFieldName() }}</label><br/>
             <p-dropdown id="repoBranch" [options]="branchItems" [filter]="true" filterBy="label" [(ngModel)]="option" [placeholder]="getOptionPlaceholder()" (onClick)="getOptions()">
               <ng-template pTemplate="loader" let-options="options">
@@ -61,6 +61,10 @@
                 </div>
               </ng-template>
             </p-dropdown>
+          </div>
+          <div class="mb-3" [hidden]="getOptionFieldName() === undefined || !isOptionFieldInteractive()">
+            <label for="repoBranchTree" class="form-label">{{ getOptionFieldName() }}</label><br/>
+            <p-tree selectionMode="single" [selection]="selectedOption" [value]="rootOptions" (onNodeExpand)="getOptions($event)" [loading]="optionsLoading" (onNodeSelect)="optionSelected($event)"></p-tree>
           </div>
         </div>
       </div>
