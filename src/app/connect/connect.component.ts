@@ -555,14 +555,6 @@ export class ConnectComponent implements OnInit {
   }
 
   getSourceUrlValue(): string | undefined {
-    const repoName = this.getRepoName();
-    const valueMap = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValueMap;
-    if (repoName !== undefined && valueMap !== undefined) {
-      const res = valueMap[repoName];
-      if (res !== undefined && res !== null) {
-        return res;
-      }
-    }
     const res = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValue;
     if (res !== undefined) {
       return res;

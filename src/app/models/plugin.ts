@@ -13,7 +13,6 @@ export interface RepoPlugin {
     sourceUrlFieldName?: string;
     sourceUrlFieldPlaceholder?: string;
     sourceUrlFieldValue?: string;
-    sourceUrlFieldValueMap?: { [repoName: string]: string };
     usernameFieldName?: string;
     usernameFieldPlaceholder?: string;
     repoNameFieldName?: string;
