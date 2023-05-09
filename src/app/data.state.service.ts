@@ -38,13 +38,11 @@ export class DataStateService {
   }
 
   private getCompareData(key: Key): void {
-    let i = 0;
-    const subscription = interval(1000)
+    const subscription = interval(10000)
       .pipe(
         switchMap(() => this.dataService.getCachedData(key))
       ).subscribe({
         next: (res: CachedResponse) => {
-        i++;
         if (res.ready === true) {
           if (res.res) {
             res.res.data = res.res.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
@@ -56,10 +54,6 @@ export class DataStateService {
             alert(res.err);
           }
           subscription.unsubscribe();
-        } else if (i > 1000) {
-          alert("compare failed: time out");
-          subscription.unsubscribe();
-          this.router.navigate(['/connect']);
         }
       },
       error: (err) => {
