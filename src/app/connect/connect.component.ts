@@ -519,6 +519,10 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.pluginId).repoNameFieldHasSearch!;
   }
 
+  repoNameSearchInitEnabled(): boolean {
+    return this.pluginService.getPlugin(this.pluginId).repoNameFieldHasInit!;
+  }
+
   async repoNameSearch(searchTerm: string): Promise<SelectItem<string>[]> {
     const req = this.getRepoLookupRequest(true);
     if (req === undefined) {
