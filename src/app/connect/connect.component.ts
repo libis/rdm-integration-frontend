@@ -316,8 +316,8 @@ export class ConnectComponent implements OnInit {
   }
 
   parseAndCheckFields(): string | undefined {
-    const strings: (string | undefined)[] = [this.pluginId, this.datasetId, this.dataverseToken];
-    const names: string[] = ['Repository type', 'Dataset DOI', 'Dataverse token'];
+    const strings: (string | undefined)[] = [this.pluginId, this.datasetId];
+    const names: string[] = ['Repository type', 'Dataset DOI'];
     if (this.getSourceUrlFieldName()) {
       strings.push(this.sourceUrl);
       names.push(this.getSourceUrlFieldName()!);
