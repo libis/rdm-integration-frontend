@@ -766,6 +766,9 @@ export class ConnectComponent implements OnInit {
     this.creatingNewDataset = true;
     const httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {
+        if (data.persistentId !== undefined) {
+          this.doiItems = [{ label: data.persistentId, value: data.persistentId }];
+        }
         this.datasetId = data.persistentId;
         httpSubscr.unsubscribe();
         this.creatingNewDataset = false;
