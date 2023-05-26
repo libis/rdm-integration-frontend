@@ -32,9 +32,8 @@
 <div [hidden]="rejected === undefined || rejected.length === 0">
   <table class="table">
     <tbody>
-      <tr>
-        <h5><i [class]="icon_warning" style="color:red"></i> Files that exceed the file size limit ({{ maxFileSize }} bytes) or have not allowed characters in the name and cannot be uploaded:</h5>
-        <hr>
+      <tr class="file-list-header">
+        <th><i [class]="icon_warning" style="color:red"></i> Files that exceed the file size limit ({{ maxFileSize }} bytes) or have not allowed characters in the name and cannot be uploaded:</th>
       </tr>
       <tr>
         <table class="table">
