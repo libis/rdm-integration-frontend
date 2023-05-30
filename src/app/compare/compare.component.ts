@@ -34,7 +34,7 @@ export class CompareComponent implements OnInit {
   refreshHidden = true;
   isInFilterMode = false;
 	maxFileSize?: number;
-	tooLarge?: string[];
+	rejected?: string[];
 
   data: CompareResult = {};
   updatedDataSubscription?: Subscription;
@@ -97,7 +97,7 @@ export class CompareComponent implements OnInit {
         this.setData(data);
         if (data.data && data.id) {
           this.maxFileSize = data.maxFileSize;
-          this.tooLarge = data.tooLarge;
+          this.rejected = data.rejected;
           if (this.data.status !== ResultStatus.Updating) {
             this.disabled = false;
             this.loading = false;
@@ -111,7 +111,7 @@ export class CompareComponent implements OnInit {
 
   getUpdatedDataSubscription(): Subscription {
     let cnt = 0;
-    return interval(1000).pipe(
+    return interval(10000).pipe(
       switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
     ).subscribe((data: CompareResult) => {
       cnt++;

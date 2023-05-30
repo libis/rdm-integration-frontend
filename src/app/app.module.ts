@@ -22,8 +22,10 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DropdownModule } from 'primeng/dropdown';
 import { SkeletonModule } from 'primeng/skeleton';
-import {DialogModule} from 'primeng/dialog';
-import {CheckboxModule} from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
+import { CheckboxModule } from 'primeng/checkbox';
+import { TreeModule } from 'primeng/tree';
+import { TreeSelectModule } from 'primeng/treeselect';
 
 @NgModule({
   declarations: [
@@ -51,6 +53,8 @@ import {CheckboxModule} from 'primeng/checkbox';
     SkeletonModule,
     DialogModule,
     CheckboxModule,
+    TreeModule,
+    TreeSelectModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

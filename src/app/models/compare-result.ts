@@ -14,7 +14,7 @@ export interface CompareResult {
   data?: Datafile[];
   url?: string;
 	maxFileSize?: number;
-	tooLarge?: string[];
+	rejected?: string[];
 }
 
 export interface CachedResponse {

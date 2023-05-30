@@ -7,12 +7,12 @@ export interface RepoPlugin {
     pluginName: string;
     optionFieldName?: string;
     optionFieldPlaceholder?: string;
+    optionFieldInteractive?: boolean;
     tokenFieldName?: string;
     tokenFieldPlaceholder?: string;
     sourceUrlFieldName?: string;
     sourceUrlFieldPlaceholder?: string;
     sourceUrlFieldValue?: string;
-    sourceUrlFieldValueMap?: { [repoName: string]: string };
     usernameFieldName?: string;
     usernameFieldPlaceholder?: string;
     repoNameFieldName?: string;
@@ -20,6 +20,7 @@ export interface RepoPlugin {
     repoNameFieldEditable?: boolean;
     repoNameFieldValues?: string[];
     repoNameFieldHasSearch: boolean;
+    repoNameFieldHasInit: boolean;
     parseSourceUrlField: boolean;
     tokenName?: string;
     tokenGetter?: TokenGetter;

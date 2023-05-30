@@ -33,6 +33,7 @@ export class PluginService {
     pluginName: "Unknown plugin",
     parseSourceUrlField: false,
     repoNameFieldHasSearch: false,
+    repoNameFieldHasInit: false,
     showTokenGetter: false,
   };
 

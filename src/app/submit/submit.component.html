@@ -15,7 +15,7 @@
 <h4 style="margin: 3rem; text-align: center;"><i [class]="icon_warning" style="color:red"></i> Make sure not to openly publish sensitive information, copyrighted materials or third-party libraries.</h4>
 <p-dialog header="Submit" position="top-right" [modal]="true" [(visible)]="popup">
   <p class="m-0">Click on "OK" to start the update/transfer. You can close the window and the transfer will continue.</p>
-  <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the update/transfer has been unsuccessful."</p>
+  <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the update/transfer has been unsuccessful.</p>
   <br><br>
   <div style="text-align: right;">
     <div class="field-checkbox" [hidden]="!sendMails()">
@@ -30,9 +30,8 @@
 
 <table class="table">
   <tbody>
-    <tr>
-      <h5><i [class]="icon_copy"></i> Files that will be created</h5>
-      <hr>
+    <tr class="file-list-header">
+      <th><i [class]="icon_copy"></i> Files that will be created</th>
     </tr>
     <tr>
       <table class="table">
@@ -41,9 +40,8 @@
         </tbody>
       </table>
     </tr>
-    <tr>
-      <h5><i [class]="icon_update"></i> Files that will be updated</h5>
-      <hr>
+    <tr class="file-list-header">
+      <th><i [class]="icon_update"></i> Files that will be updated</th>
     </tr>
     <tr>
       <table class="table">
@@ -52,9 +50,8 @@
         </tbody>
       </table>
     </tr>
-    <tr>
-      <h5><i [class]="icon_delete"></i> Files that will be deleted</h5>
-      <hr>
+    <tr class="file-list-header">
+      <th><i [class]="icon_delete"></i> Files that will be deleted</th>
     </tr>
     <tr>
       <table class="table">

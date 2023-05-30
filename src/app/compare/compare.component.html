@@ -29,17 +29,16 @@
 
 <br/>
 
-<div [hidden]="tooLarge === undefined || tooLarge.length === 0">
+<div [hidden]="rejected === undefined || rejected.length === 0">
   <table class="table">
     <tbody>
-      <tr>
-        <h5><i [class]="icon_warning" style="color:red"></i> Files that exceed the file size limit ({{ maxFileSize }} bytes) and cannot be uploaded:</h5>
-        <hr>
+      <tr class="file-list-header">
+        <th><i [class]="icon_warning" style="color:red"></i> Files that exceed the file size limit ({{ maxFileSize }} bytes) or have not allowed characters in the name and cannot be uploaded:</th>
       </tr>
       <tr>
         <table class="table">
           <tbody>
-            <tr *ngFor="let fileName of tooLarge">
+            <tr *ngFor="let fileName of rejected">
               <td><span>{{ fileName }}</span></td>
             </tr>
           </tbody>

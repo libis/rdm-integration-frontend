@@ -352,3 +352,13 @@ footer>div {
   margin-left: 0rem;
   margin-right: 0rem;
 }
+
+.file-list-header {
+    font-weight: 700;
+    color: #343a40;
+    background: #f8f9fa;
+    padding: 1rem 1rem;
+    border: 1px solid #dee2e6;
+    border-width: 0 0 1px 0;
+    transition: box-shadow 0.2s;
+}
