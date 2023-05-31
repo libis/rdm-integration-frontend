@@ -545,7 +545,12 @@ export class ConnectComponent implements OnInit {
     if (this.foundRepoName !== undefined) {
       return;
     }
-    this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+    if (this.repoNameSearchInitEnabled()) {
+      this.repoNames = [{ label: 'loding...', value: 'start' }];
+      this.repoSearchSubject.next('');
+    } else {
+      this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+    }
   }
 
   // REPO VIA URL
