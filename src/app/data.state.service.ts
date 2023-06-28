@@ -2,7 +2,7 @@
 
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, interval, Observable, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
 import { DataService } from './data.service';
 import { CachedResponse, CompareResult, Key } from './models/compare-result';
@@ -26,23 +26,21 @@ export class DataStateService {
     this.credentialsService.credentials = creds;
     const subscription = this.dataService.getData().subscribe({
       next: (key) => {
-        this.getCompareData(key);
         subscription.unsubscribe();
+        this.getCompareData(key);
       },
       error: (err) => {
-        alert("getting data failed: " + err.error);
         subscription.unsubscribe();
+        alert("getting data failed: " + err.error);
         this.router.navigate(['/connect']);
       }
     });
   }
 
   private getCompareData(key: Key): void {
-    const subscription = interval(10000)
-      .pipe(
-        switchMap(() => this.dataService.getCachedData(key))
-      ).subscribe({
-        next: (res: CachedResponse) => {
+    const subscription = this.dataService.getCachedData(key).subscribe({
+      next: async (res: CachedResponse) => {
+        subscription.unsubscribe();
         if (res.ready === true) {
           if (res.res) {
             res.res.data = res.res.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
@@ -53,12 +51,15 @@ export class DataStateService {
           if (res.err && res.err !== "") {
             alert(res.err);
           }
-          subscription.unsubscribe();
+        } else {
+          const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+          await sleep(1000);
+          this.getCompareData(key);
         }
       },
       error: (err) => {
-        alert("comparing failed: " + err.error);
         subscription.unsubscribe();
+        alert("comparing failed: " + err.error);
         this.router.navigate(['/connect']);
       }
     });

@@ -8,7 +8,6 @@ import { SubmitService } from '../submit.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
-import { interval, Subscription, switchMap } from 'rxjs';
 import { CompareResult } from '../models/compare-result';
 import { Location } from '@angular/common'
 import { PluginService } from '../plugin.service';
@@ -26,7 +25,6 @@ export class SubmitComponent implements OnInit {
   icon_delete = "pi pi-trash";
 
   data: Datafile[] = [];// this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
-  dataSubscription?: Subscription;// monitors the progress of the job
   pid = "";
   datasetUrl = "";
 
@@ -53,27 +51,24 @@ export class SubmitComponent implements OnInit {
     this.loadData();
   }
 
-  ngOnDestroy(): void {
-    this.dataSubscription?.unsubscribe();
-  }
-
-  getDataSubscripion(): Subscription {
-    return interval(5000)
-      .pipe(
-        switchMap(() => this.dataUpdatesService.updateData(this.data, this.pid))
-      ).subscribe({
-        next: (res: CompareResult) => {
+  getDataSubscripion(): void {
+    const dataSubscription = this.dataUpdatesService.updateData(this.data, this.pid).subscribe({
+        next: async (res: CompareResult) => {
+          dataSubscription?.unsubscribe();
           if (res.data !== undefined) {
             this.setData(res.data);
           }
           if (!this.hasUnfinishedDataFiles()) {
-            this.dataSubscription?.unsubscribe();
             this.done = true;
+          } else {
+            const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+            await sleep(1000);
+            this.getDataSubscripion();
           }
         },
         error: (err) => {
+          dataSubscription?.unsubscribe();
           alert("getting status of data failed: " + err.error);
-          this.dataSubscription?.unsubscribe();
           this.router.navigate(['/connect']);
         },
       });
@@ -160,7 +155,7 @@ export class SubmitComponent implements OnInit {
           alert("store failed, status: " + data.status);
           this.router.navigate(['/connect']);
         } else {
-          this.dataSubscription = this.getDataSubscripion();
+          this.getDataSubscripion();
           this.submitted = true;
           this.datasetUrl = data.datasetUrl!;
         }
@@ -168,7 +163,6 @@ export class SubmitComponent implements OnInit {
       },
       error: (err) => {
         alert("store failed: " + err.error);
-        this.dataSubscription?.unsubscribe();
         this.router.navigate(['/connect']);
       },
     });
