@@ -4,7 +4,6 @@
 
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { interval, Subscription, switchMap } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
@@ -33,11 +32,10 @@ export class CompareComponent implements OnInit {
   loading = true;
   refreshHidden = true;
   isInFilterMode = false;
-	maxFileSize?: number;
-	rejected?: string[];
+  maxFileSize?: number;
+  rejected?: string[];
 
   data: CompareResult = {};
-  updatedDataSubscription?: Subscription;
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
 
@@ -86,10 +84,6 @@ export class CompareComponent implements OnInit {
     this.setUpdatedDataSubscription();
   }
 
-  ngOnDestroy(): void {
-    this.updatedDataSubscription?.unsubscribe();
-  }
-
   setUpdatedDataSubscription() {
     const initialStateSubscription = this.dataStateService.getObservableState().subscribe((data) => {
       if (data !== null) {
@@ -102,36 +96,37 @@ export class CompareComponent implements OnInit {
             this.disabled = false;
             this.loading = false;
           } else {
-            this.updatedDataSubscription = this.getUpdatedDataSubscription();
+            this.getUpdatedData(0);
           }
         }
       }
     });
   }
 
-  getUpdatedDataSubscription(): Subscription {
-    let cnt = 0;
-    return interval(10000).pipe(
-      switchMap(() => this.dataUpdatesService.updateData(this.data.data!, this.data.id!))
-    ).subscribe((data: CompareResult) => {
+  getUpdatedData(cnt: number): void {
+    const subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe(async (data: CompareResult) => {
       cnt++;
+      subscription.unsubscribe();
       if (data.data && data.id) {
         this.setData(data);
       }
       if (this.data.status !== ResultStatus.Updating) {
-        this.updatedDataSubscription?.unsubscribe();
         this.disabled = false;
         this.loading = false;
       } else if (cnt > 10) {
-        this.updatedDataSubscription?.unsubscribe();
         this.loading = false;
         this.refreshHidden = false;
+      } else {
+        const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+        await sleep(1000);
+        this.getUpdatedData(cnt);
       }
     });
   }
 
   refresh(): void {
     const subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe((data) => {
+      subscription.unsubscribe();
       if (data.data && data.id) {
         this.setData(data);
       }
@@ -140,7 +135,6 @@ export class CompareComponent implements OnInit {
       } else {
         this.refreshHidden = true;
       }
-      subscription.unsubscribe();
     });
   }
 
