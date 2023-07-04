@@ -9,5 +9,6 @@ export interface Credentials {
   user?: string;
   token?: string;
   dataset_id?: string;
+  newly_created?: boolean;
   dataverse_token?: string;
 }

@@ -76,6 +76,7 @@ export class ConnectComponent implements OnInit {
   repoSearchResultsSubscription?: Subscription;
   collectionSearchResultsSubscription?: Subscription;
   datasetSearchResultsSubscription?: Subscription;
+  newlyCreated: string[] = [];
 
   constructor(
     private router: Router,
@@ -304,6 +305,7 @@ export class ConnectComponent implements OnInit {
       user: this.user,
       token: this.token,
       dataset_id: this.datasetId,
+      newly_created: this.newlyCreated.includes(this.datasetId!),
       dataverse_token: this.dataverseToken,
     }
     this.dataStateService.initializeState(creds);
@@ -777,6 +779,7 @@ export class ConnectComponent implements OnInit {
         this.datasetId = data.persistentId;
         httpSubscr.unsubscribe();
         this.creatingNewDataset = false;
+        this.newlyCreated.push(data.persistentId!);
       },
       error: (err) => {
         alert("creating new dataset failed: " + err.error);
