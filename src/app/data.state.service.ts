@@ -7,6 +7,7 @@ import { CredentialsService } from './credentials.service';
 import { DataService } from './data.service';
 import { CachedResponse, CompareResult, Key } from './models/compare-result';
 import { Credentials } from './models/credentials';
+import { UtilsService } from './utils.service';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,7 @@ export class DataStateService {
     private credentialsService: CredentialsService,
     private dataService: DataService,
     private router: Router,
+    private utils: UtilsService,
   ) { }
 
   initializeState(creds: Credentials): void {
@@ -52,8 +54,7 @@ export class DataStateService {
             alert(res.err);
           }
         } else {
-          const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-          await sleep(1000);
+          await this.utils.sleep(1000);
           this.getCompareData(key);
         }
       },

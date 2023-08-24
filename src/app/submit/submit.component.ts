@@ -11,6 +11,7 @@ import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
 import { Location } from '@angular/common'
 import { PluginService } from '../plugin.service';
+import { UtilsService } from '../utils.service';
 
 @Component({
   selector: 'app-submit',
@@ -45,7 +46,9 @@ export class SubmitComponent implements OnInit {
     private submitService: SubmitService,
     private location: Location,
     private pluginService: PluginService,
-    private router: Router) { }
+    private router: Router,
+    private utils: UtilsService,
+  ) { }
 
   ngOnInit(): void {
     this.loadData();
@@ -53,25 +56,24 @@ export class SubmitComponent implements OnInit {
 
   getDataSubscripion(): void {
     const dataSubscription = this.dataUpdatesService.updateData(this.data, this.pid).subscribe({
-        next: async (res: CompareResult) => {
-          dataSubscription?.unsubscribe();
-          if (res.data !== undefined) {
-            this.setData(res.data);
-          }
-          if (!this.hasUnfinishedDataFiles()) {
-            this.done = true;
-          } else {
-            const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-            await sleep(1000);
-            this.getDataSubscripion();
-          }
-        },
-        error: (err) => {
-          dataSubscription?.unsubscribe();
-          alert("getting status of data failed: " + err.error);
-          this.router.navigate(['/connect']);
-        },
-      });
+      next: async (res: CompareResult) => {
+        dataSubscription?.unsubscribe();
+        if (res.data !== undefined) {
+          this.setData(res.data);
+        }
+        if (!this.hasUnfinishedDataFiles()) {
+          this.done = true;
+        } else {
+          await this.utils.sleep(1000);
+          this.getDataSubscripion();
+        }
+      },
+      error: (err) => {
+        dataSubscription?.unsubscribe();
+        alert("getting status of data failed: " + err.error);
+        this.router.navigate(['/connect']);
+      },
+    });
   }
 
   hasUnfinishedDataFiles(): boolean {

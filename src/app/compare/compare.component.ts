@@ -12,6 +12,7 @@ import { TreeNode } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { PluginService } from '../plugin.service';
+import { UtilsService } from '../utils.service';
 
 @Component({
   selector: 'app-compare',
@@ -75,6 +76,7 @@ export class CompareComponent implements OnInit {
     private router: Router,
     private folderActionUpdateService: FolderActionUpdateService,
     private pluginService: PluginService,
+    private utils: UtilsService,
   ) { }
 
   ngOnInit(): void {
@@ -117,8 +119,7 @@ export class CompareComponent implements OnInit {
         this.loading = false;
         this.refreshHidden = false;
       } else {
-        const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-        await sleep(1000);
+        await this.utils.sleep(1000);
         this.getUpdatedData(cnt);
       }
     });
