@@ -548,7 +548,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     if (this.repoNameSearchInitEnabled()) {
-      this.repoNames = [{ label: 'loding...', value: 'start' }];
+      this.repoNames = [{ label: 'loading...', value: 'start' }];
       this.repoSearchSubject.next('');
     } else {
       this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
