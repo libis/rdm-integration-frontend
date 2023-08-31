@@ -9,7 +9,7 @@ export class UtilsService {
   constructor() { /*NOOP*/ }
 
   sleep(ms: number): Promise<void> {
-    return new Promise<void>(() => setTimeout(() => { /*NOOP*/ }, ms));
+    return new Promise<void>(f => setTimeout(f, ms));
   }
 
 }
