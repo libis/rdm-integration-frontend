@@ -341,16 +341,16 @@ footer>div {
 }
 
 .sticky-menu {
-  font-size: 1.8rem;
-  font-weight: 100;
-  position: sticky;
-  top: 0rem;
-  padding: 0.4rem;
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  z-index: 1;
-  margin-left: 0rem;
-  margin-right: 0rem;
+    font-size: 0.875rem;
+    font-weight: 100;
+    position: sticky;
+    top: 0rem;
+    padding: 0.4rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    z-index: 1;
+    margin-left: 0rem;
+    margin-right: 0rem;
 }
 
 .file-list-header {
@@ -361,4 +361,135 @@ footer>div {
     border: 1px solid #dee2e6;
     border-width: 0 0 1px 0;
     transition: box-shadow 0.2s;
+}
+
+button {
+    border-radius: 6px;
+}
+
+.p-accordion .p-accordion-header .p-accordion-header-link {
+    padding: 1.25rem;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+    background: #f8f9fa;
+    font-weight: 700;
+    border-radius: 6px;
+    transition: box-shadow .2s
+}
+
+.p-accordion .p-accordion-header .p-accordion-header-link .p-accordion-toggle-icon {
+    margin-right: .5rem
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled) .p-accordion-header-link:focus {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: inset 0 0 0 .2rem #bfdbfe
+}
+
+.p-accordion .p-accordion-header:not(.p-highlight):not(.p-disabled):hover .p-accordion-header-link {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    color: #343a40
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    color: #343a40;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0
+}
+
+.p-accordion .p-accordion-header:not(.p-disabled).p-highlight:hover .p-accordion-header-link {
+    border-color: #dee2e6;
+    background: #e9ecef;
+    color: #343a40
+}
+
+.p-accordion .p-accordion-content {
+    padding: 1.25rem;
+    border: 1px solid #dee2e6;
+    background: #ffffff;
+    color: #495057;
+    border-top: 0;
+    border-radius: 0 0 6px 6px
+}
+
+.p-accordion p-accordiontab .p-accordion-tab {
+    margin-bottom: 4px
+}
+
+.p-treetable .p-treetable-thead>tr>th {
+    text-align: left;
+    padding: 1rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-width: 0 0 1px 0;
+    font-weight: 700;
+    color: #374151;
+    background: #f9fafb;
+    transition: box-shadow 0.2s;
+}
+
+.p-treetable .p-treetable-tfoot>tr>td {
+    text-align: left;
+    padding: 1rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-width: 0 0 1px 0;
+    font-weight: 700;
+    color: #374151;
+    background: #f9fafb;
+}
+
+.p-treetable .p-treetable-tbody>tr {
+    background: #ffffff;
+    color: #4b5563;
+    transition: box-shadow 0.2s;
+}
+
+.p-treetable .p-treetable-tbody>tr>td {
+    text-align: left;
+    border: 1px solid #e5e7eb;
+    border-width: 0 0 1px 0;
+    padding: 1rem 1rem;
+}
+
+.p-treetable .p-treetable-tbody>tr>td .p-treetable-toggler {
+    width: 2rem;
+    height: 2rem;
+    color: #6b7280;
+    border: 0 none;
+    background: transparent;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    margin-right: 0.5rem;
+}
+
+.p-treetable .p-treetable-tbody>tr>td .p-treetable-toggler:enabled:hover {
+    color: #374151;
+    border-color: transparent;
+    background: #f3f4f6;
+}
+
+.p-treetable .p-treetable-tbody>tr>td .p-treetable-toggler:focus-visible {
+    outline: 0 none;
+    outline-offset: 0;
+    box-shadow: 0 0 0 0.2rem #BFDBFE;
+}
+
+.p-treetable .p-treetable-tbody>tr>td .p-treetable-toggler.p-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+.p-treetable .p-treetable-tbody>tr>td p-treetablecheckbox .p-checkbox {
+    margin-right: 0.5rem;
+}
+
+.p-treetable .p-treetable-tbody>tr>td p-treetablecheckbox .p-checkbox .p-indeterminate .p-checkbox-icon {
+    color: #4b5563;
+}
+
+ul {
+    padding-left: 0;
 }
