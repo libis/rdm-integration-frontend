@@ -26,6 +26,10 @@ import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TreeModule } from 'primeng/tree';
 import { TreeSelectModule } from 'primeng/treeselect';
+import { ExecutablefileComponent } from './executablefile/executablefile.component';
+import { ComputeComponent } from './compute/compute.component';
+import { AutosizeModule } from 'ngx-autosize';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 @NgModule({
   declarations: [
@@ -35,6 +39,8 @@ import { TreeSelectModule } from 'primeng/treeselect';
     DatafileComponent,
     SubmitComponent,
     SubmittedFileComponent,
+    ExecutablefileComponent,
+    ComputeComponent,
   ],
   imports: [
     BrowserModule,
@@ -55,6 +61,8 @@ import { TreeSelectModule } from 'primeng/treeselect';
     CheckboxModule,
     TreeModule,
     TreeSelectModule,
+    AutosizeModule,
+    ProgressSpinnerModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

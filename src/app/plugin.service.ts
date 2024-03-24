@@ -48,8 +48,8 @@ export class PluginService {
         this.config.plugins.forEach(p => {
           p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
           this.allPlugins.set(p.id, p);
-          subscr.unsubscribe();
         });
+        subscr.unsubscribe();
       }
     );
   }
@@ -60,7 +60,7 @@ export class PluginService {
     this.config.plugins.forEach(x => {
       if (!added.has(x.plugin)) {
         added.add(x.plugin);
-        res.push({value: x.plugin, label: x.pluginName});
+        res.push({ value: x.plugin, label: x.pluginName });
       }
     });
     return res;
@@ -70,7 +70,7 @@ export class PluginService {
     const res: SelectItem<string>[] = [];
     this.config.plugins.forEach(x => {
       if (x.plugin == plugin) {
-        res.push({value: x.id, label: x.name});
+        res.push({ value: x.id, label: x.name });
       }
     });
     return res;
@@ -130,6 +130,14 @@ export class PluginService {
 
   sendMails(): boolean {
     return this.config.sendMails;
+  }
+
+  getQueues(extension: string): SelectItem<string>[] {
+    return this.config.queues ?
+      this.config.queues.
+        filter((queue) => queue.fileextensions.includes(extension)).
+        map((queue) => { return { label: queue.label, value: queue.value } }) :
+      [];
   }
 
 }

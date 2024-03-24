@@ -45,4 +45,11 @@ export interface Config {
     storeDvToken?: boolean;
     sendMails: boolean;
     plugins: RepoPlugin[];
+    queues?: Queue[];
+}
+
+export interface Queue {
+    label: string;
+    value: string;
+    fileextensions: string[];
 }

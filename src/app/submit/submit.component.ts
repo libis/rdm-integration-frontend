@@ -12,6 +12,8 @@ import { CompareResult } from '../models/compare-result';
 import { Location } from '@angular/common'
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
+import { DataService } from '../data.service';
+import { CredentialsService } from '../credentials.service';
 
 @Component({
   selector: 'app-submit',
@@ -39,6 +41,7 @@ export class SubmitComponent implements OnInit {
   done = false;
   sendEmailOnSucces = false;
   popup = false;
+  hasAccessToCompute = false;
 
   constructor(
     private dataStateService: DataStateService,
@@ -48,10 +51,21 @@ export class SubmitComponent implements OnInit {
     private pluginService: PluginService,
     private router: Router,
     private utils: UtilsService,
+    public dataService: DataService,
+    private credentialsService: CredentialsService,
   ) { }
 
   ngOnInit(): void {
     this.loadData();
+    const subscription = this.dataService.checkAccessToQueue('', this.credentialsService.credentials.dataverse_token, '').subscribe({
+      next: (access) => {
+        subscription.unsubscribe();
+        this.hasAccessToCompute = access.access;
+      },
+      error: (err) => {
+        subscription.unsubscribe();
+      }
+    });
   }
 
   getDataSubscripion(): void {
@@ -176,6 +190,10 @@ export class SubmitComponent implements OnInit {
 
   goToDataset() {
     window.open(this.datasetUrl, "_blank");
+  }
+
+  goToCompute() {
+    this.router.navigate(['/compute'], {queryParams: {pid: this.pid}});
   }
 
   sendMails(): boolean {

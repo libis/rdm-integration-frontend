@@ -27,3 +27,23 @@ export interface CachedResponse {
 export interface Key {
   key?: string;
 }
+
+export interface AccessResponse {
+  access: boolean;
+  message: string;
+}
+
+export interface ComputeRequest {
+  persistentId: string;
+  dataverseKey?: string;
+  queue: string;
+  executable: string;
+  sendEmailOnSucces: boolean;
+}
+
+export interface CachedComputeResponse {
+  key?: string;
+  ready?: boolean;
+  res?: string;
+  err?: string;
+}

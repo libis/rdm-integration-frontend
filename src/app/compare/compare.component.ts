@@ -258,8 +258,8 @@ export class CompareComponent implements OnInit {
     if (!data.data || data.data.length === 0) {
       return;
     }
-    const rowDataMap = this.mapDatafiles(data.data);
-    rowDataMap.forEach(v => this.addChild(v, rowDataMap));
+    const rowDataMap = this.utils.mapDatafiles(data.data);
+    rowDataMap.forEach(v => this.utils.addChild(v, rowDataMap));
     const rootNode = rowDataMap.get("");
     this.rowNodeMap = rowDataMap;
     if (rootNode?.children) {
@@ -292,52 +292,6 @@ export class CompareComponent implements OnInit {
     else if (allNew) status = Filestatus.New
     else status = Filestatus.Updated;
     node.data!.status = status;
-  }
-
-  addChild(v: TreeNode<Datafile>, rowDataMap: Map<string, TreeNode<Datafile>>): void {
-    if (v.data!.id === "") {
-      return;
-    }
-    const parent = rowDataMap.get(v.data!.path!)!;
-    const children = parent.children ? parent.children : [];
-    parent.children = children.concat(v);
-  }
-
-  mapDatafiles(data: Datafile[]): Map<string, TreeNode<Datafile>> {
-    const rootData: Datafile = {
-      path: "",
-      name: "",
-      action: Fileaction.Ignore,
-      hidden: false,
-      id: "",
-    }
-
-    const rowDataMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
-    rowDataMap.set("", {
-      data: rootData,
-    });
-
-    data.forEach((d) => {
-      let path = "";
-      d.path!.split("/").forEach((folder) => {
-        const id = path != "" ? path + "/" + folder : folder;
-        const folderData: Datafile = {
-          path: path,
-          name: folder,
-          action: Fileaction.Ignore,
-          hidden: false,
-          id: id,
-        }
-        rowDataMap.set(id, {
-          data: folderData,
-        });
-        path = id;
-      });
-      rowDataMap.set(d.id! + ":file", { // avoid collisions between folders and files having the same path and name
-        data: d,
-      });
-    });
-    return rowDataMap;
   }
 
   back(): void {
