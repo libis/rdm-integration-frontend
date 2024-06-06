@@ -75,10 +75,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "datasync:build:production"
+              "buildTarget": "datasync:build:production"
             },
             "development": {
-              "browserTarget": "datasync:build:development"
+              "buildTarget": "datasync:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -86,7 +86,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "datasync:build"
+            "buildTarget": "datasync:build"
           }
         },
         "test": {

@@ -16,11 +16,11 @@ export class OauthService {
     private http: HttpClient
   ) { }
 
-  getToken(pluginId: string, code: string, nounce: string): Observable<TokenResponse> {
+  getToken(pluginId: string, code: string, nonce: string): Observable<TokenResponse> {
     const req = {
       pluginId: pluginId,
       code: code,
-      nounce: nounce,
+      nonce: nonce,
     }
     return this.http.post<TokenResponse>(this.token_url, req);
   }

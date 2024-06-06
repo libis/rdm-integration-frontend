@@ -39,7 +39,7 @@ export class SubmitComponent implements OnInit {
   disabled = false;
   submitted = false;
   done = false;
-  sendEmailOnSucces = false;
+  sendEmailOnSuccess = false;
   popup = false;
   hasAccessToCompute = false;
 
@@ -68,7 +68,7 @@ export class SubmitComponent implements OnInit {
     });
   }
 
-  getDataSubscripion(): void {
+  getDataSubscription(): void {
     const dataSubscription = this.dataUpdatesService.updateData(this.data, this.pid).subscribe({
       next: async (res: CompareResult) => {
         dataSubscription?.unsubscribe();
@@ -79,7 +79,7 @@ export class SubmitComponent implements OnInit {
           this.done = true;
         } else {
           await this.utils.sleep(1000);
-          this.getDataSubscripion();
+          this.getDataSubscription();
         }
       },
       error: (err) => {
@@ -137,7 +137,7 @@ export class SubmitComponent implements OnInit {
     const result: Datafile[] = [];
     this.data.forEach(datafile => {
       if (datafile.action === Fileaction.Delete) {
-        if (datafile.attributes?.remoteHashType === undefined || datafile.attributes?.remoteHashType === '') { // file from unknown origin, by setting the hashtype to not empty value we can detect in comparison that the file got deleted
+        if (datafile.attributes?.remoteHashType === undefined || datafile.attributes?.remoteHashType === '') { // file from unknown origin, by setting the hash type to not empty value we can detect in comparison that the file got deleted
           datafile.attributes!.remoteHashType = 'unknown'
           datafile.attributes!.remoteHash = 'unknown'
         }
@@ -165,17 +165,17 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
-    const httpSubscr = this.submitService.submit(selected, this.sendEmailOnSucces).subscribe({
+    const httpSubscription = this.submitService.submit(selected, this.sendEmailOnSuccess).subscribe({
       next: (data: StoreResult) => {
         if (data.status !== "OK") {// this should not happen
           alert("store failed, status: " + data.status);
           this.router.navigate(['/connect']);
         } else {
-          this.getDataSubscripion();
+          this.getDataSubscription();
           this.submitted = true;
           this.datasetUrl = data.datasetUrl!;
         }
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
       },
       error: (err) => {
         alert("store failed: " + err.error);

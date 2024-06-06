@@ -38,7 +38,7 @@ export interface ComputeRequest {
   dataverseKey?: string;
   queue: string;
   executable: string;
-  sendEmailOnSucces: boolean;
+  sendEmailOnSuccess: boolean;
 }
 
 export interface CachedComputeResponse {

@@ -42,14 +42,14 @@ export class PluginService {
   }
 
   private setConfig(): void {
-    const subscr = this.http.get<Config>(`api/frontend/config`).subscribe(
+    const subscription = this.http.get<Config>(`api/frontend/config`).subscribe(
       c => {
         this.config = c;
         this.config.plugins.forEach(p => {
           p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
           this.allPlugins.set(p.id, p);
         });
-        subscr.unsubscribe();
+        subscription.unsubscribe();
       }
     );
   }
@@ -135,7 +135,7 @@ export class PluginService {
   getQueues(extension: string): SelectItem<string>[] {
     return this.config.queues ?
       this.config.queues.
-        filter((queue) => queue.fileextensions.includes(extension)).
+        filter((queue) => queue.fileExtensions.includes(extension)).
         map((queue) => { return { label: queue.label, value: queue.value } }) :
       [];
   }

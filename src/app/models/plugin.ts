@@ -51,5 +51,5 @@ export interface Config {
 export interface Queue {
     label: string;
     value: string;
-    fileextensions: string[];
+    fileExtensions: string[];
 }

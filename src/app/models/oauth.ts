@@ -7,7 +7,7 @@ export interface LoginState {
   pluginId?: Item;
   repoName?: string;
   user?: string;
-  nounce?: string;
+  nonce?: string;
   code?: string;
   option?: Item;
   datasetId?: Item;

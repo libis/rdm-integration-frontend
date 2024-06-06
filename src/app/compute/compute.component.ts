@@ -33,7 +33,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
   loading = false;
   popup = false;
   outputDisabled = true;
-  sendEmailOnSucces = false;
+  sendEmailOnSuccess = false;
 
   // ITEMS IN DROPDOWNS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
@@ -103,7 +103,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
     this.doiItems = this.loadingItems;
     this.datasetId = undefined;
 
-    const httpSubscr = this.dvObjectLookupService.getItems("", "Dataset", undefined, this.dataverseToken).subscribe({
+    const httpSubscription = this.dvObjectLookupService.getItems("", "Dataset", undefined, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items && items.length > 0) {
           this.doiItems = items;
@@ -112,7 +112,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
           this.doiItems = [];
           this.datasetId = undefined;
         }
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
       },
       error: (err) => {
         alert("doi lookup failed: " + err.error);
@@ -189,14 +189,14 @@ export class ComputeComponent implements OnInit, OnDestroy {
   continueSubmit() {
     this.popup = false;
     this.loading = true;
-    this.req!.sendEmailOnSucces = this.sendEmailOnSucces;
-    const httpSubscr = this.dataService.compute(this.req!).subscribe({
+    this.req!.sendEmailOnSuccess = this.sendEmailOnSuccess;
+    const httpSubscription = this.dataService.compute(this.req!).subscribe({
       next: (key: Key) => {
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
         this.getComputeData(key);
       },
       error: (err) => {
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
         alert(err);
       },
     });

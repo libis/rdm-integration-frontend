@@ -30,14 +30,14 @@ export interface Attributes {
 	url?: string;
 	remoteHash?: string;
 	remoteHashType?: string;
-	remoteFilesize?: number;
+	remoteFileSize?: number;
 	isFile?: boolean;
-	destinatinFile?: DestinatinFile;
+	destinationFile?: DestinationFile;
 }
 
-export interface DestinatinFile {
+export interface DestinationFile {
 	id?: number;
-	filesize?: number;
+	fileSize?: number;
 	hash?: string;
 	hashType?: string;
 	storageIdentifier?: string;

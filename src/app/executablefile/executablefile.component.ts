@@ -73,7 +73,7 @@ export class ExecutablefileComponent implements OnInit {
       dataverseKey: this.dv_token,
       queue: this.queue!,
       executable: this.datafile.id!,
-      sendEmailOnSucces: false,
+      sendEmailOnSuccess: false,
     });
   }
 }

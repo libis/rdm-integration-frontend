@@ -166,13 +166,13 @@ export class ConnectComponent implements OnInit {
         }
 
         const code = params['code'];
-        if (this.getNounce() === loginState.nounce && this.pluginId !== undefined && code !== undefined) {
-          const tokenSubscr = this.oauth.getToken(this.pluginId, code, loginState.nounce).subscribe(x => {
+        if (this.getNonce() === loginState.nonce && this.pluginId !== undefined && code !== undefined) {
+          const tokenSubscription = this.oauth.getToken(this.pluginId, code, loginState.nonce).subscribe(x => {
             this.token = x.session_id;
             if (!this.pluginService.isStoreDvToken()) {
               localStorage.removeItem("dataverseToken");
             }
-            tokenSubscr.unsubscribe();
+            tokenSubscription.unsubscribe();
           });
         }
       });
@@ -214,12 +214,12 @@ export class ConnectComponent implements OnInit {
       url = tg.URL;
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
-      const nounce = this.newNounce(44);
+      const nonce = this.newNonce(44);
       const pluginId = this.getItem(this.pluginIds, this.pluginId);
       if (pluginId !== undefined) {
         pluginId.hidden = this.pluginIdSelectHidden;
       }
-      const looginState: LoginState = {
+      const loginState: LoginState = {
         sourceUrl: this.sourceUrl,
         url: this.url,
         plugin: this.getItem(this.plugins, this.plugin),
@@ -229,7 +229,7 @@ export class ConnectComponent implements OnInit {
         option: this.getItem(this.branchItems, this.option),
         datasetId: this.getItem(this.doiItems, this.datasetId),
         collectionId: this.getItem(this.collectionItems, this.collectionId),
-        nounce: nounce,
+        nonce: nonce,
       }
       let clId = '?client_id='
       if (url.includes("?")) {
@@ -237,15 +237,15 @@ export class ConnectComponent implements OnInit {
       }
       url = url + clId + encodeURIComponent(tg.oauth_client_id) +
         '&redirect_uri=' + encodeURIComponent(this.pluginService.getRedirectUri()) +
-        '&response_type=code&state=' + encodeURIComponent(JSON.stringify(looginState));
-      // + '&code_challenge=' + nounce + '&code_challenge_method=S256';
+        '&response_type=code&state=' + encodeURIComponent(JSON.stringify(loginState));
+      // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
       location.href = url;
     } else {
       window.open(url, "_blank");
     }
   }
 
-  newNounce(length: number): string {
+  newNonce(length: number): string {
     let result = '';
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const charactersLength = characters.length;
@@ -254,13 +254,13 @@ export class ConnectComponent implements OnInit {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));
       counter += 1;
     }
-    localStorage.setItem("nounce", result);
+    localStorage.setItem("nonce", result);
     return result;
   }
 
-  getNounce(): string | null {
-    const result = localStorage.getItem("nounce");
-    localStorage.removeItem("nounce");
+  getNonce(): string | null {
+    const result = localStorage.getItem("nonce");
+    localStorage.removeItem("nonce");
     return result;
   }
 
@@ -606,7 +606,7 @@ export class ConnectComponent implements OnInit {
       this.optionsLoading = true;
     }
 
-    const httpSubscr = this.repoLookupService.getOptions(req).subscribe({
+    const httpSubscription = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items && node) {
           const nodes: TreeNode<string>[] = [];
@@ -618,7 +618,7 @@ export class ConnectComponent implements OnInit {
         } else {
           this.branchItems = [];
         }
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
       },
       error: (err) => {
         alert("branch lookup failed: " + err.error);
@@ -695,14 +695,14 @@ export class ConnectComponent implements OnInit {
     }
     setter(this, this.loadingItems);
 
-    const httpSubscr = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, undefined, this.dataverseToken).subscribe({
+    const httpSubscription = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, undefined, this.dataverseToken).subscribe({
       next: (items: SelectItem<string>[]) => {
         if (items && items.length > 0) {
           setter(this, items);
         } else {
           setter(this, []);
         }
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
       },
       error: (err) => {
         alert("doi lookup failed: " + err.error);
@@ -771,19 +771,19 @@ export class ConnectComponent implements OnInit {
 
   newDataset() {
     this.creatingNewDataset = true;
-    const httpSubscr = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
+    const httpSubscription = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
       next: (data: NewDatasetResponse) => {
         if (data.persistentId !== undefined) {
           this.doiItems = [{ label: data.persistentId, value: data.persistentId }];
         }
         this.datasetId = data.persistentId;
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
         this.creatingNewDataset = false;
         this.newlyCreated.push(data.persistentId!);
       },
       error: (err) => {
         alert("creating new dataset failed: " + err.error);
-        httpSubscr.unsubscribe();
+        httpSubscription.unsubscribe();
         this.creatingNewDataset = false;
       }
     });
