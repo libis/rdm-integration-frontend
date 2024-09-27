@@ -24,7 +24,7 @@
     "npm": "^10.8.3",
     "primeflex": "^3.3.1",
     "primeicons": "^7.0.0",
-    "primeng": "^17.18.10",
+    "primeng": "^17.18.11",
     "rxjs": "^7.8.1",
     "tslib": "^2.7.0",
     "zone.js": "^0.14.10"
@@ -44,7 +44,7 @@
     "karma-coverage": "^2.2.1",
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.1.0",
-    "terser": "^5.33.0",
+    "terser": "^5.34.0",
     "typescript": "^5.5.4"
   }
 }
