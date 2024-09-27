@@ -10,7 +10,7 @@ import { CompareComponent } from './compare/compare.component';
 import { ConnectComponent } from './connect/connect.component';
 import { DatafileComponent } from './datafile/datafile.component';
 import { SubmitComponent } from './submit/submit.component';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SubmittedFileComponent } from './submitted-file/submitted-file.component';
 import { TreeTableModule } from 'primeng/treetable';
@@ -41,7 +41,6 @@ import { TreeSelectModule } from 'primeng/treeselect';
     AppRoutingModule,
     NgbModule,
     AccordionModule,
-    HttpClientModule,
     FormsModule,
     TreeTableModule,
     TableModule,
@@ -56,7 +55,7 @@ import { TreeSelectModule } from 'primeng/treeselect';
     TreeModule,
     TreeSelectModule,
   ],
-  providers: [],
+  providers: [provideHttpClient(withInterceptorsFromDi())],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

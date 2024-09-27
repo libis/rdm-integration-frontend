@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Injectable } from '@angular/core';
