@@ -127,6 +127,11 @@ export class ConnectComponent implements OnInit {
       .subscribe(params => {
         const stateString = params['state'];
         if (stateString === undefined || stateString === null || stateString === '') {
+          const datasetPid = params['datasetPid'];
+          if (datasetPid !== undefined && datasetPid !== null || datasetPid !== '') {
+            this.doiItems = [{ label: datasetPid, value: datasetPid }, this.loadingItem];
+            this.datasetId = datasetPid;
+          }
           return;
         }
         const loginState: LoginState = JSON.parse(params['state']);
