@@ -12,6 +12,7 @@ import { CompareResult } from '../models/compare-result';
 import { Location } from '@angular/common'
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
+import { CredentialsService } from '../credentials.service';
 
 @Component({
   selector: 'app-submit',
@@ -48,13 +49,14 @@ export class SubmitComponent implements OnInit {
     private pluginService: PluginService,
     private router: Router,
     private utils: UtilsService,
+    private credentialsService: CredentialsService,
   ) { }
 
   ngOnInit(): void {
     this.loadData();
   }
 
-  getDataSubscripion(): void {
+  getDataSubscription(): void {
     const dataSubscription = this.dataUpdatesService.updateData(this.data, this.pid).subscribe({
       next: async (res: CompareResult) => {
         dataSubscription?.unsubscribe();
@@ -65,7 +67,7 @@ export class SubmitComponent implements OnInit {
           this.done = true;
         } else {
           await this.utils.sleep(1000);
-          this.getDataSubscripion();
+          this.getDataSubscription();
         }
       },
       error: (err) => {
@@ -134,7 +136,11 @@ export class SubmitComponent implements OnInit {
   }
 
   submit() {
-    this.popup = true;
+    if (this.credentialsService.credentials.plugin === "globus") {
+      this.continueSubmit();
+    } else {
+      this.popup = true;
+    }
   }
 
   continueSubmit() {
@@ -157,7 +163,7 @@ export class SubmitComponent implements OnInit {
           alert("store failed, status: " + data.status);
           this.router.navigate(['/connect']);
         } else {
-          this.getDataSubscripion();
+          this.getDataSubscription();
           this.submitted = true;
           this.datasetUrl = data.datasetUrl!;
         }
