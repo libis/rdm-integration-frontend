@@ -18,6 +18,7 @@
     "@angular/platform-browser": "^18.2.6",
     "@angular/platform-browser-dynamic": "^18.2.6",
     "@angular/router": "^18.2.6",
+    "@angular/localize": "^18.2.6",
     "@ng-bootstrap/ng-bootstrap": "^17.0.1",
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.3",
@@ -47,7 +48,7 @@
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.1.0",
     "terser": "^5.34.0",
-    "typescript": "^5.5.4",
+    "typescript": "5.5.4",
     "typescript-eslint": "^8.7.0"
   }
 }
