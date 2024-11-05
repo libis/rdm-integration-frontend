@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+ 
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit } from '@angular/core';
@@ -12,8 +12,8 @@ import { CompareResult } from '../models/compare-result';
 import { Location } from '@angular/common'
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
-import { DataService } from '../data.service';
 import { CredentialsService } from '../credentials.service';
+import { DataService } from '../data.service';
 
 @Component({
   selector: 'app-submit',
@@ -148,7 +148,11 @@ export class SubmitComponent implements OnInit {
   }
 
   submit() {
-    this.popup = true;
+    if (this.credentialsService.credentials.plugin === "globus") {
+      this.continueSubmit();
+    } else {
+      this.popup = true;
+    }
   }
 
   continueSubmit() {
