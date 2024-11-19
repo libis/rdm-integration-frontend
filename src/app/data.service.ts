@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Injectable } from '@angular/core';
-import { AccessResponse, CachedComputeResponse, CachedResponse, CompareResult, ComputeRequest, Key } from './models/compare-result';
+import { AccessResponse, CachedComputeResponse, CachedDownloadResponse, CachedResponse, CompareResult, ComputeRequest, DownloadRequest, Key } from './models/compare-result';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
@@ -17,6 +17,8 @@ export class DataService {
   common_get_check_access_files_url = "api/common/checkaccess";
   common_compute_url = "api/common/compute";
   common_get_cached_compute_res_url = "api/common/cachedcompute";
+  common_download_url = "api/common/download";
+  common_get_cached_download_res_url = "api/common/cacheddownload";
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
@@ -65,5 +67,13 @@ export class DataService {
 
   getCachedComputeData(key: Key): Observable<CachedComputeResponse> {
     return this.http.post<CachedComputeResponse>(this.common_get_cached_compute_res_url, key);
+  }
+
+  download(req: DownloadRequest): Observable<Key> {
+    return this.http.post<Key>(this.common_download_url, req);
+  }
+
+  getCachedDownloadData(key: Key): Observable<CachedDownloadResponse> {
+    return this.http.post<CachedDownloadResponse>(this.common_get_cached_download_res_url, key);
   }
 }

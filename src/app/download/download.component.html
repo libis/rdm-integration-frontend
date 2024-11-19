@@ -1,0 +1,66 @@
+<!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
+<div class="row justify-content-between sticky-menu">
+    <span class="col-auto">
+        <button style="height: 3rem;" pButton pRipple type="button"
+            class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i
+                class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+    </span>
+    <span class="col-auto" [hidden]="!showDVToken()">
+        <div class="input-group">
+            <div class="input-group-prepend"><span class="input-group-text" style="height: 3rem;">Token:&nbsp;</span>
+            </div>
+            <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token"
+                [(ngModel)]="dataverseToken" #ctrl="ngModel" (onChange)="onUserChange()">
+        </div>
+    </span>
+    <span class="col-auto">
+        <div class="input-group">
+            <div class="input-group-prepend"><span class="input-group-text" style="height: 3rem;">Dataset
+                    DOI:&nbsp;</span></div>
+            <div class="input-group-append" style="width: 30rem;"><p-dropdown autoWidth="false"
+                    [style]="{'width':'100%'}" [editable]="datasetFieldEditable()" id="datasetId" [options]="doiItems"
+                    [filter]="true" filterBy="label" [resetFilterOnHide]="true"
+                    (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId" placeholder="Select dataset"
+                    (onClick)="getDoiOptions()" (onChange)="onDatasetChange()"></p-dropdown></div>
+        </div>
+    </span>
+</div>
+
+<br />
+<p-dialog header="Download" position="topright" [modal]="true" [(visible)]="popup">
+    <p class="m-0">Click on "OK" to start the download. You can close the window and the download will continue.
+    </p>
+    <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the download has been unsuccessful.</p>
+    <br><br>
+    <div style="text-align: right;">
+        <div class="field-checkbox" [hidden]="!sendMails()">
+            <p-checkbox [(ngModel)]="sendEmailOnSuccess" [binary]="true" inputId="sendEmailOnSuccessCB"></p-checkbox>
+            <label for="sendEmailOnSuccesCB">Email me when the download is completed</label>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button (click)="continueSubmit()" styleClass="p-button-sm p-button-raised p-button-primary">OK</p-button>
+    </ng-template>
+</p-dialog>
+<div style="height: 100% - 2rem">
+    <div style="float:left; width: 50%;">
+        <p-treeTable [value]="rootNodeChildren" [loading]="loading">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="text-align: left;"><a [href]="data!.url" target="_blank">{{ data!.id }}</a></th>
+                    <th class="icon_col" style="text-align: right;">
+                        <span title="Action">Download</span>
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+                <tr app-downloadablefile [datafile]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode">
+            </ng-template>
+        </p-treeTable>
+    </div>
+    <div style="float:right; width: 50%;">
+        <div [style.width]="'100%'" [style.margin]="'0.2rem'">
+            <!-- TODO: download button-->>
+        </div>
+    </div>
+</div>
