@@ -1,5 +1,5 @@
  
-// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+// Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { Component, Input, OnInit } from '@angular/core';
 import { TreeNode } from 'primeng/api';
@@ -20,7 +20,7 @@ export class DownladablefileComponent implements OnInit {
   node: TreeNode<Datafile> = {};
 
   icon_ignore = "pi pi-stop";
-  icon_download = "pi pi-stop";
+  icon_download = "pi pi-cloud-download";
 
   constructor(private folderActionUpdateService: FolderActionUpdateService) { }
 
@@ -56,7 +56,6 @@ export class DownladablefileComponent implements OnInit {
   }
 
   setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
-    const isFileFileInFolder = node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
     node.data!.action = action;
     node.children?.forEach(v => this.setNodeAction(v, action));
   }
