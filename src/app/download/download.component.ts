@@ -153,14 +153,14 @@ export class DownloadComponent implements OnInit, OnDestroy {
         .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
       error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
     });
-    const subscription = this.dataService.getExecutableFiles(this.datasetId!, this.dataverseToken).subscribe({
+    const subscription = this.dataService.getDownloadableFiles(this.datasetId!, this.dataverseToken).subscribe({
       next: (data) => {
         subscription.unsubscribe();
         this.setData(data);
       },
       error: (err) => {
         subscription.unsubscribe();
-        alert("getting executable files failed: " + err.error);
+        alert("getting downloadable files failed: " + err.error);
       }
     });
   }

@@ -1,4 +1,4 @@
-// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+downloadable// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Injectable } from '@angular/core';
 import { AccessResponse, CachedComputeResponse, CachedDownloadResponse, CachedResponse, CompareResult, ComputeRequest, DownloadRequest, Key } from './models/compare-result';
@@ -17,6 +17,7 @@ export class DataService {
   common_get_check_access_files_url = "api/common/checkaccess";
   common_compute_url = "api/common/compute";
   common_get_cached_compute_res_url = "api/common/cachedcompute";
+  common_get_downloadable_files_url = "api/common/downloadable";
   common_download_url = "api/common/download";
   common_get_cached_download_res_url = "api/common/cacheddownload";
 
@@ -67,6 +68,14 @@ export class DataService {
 
   getCachedComputeData(key: Key): Observable<CachedComputeResponse> {
     return this.http.post<CachedComputeResponse>(this.common_get_cached_compute_res_url, key);
+  }
+
+  getDownloadableFiles(pid: string, dataverse_token?: string): Observable<CompareResult> {
+    const req = {
+      persistentId: pid,
+      dataverseKey: dataverse_token,
+    };
+    return this.http.post<CompareResult>(this.common_get_downloadable_files_url, req);
   }
 
   download(req: DownloadRequest): Observable<Key> {
