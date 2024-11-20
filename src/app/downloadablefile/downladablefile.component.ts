@@ -7,7 +7,7 @@ import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction } from '../models/datafile';
 
 @Component({
-  selector: 'tr[app-downladablefile]',
+  selector: 'tr[app-downloadablefile]',
   templateUrl: './downladablefile.component.html',
   styleUrls: ['./downladablefile.component.scss']
 })

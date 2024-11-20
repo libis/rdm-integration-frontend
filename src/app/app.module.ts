@@ -29,6 +29,7 @@ import { TreeSelectModule } from 'primeng/treeselect';
 import { ExecutablefileComponent } from './executablefile/executablefile.component';
 import { ComputeComponent } from './compute/compute.component';
 import { DownloadComponent } from './download/download.component';
+import { DownladablefileComponent } from './downloadablefile/downladablefile.component';
 import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
@@ -43,6 +44,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
     ExecutablefileComponent,
     ComputeComponent,
     DownloadComponent,
+    DownladablefileComponent,
   ],
   imports: [
     BrowserModule,
