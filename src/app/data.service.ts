@@ -1,4 +1,4 @@
-downloadable// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Injectable } from '@angular/core';
 import { AccessResponse, CachedComputeResponse, CachedDownloadResponse, CachedResponse, CompareResult, ComputeRequest, DownloadRequest, Key } from './models/compare-result';
