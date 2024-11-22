@@ -17,9 +17,6 @@ import { ActivatedRoute } from '@angular/router';
   styleUrl: './download.component.scss',
 })
 export class DownloadComponent implements OnInit, OnDestroy {
-
-  icon_play = "pi pi-play";
-
   // CONSTANTS
   DEBOUNCE_TIME = 750;
 
@@ -68,8 +65,8 @@ export class DownloadComponent implements OnInit, OnDestroy {
     .subscribe(params => {
       const pid = params['datasetPid'];
       if (pid) {
+        this.doiItems = [{label: pid, value: pid}];
         this.datasetId = pid;
-        this.onDatasetChange()
       }
     });
   }

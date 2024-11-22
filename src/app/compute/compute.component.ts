@@ -68,8 +68,8 @@ export class ComputeComponent implements OnInit, OnDestroy {
     .subscribe(params => {
       const pid = params['datasetPid'];
       if (pid) {
+        this.doiItems = [{label: pid, value: pid}];
         this.datasetId = pid;
-        this.onDatasetChange()
       }
     });
   }
