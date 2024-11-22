@@ -66,7 +66,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
     }
     this.route.queryParams
     .subscribe(params => {
-      const pid = params['pid'];
+      const pid = params['datasetPid'];
       if (pid) {
         this.datasetId = pid;
         this.onDatasetChange()
