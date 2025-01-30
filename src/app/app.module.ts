@@ -32,6 +32,9 @@ import { DownloadComponent } from './download/download.component';
 import { DownladablefileComponent } from './downloadablefile/downladablefile.component';
 import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeng/themes/aura';
 
 @NgModule({
   declarations: [
@@ -67,7 +70,11 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
     AutosizeModule,
     ProgressSpinnerModule,
   ],
-  providers: [provideHttpClient(withInterceptorsFromDi())],
+  providers: [
+    provideHttpClient(withInterceptorsFromDi()),
+    provideAnimationsAsync(),
+    providePrimeNG()
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

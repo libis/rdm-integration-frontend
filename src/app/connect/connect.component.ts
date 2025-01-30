@@ -21,6 +21,7 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 
 @Component({
   selector: 'app-connect',
+  standalone: false,
   templateUrl: './connect.component.html',
   styleUrls: ['./connect.component.scss']
 })

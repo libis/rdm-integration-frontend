@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-compute',
+  standalone: false,
   templateUrl: './compute.component.html',
   styleUrl: './compute.component.scss',
 })

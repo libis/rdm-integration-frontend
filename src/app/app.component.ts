@@ -1,20 +1,21 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit } from '@angular/core';
-import { PrimeNGConfig } from 'primeng/api';
+import { PrimeNG } from 'primeng/config';
 import { DataService } from './data.service';
 
 @Component({
   selector: 'app-root',
+  standalone: false,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
   title = 'datasync';
 
-  constructor(private primengConfig: PrimeNGConfig, public dataService: DataService) { }
+  constructor(private primengConfig: PrimeNG, public dataService: DataService) { }
   ngOnInit(): void {
-    this.primengConfig.ripple = true;
+    this.primengConfig.ripple.set(true);
     const dvToken = localStorage.getItem("dataverseToken");
     const subscription = this.dataService.checkAccessToQueue('', dvToken ? dvToken : '', '').subscribe({
       next: (access) => {

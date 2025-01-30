@@ -8,6 +8,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
   selector: 'tr[app-datafile]',
+  standalone: false,
   templateUrl: './datafile.component.html',
   styleUrls: ['./datafile.component.scss']
 })

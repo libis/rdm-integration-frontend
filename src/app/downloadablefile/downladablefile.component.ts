@@ -8,6 +8,7 @@ import { Datafile, Fileaction } from '../models/datafile';
 
 @Component({
   selector: 'tr[app-downloadablefile]',
+  standalone: false,
   templateUrl: './downladablefile.component.html',
   styleUrls: ['./downladablefile.component.scss']
 })

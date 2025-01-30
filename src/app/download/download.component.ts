@@ -13,6 +13,7 @@ import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-download',
+  standalone: false,
   templateUrl: './download.component.html',
   styleUrl: './download.component.scss',
 })

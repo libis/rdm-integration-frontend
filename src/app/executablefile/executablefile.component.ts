@@ -9,6 +9,7 @@ import { ComputeRequest } from '../models/compare-result';
 
 @Component({
   selector: 'tr[app-executablefile]',
+  standalone: false,
   templateUrl: './executablefile.component.html',
   styleUrl: './executablefile.component.scss'
 })

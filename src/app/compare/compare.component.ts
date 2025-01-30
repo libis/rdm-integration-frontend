@@ -16,6 +16,7 @@ import { UtilsService } from '../utils.service';
 
 @Component({
   selector: 'app-compare',
+  standalone: false,
   templateUrl: './compare.component.html',
   styleUrls: ['./compare.component.scss']
 })

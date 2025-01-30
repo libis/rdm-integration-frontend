@@ -17,6 +17,7 @@ import { DataService } from '../data.service';
 
 @Component({
   selector: 'app-submit',
+  standalone: false,
   templateUrl: './submit.component.html',
   styleUrls: ['./submit.component.scss']
 })
