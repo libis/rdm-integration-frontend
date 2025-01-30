@@ -248,7 +248,7 @@ body {
     font-size: 0.875rem;
     line-height: 1.42857143;
     color: #333;
-    background-color: #fff;
+    background-color: var(--highlight-bg);
     min-height: 100vh;
     position: relative;
 }
@@ -268,7 +268,7 @@ img {
     height: 3.125rem;
     display: block;
     border-width: 0 0 1px;
-    background-color: #f8f8f8;
+    background-color: var(--highlight-bg);
     border-color: #e7e7e7;
     background-image: linear-gradient(to bottom, #fff 0, #f8f8f8 100%);
     background-repeat: repeat-x;
@@ -344,8 +344,8 @@ footer>div {
     position: sticky;
     top: 0rem;
     padding: 0.4rem;
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background-color: var(--highlight-bg);
+    border: 1px solid var(--bs-border-color);
     z-index: 1;
     margin-left: 0rem;
     margin-right: 0rem;
