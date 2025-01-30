@@ -4,6 +4,14 @@
 @import 'primeicons/primeicons.css';
 @import 'primeflex/primeflex.css';
 
+:root {
+    -webkit-locale: "en";
+    --bs-table-color: var(--p-treetable-row-color);
+    --bs-table-bg: var(--highlight-bg);
+    --bs-table-accent-bg: var(--highlight-bg);
+    scroll-behavior: smooth;
+}
+
 body {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
