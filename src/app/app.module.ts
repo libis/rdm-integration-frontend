@@ -34,7 +34,7 @@ import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import LaraLightBlue from '@primeng/themes/lara';
+import Lara from '@primeng/themes/lara';
 
 @NgModule({
   declarations: [
@@ -75,7 +75,7 @@ import LaraLightBlue from '@primeng/themes/lara';
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {
-          preset: LaraLightBlue
+          preset: Lara
       }
   })
   ],
