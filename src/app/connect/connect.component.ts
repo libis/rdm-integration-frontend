@@ -132,6 +132,10 @@ export class ConnectComponent implements OnInit {
             this.doiItems = [{ label: datasetPid, value: datasetPid }, this.loadingItem];
             this.datasetId = datasetPid;
           }
+          const apiToken = params['apiToken'];
+          if (apiToken) {
+            this.dataverseToken = apiToken;
+          }
           return;
         }
         const loginState: LoginState = JSON.parse(params['state']);

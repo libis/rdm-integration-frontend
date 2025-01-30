@@ -71,6 +71,10 @@ export class ComputeComponent implements OnInit, OnDestroy {
         this.doiItems = [{label: pid, value: pid}];
         this.datasetId = pid;
       }
+      const apiToken = params['apiToken'];
+      if (apiToken) {
+        this.dataverseToken = apiToken;
+      }
     });
   }
 
