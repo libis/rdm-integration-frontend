@@ -34,7 +34,7 @@ import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
+import LaraLightBlue from '@primeng/themes/lara';
 
 @NgModule({
   declarations: [
@@ -73,7 +73,11 @@ import Aura from '@primeng/themes/aura';
   providers: [
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimationsAsync(),
-    providePrimeNG()
+    providePrimeNG({
+      theme: {
+          preset: LaraLightBlue
+      }
+  })
   ],
   bootstrap: [AppComponent]
 })
