@@ -11,7 +11,7 @@ import { DatasetVersionResponse, NewDatasetResponse } from './models/new-dataset
 export class DatasetService {
 
   new_dataset_url = 'api/common/newdataset';
-  dataset_version_url = 'api/common/version';
+  dataset_version_url = 'api/common/datasetversion';
 
   constructor(private http: HttpClient) { }
 
@@ -30,6 +30,6 @@ export class DatasetService {
       dataverseKey: apiToken,
     };
 
-    return this.http.post<NewDatasetResponse>(this.dataset_version_url, req);
+    return this.http.post<DatasetVersionResponse>(this.dataset_version_url, req);
   }
 }
