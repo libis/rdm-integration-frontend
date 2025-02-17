@@ -3,3 +3,7 @@
 export interface NewDatasetResponse {
 	persistentId?: string,
 }
+
+export interface DatasetVersionResponse {
+	persistentId?: string,
+}

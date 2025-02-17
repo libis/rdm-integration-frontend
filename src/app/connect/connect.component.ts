@@ -139,11 +139,19 @@ export class ConnectComponent implements OnInit {
           }
           const callback = params['callback'];
           if (callback) {
-            const callbackUrl = atob(callback);
-            const parts = callbackUrl.split('/');
-            if (parts.length > 6) {
-                //const datasetDbId = parts[6];
-                //api/v1/datasets/{datasetDbId}/versions/:latest?excludeFiles=true
+            this.plugin = "globus";
+            this.pluginId = "globus";
+            this.changePlugin();
+            if (!datasetPid) {
+              const callbackUrl = atob(callback);
+              const parts = callbackUrl.split('/');
+              if (parts.length > 6) {
+                const datasetDbId = parts[6];
+                const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
+                  this.datasetId = x.persistentId;
+                  versionSubscription.unsubscribe();
+                });
+              }
             }
           }
           return;
