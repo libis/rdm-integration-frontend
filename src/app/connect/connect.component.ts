@@ -137,6 +137,14 @@ export class ConnectComponent implements OnInit {
           if (apiToken) {
             this.dataverseToken = apiToken;
           }
+          const callback = params['callbck'];
+          if (callback) {
+            const callbackUrl = atob(callback);
+            const parts = callbackUrl.split('/');
+            if (parts.length > 6) {
+                console.log(parts[6]);
+            }
+          }
           return;
         }
         const loginState: LoginState = JSON.parse(params['state']);
