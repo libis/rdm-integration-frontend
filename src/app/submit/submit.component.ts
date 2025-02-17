@@ -63,7 +63,7 @@ export class SubmitComponent implements OnInit {
         subscription.unsubscribe();
         this.hasAccessToCompute = access.access;
       },
-      error: (err) => {
+      error: () => {
         subscription.unsubscribe();
       }
     });

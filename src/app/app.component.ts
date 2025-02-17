@@ -25,7 +25,7 @@ export class AppComponent implements OnInit {
           computeLink?.style.setProperty('display', 'none')
         }
       },
-      error: (err) => {
+      error: () => {
         const computeLink = document.getElementById('navbar-compute-li') as HTMLElement;
         computeLink?.style.setProperty('display', 'none')
       }
