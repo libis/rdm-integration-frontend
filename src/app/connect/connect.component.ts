@@ -137,12 +137,13 @@ export class ConnectComponent implements OnInit {
           if (apiToken) {
             this.dataverseToken = apiToken;
           }
-          const callback = params['callbck'];
+          const callback = params['callback'];
           if (callback) {
             const callbackUrl = atob(callback);
             const parts = callbackUrl.split('/');
             if (parts.length > 6) {
-                console.log(parts[6]);
+                //const datasetDbId = parts[6];
+                //api/v1/datasets/{datasetDbId}/versions/:latest?excludeFiles=true
             }
           }
           return;
