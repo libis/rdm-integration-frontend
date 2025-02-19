@@ -15,7 +15,7 @@ import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
 import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
-import { Dropdown } from 'primeng/dropdown';
+import { Select } from 'primeng/select';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { RepoLookupRequest } from '../models/repo-lookup';
 
@@ -27,12 +27,12 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 })
 export class ConnectComponent implements OnInit {
 
-  @ViewChild('repoDropdown') repoNameDropdown!: Dropdown;
+  @ViewChild('repoSelect') repoNameSelect!: Select;
 
   // CONSTANTS
 
   DEBOUNCE_TIME = 750;
-  DOI_DROPDOWN_WIDTH: SafeStyle = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
+  DOI_SELECT_WIDTH: SafeStyle = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
 
   // NG MODEL FIELDS
 
@@ -49,7 +49,7 @@ export class ConnectComponent implements OnInit {
   collectionId?: string;
   datasetId?: string;
 
-  // ITEMS IN DROPDOWNS
+  // ITEMS IN SELECTS
 
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   loadingItems: SelectItem<string>[] = [this.loadingItem];
@@ -600,7 +600,7 @@ export class ConnectComponent implements OnInit {
     return this.sourceUrl;
   }
 
-  // REPO VIA DROPDOWN
+  // REPO VIA SELECT
 
   getPluginRepoNames(): SelectItem<string>[] {
     const res: SelectItem<string>[] = [];
@@ -609,7 +609,7 @@ export class ConnectComponent implements OnInit {
   }
 
   showRepoName() {
-    this.repoNameDropdown.show();
+    this.repoNameSelect.show();
   }
 
   // BRANCHES/FOLDERS/OTHER OPTIONS

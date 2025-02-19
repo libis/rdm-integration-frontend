@@ -20,7 +20,7 @@ import { RippleModule } from 'primeng/ripple';
 import { AccordionModule } from 'primeng/accordion';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -62,7 +62,7 @@ import { definePreset } from '@primeng/themes';
     RippleModule,
     BrowserAnimationsModule,
     OverlayPanelModule,
-    DropdownModule,
+    SelectModule,
     SkeletonModule,
     DialogModule,
     CheckboxModule,

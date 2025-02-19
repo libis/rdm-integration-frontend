@@ -17,11 +17,11 @@
         <div class="input-group">
             <div class="input-group-prepend"><span class="input-group-text" style="height: 3rem;">Dataset
                     DOI:&nbsp;</span></div>
-            <div class="input-group-append" style="width: 30rem;"><p-dropdown appendTo="body" autoWidth="false"
+            <div class="input-group-append" style="width: 30rem;"><p-select appendTo="body" autoWidth="false"
                     [style]="{'width':'100%'}" [editable]="datasetFieldEditable()" id="datasetId" [options]="doiItems"
                     [filter]="true" filterBy="label" [resetFilterOnHide]="true"
                     (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId" placeholder="Select dataset"
-                    (onClick)="getDoiOptions()" (onChange)="onDatasetChange()"></p-dropdown></div>
+                    (onClick)="getDoiOptions()" (onChange)="onDatasetChange()"></p-select></div>
         </div>
     </span>
 </div>

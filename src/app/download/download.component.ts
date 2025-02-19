@@ -33,7 +33,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
   outputDisabled = true;
   sendEmailOnSuccess = false;
 
-  // ITEMS IN DROPDOWNS
+  // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
   loadingItems: SelectItem<string>[] = [this.loadingItem];
   doiItems: SelectItem<string>[] = [];
