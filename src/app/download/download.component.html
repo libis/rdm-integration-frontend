@@ -14,15 +14,12 @@
         </div>
     </span>
     <span class="col-auto">
-        <div class="input-group">
-            <div class="input-group-prepend"><span class="input-group-text" style="height: 3rem;">Dataset
-                    DOI:&nbsp;</span></div>
-            <div class="input-group-append" style="width: 30rem;"><p-select appendTo="body" autoWidth="false"
-                    [style]="{'width':'100%'}" [editable]="datasetFieldEditable()" id="datasetId" [options]="doiItems"
-                    [filter]="true" filterBy="label" [resetFilterOnHide]="true"
-                    (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId" placeholder="Select dataset"
-                    (onClick)="getDoiOptions()" (onChange)="onDatasetChange()"></p-select></div>
-        </div>
+        <span style="height: 3rem;">Dataset DOI:&nbsp;</span>
+        <span style="width: 30rem;"><p-select appendTo="body" autoWidth="false" [style]="{'width':'100%'}"
+                [editable]="datasetFieldEditable()" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label"
+                [resetFilterOnHide]="true" (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId"
+                placeholder="Select dataset" (onClick)="getDoiOptions()"
+                (onChange)="onDatasetChange()"></p-select></span>
     </span>
 </div>
 
@@ -30,7 +27,8 @@
 <p-dialog header="Download" position="topright" [modal]="true" [(visible)]="popup">
     <p class="m-0">Click on "OK" to start the download. You can close the window and the download will continue.
     </p>
-    <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the download has been unsuccessful.</p>
+    <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the download has been
+        unsuccessful.</p>
     <br><br>
     <div style="text-align: right;">
         <div class="field-checkbox" [hidden]="!sendMails()">
@@ -49,7 +47,9 @@
                 <tr>
                     <th style="text-align: left;"><a [href]="data!.url" target="_blank">{{ data!.id }}</a></th>
                     <th class="icon_col" style="text-align: right;">
-                        <span title="Action">Download</span>
+                        <button pButton pRipple label='' type="button"
+                            class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
+                                [class]="action()"></i></button>
                     </th>
                 </tr>
             </ng-template>

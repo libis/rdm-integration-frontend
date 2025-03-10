@@ -10,6 +10,7 @@ import { Datafile } from '../models/datafile';
 import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
+import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
 
 @Component({
   selector: 'app-download',
@@ -234,9 +235,24 @@ export class DownloadComponent implements OnInit, OnDestroy {
       error: (err) => {
         subscription.unsubscribe();
         this.loading = false;
-        alert("getting computation results failed: " + err.error);
+        alert("getting downloadable files list failed: " + err.error);
       }
     });
+  }
+
+  action(): string {
+    const root = this.rowNodeMap.get("")
+    if (root) {
+        return DownladablefileComponent.actionIcon(root);
+    }
+    return DownladablefileComponent.icon_ignore;
+  }
+  
+  toggleAction(): void {
+    const root = this.rowNodeMap.get("")
+    if (root) {
+        DownladablefileComponent.toggleNodeAction(root);
+    }
   }
 }
 

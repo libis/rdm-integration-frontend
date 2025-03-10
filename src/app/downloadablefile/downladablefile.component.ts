@@ -3,7 +3,6 @@
 
 import { Component, Input, OnInit } from '@angular/core';
 import { TreeNode } from 'primeng/api';
-import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction } from '../models/datafile';
 
 @Component({
@@ -20,21 +19,31 @@ export class DownladablefileComponent implements OnInit {
 
   node: TreeNode<Datafile> = {};
 
-  icon_ignore = "pi pi-stop";
-  icon_download = "pi pi-cloud-download";
+  static icon_ignore = "pi pi-stop";
+  static icon_download = "pi pi-cloud-download";
+  static icon_custom = "pi pi-exclamation-triangle";
 
-  constructor(private folderActionUpdateService: FolderActionUpdateService) { }
+  constructor() { }
 
   ngOnInit(): void {
     this.node = this.rowNodeMap.get(this.datafile.id! + (this.datafile.attributes?.isFile ? ":file" : ""))!; // avoid collisions between folders and files having the same path and name
   }
 
   action(): string {
-    switch (Number(this.datafile.action)) {
-      case Fileaction.Download:
-        return this.icon_download;
-    }
-    return this.icon_ignore;
+    return DownladablefileComponent.actionIcon(this.node);
+  }
+
+  public static actionIcon(node: TreeNode<Datafile>): string {
+    switch (node.data?.action) {
+        case Fileaction.Ignore:
+          return this.icon_ignore;
+        case Fileaction.Download:
+          return this.icon_download;
+        case Fileaction.Custom:
+          return this.icon_custom;
+        default:
+          return this.icon_ignore;
+      }
   }
 
   sourceFile(): string {
@@ -42,21 +51,45 @@ export class DownladablefileComponent implements OnInit {
   }
 
   toggleAction(): void {
-    switch (this.datafile.action) {
-      case Fileaction.Ignore:
-        this.setNodeAction(this.node, Fileaction.Download);
-        break;
-      case Fileaction.Download:
-        this.setNodeAction(this.node, Fileaction.Ignore);
-        break;
-      default:
-        this.setNodeAction(this.node, Fileaction.Ignore);
-        break;
-    }
-    this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
+    DownladablefileComponent.toggleNodeAction(this.node);
+    this.updateFolderActions(this.rowNodeMap.get("")!);
   }
 
-  setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
+  updateFolderActions(node: TreeNode<Datafile>): Fileaction {
+    if (node.children && node.children.length > 0) {
+        let res: Fileaction|undefined = undefined;
+        for (const child of node.children) {
+            const childAction = this.updateFolderActions(child)
+            if (res && res !== childAction) {
+                res = Fileaction.Custom;
+            } else if (!res) {
+                res = childAction;
+            }
+        }
+        if (res && node.data) {
+            node.data.action = res;
+        }
+        return res ? res : Fileaction.Ignore;
+    } else {
+        return node.data?.action ? node.data.action : Fileaction.Ignore;
+    }
+  }
+
+  public static toggleNodeAction(node: TreeNode<Datafile>): void {
+    switch (node.data?.action) {
+      case Fileaction.Ignore:
+        DownladablefileComponent.setNodeAction(node, Fileaction.Download);
+        break;
+      case Fileaction.Download:
+        DownladablefileComponent.setNodeAction(node, Fileaction.Ignore);
+        break;
+      default:
+        DownladablefileComponent.setNodeAction(node, Fileaction.Ignore);
+        break;
+    }
+  }
+
+  private static setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
     node.data!.action = action;
     node.children?.forEach(v => this.setNodeAction(v, action));
   }
