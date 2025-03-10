@@ -64,14 +64,15 @@ export class DownloadComponent implements OnInit, OnDestroy {
     }
     this.route.queryParams
     .subscribe(params => {
+      const apiToken = params['apiToken'];
+      if (apiToken) {
+        this.dataverseToken = apiToken;
+      }
       const pid = params['datasetPid'];
       if (pid) {
         this.doiItems = [{label: pid, value: pid}];
         this.datasetId = pid;
-      }
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken = apiToken;
+        this.onDatasetChange();
       }
     });
   }
