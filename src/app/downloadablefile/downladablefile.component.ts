@@ -1,4 +1,3 @@
- 
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { Component, Input, OnInit } from '@angular/core';
@@ -35,15 +34,15 @@ export class DownladablefileComponent implements OnInit {
 
   public static actionIcon(node: TreeNode<Datafile>): string {
     switch (node.data?.action) {
-        case Fileaction.Ignore:
-          return this.icon_ignore;
-        case Fileaction.Download:
-          return this.icon_download;
-        case Fileaction.Custom:
-          return this.icon_custom;
-        default:
-          return this.icon_ignore;
-      }
+      case Fileaction.Ignore:
+        return this.icon_ignore;
+      case Fileaction.Download:
+        return this.icon_download;
+      case Fileaction.Custom:
+        return this.icon_custom;
+      default:
+        return this.icon_ignore;
+    }
   }
 
   sourceFile(): string {
@@ -57,21 +56,21 @@ export class DownladablefileComponent implements OnInit {
 
   updateFolderActions(node: TreeNode<Datafile>): Fileaction {
     if (node.children && node.children.length > 0) {
-        let res: Fileaction|undefined = undefined;
-        for (const child of node.children) {
-            const childAction = this.updateFolderActions(child)
-            if (res !== undefined && res !== childAction) {
-                res = Fileaction.Custom;
-            } else if (res === undefined) {
-                res = childAction;
-            }
+      let res: Fileaction | undefined = undefined;
+      for (const child of node.children) {
+        const childAction = this.updateFolderActions(child)
+        if (res !== undefined && res !== childAction) {
+          res = Fileaction.Custom;
+        } else if (res === undefined) {
+          res = childAction;
         }
-        if (node.data) {
-            node.data.action = res;
-        }
-        return res ? res : Fileaction.Ignore;
+      }
+      if (node.data) {
+        node.data.action = res;
+      }
+      return res ? res : Fileaction.Ignore;
     } else {
-        return node.data?.action ? node.data.action : Fileaction.Ignore;
+      return node.data?.action ? node.data.action : Fileaction.Ignore;
     }
   }
 
