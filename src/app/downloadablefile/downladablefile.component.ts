@@ -60,13 +60,13 @@ export class DownladablefileComponent implements OnInit {
         let res: Fileaction|undefined = undefined;
         for (const child of node.children) {
             const childAction = this.updateFolderActions(child)
-            if (res && res !== childAction) {
+            if (res !== undefined && res !== childAction) {
                 res = Fileaction.Custom;
-            } else if (!res) {
+            } else if (res === undefined) {
                 res = childAction;
             }
         }
-        if (res && node.data) {
+        if (node.data) {
             node.data.action = res;
         }
         return res ? res : Fileaction.Ignore;
