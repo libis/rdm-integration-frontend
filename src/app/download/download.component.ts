@@ -6,7 +6,7 @@ import { PluginService } from '../plugin.service';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CachedDownloadResponse, CompareResult, DownloadRequest, Key } from '../models/compare-result';
-import { Datafile } from '../models/datafile';
+import { Datafile, Fileaction } from '../models/datafile';
 import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
@@ -253,6 +253,14 @@ export class DownloadComponent implements OnInit, OnDestroy {
     if (root) {
         DownladablefileComponent.toggleNodeAction(root);
     }
+  }
+
+  downloadDisabled(): boolean {
+    return !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
+  }
+
+  download(): void {
+    // TODO
   }
 }
 
