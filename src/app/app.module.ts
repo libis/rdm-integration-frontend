@@ -21,6 +21,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SelectModule } from 'primeng/select';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { SkeletonModule } from 'primeng/skeleton';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -63,6 +64,7 @@ import { definePreset } from '@primeng/themes';
     BrowserAnimationsModule,
     OverlayPanelModule,
     SelectModule,
+    FloatLabelModule,
     SkeletonModule,
     DialogModule,
     CheckboxModule,
