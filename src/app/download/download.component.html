@@ -13,7 +13,7 @@
                 [(ngModel)]="dataverseToken" #ctrl="ngModel" (onChange)="onUserChange()">
         </div>
     </span>
-    <span class="col-auto">
+    <span class="col-auto" style="width: 30rem;">
         <p-floatlabel class="w-full md:w-56" variant="on">
             <p-select appendTo="body" autoWidth="false" [style]="{'width':'100%'}"
                 [editable]="datasetFieldEditable()" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label"
