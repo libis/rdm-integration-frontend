@@ -41,7 +41,7 @@
         <p-button (click)="continueSubmit()" styleClass="p-button-sm p-button-raised p-button-primary">OK</p-button>
     </ng-template>
 </p-dialog>
-<div style="height: 100% - 2rem">
+<div style="height: 100% - 2rem; overflow: hidden;">
     <div style="float:left; width: 50%;">
         <p-treeTable [value]="rootNodeChildren" [loading]="loading">
             <ng-template pTemplate="header">
