@@ -62,7 +62,6 @@
     <div style="float:right; width: 50%;">
         <div style="width: 1000%; margin: 0.2rem; padding-left: 2rem">
             <p-button (click)="download()" styleClass="p-button-sm p-button-raised p-button-primary" [disabled]="downloadDisabled()">Download</p-button>
-            <span [hidden]="!showProgress">Downloading {{ downloadingIdx }} out of {{ nbToDownload }}</span>
         </div>
     </div>
 </div>
