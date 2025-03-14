@@ -5,7 +5,7 @@ import { SelectItem, TreeNode } from 'primeng/api';
 import { PluginService } from '../plugin.service';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { CachedDownloadResponse, CompareResult, DownloadRequest, Key } from '../models/compare-result';
+import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction } from '../models/datafile';
 import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
@@ -25,14 +25,10 @@ export class DownloadComponent implements OnInit, OnDestroy {
   // NG MODEL FIELDS
   dataverseToken?: string;
   datasetId?: string;
-  output = "";
   data: CompareResult = {};
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
   loading = false;
-  popup = false;
-  outputDisabled = true;
-  sendEmailOnSuccess = false;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
@@ -43,7 +39,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   datasetSearchResultsSubscription?: Subscription;
-  req?: DownloadRequest;
 
   constructor(
     private dvObjectLookupService: DvObjectLookupService,
@@ -76,6 +71,11 @@ export class DownloadComponent implements OnInit, OnDestroy {
           this.onDatasetChange();
         }
       });
+    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
+      next: x => x.then(v => this.doiItems = v)
+        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
+      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
+    });
   }
 
   ngOnDestroy() {
@@ -144,22 +144,12 @@ export class DownloadComponent implements OnInit, OnDestroy {
     return await firstValueFrom(this.dvObjectLookupService.getItems("", "Dataset", searchTerm, this.dataverseToken));
   }
 
-  dataverseHeader(): string {
-    return this.pluginService.dataverseHeader();
-  }
-
   onDatasetChange() {
     this.loading = true;
-    this.output = '';
-    this.outputDisabled = true;
-    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
-      next: x => x.then(v => this.doiItems = v)
-        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
-      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
-    });
     const subscription = this.dataService.getDownloadableFiles(this.datasetId!, this.dataverseToken).subscribe({
       next: (data) => {
         subscription.unsubscribe();
+        data.data = data.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
         this.setData(data);
       },
       error: (err) => {
@@ -185,61 +175,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
     this.loading = false;
   }
 
-  submitDownload(req: DownloadRequest): void {
-    this.req = req;
-    this.popup = true;
-  }
-
-  continueSubmit() {
-    this.popup = false;
-    this.loading = true;
-    this.req!.sendEmailOnSuccess = this.sendEmailOnSuccess;
-    const httpSubscription = this.dataService.download(this.req!).subscribe({
-      next: (key: Key) => {
-        httpSubscription.unsubscribe();
-        this.getDownloadData(key);
-      },
-      error: (err) => {
-        httpSubscription.unsubscribe();
-        alert(err);
-      },
-    });
-  }
-
-  sendMails(): boolean {
-    return this.pluginService.sendMails();
-  }
-
-  private getDownloadData(key: Key): void {
-    const subscription = this.dataService.getCachedDownloadData(key).subscribe({
-      next: async (res: CachedDownloadResponse) => {
-        subscription.unsubscribe();
-        if (res.ready === true) {
-          this.loading = false;
-          if (res.res) {
-            this.output = res.res;
-          }
-          if (res.err && res.err !== "") {
-            alert(res.err);
-          } else {
-            this.outputDisabled = false;
-          }
-        } else {
-          if (res.res) {
-            this.output = res.res;
-          }
-          await this.utils.sleep(1000);
-          this.getDownloadData(key);
-        }
-      },
-      error: (err) => {
-        subscription.unsubscribe();
-        this.loading = false;
-        alert("getting downloadable files list failed: " + err.error);
-      }
-    });
-  }
-
   action(): string {
     const root = this.rowNodeMap.get("")
     if (root) {
@@ -258,9 +193,19 @@ export class DownloadComponent implements OnInit, OnDestroy {
   downloadDisabled(): boolean {
     return !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
   }
-  
+
   async download(): Promise<void> {
     //TODO
+
+    const httpSubscription = this.dataService.download().subscribe({
+      next: () => {
+        httpSubscription.unsubscribe();
+      },
+      error: (err) => {
+        httpSubscription.unsubscribe();
+        alert(err);
+      },
+    });
   }
 }
 

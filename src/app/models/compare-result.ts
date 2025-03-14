@@ -47,18 +47,3 @@ export interface CachedComputeResponse {
   res?: string;
   err?: string;
 }
-
-export interface DownloadRequest {
-  persistentId: string;
-  dataverseKey?: string;
-  queue: string;
-  executable: string;
-  sendEmailOnSuccess: boolean;
-}
-
-export interface CachedDownloadResponse {
-  key?: string;
-  ready?: boolean;
-  res?: string;
-  err?: string;
-}

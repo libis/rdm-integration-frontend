@@ -66,16 +66,21 @@ export class ComputeComponent implements OnInit, OnDestroy {
       this.dataverseToken = dvToken;
     }
     this.route.queryParams
-    .subscribe(params => {
-      const pid = params['datasetPid'];
-      if (pid) {
-        this.doiItems = [{label: pid, value: pid}];
-        this.datasetId = pid;
-      }
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken = apiToken;
-      }
+      .subscribe(params => {
+        const pid = params['datasetPid'];
+        if (pid) {
+          this.doiItems = [{ label: pid, value: pid }];
+          this.datasetId = pid;
+        }
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken = apiToken;
+        }
+      });
+    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
+      next: x => x.then(v => this.doiItems = v)
+        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
+      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
     });
   }
 
@@ -153,11 +158,6 @@ export class ComputeComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.output = '';
     this.outputDisabled = true;
-    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
-      next: x => x.then(v => this.doiItems = v)
-        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
-      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
-    });
     const subscription = this.dataService.getExecutableFiles(this.datasetId!, this.dataverseToken).subscribe({
       next: (data) => {
         subscription.unsubscribe();
