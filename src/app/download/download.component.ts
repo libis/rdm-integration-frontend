@@ -11,6 +11,10 @@ import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
 import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
+import * as fs from 'fs';
+import * as archiver from 'archiver';
+import { HttpClient } from '@angular/common/http';
+import { Readable } from 'stream';
 
 @Component({
   selector: 'app-download',
@@ -33,6 +37,9 @@ export class DownloadComponent implements OnInit, OnDestroy {
   popup = false;
   outputDisabled = true;
   sendEmailOnSuccess = false;
+  showProgress = false;
+  nbToDownload = 0;
+  downloadingIdx = 0;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
@@ -51,6 +58,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
     public dataService: DataService,
     private utils: UtilsService,
     private route: ActivatedRoute,
+    private http: HttpClient,
   ) {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
@@ -64,18 +72,18 @@ export class DownloadComponent implements OnInit, OnDestroy {
       this.dataverseToken = dvToken;
     }
     this.route.queryParams
-    .subscribe(params => {
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken = apiToken;
-      }
-      const pid = params['datasetPid'];
-      if (pid) {
-        this.doiItems = [{label: pid, value: pid}];
-        this.datasetId = pid;
-        this.onDatasetChange();
-      }
-    });
+      .subscribe(params => {
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken = apiToken;
+        }
+        const pid = params['datasetPid'];
+        if (pid) {
+          this.doiItems = [{ label: pid, value: pid }];
+          this.datasetId = pid;
+          this.onDatasetChange();
+        }
+      });
   }
 
   ngOnDestroy() {
@@ -243,15 +251,15 @@ export class DownloadComponent implements OnInit, OnDestroy {
   action(): string {
     const root = this.rowNodeMap.get("")
     if (root) {
-        return DownladablefileComponent.actionIcon(root);
+      return DownladablefileComponent.actionIcon(root);
     }
     return DownladablefileComponent.icon_ignore;
   }
-  
+
   toggleAction(): void {
     const root = this.rowNodeMap.get("")
     if (root) {
-        DownladablefileComponent.toggleNodeAction(root);
+      DownladablefileComponent.toggleNodeAction(root);
     }
   }
 
@@ -259,8 +267,69 @@ export class DownloadComponent implements OnInit, OnDestroy {
     return !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
   }
 
-  download(): void {
-    // TODO
+  readableFromReadableStream(readableStream: ReadableStream<Uint8Array>): Readable {
+    const reader = readableStream.getReader();
+    return new Readable({
+      async read() {
+        const { done, value } = await reader.read();
+        if (done) {
+          this.push(null);
+        } else {
+          this.push(Buffer.from(value));
+        }
+      },
+    });
+  }
+  
+  async download(): Promise<void> {
+    const files: Datafile[] = [];
+    for (const file of this.data.data as Datafile[]) {
+      if (!file.attributes?.isFile || file.action !== Fileaction.Download) {
+        continue;
+      }
+      files.push(file);
+    }
+    if (files.length === 0) {
+      return;
+    }
+  
+    this.nbToDownload = files.length;
+    this.showProgress = true;
+    const downloadURL = this.data.url?.split('dataset.xhtml').at(0) + 'api/access/datafile/';
+  
+    // Create a writable stream for the zip file
+    const output = fs.createWriteStream(`${this.datasetId ? this.datasetId : 'dataset'}.zip`);
+    const archive = archiver('zip', {
+      zlib: { level: 9 }, // Compression level
+    });
+  
+    archive.pipe(output);
+  
+    for (let i = 0; i < files.length; i++) {
+      this.downloadingIdx = i;
+      const file = files[i];
+  
+      try {
+        // Fetch the file as a stream (Blob)
+        const blob = await firstValueFrom(
+          this.http.get(downloadURL + file.attributes?.destinationFile?.id as string, { responseType: 'blob' })
+        );
+  
+        // Convert Blob to ReadableStream
+        const readableStream = blob.stream();
+  
+        // Add the transformed stream to the archive
+        archive.append(this.readableFromReadableStream(readableStream), { name: file.id as string });
+      } catch (err) {
+        console.error(`Failed to process file ${file.id}:`, err);
+      }
+    }
+  
+    // Finalize the archive when all files are added
+    await archive.finalize();
+  
+    console.log('Files successfully downloaded and zipped!');
+    this.showProgress = false;
   }
 }
 
