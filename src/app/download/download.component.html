@@ -39,7 +39,7 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-                <tr app-downloadablefile [datafile]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode">
+                <tr app-downloadablefile [datafile]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode" [style]="rowClass(rowData)">
             </ng-template>
         </p-treeTable>
     </div>

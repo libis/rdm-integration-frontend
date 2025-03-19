@@ -90,6 +90,18 @@ export class DownloadComponent implements OnInit, OnDestroy {
     return this.pluginService.showDVToken();
   }
 
+  rowClass(datafile: Datafile): string {
+    switch (datafile.action) {
+      case Fileaction.Ignore:
+        return '';
+      case Fileaction.Download:
+        return 'background-color: #c3e6cb';
+      case Fileaction.Custom:
+        return 'background-color: #FFFAA0';
+    }
+    return '';
+  }
+
   onUserChange() {
     this.doiItems = [];
     this.datasetId = undefined;

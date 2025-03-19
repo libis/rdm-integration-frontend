@@ -19,7 +19,7 @@ export class DownladablefileComponent implements OnInit {
   node: TreeNode<Datafile> = {};
 
   static icon_ignore = "pi pi-stop";
-  static icon_download = "pi pi-cloud-download";
+  static icon_download = "pi pi-check-square";
   static icon_custom = "pi pi-exclamation-triangle";
 
   constructor() { }
