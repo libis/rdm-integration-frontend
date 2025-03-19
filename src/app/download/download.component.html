@@ -45,20 +45,21 @@
         </p-treeTable>
     </div>
     <div style="float:right; width: 50%;">
-        <div class="mb-3">
-            <label for="repoNameSearch" class="form-label">{{ getRepoNameFieldName() }}</label>
-            <p-select appendTo="body" [editable]="repoNameFieldEditable()" id="repoNameSearch" [options]="repoNames"
-                [(ngModel)]="foundRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label"
-                [resetFilterOnHide]="true" (onFilter)="onRepoNameSearch($event.filter)" (onClick)="startRepoSearch()"
-                (onChange)="onRepoChange()"></p-select>
-        </div>
-        <div class="mb-3">
-            <label for="repoBranchTree" class="form-label">{{ getOptionFieldName() }}</label><br />
-            <p-tree selectionMode="single" [selection]="selectedOption" [value]="rootOptions"
-                (onNodeExpand)="getOptions($event.node)" [loading]="optionsLoading"
-                (onNodeSelect)="optionSelected($event.node)"></p-tree>
-        </div>
         <div style="margin: 0.2rem; padding-left: 2rem">
+            <div class="mb-3"><span>Globus download</span></div>
+            <div class="mb-3">
+                <label for="repoNameSearch" class="form-label">{{ getRepoNameFieldName() }}</label>
+                <p-select appendTo="body" [editable]="repoNameFieldEditable()" id="repoNameSearch" [options]="repoNames"
+                    [(ngModel)]="foundRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label"
+                    [resetFilterOnHide]="true" (onFilter)="onRepoNameSearch($event.filter)" (onClick)="startRepoSearch()"
+                    (onChange)="onRepoChange()"></p-select>
+            </div>
+            <div class="mb-3">
+                <label for="repoBranchTree" class="form-label">{{ getOptionFieldName() }}</label><br />
+                <p-tree selectionMode="single" [selection]="selectedOption" [value]="rootOptions"
+                    (onNodeExpand)="getOptions($event.node)" [loading]="optionsLoading"
+                    (onNodeSelect)="optionSelected($event.node)"></p-tree>
+            </div>
             <p-button (click)="download()" styleClass="p-button-sm p-button-raised p-button-primary"
                 [disabled]="downloadDisabled()">Download</p-button>
         </div>

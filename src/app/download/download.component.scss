@@ -1,5 +1,3 @@
-textarea {
-    resize: horizontal;
-    overflow: hidden;
-    width: 100%
+:host ::ng-deep .p-select {
+    width: 100%;
 }
