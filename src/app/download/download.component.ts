@@ -231,7 +231,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
     }
 
     downloadDisabled(): boolean {
-        return !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
+        return !this.option || !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
     }
 
     async download(): Promise<void> {
