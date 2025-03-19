@@ -11,213 +11,375 @@ import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
 import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
+import { RepoLookupRequest } from '../models/repo-lookup';
+import { RepoLookupService } from '../repo.lookup.service';
 
 @Component({
-  selector: 'app-download',
-  standalone: false,
-  templateUrl: './download.component.html',
-  styleUrl: './download.component.scss',
+    selector: 'app-download',
+    standalone: false,
+    templateUrl: './download.component.html',
+    styleUrl: './download.component.scss',
 })
 export class DownloadComponent implements OnInit, OnDestroy {
-  // CONSTANTS
-  DEBOUNCE_TIME = 750;
+    // CONSTANTS
+    DEBOUNCE_TIME = 750;
 
-  // NG MODEL FIELDS
-  dataverseToken?: string;
-  datasetId?: string;
-  data: CompareResult = {};
-  rootNodeChildren: TreeNode<Datafile>[] = [];
-  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
-  loading = false;
+    // NG MODEL FIELDS
+    dataverseToken?: string;
+    datasetId?: string;
+    data: CompareResult = {};
+    rootNodeChildren: TreeNode<Datafile>[] = [];
+    rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
+    loading = false;
 
-  // ITEMS IN SELECTS
-  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
-  loadingItems: SelectItem<string>[] = [this.loadingItem];
-  doiItems: SelectItem<string>[] = [];
+    // ITEMS IN SELECTS
+    loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
+    loadingItems: SelectItem<string>[] = [this.loadingItem];
+    doiItems: SelectItem<string>[] = [];
 
-  // INTERNAL STATE VARIABLES
-  datasetSearchSubject: Subject<string> = new Subject();
-  datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
-  datasetSearchResultsSubscription?: Subscription;
+    // INTERNAL STATE VARIABLES
+    datasetSearchSubject: Subject<string> = new Subject();
+    datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+    datasetSearchResultsSubscription?: Subscription;
 
-  constructor(
-    private dvObjectLookupService: DvObjectLookupService,
-    private pluginService: PluginService,
-    public dataService: DataService,
-    private utils: UtilsService,
-    private route: ActivatedRoute,
-  ) {
-    this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
-      debounceTime(this.DEBOUNCE_TIME),
-      map(searchText => this.datasetSearch(searchText)),
-    );
-  }
+    // globus
+    token?: string;
+    repoNames: SelectItem<string>[] = [];
+    repoName?: string;
+    selectedRepoName?: string;
+    foundRepoName?: string;
+    repoSearchSubject: Subject<string> = new Subject();
+    repoSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+    repoSearchResultsSubscription?: Subscription;
+    branchItems: SelectItem<string>[] = [];
+    option?: string;
+    rootOptions: TreeNode<string>[] = [{ label: 'Expand and select', data: '', leaf: false, selectable: true }];
+    selectedOption?: TreeNode<string>;
+    optionsLoading = false;
 
-  ngOnInit(): void {
-    const dvToken = localStorage.getItem("dataverseToken");
-    if (dvToken !== null) {
-      this.dataverseToken = dvToken;
+    constructor(
+        private dvObjectLookupService: DvObjectLookupService,
+        private pluginService: PluginService,
+        public dataService: DataService,
+        private utils: UtilsService,
+        private route: ActivatedRoute,
+        private repoLookupService: RepoLookupService,
+    ) {
+        this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
+            debounceTime(this.DEBOUNCE_TIME),
+            map(searchText => this.datasetSearch(searchText)),
+        );
+        this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
+            debounceTime(this.DEBOUNCE_TIME),
+            map(searchText => this.repoNameSearch(searchText)),
+        );
     }
-    this.route.queryParams
-      .subscribe(params => {
-        const apiToken = params['apiToken'];
-        if (apiToken) {
-          this.dataverseToken = apiToken;
+
+    ngOnInit(): void {
+        const dvToken = localStorage.getItem("dataverseToken");
+        if (dvToken !== null) {
+            this.dataverseToken = dvToken;
         }
-        const pid = params['datasetPid'];
-        if (pid) {
-          this.doiItems = [{ label: pid, value: pid }];
-          this.datasetId = pid;
-          this.onDatasetChange();
+        this.route.queryParams
+            .subscribe(params => {
+                const apiToken = params['apiToken'];
+                if (apiToken) {
+                    this.dataverseToken = apiToken;
+                }
+                const pid = params['datasetPid'];
+                if (pid) {
+                    this.doiItems = [{ label: pid, value: pid }];
+                    this.datasetId = pid;
+                    this.onDatasetChange();
+                }
+            });
+        this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
+            next: x => x.then(v => this.doiItems = v)
+                .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
+            error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
+        });
+        this.repoSearchResultsSubscription = this.repoSearchResultsObservable.subscribe({
+            next: x => x.then(v => this.repoNames = v)
+                .catch(err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }]),
+            error: err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }],
+        });
+    }
+
+    ngOnDestroy() {
+        this.datasetSearchResultsSubscription?.unsubscribe();
+        this.repoSearchResultsSubscription?.unsubscribe();
+    }
+
+    back(): void {
+        location.href = "connect";
+    }
+
+    showDVToken(): boolean {
+        return this.pluginService.showDVToken();
+    }
+
+    rowClass(datafile: Datafile): string {
+        switch (datafile.action) {
+            case Fileaction.Ignore:
+                return '';
+            case Fileaction.Download:
+                return 'background-color: #c3e6cb';
+            case Fileaction.Custom:
+                return 'background-color: #FFFAA0';
         }
-      });
-    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
-      next: x => x.then(v => this.doiItems = v)
-        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
-      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
-    });
-  }
-
-  ngOnDestroy() {
-    this.datasetSearchResultsSubscription?.unsubscribe();
-  }
-
-  back(): void {
-    location.href = "connect";
-  }
-
-  showDVToken(): boolean {
-    return this.pluginService.showDVToken();
-  }
-
-  rowClass(datafile: Datafile): string {
-    switch (datafile.action) {
-      case Fileaction.Ignore:
         return '';
-      case Fileaction.Download:
-        return 'background-color: #c3e6cb';
-      case Fileaction.Custom:
-        return 'background-color: #FFFAA0';
     }
-    return '';
-  }
 
-  onUserChange() {
-    this.doiItems = [];
-    this.datasetId = undefined;
-    if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
-      localStorage.setItem("dataverseToken", this.dataverseToken!);
-    }
-  }
-
-  // DV OBJECTS: COMMON
-
-  getDoiOptions(): void {
-    if (this.doiItems.length !== 0 && this.doiItems.find(x => x === this.loadingItem) === undefined) {
-      return;
-    }
-    this.doiItems = this.loadingItems;
-    this.datasetId = undefined;
-
-    const httpSubscription = this.dvObjectLookupService.getItems("", "Dataset", undefined, this.dataverseToken).subscribe({
-      next: (items: SelectItem<string>[]) => {
-        if (items && items.length > 0) {
-          this.doiItems = items;
-          this.datasetId = undefined;
-        } else {
-          this.doiItems = [];
-          this.datasetId = undefined;
-        }
-        httpSubscription.unsubscribe();
-      },
-      error: (err) => {
-        alert("doi lookup failed: " + err.error);
+    onUserChange() {
         this.doiItems = [];
         this.datasetId = undefined;
-      },
-    });
-  }
-
-  // DATASETS
-  datasetFieldEditable(): boolean {
-    return this.pluginService.datasetFieldEditable();
-  }
-
-  onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
-      return;
+        if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
+            localStorage.setItem("dataverseToken", this.dataverseToken!);
+        }
     }
-    this.doiItems = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
-    this.datasetSearchSubject.next(searchTerm);
-  }
 
-  async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(this.dvObjectLookupService.getItems("", "Dataset", searchTerm, this.dataverseToken));
-  }
+    // DV OBJECTS: COMMON
 
-  onDatasetChange() {
-    this.loading = true;
-    const subscription = this.dataService.getDownloadableFiles(this.datasetId!, this.dataverseToken).subscribe({
-      next: (data) => {
-        subscription.unsubscribe();
-        data.data = data.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
-        this.setData(data);
-      },
-      error: (err) => {
-        subscription.unsubscribe();
-        alert("getting downloadable files failed: " + err.error);
-      }
-    });
-  }
+    getDoiOptions(): void {
+        if (this.doiItems.length !== 0 && this.doiItems.find(x => x === this.loadingItem) === undefined) {
+            return;
+        }
+        this.doiItems = this.loadingItems;
+        this.datasetId = undefined;
 
-  setData(data: CompareResult): void {
-    this.data = data;
-    if (!data.data || data.data.length === 0) {
-      this.loading = false;
-      return;
+        const httpSubscription = this.dvObjectLookupService.getItems("", "Dataset", undefined, this.dataverseToken).subscribe({
+            next: (items: SelectItem<string>[]) => {
+                if (items && items.length > 0) {
+                    this.doiItems = items;
+                    this.datasetId = undefined;
+                } else {
+                    this.doiItems = [];
+                    this.datasetId = undefined;
+                }
+                httpSubscription.unsubscribe();
+            },
+            error: (err) => {
+                alert("doi lookup failed: " + err.error);
+                this.doiItems = [];
+                this.datasetId = undefined;
+            },
+        });
     }
-    const rowDataMap = this.utils.mapDatafiles(data.data);
-    rowDataMap.forEach(v => this.utils.addChild(v, rowDataMap));
-    const rootNode = rowDataMap.get("");
-    this.rowNodeMap = rowDataMap;
-    if (rootNode?.children) {
-      this.rootNodeChildren = rootNode.children;
+
+    // DATASETS
+    datasetFieldEditable(): boolean {
+        return this.pluginService.datasetFieldEditable();
     }
-    this.loading = false;
-  }
 
-  action(): string {
-    const root = this.rowNodeMap.get("")
-    if (root) {
-      return DownladablefileComponent.actionIcon(root);
+    onDatasetSearch(searchTerm: string | null) {
+        if (searchTerm === null || searchTerm.length < 3) {
+            this.doiItems = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+            return;
+        }
+        this.doiItems = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+        this.datasetSearchSubject.next(searchTerm);
     }
-    return DownladablefileComponent.icon_ignore;
-  }
 
-  toggleAction(): void {
-    const root = this.rowNodeMap.get("")
-    if (root) {
-      DownladablefileComponent.toggleNodeAction(root);
+    async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+        return await firstValueFrom(this.dvObjectLookupService.getItems("", "Dataset", searchTerm, this.dataverseToken));
     }
-  }
 
-  downloadDisabled(): boolean {
-    return !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
-  }
+    onDatasetChange() {
+        this.loading = true;
+        const subscription = this.dataService.getDownloadableFiles(this.datasetId!, this.dataverseToken).subscribe({
+            next: (data) => {
+                subscription.unsubscribe();
+                data.data = data.data?.sort((o1, o2) => (o1.id === undefined ? "" : o1.id) < (o2.id === undefined ? "" : o2.id) ? -1 : 1);
+                this.setData(data);
+            },
+            error: (err) => {
+                subscription.unsubscribe();
+                alert("getting downloadable files failed: " + err.error);
+            }
+        });
+    }
 
-  async download(): Promise<void> {
-    //TODO
+    setData(data: CompareResult): void {
+        this.data = data;
+        if (!data.data || data.data.length === 0) {
+            this.loading = false;
+            return;
+        }
+        const rowDataMap = this.utils.mapDatafiles(data.data);
+        rowDataMap.forEach(v => this.utils.addChild(v, rowDataMap));
+        const rootNode = rowDataMap.get("");
+        this.rowNodeMap = rowDataMap;
+        if (rootNode?.children) {
+            this.rootNodeChildren = rootNode.children;
+        }
+        this.loading = false;
+    }
 
-    const httpSubscription = this.dataService.download().subscribe({
-      next: () => {
-        httpSubscription.unsubscribe();
-      },
-      error: (err) => {
-        httpSubscription.unsubscribe();
-        alert(err);
-      },
-    });
-  }
+    action(): string {
+        const root = this.rowNodeMap.get("")
+        if (root) {
+            return DownladablefileComponent.actionIcon(root);
+        }
+        return DownladablefileComponent.icon_ignore;
+    }
+
+    toggleAction(): void {
+        const root = this.rowNodeMap.get("")
+        if (root) {
+            DownladablefileComponent.toggleNodeAction(root);
+        }
+    }
+
+    downloadDisabled(): boolean {
+        return !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
+    }
+
+    async download(): Promise<void> {
+        //TODO
+
+        const httpSubscription = this.dataService.download().subscribe({
+            next: () => {
+                httpSubscription.unsubscribe();
+            },
+            error: (err) => {
+                httpSubscription.unsubscribe();
+                alert(err);
+            },
+        });
+    }
+
+    // globus
+    getRepoNameFieldName(): string | undefined {
+        return this.pluginService.getPlugin('globus').repoNameFieldName;
+    }
+
+    getRepoName(): string | undefined {
+        if (this.repoName !== undefined) {
+            return this.repoName;
+        }
+        if (this.selectedRepoName !== undefined) {
+            return this.selectedRepoName;
+        }
+        return this.foundRepoName;
+    }
+
+    async repoNameSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+        const req = this.getRepoLookupRequest(true);
+        if (req === undefined) {
+            return [{ label: 'error', value: "error" }];
+        }
+        req.repoName = searchTerm;
+        return await firstValueFrom(this.repoLookupService.search(req));
+    }
+
+    getRepoLookupRequest(isSearch: boolean): RepoLookupRequest | undefined {
+        if (this.getRepoNameFieldName() && (this.getRepoName() === undefined || this.getRepoName() === '') && !isSearch) {
+            alert(this.getRepoNameFieldName() + ' is missing');
+            return;
+        }
+        if (this.branchItems.length !== 0 && this.branchItems.find(x => x === this.loadingItem) === undefined) {
+            return;
+        }
+        this.branchItems = this.loadingItems;
+
+        return {
+            pluginId: 'globus',
+            plugin: 'globus',
+            repoName: this.getRepoName(),
+            url: this.pluginService.getPlugin('globus').sourceUrlFieldValue,
+            token: this.token,
+        };
+    }
+
+    repoNameFieldEditable(): boolean {
+        const v = this.pluginService.getPlugin('globus').repoNameFieldEditable;
+        return v === undefined ? false : v;
+    }
+
+    getRepoNamePlaceholder(): string {
+        const v = this.pluginService.getPlugin('globus').repoNameFieldPlaceholder;
+        return v === undefined ? "" : v;
+    }
+
+    onRepoNameSearch(searchTerm: string | null) {
+        if (searchTerm === null || searchTerm.length < 3) {
+            this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+            return;
+        }
+        this.repoNames = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+        this.repoSearchSubject.next(searchTerm);
+    }
+
+    startRepoSearch() {
+        if (this.foundRepoName !== undefined) {
+            return;
+        }
+        if (this.repoNameSearchInitEnabled()) {
+            this.repoNames = [{ label: 'loading...', value: 'start' }];
+            this.repoSearchSubject.next('');
+        } else {
+            this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+        }
+    }
+
+    repoNameSearchInitEnabled(): boolean {
+        return this.pluginService.getPlugin('globus').repoNameFieldHasInit!;
+    }
+
+    getOptionFieldName(): string | undefined {
+        return this.pluginService.getPlugin('globus').optionFieldName;
+    }
+
+    getOptions(node?: TreeNode<string>): void {
+        const req = this.getRepoLookupRequest(false);
+        if (req === undefined) {
+            return;
+        }
+        if (node) {
+            req.option = node.data;
+            this.optionsLoading = true;
+        }
+
+        const httpSubscription = this.repoLookupService.getOptions(req).subscribe({
+            next: (items: SelectItem<string>[]) => {
+                if (items && node) {
+                    const nodes: TreeNode<string>[] = [];
+                    items.forEach(i => nodes.push({ label: i.label, data: i.value, leaf: false, selectable: true }))
+                    node.children = nodes;
+                    this.optionsLoading = false;
+                } else if (items && items.length > 0) {
+                    this.branchItems = items;
+                } else {
+                    this.branchItems = [];
+                }
+                httpSubscription.unsubscribe();
+            },
+            error: (err) => {
+                alert("branch lookup failed: " + err.error);
+                this.branchItems = [];
+                this.option = undefined;
+                this.optionsLoading = false;
+            },
+        });
+    }
+
+    optionSelected(node: TreeNode<string>): void {
+        const v = node.data;
+        if (!v || v === '') {
+            this.selectedOption = undefined;
+            this.option = undefined;
+        } else {
+            this.option = v;
+            this.selectedOption = node;
+        }
+    }
+
+    onRepoChange() {
+        this.branchItems = [];
+        this.option = undefined;
+        if (this.getRepoNameFieldName() === undefined) {
+            this.repoName = undefined;
+        }
+    }
 }
 

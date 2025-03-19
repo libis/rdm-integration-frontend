@@ -46,11 +46,6 @@
     </div>
     <div style="float:right; width: 50%;">
         <div class="mb-3">
-            <label for="baseUrl" class="form-label">{{ getSourceUrlFieldName() }}</label>
-            <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()"
-                [(ngModel)]="sourceUrl" #ctrl="ngModel" (change)="onRepoChange()">
-        </div>
-        <div class="mb-3">
             <label for="repoNameSearch" class="form-label">{{ getRepoNameFieldName() }}</label>
             <p-select appendTo="body" [editable]="repoNameFieldEditable()" id="repoNameSearch" [options]="repoNames"
                 [(ngModel)]="foundRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label"
@@ -68,5 +63,4 @@
                 [disabled]="downloadDisabled()">Download</p-button>
         </div>
     </div>
-</div>
 </div>
