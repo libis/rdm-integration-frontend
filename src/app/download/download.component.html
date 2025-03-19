@@ -15,9 +15,9 @@
     </span>
     <span class="col-auto" style="width: 30rem;position:relative;top:0.275rem;">
         <p-floatlabel class="w-full md:w-56" variant="on">
-            <p-select appendTo="body" autoWidth="false" [style]="{'width':'100%'}"
-                [editable]="datasetFieldEditable()" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label"
-                [resetFilterOnHide]="true" (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId" (onClick)="getDoiOptions()"
+            <p-select appendTo="body" autoWidth="false" [style]="{'width':'100%'}" [editable]="datasetFieldEditable()"
+                id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [resetFilterOnHide]="true"
+                (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId" (onClick)="getDoiOptions()"
                 (onChange)="onDatasetChange()"></p-select>
             <label for="datasetId">Select Dataset</label>
         </p-floatlabel>
@@ -39,13 +39,34 @@
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-                <tr app-downloadablefile [datafile]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode" [style]="rowClass(rowData)">
+                <tr app-downloadablefile [datafile]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
+                    [style]="rowClass(rowData)">
             </ng-template>
         </p-treeTable>
     </div>
     <div style="float:right; width: 50%;">
-        <div style="width: 1000%; margin: 0.2rem; padding-left: 2rem">
-            <p-button (click)="download()" styleClass="p-button-sm p-button-raised p-button-primary" [disabled]="downloadDisabled()">Download</p-button>
+        <div class="mb-3">
+            <label for="baseUrl" class="form-label">{{ getSourceUrlFieldName() }}</label>
+            <input type="text" class="form-control" id="baseUrl" [placeholder]="getSourceUrlPlaceholder()"
+                [(ngModel)]="sourceUrl" #ctrl="ngModel" (change)="onRepoChange()">
+        </div>
+        <div class="mb-3">
+            <label for="repoNameSearch" class="form-label">{{ getRepoNameFieldName() }}</label>
+            <p-select appendTo="body" [editable]="repoNameFieldEditable()" id="repoNameSearch" [options]="repoNames"
+                [(ngModel)]="foundRepoName" [placeholder]="getRepoNamePlaceholder()" [filter]="true" filterBy="label"
+                [resetFilterOnHide]="true" (onFilter)="onRepoNameSearch($event.filter)" (onClick)="startRepoSearch()"
+                (onChange)="onRepoChange()"></p-select>
+        </div>
+        <div class="mb-3">
+            <label for="repoBranchTree" class="form-label">{{ getOptionFieldName() }}</label><br />
+            <p-tree selectionMode="single" [selection]="selectedOption" [value]="rootOptions"
+                (onNodeExpand)="getOptions($event.node)" [loading]="optionsLoading"
+                (onNodeSelect)="optionSelected($event.node)"></p-tree>
+        </div>
+        <div style="margin: 0.2rem; padding-left: 2rem">
+            <p-button (click)="download()" styleClass="p-button-sm p-button-raised p-button-primary"
+                [disabled]="downloadDisabled()">Download</p-button>
         </div>
     </div>
+</div>
 </div>
