@@ -146,9 +146,9 @@ export class DownloadComponent implements OnInit, OnDestroy {
             case Fileaction.Ignore:
                 return '';
             case Fileaction.Download:
-                return 'background-color: #c3e6cb';
+                return 'background-color: #c3e6cb; color: black';
             case Fileaction.Custom:
-                return 'background-color: #FFFAA0';
+                return 'background-color: #FFFAA0; color: black';
         }
         return '';
     }

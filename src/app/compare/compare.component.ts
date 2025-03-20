@@ -145,13 +145,13 @@ export class CompareComponent implements OnInit {
       case Fileaction.Ignore:
         return '';
       case Fileaction.Copy:
-        return 'background-color: #c3e6cb';
+        return 'background-color: #c3e6cb; color: black';
       case Fileaction.Update:
-        return 'background-color: #b8daff';
+        return 'background-color: #b8daff; color: black';
       case Fileaction.Delete:
-        return 'background-color: #f5c6cb';
+        return 'background-color: #f5c6cb; color: black';
       case Fileaction.Custom:
-        return 'background-color: #FFFAA0';
+        return 'background-color: #FFFAA0; color: black';
     }
     return '';
   }
