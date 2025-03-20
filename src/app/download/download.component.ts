@@ -95,18 +95,20 @@ export class DownloadComponent implements OnInit, OnDestroy {
                     this.datasetId = pid;
                     this.onDatasetChange();
                 }
-                const code = params['code'];
-                const loginState: LoginState = JSON.parse(params['state']);
                 const storedNonce = this.getNonce();
-                if (storedNonce === loginState.nonce && code !== undefined) {
-                    this.datasetId = loginState.datasetId?.value;
-                    const tokenSubscription = this.oauth.getToken('globus', code, loginState.nonce).subscribe(x => {
-                        this.token = x.session_id;
-                        if (!this.pluginService.isStoreDvToken()) {
-                            localStorage.removeItem("dataverseToken");
-                        }
-                        tokenSubscription.unsubscribe();
-                    });
+                const code = params['code'];
+                if (code !== undefined) {
+                    const loginState: LoginState = JSON.parse(params['state']);
+                    if (storedNonce === loginState.nonce && code !== undefined) {
+                        this.datasetId = loginState.datasetId?.value;
+                        const tokenSubscription = this.oauth.getToken('globus', code, loginState.nonce).subscribe(x => {
+                            this.token = x.session_id;
+                            if (!this.pluginService.isStoreDvToken()) {
+                                localStorage.removeItem("dataverseToken");
+                            }
+                            tokenSubscription.unsubscribe();
+                        });
+                    }
                 } else if (storedNonce === undefined) {
                     this.getRepoToken();
                 }
