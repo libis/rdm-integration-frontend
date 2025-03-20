@@ -15,6 +15,7 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 import { RepoLookupService } from '../repo.lookup.service';
 import { LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
+import { SubmitService } from '../submit.service';
 
 @Component({
     selector: 'app-download',
@@ -43,6 +44,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
     datasetSearchSubject: Subject<string> = new Subject();
     datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
     datasetSearchResultsSubscription?: Subscription;
+    downloadRequested = false;
 
     // globus
     token?: string;
@@ -63,6 +65,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
         private dvObjectLookupService: DvObjectLookupService,
         private pluginService: PluginService,
         public dataService: DataService,
+        public submit: SubmitService,
         private utils: UtilsService,
         private route: ActivatedRoute,
         private repoLookupService: RepoLookupService,
@@ -250,15 +253,21 @@ export class DownloadComponent implements OnInit, OnDestroy {
     }
 
     downloadDisabled(): boolean {
-        return !this.option || !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
+        return this.downloadRequested || !this.option || !Array.from(this.rowNodeMap.values()).some(x => x.data?.action === Fileaction.Download);
     }
 
     async download(): Promise<void> {
-        //TODO
-
-        const httpSubscription = this.dataService.download().subscribe({
-            next: () => {
+        const selected: Datafile[] = [];
+        this.rowNodeMap.forEach(datafile => {
+          if (datafile.data?.action === Fileaction.Download) {
+            selected.push(datafile.data)
+          }
+        });
+        this.downloadRequested = true;
+        const httpSubscription = this.submit.download(selected, this.repoName, this.option, this.token, this.datasetId, this.token).subscribe({
+            next: (submissionId) => {
                 httpSubscription.unsubscribe();
+                alert("download is requested and can be monitored in Dataverse UI: " + submissionId);
             },
             error: (err) => {
                 httpSubscription.unsubscribe();

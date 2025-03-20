@@ -13,6 +13,7 @@ import { CredentialsService } from './credentials.service';
 export class SubmitService {
 
   store_url = 'api/common/store';
+  download_url = "api/common/download";
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
@@ -35,5 +36,22 @@ export class SubmitService {
     };
 
     return this.http.post<StoreResult>(this.store_url, req);
+  }
+
+  download(selected: Datafile[], endpoint: string | undefined, option: string | undefined, globusToken: string | undefined, pid: string | undefined, dvToken: string | undefined): Observable<string> {
+    const credentials = this.credentialsService.credentials;
+    const req = {
+      plugin: 'globus',
+      streamParams: {
+        pluginId: "globus",
+        repoName: endpoint,
+        option: option,
+        token: globusToken,
+      },
+      persistentId: pid,
+      dataverseKey: dvToken,
+      selectedNodes: selected,
+    };
+    return this.http.post<string>(this.download_url, req);
   }
 }

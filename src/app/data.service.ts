@@ -18,7 +18,6 @@ export class DataService {
   common_compute_url = "api/common/compute";
   common_get_cached_compute_res_url = "api/common/cachedcompute";
   common_get_downloadable_files_url = "api/common/downloadable";
-  common_download_url = "api/common/download";
 
   constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
 
@@ -75,9 +74,5 @@ export class DataService {
       dataverseKey: dataverse_token,
     };
     return this.http.post<CompareResult>(this.common_get_downloadable_files_url, req);
-  }
-
-  download(): Observable<Key> {
-    return this.http.get<Key>(this.common_download_url);
   }
 }
