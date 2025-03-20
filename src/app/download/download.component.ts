@@ -13,6 +13,8 @@ import { ActivatedRoute } from '@angular/router';
 import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
 import { RepoLookupRequest } from '../models/repo-lookup';
 import { RepoLookupService } from '../repo.lookup.service';
+import { LoginState } from '../models/oauth';
+import { OauthService } from '../oauth.service';
 
 @Component({
     selector: 'app-download',
@@ -64,6 +66,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
         private utils: UtilsService,
         private route: ActivatedRoute,
         private repoLookupService: RepoLookupService,
+        private oauth: OauthService,
     ) {
         this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
             debounceTime(this.DEBOUNCE_TIME),
@@ -91,6 +94,21 @@ export class DownloadComponent implements OnInit, OnDestroy {
                     this.doiItems = [{ label: pid, value: pid }];
                     this.datasetId = pid;
                     this.onDatasetChange();
+                }
+                const code = params['code'];
+                const loginState: LoginState = JSON.parse(params['state']);
+                const storedNonce = this.getNonce();
+                if (storedNonce === loginState.nonce && code !== undefined) {
+                    this.datasetId = loginState.datasetId?.value;
+                    const tokenSubscription = this.oauth.getToken('globus', code, loginState.nonce).subscribe(x => {
+                        this.token = x.session_id;
+                        if (!this.pluginService.isStoreDvToken()) {
+                            localStorage.removeItem("dataverseToken");
+                        }
+                        tokenSubscription.unsubscribe();
+                    });
+                } else if (storedNonce === undefined) {
+                    this.getRepoToken();
                 }
             });
         this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
@@ -139,7 +157,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
     }
 
     // DV OBJECTS: COMMON
-
     getDoiOptions(): void {
         if (this.doiItems.length !== 0 && this.doiItems.find(x => x === this.loadingItem) === undefined) {
             return;
@@ -380,6 +397,67 @@ export class DownloadComponent implements OnInit, OnDestroy {
         if (this.getRepoNameFieldName() === undefined) {
             this.repoName = undefined;
         }
+    }
+
+    getRepoToken() {
+        if (this.dataverseToken !== undefined) {
+            localStorage.setItem("dataverseToken", this.dataverseToken!);
+        }
+        const tg = this.pluginService.getPlugin('globus').tokenGetter!;
+        let url = this.pluginService.getPlugin('globus').sourceUrlFieldValue + (tg.URL === undefined ? '' : tg.URL);
+        if (tg.URL?.includes('://')) {
+            url = tg.URL;
+        }
+        if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
+            const nonce = this.newNonce(44);
+            const loginState: LoginState = {
+                datasetId: { value: this.datasetId, label: this.datasetId },
+                nonce: nonce,
+            }
+            let clId = '?client_id='
+            if (url.includes("?")) {
+                clId = '&client_id='
+            }
+            url = url + clId + encodeURIComponent(tg.oauth_client_id) +
+                '&redirect_uri=' + this.getRedirectUri() +
+                '&response_type=code&state=' + encodeURIComponent(JSON.stringify(loginState));
+            location.href = url;
+        } else {
+            window.open(url, "_blank");
+        }
+    }
+
+    getRedirectUri(): string {
+        let redirect_uri = this.pluginService.getRedirectUri();
+        if (redirect_uri.includes('#/connect')) {
+            redirect_uri = redirect_uri.replace('#/connect', '#/download');
+        } else if (redirect_uri.includes('connect')) {
+            redirect_uri = redirect_uri.replace('connect', '#/download');
+        } else if (redirect_uri.endsWith('/')) {
+            redirect_uri = redirect_uri + '#/download';
+        } else {
+            redirect_uri = redirect_uri + '/#/download';
+        }
+        return redirect_uri;
+    }
+
+    newNonce(length: number): string {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        let counter = 0;
+        while (counter < length) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            counter += 1;
+        }
+        localStorage.setItem("nonce", result);
+        return result;
+    }
+
+    getNonce(): string | null {
+        const result = localStorage.getItem("nonce");
+        localStorage.removeItem("nonce");
+        return result;
     }
 }
 
