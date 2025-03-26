@@ -112,7 +112,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
                             tokenSubscription.unsubscribe();
                         });
                     }
-                } else if (storedNonce === undefined) {
+                } else if (storedNonce === null) {
                     this.getRepoToken();
                 }
             });
