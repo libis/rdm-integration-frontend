@@ -414,7 +414,11 @@ export class DownloadComponent implements OnInit, OnDestroy {
         if (this.dataverseToken !== undefined) {
             localStorage.setItem("dataverseToken", this.dataverseToken!);
         }
-        const tg = this.pluginService.getPlugin('globus').tokenGetter!;
+        const tg = this.pluginService.getPlugin('globus').tokenGetter;
+        if (tg === undefined) {
+            alert("globus plugin not found: " + this.pluginService.getPlugin('globus'));
+            return;
+        }
         let url = this.pluginService.getPlugin('globus').sourceUrlFieldValue + (tg.URL === undefined ? '' : tg.URL);
         if (tg.URL?.includes('://')) {
             url = tg.URL;
