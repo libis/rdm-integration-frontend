@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SelectItem } from 'primeng/api';
 import { Config, RepoPlugin } from './models/plugin';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -41,17 +42,13 @@ export class PluginService {
     this.setConfig();
   }
 
-  private setConfig(): void {
-    const subscription = this.http.get<Config>(`api/frontend/config`).subscribe(
-      c => {
-        this.config = c;
-        this.config.plugins.forEach(p => {
-          p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
-          this.allPlugins.set(p.id, p);
-        });
-        subscription.unsubscribe();
-      }
-    );
+  private async setConfig(): Promise<void> {
+    const c = await firstValueFrom(this.http.get<Config>(`api/frontend/config`))
+    this.config = c;
+    this.config.plugins.forEach(p => {
+      p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
+      this.allPlugins.set(p.id, p);
+    });
   }
 
   getPlugins(): SelectItem<string>[] {
