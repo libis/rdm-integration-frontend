@@ -445,13 +445,13 @@ export class DownloadComponent implements OnInit, OnDestroy {
     getRedirectUri(): string {
         let redirect_uri = this.pluginService.getRedirectUri();
         if (redirect_uri.includes('#/connect')) {
-            redirect_uri = redirect_uri.replace('#/connect', '#/download');
+            redirect_uri = redirect_uri.replace('#/connect', 'download');
         } else if (redirect_uri.includes('connect')) {
-            redirect_uri = redirect_uri.replace('connect', '#/download');
+            redirect_uri = redirect_uri.replace('connect', 'download');
         } else if (redirect_uri.endsWith('/')) {
-            redirect_uri = redirect_uri + '#/download';
+            redirect_uri = redirect_uri + 'download';
         } else {
-            redirect_uri = redirect_uri + '/#/download';
+            redirect_uri = redirect_uri + '/download';
         }
         return redirect_uri;
     }
