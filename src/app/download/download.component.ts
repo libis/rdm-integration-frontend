@@ -16,6 +16,7 @@ import { RepoLookupService } from '../repo.lookup.service';
 import { LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { SubmitService } from '../submit.service';
+import { RepoPlugin } from '../models/plugin';
 
 @Component({
     selector: 'app-download',
@@ -60,6 +61,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
     rootOptions: TreeNode<string>[] = [{ label: 'Expand and select', data: '', leaf: false, selectable: true }];
     selectedOption?: TreeNode<string>;
     optionsLoading = false;
+    globusPlugin?: RepoPlugin;
 
     constructor(
         private dvObjectLookupService: DvObjectLookupService,
@@ -112,8 +114,14 @@ export class DownloadComponent implements OnInit, OnDestroy {
                             tokenSubscription.unsubscribe();
                         });
                     }
+                    this.pluginService.getGlobusPlugin().then(p => {
+                        this.globusPlugin = p;
+                    });
                 } else if (storedNonce === null) {
-                    this.getRepoToken();
+                    this.pluginService.getGlobusPlugin().then(p => {
+                        this.globusPlugin = p;
+                        this.getRepoToken();
+                    });
                 }
             });
         this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
@@ -259,9 +267,9 @@ export class DownloadComponent implements OnInit, OnDestroy {
     async download(): Promise<void> {
         const selected: Datafile[] = [];
         this.rowNodeMap.forEach(datafile => {
-          if (datafile.data?.action === Fileaction.Download) {
-            selected.push(datafile.data)
-          }
+            if (datafile.data?.action === Fileaction.Download) {
+                selected.push(datafile.data)
+            }
         });
         this.downloadRequested = true;
         const httpSubscription = this.submit.download(selected, this.repoName, this.option, this.token, this.datasetId, this.token).subscribe({
@@ -278,7 +286,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
 
     // globus
     getRepoNameFieldName(): string | undefined {
-        return this.pluginService.getPlugin('globus').repoNameFieldName;
+        return this.globusPlugin?.repoNameFieldName;
     }
 
     getRepoName(): string | undefined {
@@ -314,18 +322,18 @@ export class DownloadComponent implements OnInit, OnDestroy {
             pluginId: 'globus',
             plugin: 'globus',
             repoName: this.getRepoName(),
-            url: this.pluginService.getPlugin('globus').sourceUrlFieldValue,
+            url: this.globusPlugin?.sourceUrlFieldValue,
             token: this.token,
         };
     }
 
     repoNameFieldEditable(): boolean {
-        const v = this.pluginService.getPlugin('globus').repoNameFieldEditable;
+        const v = this.globusPlugin?.repoNameFieldEditable;
         return v === undefined ? false : v;
     }
 
     getRepoNamePlaceholder(): string {
-        const v = this.pluginService.getPlugin('globus').repoNameFieldPlaceholder;
+        const v = this.globusPlugin?.repoNameFieldPlaceholder;
         return v === undefined ? "" : v;
     }
 
@@ -350,12 +358,12 @@ export class DownloadComponent implements OnInit, OnDestroy {
         }
     }
 
-    repoNameSearchInitEnabled(): boolean {
-        return this.pluginService.getPlugin('globus').repoNameFieldHasInit!;
+    repoNameSearchInitEnabled(): boolean | undefined {
+        return this.globusPlugin?.repoNameFieldHasInit;
     }
 
     getOptionFieldName(): string | undefined {
-        return this.pluginService.getPlugin('globus').optionFieldName;
+        return this.globusPlugin?.optionFieldName;
     }
 
     getOptions(node?: TreeNode<string>): void {
@@ -414,12 +422,12 @@ export class DownloadComponent implements OnInit, OnDestroy {
         if (this.dataverseToken !== undefined) {
             localStorage.setItem("dataverseToken", this.dataverseToken!);
         }
-        const tg = this.pluginService.getPlugin('globus').tokenGetter;
+        const tg = this.globusPlugin?.tokenGetter;
         if (tg === undefined) {
-            alert("globus plugin not found: " + this.pluginService.getPlugin('globus'));
+            console.log("globus plugin not found");
             return;
         }
-        let url = this.pluginService.getPlugin('globus').sourceUrlFieldValue + (tg.URL === undefined ? '' : tg.URL);
+        let url = this.globusPlugin?.sourceUrlFieldValue + (tg.URL === undefined ? '' : tg.URL);
         if (tg.URL?.includes('://')) {
             url = tg.URL;
         }

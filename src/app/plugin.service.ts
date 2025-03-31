@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { SelectItem } from 'primeng/api';
 import { Config, RepoPlugin } from './models/plugin';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -52,6 +53,11 @@ export class PluginService {
         subscription.unsubscribe();
       }
     );
+  }
+
+  async getGlobusPlugin(): Promise<RepoPlugin | undefined> {
+    const c = await firstValueFrom(this.http.get<Config>(`api/frontend/config`));
+    return c.plugins.find(p => p.id === 'globus');
   }
 
   getPlugins(): SelectItem<string>[] {
