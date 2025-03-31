@@ -196,7 +196,7 @@ export class ConnectComponent implements OnInit {
         }
 
         const code = params['code'];
-        if (this.getNonce() === loginState.nonce && this.pluginId !== undefined && code !== undefined) {
+        if (loginState.nonce && this.pluginId !== undefined && code !== undefined) {
           const tokenSubscription = this.oauth.getToken(this.pluginId, code, loginState.nonce).subscribe(x => {
             this.token = x.session_id;
             if (!this.pluginService.isStoreDvToken()) {
@@ -284,13 +284,6 @@ export class ConnectComponent implements OnInit {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));
       counter += 1;
     }
-    localStorage.setItem("nonce", result);
-    return result;
-  }
-
-  getNonce(): string | null {
-    const result = localStorage.getItem("nonce");
-    localStorage.removeItem("nonce");
     return result;
   }
 

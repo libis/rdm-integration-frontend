@@ -100,11 +100,10 @@ export class DownloadComponent implements OnInit, OnDestroy {
                     this.datasetId = pid;
                     this.onDatasetChange();
                 }
-                const storedNonce = this.getNonce();
                 const code = params['code'];
                 if (code !== undefined) {
                     const loginState: LoginState = JSON.parse(params['state']);
-                    if (storedNonce === loginState.nonce) {
+                    if (loginState.nonce) {
                         this.datasetId = loginState.datasetId?.value;
                         const tokenSubscription = this.oauth.getToken('globus', code, loginState.nonce).subscribe(x => {
                             this.token = x.session_id;
@@ -113,13 +112,11 @@ export class DownloadComponent implements OnInit, OnDestroy {
                             }
                             tokenSubscription.unsubscribe();
                         });
-                    } else {
-                        alert("nonce not equal: " + storedNonce + " != " + loginState.nonce);
                     }
                     this.pluginService.getGlobusPlugin().then(p => {
                         this.globusPlugin = p;
                     });
-                } else if (storedNonce === null) {
+                } else {
                     this.pluginService.getGlobusPlugin().then(p => {
                         this.globusPlugin = p;
                         this.getRepoToken();
@@ -462,13 +459,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
             counter += 1;
         }
-        localStorage.setItem("nonce", result);
-        return result;
-    }
-
-    getNonce(): string | null {
-        const result = localStorage.getItem("nonce");
-        localStorage.removeItem("nonce");
         return result;
     }
 }
