@@ -157,6 +157,9 @@ export class ConnectComponent implements OnInit {
           return;
         }
         const loginState: LoginState = JSON.parse(params['state']);
+        if (loginState.download) {
+            this.router.navigate(['/download'], {queryParams: params});
+        }
         this.sourceUrl = loginState.sourceUrl;
         this.url = loginState.url;
         this.repoName = loginState.repoName;

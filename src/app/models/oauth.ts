@@ -12,6 +12,7 @@ export interface LoginState {
   option?: Item;
   datasetId?: Item;
   collectionId?: Item;
+  download?: boolean;
 }
 
 export interface Item {

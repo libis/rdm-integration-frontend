@@ -436,32 +436,19 @@ export class DownloadComponent implements OnInit, OnDestroy {
             const loginState: LoginState = {
                 datasetId: { value: this.datasetId, label: this.datasetId },
                 nonce: nonce,
+                download: true,
             }
             let clId = '?client_id='
             if (url.includes("?")) {
                 clId = '&client_id='
             }
             url = url + clId + encodeURIComponent(tg.oauth_client_id) +
-                '&redirect_uri=' + this.getRedirectUri() +
+                '&redirect_uri=' + this.pluginService.getRedirectUri() +
                 '&response_type=code&state=' + encodeURIComponent(JSON.stringify(loginState));
             location.href = url;
         } else {
             window.open(url, "_blank");
         }
-    }
-
-    getRedirectUri(): string {
-        let redirect_uri = this.pluginService.getRedirectUri();
-        if (redirect_uri.includes('#/connect')) {
-            redirect_uri = redirect_uri.replace('#/connect', 'download');
-        } else if (redirect_uri.includes('connect')) {
-            redirect_uri = redirect_uri.replace('connect', 'download');
-        } else if (redirect_uri.endsWith('/')) {
-            redirect_uri = redirect_uri + 'download';
-        } else {
-            redirect_uri = redirect_uri + '/download';
-        }
-        return redirect_uri;
     }
 
     newNonce(length: number): string {
