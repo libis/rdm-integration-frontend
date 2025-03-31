@@ -104,7 +104,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
                 const code = params['code'];
                 if (code !== undefined) {
                     const loginState: LoginState = JSON.parse(params['state']);
-                    if (storedNonce === loginState.nonce && code !== undefined) {
+                    if (storedNonce === loginState.nonce) {
                         this.datasetId = loginState.datasetId?.value;
                         const tokenSubscription = this.oauth.getToken('globus', code, loginState.nonce).subscribe(x => {
                             this.token = x.session_id;
@@ -113,6 +113,8 @@ export class DownloadComponent implements OnInit, OnDestroy {
                             }
                             tokenSubscription.unsubscribe();
                         });
+                    } else {
+                        alert("nonce not equal: " + storedNonce + " != " + loginState.nonce);
                     }
                     this.pluginService.getGlobusPlugin().then(p => {
                         this.globusPlugin = p;
