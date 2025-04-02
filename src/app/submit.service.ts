@@ -39,7 +39,6 @@ export class SubmitService {
   }
 
   download(selected: Datafile[], endpoint: string | undefined, option: string | undefined, globusToken: string | undefined, pid: string | undefined, dvToken: string | undefined): Observable<string> {
-    const credentials = this.credentialsService.credentials;
     const req = {
       plugin: 'globus',
       streamParams: {

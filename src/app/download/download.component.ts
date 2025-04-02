@@ -50,7 +50,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
     // globus
     token?: string;
     repoNames: SelectItem<string>[] = [];
-    repoName?: string;
     selectedRepoName?: string;
     foundRepoName?: string;
     repoSearchSubject: Subject<string> = new Subject();
@@ -271,7 +270,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
             }
         });
         this.downloadRequested = true;
-        const httpSubscription = this.submit.download(selected, this.repoName, this.option, this.token, this.datasetId, this.token).subscribe({
+        const httpSubscription = this.submit.download(selected, this.getRepoName(), this.option, this.token, this.datasetId, this.dataverseToken).subscribe({
             next: (submissionId) => {
                 httpSubscription.unsubscribe();
                 alert("download is requested and can be monitored in Dataverse UI: " + submissionId);
@@ -289,9 +288,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
     }
 
     getRepoName(): string | undefined {
-        if (this.repoName !== undefined) {
-            return this.repoName;
-        }
         if (this.selectedRepoName !== undefined) {
             return this.selectedRepoName;
         }
@@ -412,9 +408,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
     onRepoChange() {
         this.branchItems = [];
         this.option = undefined;
-        if (this.getRepoNameFieldName() === undefined) {
-            this.repoName = undefined;
-        }
     }
 
     getRepoToken() {
