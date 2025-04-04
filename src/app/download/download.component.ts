@@ -61,6 +61,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
     selectedOption?: TreeNode<string>;
     optionsLoading = false;
     globusPlugin?: RepoPlugin;
+    downloadId?: string;
 
     constructor(
         private dvObjectLookupService: DvObjectLookupService,
@@ -94,6 +95,12 @@ export class DownloadComponent implements OnInit, OnDestroy {
                     this.dataverseToken = apiToken;
                 }
                 const pid = params['datasetPid'];
+                if (pid) {
+                    this.doiItems = [{ label: pid, value: pid }];
+                    this.datasetId = pid;
+                    this.onDatasetChange();
+                }
+                this.downloadId = params['downloadId'];
                 if (pid) {
                     this.doiItems = [{ label: pid, value: pid }];
                     this.datasetId = pid;
@@ -270,7 +277,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
             }
         });
         this.downloadRequested = true;
-        const httpSubscription = this.submit.download(selected, this.getRepoName(), this.option, this.token, this.datasetId, this.dataverseToken).subscribe({
+        const httpSubscription = this.submit.download(selected, this.getRepoName(), this.option, this.token, this.datasetId, this.dataverseToken, this.downloadId).subscribe({
             next: (submissionId) => {
                 httpSubscription.unsubscribe();
                 alert("download is requested and can be monitored in Dataverse UI: " + submissionId);

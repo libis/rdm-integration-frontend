@@ -38,7 +38,7 @@ export class SubmitService {
     return this.http.post<StoreResult>(this.store_url, req);
   }
 
-  download(selected: Datafile[], endpoint: string | undefined, option: string | undefined, globusToken: string | undefined, pid: string | undefined, dvToken: string | undefined): Observable<string> {
+  download(selected: Datafile[], endpoint: string | undefined, option: string | undefined, globusToken: string | undefined, pid: string | undefined, dvToken: string | undefined, downloadId: string | undefined): Observable<string> {
     const req = {
       plugin: 'globus',
       streamParams: {
@@ -46,6 +46,7 @@ export class SubmitService {
         repoName: endpoint,
         option: option,
         token: globusToken,
+        downloadId: downloadId,
       },
       persistentId: pid,
       dataverseKey: dvToken,
