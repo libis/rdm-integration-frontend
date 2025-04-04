@@ -1,4 +1,4 @@
- 
+
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, ViewChild } from '@angular/core';
@@ -147,9 +147,22 @@ export class ConnectComponent implements OnInit {
               const parts = callbackUrl.split('/');
               if (parts.length > 6) {
                 const datasetDbId = parts[6];
+                const g = callbackUrl.split('?');
+                const globusParams = g[g.length - 1].split("&");
+                let downloadId: string | undefined = undefined;
+                globusParams.forEach(p => {
+                  if (p.startsWith('downloadId=')) {
+                    downloadId = p.substring('downloadId='.length);
+                  }
+                });
                 const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
                   this.datasetId = x.persistentId;
                   versionSubscription.unsubscribe();
+                  if (downloadId) {
+                    this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
+                  } else {
+                    this.changePlugin();
+                  }
                 });
               }
             }
@@ -158,7 +171,7 @@ export class ConnectComponent implements OnInit {
         }
         const loginState: LoginState = JSON.parse(params['state']);
         if (loginState.download) {
-            this.router.navigate(['/download'], {queryParams: params});
+          this.router.navigate(['/download'], { queryParams: params });
         }
         this.sourceUrl = loginState.sourceUrl;
         this.url = loginState.url;
