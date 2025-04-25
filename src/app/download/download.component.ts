@@ -98,14 +98,8 @@ export class DownloadComponent implements OnInit, OnDestroy {
                 if (pid) {
                     this.doiItems = [{ label: pid, value: pid }];
                     this.datasetId = pid;
-                    this.onDatasetChange();
                 }
                 this.downloadId = params['downloadId'];
-                if (pid) {
-                    this.doiItems = [{ label: pid, value: pid }];
-                    this.datasetId = pid;
-                    this.onDatasetChange();
-                }
                 const code = params['code'];
                 if (code !== undefined) {
                     const loginState: LoginState = JSON.parse(params['state']);
