@@ -110,7 +110,10 @@ export class DownloadComponent implements OnInit, OnDestroy {
                 if (code !== undefined) {
                     const loginState: LoginState = JSON.parse(params['state']);
                     if (loginState.nonce) {
-                        this.datasetId = loginState.datasetId?.value;
+                        const doi = loginState.datasetId?.value ? loginState.datasetId?.value : '?'
+                        this.doiItems = [{ label: doi, value: doi}];
+                        this.datasetId = doi;
+                        this.onDatasetChange();
                         const tokenSubscription = this.oauth.getToken('globus', code, loginState.nonce).subscribe(x => {
                             this.token = x.session_id;
                             if (!this.pluginService.isStoreDvToken()) {

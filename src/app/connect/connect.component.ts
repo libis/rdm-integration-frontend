@@ -141,7 +141,6 @@ export class ConnectComponent implements OnInit {
           if (callback) {
             this.plugin = "globus";
             this.pluginId = "globus";
-            this.changePlugin();
             if (!datasetPid) {
               const callbackUrl = atob(callback);
               const parts = callbackUrl.split('/');
@@ -160,8 +159,6 @@ export class ConnectComponent implements OnInit {
                   versionSubscription.unsubscribe();
                   if (downloadId) {
                     this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
-                  } else {
-                    this.changePlugin();
                   }
                 });
               }
