@@ -60,7 +60,8 @@ export class ComputeComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnInit(): void {
+  async ngOnInit() {
+    await this.pluginService.setConfig();
     const dvToken = localStorage.getItem("dataverseToken");
     if (dvToken !== null) {
       this.dataverseToken = dvToken;

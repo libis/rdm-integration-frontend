@@ -104,7 +104,8 @@ export class ConnectComponent implements OnInit {
     );
   }
 
-  ngOnInit(): void {
+  async ngOnInit() {
+    await this.pluginService.setConfig();
     const dvToken = localStorage.getItem("dataverseToken");
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
@@ -139,7 +140,7 @@ export class ConnectComponent implements OnInit {
           }
           const callback = params['callback'];
           if (callback) {
-            this.pluginService.getGlobusPlugin().then(p => {
+            const p = this.pluginService.getGlobusPlugin()
               if (p) {
                 this.plugin = "globus";
                 this.pluginId = "globus";
@@ -166,7 +167,6 @@ export class ConnectComponent implements OnInit {
                   }
                 }
               }
-            });
           }
           return;
         }

@@ -83,7 +83,8 @@ export class DownloadComponent implements OnInit, OnDestroy {
         );
     }
 
-    ngOnInit(): void {
+    async ngOnInit() {
+        await this.pluginService.setConfig();
         const dvToken = localStorage.getItem("dataverseToken");
         if (dvToken !== null) {
             this.dataverseToken = dvToken;
@@ -116,14 +117,10 @@ export class DownloadComponent implements OnInit, OnDestroy {
                             tokenSubscription.unsubscribe();
                         });
                     }
-                    this.pluginService.getGlobusPlugin().then(p => {
-                        this.globusPlugin = p;
-                    });
+                    this.globusPlugin  = this.pluginService.getGlobusPlugin();
                 } else {
-                    this.pluginService.getGlobusPlugin().then(p => {
-                        this.globusPlugin = p;
-                        this.getRepoToken();
-                    });
+                    this.globusPlugin  = this.pluginService.getGlobusPlugin();
+                    this.getRepoToken();
                 }
             });
         this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({

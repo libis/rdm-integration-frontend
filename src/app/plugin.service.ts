@@ -39,10 +39,9 @@ export class PluginService {
   };
 
   constructor(private http: HttpClient) {
-    this.setConfig();
   }
 
-  private async setConfig() {
+  async setConfig() {
     const c = await firstValueFrom(this.http.get<Config>(`api/frontend/config`));
     this.config = c;
     this.config.plugins.forEach(p => {
@@ -51,8 +50,7 @@ export class PluginService {
     });
   }
 
-  async getGlobusPlugin(): Promise<RepoPlugin | undefined> {
-    await this.setConfig()
+  getGlobusPlugin(): RepoPlugin | undefined {
     return this.config.plugins.find(p => p.id === 'globus');
   }
 
