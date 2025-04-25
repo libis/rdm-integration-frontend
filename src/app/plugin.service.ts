@@ -42,22 +42,18 @@ export class PluginService {
     this.setConfig();
   }
 
-  private setConfig(): void {
-    const subscription = this.http.get<Config>(`api/frontend/config`).subscribe(
-      c => {
-        this.config = c;
-        this.config.plugins.forEach(p => {
-          p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
-          this.allPlugins.set(p.id, p);
-        });
-        subscription.unsubscribe();
-      }
-    );
+  private async setConfig() {
+    const c = await firstValueFrom(this.http.get<Config>(`api/frontend/config`));
+    this.config = c;
+    this.config.plugins.forEach(p => {
+      p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
+      this.allPlugins.set(p.id, p);
+    });
   }
 
   async getGlobusPlugin(): Promise<RepoPlugin | undefined> {
-    const c = await firstValueFrom(this.http.get<Config>(`api/frontend/config`));
-    return c.plugins.find(p => p.id === 'globus');
+    await this.setConfig()
+    return this.config.plugins.find(p => p.id === 'globus');
   }
 
   getPlugins(): SelectItem<string>[] {

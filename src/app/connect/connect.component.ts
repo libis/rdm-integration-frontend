@@ -139,30 +139,34 @@ export class ConnectComponent implements OnInit {
           }
           const callback = params['callback'];
           if (callback) {
-            this.plugin = "globus";
-            this.pluginId = "globus";
-            if (!datasetPid) {
-              const callbackUrl = atob(callback);
-              const parts = callbackUrl.split('/');
-              if (parts.length > 6) {
-                const datasetDbId = parts[6];
-                const g = callbackUrl.split('?');
-                const globusParams = g[g.length - 1].split("&");
-                let downloadId: string | undefined = undefined;
-                globusParams.forEach(p => {
-                  if (p.startsWith('downloadId=')) {
-                    downloadId = p.substring('downloadId='.length);
+            this.pluginService.getGlobusPlugin().then(p => {
+              if (p) {
+                this.plugin = "globus";
+                this.pluginId = "globus";
+                if (!datasetPid) {
+                  const callbackUrl = atob(callback);
+                  const parts = callbackUrl.split('/');
+                  if (parts.length > 6) {
+                    const datasetDbId = parts[6];
+                    const g = callbackUrl.split('?');
+                    const globusParams = g[g.length - 1].split("&");
+                    let downloadId: string | undefined = undefined;
+                    globusParams.forEach(p => {
+                      if (p.startsWith('downloadId=')) {
+                        downloadId = p.substring('downloadId='.length);
+                      }
+                    });
+                    const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
+                      this.datasetId = x.persistentId;
+                      versionSubscription.unsubscribe();
+                      if (downloadId) {
+                        this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
+                      }
+                    });
                   }
-                });
-                const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
-                  this.datasetId = x.persistentId;
-                  versionSubscription.unsubscribe();
-                  if (downloadId) {
-                    this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
-                  }
-                });
+                }
               }
-            }
+            });
           }
           return;
         }
