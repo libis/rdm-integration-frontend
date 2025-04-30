@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DatasetVersionResponse, NewDatasetResponse } from './models/new-dataset-response';
+import { MetadataRequest } from './models/metadata-request';
 
 @Injectable({
   providedIn: 'root'
@@ -15,10 +16,11 @@ export class DatasetService {
 
   constructor(private http: HttpClient) { }
 
-  newDataset(collectionId: string, apiToken?: string): Observable<NewDatasetResponse> {
+  newDataset(collectionId: string, apiToken?: string, metadata?: JSON): Observable<NewDatasetResponse> {
     const req = {
       collectionId: collectionId,
       dataverseKey: apiToken,
+      metadata: metadata,
     };
 
     return this.http.post<NewDatasetResponse>(this.new_dataset_url, req);
@@ -31,5 +33,9 @@ export class DatasetService {
     };
 
     return this.http.post<DatasetVersionResponse>(this.dataset_version_url, req);
+  }
+
+  getMetadata(req: MetadataRequest): Observable<JSON> {
+    return this.http.post<JSON>(this.dataset_version_url, req);
   }
 }

@@ -31,6 +31,12 @@
 
 <table class="table">
   <tbody>
+    <tr class="file-list-header" [hidden]="!metadata">
+        <th><i [class]="icon_copy"></i> Metadata that will be copied</th>
+    </tr>
+    <tr [hidden]="!metadata">
+        <span>{{metadata}}</span>
+    </tr>
     <tr class="file-list-header">
       <th><i [class]="icon_copy"></i> Files that will be created</th>
     </tr>

@@ -8,7 +8,6 @@ import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
-import { NewDatasetResponse } from '../models/new-dataset-response';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
 import { PluginService } from '../plugin.service';
@@ -18,6 +17,8 @@ import { OauthService } from '../oauth.service';
 import { Select } from 'primeng/select';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { RepoLookupRequest } from '../models/repo-lookup';
+
+const new_dataset = 'New Dataset';
 
 @Component({
   selector: 'app-connect',
@@ -66,7 +67,6 @@ export class ConnectComponent implements OnInit {
 
   url?: string;
   pluginIdSelectHidden = true;
-  creatingNewDataset = false;
   optionsLoading = false;
   repoSearchSubject: Subject<string> = new Subject();
   collectionSearchSubject: Subject<string> = new Subject();
@@ -77,7 +77,6 @@ export class ConnectComponent implements OnInit {
   repoSearchResultsSubscription?: Subscription;
   collectionSearchResultsSubscription?: Subscription;
   datasetSearchResultsSubscription?: Subscription;
-  newlyCreated: string[] = [];
 
   constructor(
     private router: Router,
@@ -342,7 +341,7 @@ export class ConnectComponent implements OnInit {
       user: this.user,
       token: this.token,
       dataset_id: this.datasetId,
-      newly_created: this.newlyCreated.includes(this.datasetId!),
+      newly_created: this.datasetId === new_dataset,
       dataverse_token: this.dataverseToken,
     }
     this.dataStateService.initializeState(creds);
@@ -803,27 +802,13 @@ export class ConnectComponent implements OnInit {
   // NEW DATASET 
 
   createNewDatasetEnabled(): boolean {
-    return !this.creatingNewDataset && this.pluginService.createNewDatasetEnabled();
+    return this.pluginService.createNewDatasetEnabled();
   }
 
   newDataset() {
-    this.creatingNewDataset = true;
-    const httpSubscription = this.datasetService.newDataset((this.collectionId ? this.collectionId! : ""), this.dataverseToken).subscribe({
-      next: (data: NewDatasetResponse) => {
-        if (data.persistentId !== undefined) {
-          this.doiItems = [{ label: data.persistentId, value: data.persistentId }];
-        }
-        this.datasetId = data.persistentId;
-        httpSubscription.unsubscribe();
-        this.creatingNewDataset = false;
-        this.newlyCreated.push(data.persistentId!);
-      },
-      error: (err) => {
-        alert("creating new dataset failed: " + err.error);
-        httpSubscription.unsubscribe();
-        this.creatingNewDataset = false;
-      }
-    });
+    const datasetId = (this.collectionId ? this.collectionId! : "") + ':' + new_dataset
+    this.doiItems = [{ label: new_dataset, value: datasetId }];
+    this.datasetId = datasetId;
   }
 
   onDatasetSearch(searchTerm: string | null) {

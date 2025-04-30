@@ -14,6 +14,9 @@ import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
+import { DatasetService } from '../dataset.service';
+import { firstValueFrom } from 'rxjs';
+import { MetadataRequest } from '../models/metadata-request';
 
 @Component({
   selector: 'app-submit',
@@ -44,6 +47,8 @@ export class SubmitComponent implements OnInit {
   popup = false;
   hasAccessToCompute = false;
 
+  metadata?: JSON;
+
   constructor(
     private dataStateService: DataStateService,
     private dataUpdatesService: DataUpdatesService,
@@ -54,6 +59,7 @@ export class SubmitComponent implements OnInit {
     private utils: UtilsService,
     public dataService: DataService,
     private credentialsService: CredentialsService,
+    private datasetService: DatasetService,
   ) { }
 
   ngOnInit(): void {
@@ -106,12 +112,25 @@ export class SubmitComponent implements OnInit {
     }
   }
 
-  setData(data: Datafile[]): void {
+  async setData(data: Datafile[]) {
     this.data = data;
     this.created = this.toCreate();
     this.updated = this.toUpdate();
     this.deleted = this.toDelete();
     this.data = [...this.created, ...this.updated, ...this.deleted];
+    if (this.pid.endsWith(':New Dataset')) {
+        const credentials = this.credentialsService.credentials;
+        const req: MetadataRequest = {
+            pluginId: credentials.pluginId,
+            plugin: credentials.plugin,
+            repoName: credentials.repo_name,
+            url: credentials.url,
+            option: credentials.option,
+            user: credentials.user,
+            token: credentials.token,
+          };
+        this.metadata = await firstValueFrom(this.datasetService.getMetadata(req))
+    }
   }
 
   toCreate(): Datafile[] {
@@ -156,7 +175,7 @@ export class SubmitComponent implements OnInit {
     }
   }
 
-  continueSubmit() {
+  async continueSubmit() {
     this.popup = false;
     this.disabled = true;
     const selected: Datafile[] = [];
@@ -170,6 +189,15 @@ export class SubmitComponent implements OnInit {
       this.router.navigate(['/connect']);
       return;
     }
+
+    if (this.pid.endsWith(':New Dataset')) {
+        const ids = this.pid.split(':')
+        const ok = await this.newDataset(ids[0]);
+        if (!ok) {
+            return;
+        }
+    }
+
     const httpSubscription = this.submitService.submit(selected, this.sendEmailOnSuccess).subscribe({
       next: (data: StoreResult) => {
         if (data.status !== "OK") {// this should not happen
@@ -205,4 +233,14 @@ export class SubmitComponent implements OnInit {
     return this.pluginService.sendMails();
   }
 
+  async newDataset(collectionId: string): Promise<boolean> {
+    const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, this.metadata));
+    if (data.persistentId !== undefined) {
+        this.pid = data.persistentId;
+        return true;
+    } else {
+        alert("creating new dataset failed");
+        return false;
+    }
+  }
 }
