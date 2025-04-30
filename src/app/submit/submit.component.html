@@ -33,6 +33,22 @@
   <tbody>
     <tr class="file-list-header" [hidden]="!metadata">
         <th><i [class]="icon_copy"></i> Metadata that will be copied</th>
+        <p-treeTable [value]="rootNodeChildren">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="text-align: left;">Field</th>
+                    <th class="icon_col" style="text-align: right;">
+                        <button pButton pRipple label='' type="button"
+                            class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
+                                [class]="action()"></i></button>
+                    </th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+                <tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
+                    [style]="rowClass(rowData)">
+            </ng-template>
+        </p-treeTable>
     </tr>
     <tr [hidden]="!metadata">
         <span>{{metadata}}</span>

@@ -31,6 +31,7 @@ import { ExecutablefileComponent } from './executablefile/executablefile.compone
 import { ComputeComponent } from './compute/compute.component';
 import { DownloadComponent } from './download/download.component';
 import { DownladablefileComponent } from './downloadablefile/downladablefile.component';
+import { MetadatafieldComponent } from './metadatafield/metadatafield.component';
 import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -50,6 +51,7 @@ import { definePreset } from '@primeng/themes';
     ComputeComponent,
     DownloadComponent,
     DownladablefileComponent,
+    MetadatafieldComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,256 @@
+{
+    "datasetVersion": {
+        "metadataBlocks": {
+            "citation": {
+                "displayName": "Citation Metadata",
+                "fields": [
+                    {
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "typeName": "title",
+                        "value": "Replication Data for: Testing PIDS"
+                    },
+                    {
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "typeName": "author",
+                        "value": [
+                            {
+                                "authorAffiliation": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorAffiliation",
+                                    "value": "University of Virginia"
+                                },
+                                "authorIdentifier": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorIdentifier",
+                                    "value": "0001-1235-1234-9632"
+                                },
+                                "authorIdentifierScheme": {
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "typeName": "authorIdentifierScheme",
+                                    "value": "ORCID"
+                                },
+                                "authorName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorName",
+                                    "value": "Lake, Sherry"
+                                }
+                            },
+                            {
+                                "authorIdentifier": {
+                                    "expandedvalue": {
+                                        "@id": "https://orcid.org/0000-0001-6259-4850",
+                                        "@type": "https://schema.org/Person",
+                                        "personName": "Lake, Douglas",
+                                        "scheme": "ORCID"
+                                    },
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorIdentifier",
+                                    "value": "https://orcid.org/0000-0001-6259-4850"
+                                },
+                                "authorIdentifierScheme": {
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "typeName": "authorIdentifierScheme",
+                                    "value": "ORCID"
+                                },
+                                "authorName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorName",
+                                    "value": "Lake, Douglas"
+                                }
+                            },
+                            {
+                                "authorAffiliation": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorAffiliation",
+                                    "value": "Petersburg University"
+                                },
+                                "authorName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorName",
+                                    "value": "George Jones"
+                                }
+                            },
+                            {
+                                "authorAffiliation": {
+                                    "expandedvalue": {
+                                        "@type": "https://schema.org/Organization",
+                                        "scheme": "http://www.grid.ac/ontology/",
+                                        "termName": "University of Virginia"
+                                    },
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorAffiliation",
+                                    "value": "https://ror.org/0153tk833"
+                                },
+                                "authorIdentifier": {
+                                    "expandedvalue": {
+                                        "@id": "https://orcid.org/0000-0002-6402-906X",
+                                        "@type": "https://schema.org/Person",
+                                        "personName": "Patterson, Ph.D., Richard",
+                                        "scheme": "ORCID"
+                                    },
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorIdentifier",
+                                    "value": "https://orcid.org/0000-0002-6402-906X"
+                                },
+                                "authorIdentifierScheme": {
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "typeName": "authorIdentifierScheme",
+                                    "value": "ORCID"
+                                },
+                                "authorName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorName",
+                                    "value": "Patterson, Ph.D., Richard"
+                                }
+                            },
+                            {
+                                "authorAffiliation": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorAffiliation",
+                                    "value": "University of Virginia"
+                                },
+                                "authorIdentifier": {
+                                    "expandedvalue": {
+                                        "@id": "https://orcid.org/0000-0002-4353-4163",
+                                        "@type": "https://schema.org/Person",
+                                        "personName": "Swap, Robert",
+                                        "scheme": "ORCID"
+                                    },
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorIdentifier",
+                                    "value": "https://orcid.org/0000-0002-4353-4163"
+                                },
+                                "authorIdentifierScheme": {
+                                    "multiple": false,
+                                    "typeClass": "controlledVocabulary",
+                                    "typeName": "authorIdentifierScheme",
+                                    "value": "ORCID"
+                                },
+                                "authorName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorName",
+                                    "value": "Swap, Robert"
+                                }
+                            },
+                            {
+                                "authorName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "authorName",
+                                    "value": "University of Virginia"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "typeName": "datasetContact",
+                        "value": [
+                            {
+                                "datasetContactAffiliation": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "datasetContactAffiliation",
+                                    "value": "University of Virginia"
+                                },
+                                "datasetContactEmail": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "datasetContactEmail",
+                                    "value": "shlakeuva@virginia.edu"
+                                },
+                                "datasetContactName": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "datasetContactName",
+                                    "value": "Lake, Sherry"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "typeName": "dsDescription",
+                        "value": [
+                            {
+                                "dsDescriptionValue": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "dsDescriptionValue",
+                                    "value": "Reviewing the Name and affiliation \"selections\" for Author"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "multiple": true,
+                        "typeClass": "controlledVocabulary",
+                        "typeName": "subject",
+                        "value": [
+                            "Computer and Information Science"
+                        ]
+                    },
+                    {
+                        "multiple": true,
+                        "typeClass": "compound",
+                        "typeName": "grantNumber",
+                        "value": [
+                            {
+                                "grantNumberAgency": {
+                                    "expandedvalue": {
+                                        "@type": "https://schema.org/Organization",
+                                        "scheme": "http://www.grid.ac/ontology/",
+                                        "termName": "American Heart Association"
+                                    },
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "grantNumberAgency",
+                                    "value": "https://ror.org/013kjyp64"
+                                },
+                                "grantNumberValue": {
+                                    "multiple": false,
+                                    "typeClass": "primitive",
+                                    "typeName": "grantNumberValue",
+                                    "value": "X12-12568"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "typeName": "depositor",
+                        "value": "Lake, SherryH"
+                    },
+                    {
+                        "multiple": false,
+                        "typeClass": "primitive",
+                        "typeName": "dateOfDeposit",
+                        "value": "2024-12-02"
+                    }
+                ],
+                "name": "citation"
+            }
+        }
+    }
+}

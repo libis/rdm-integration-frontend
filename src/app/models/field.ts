@@ -1,0 +1,47 @@
+export interface Metadata {
+    datasetVersion: DatasetVersion;
+}
+export interface DatasetVersion {
+    metadataBlocks: Metadatablocks;
+}
+export interface Metadatablocks {
+    citation: CitationBlock;
+}
+
+export interface CitationBlock {
+    displayName: string;
+    fields: MetadataField[];
+}
+
+export interface MetadataField {
+  expandedvalue?: Expandedvalue;
+  multiple: boolean;
+  typeClass: string;
+  typeName: string;
+  value: string | FieldDictonary[];
+}
+
+export interface FieldDictonary {
+  [index: string]: MetadataField;
+}
+
+export interface Expandedvalue {
+    [index: string]: string;
+}
+
+export interface Field {
+  path?: string;
+  name?: string;
+  action?: Fieldaction;
+  leafValue?: string;
+  field?: MetadataField;
+}
+
+export enum Fieldaction {
+    Ignore = 0,
+    Copy = 1,
+    Update = 2,
+    Delete = 3,
+    Custom = 4,
+    Download = 5,
+}

@@ -17,6 +17,9 @@ import { DataService } from '../data.service';
 import { DatasetService } from '../dataset.service';
 import { firstValueFrom } from 'rxjs';
 import { MetadataRequest } from '../models/metadata-request';
+import { TreeNode } from 'primeng/api';
+import { Field, Fieldaction, FieldDictonary, Metadata } from '../models/field';
+import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 @Component({
   selector: 'app-submit',
@@ -47,7 +50,11 @@ export class SubmitComponent implements OnInit {
   popup = false;
   hasAccessToCompute = false;
 
-  metadata?: JSON;
+  metadata?: Metadata;
+
+  root?: TreeNode<Field>;
+  rootNodeChildren: TreeNode<Field>[] = [];
+  rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
 
   constructor(
     private dataStateService: DataStateService,
@@ -129,7 +136,14 @@ export class SubmitComponent implements OnInit {
             user: credentials.user,
             token: credentials.token,
           };
-        this.metadata = await firstValueFrom(this.datasetService.getMetadata(req))
+        this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
+        const rowDataMap = this.mapFields(this.metadata);
+        rowDataMap.forEach(v => this.addChild(v, rowDataMap));
+        this.root = rowDataMap.get("");
+        this.rowNodeMap = rowDataMap;
+        if (this.root?.children) {
+            this.rootNodeChildren = this.root.children;
+        }
     }
   }
 
@@ -243,5 +257,90 @@ export class SubmitComponent implements OnInit {
         alert("creating new dataset failed");
         return false;
     }
+  }
+
+  action(): string {
+    if (this.root) {
+      return MetadatafieldComponent.actionIcon(this.root);
+    }
+    return MetadatafieldComponent.icon_ignore;
+  }
+  
+  toggleAction(): void {
+    if (this.root) {
+        MetadatafieldComponent.toggleNodeAction(this.root);
+    }
+  }
+
+  rowClass(field: Field): string {
+    switch (field.action) {
+        case Fieldaction.Ignore:
+            return '';
+        case Fieldaction.Copy:
+            return 'background-color: #c3e6cb; color: black';
+        case Fieldaction.Custom:
+            return 'background-color: #FFFAA0; color: black';
+    }
+    return '';
+  }
+
+  addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {
+    if (v.data?.path === "" && v.data.name == "") {
+      return;
+    }
+    const parent = rowDataMap.get(v.data!.path!)!;
+    const children = parent.children ? parent.children : [];
+    parent.children = children.concat(v);
+  }
+
+  mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
+    const rootData: Field = {
+      path: "",
+      name: "",
+      action: Fieldaction.Ignore,
+    }
+
+    const rowDataMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
+    rowDataMap.set("", {
+      data: rootData,
+    });
+
+    metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
+        const path = ""
+        const data: Field = {
+            path: path,
+            name: d.typeName,
+            action: Fieldaction.Ignore,
+            leafValue: (typeof d.value === "string") ? d.value as string : undefined,
+            field: d,
+          }
+          rowDataMap.set(path, {
+            data: data,
+          });
+
+          if (d.value && typeof d.value !== "string") {
+            (d.value as FieldDictonary[]).forEach((v) => this.mapChildField(d.typeName, v, rowDataMap));
+          }
+      });
+    return rowDataMap;
+  }
+
+  mapChildField(path: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
+    Object.values(fieldDictonary).forEach((d) => {
+        const data: Field = {
+            path: path,
+            name: d.typeName,
+            action: Fieldaction.Ignore,
+            leafValue: (typeof d.value === "string") ? d.value as string : undefined,
+            field: d,
+          }
+          rowDataMap.set(path, {
+            data: data,
+          });
+
+          if (d.value && typeof d.value !== "string") {
+            (d.value as FieldDictonary[]).forEach((v) => this.mapChildField(path + d.typeName, v, rowDataMap));
+          }
+    })
   }
 }
