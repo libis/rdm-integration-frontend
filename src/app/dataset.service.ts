@@ -13,6 +13,7 @@ export class DatasetService {
 
   new_dataset_url = 'api/common/newdataset';
   dataset_version_url = 'api/common/datasetversion';
+  metadata_url = 'api/common/metadata';
 
   constructor(private http: HttpClient) { }
 
@@ -36,6 +37,6 @@ export class DatasetService {
   }
 
   getMetadata(req: MetadataRequest): Observable<JSON> {
-    return this.http.post<JSON>(this.dataset_version_url, req);
+    return this.http.post<JSON>(this.metadata_url, req);
   }
 }
