@@ -237,6 +237,7 @@ export class SubmitComponent implements OnInit {
     const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, this.metadata));
     if (data.persistentId !== undefined) {
         this.pid = data.persistentId;
+        this.credentialsService.credentials.dataset_id = data.persistentId;
         return true;
     } else {
         alert("creating new dataset failed");
