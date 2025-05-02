@@ -263,11 +263,16 @@ export class SubmitComponent implements OnInit {
   }
 
   action(): string {
-    return MetadatafieldComponent.actionIcon(this.root!);
+    if (this.root) {
+      return MetadatafieldComponent.actionIcon(this.root);
+    }
+    return MetadatafieldComponent.icon_ignore;
   }
   
   toggleAction(): void {
-    MetadatafieldComponent.toggleNodeAction(this.root!);
+    if (this.root) {
+        MetadatafieldComponent.toggleNodeAction(this.root);
+    }
   }
 
   rowClass(field: Field): string {
@@ -276,7 +281,7 @@ export class SubmitComponent implements OnInit {
             return '';
         case Fieldaction.Copy:
             return 'background-color: #c3e6cb; color: black';
-        case Fieldaction.Custom:https://www.uuidgenerator.net/dev-corner/vb-net
+        case Fieldaction.Custom:
             return 'background-color: #FFFAA0; color: black';
     }
     return '';
