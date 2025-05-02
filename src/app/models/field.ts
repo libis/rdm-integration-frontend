@@ -11,9 +11,11 @@ export interface Metadatablocks {
 export interface CitationBlock {
     displayName: string;
     fields: MetadataField[];
+    name: string;
 }
 
 export interface MetadataField {
+  id?: string;
   expandedvalue?: Expandedvalue;
   multiple: boolean;
   typeClass: string;
@@ -35,7 +37,7 @@ export interface Field {
   name?: string;
   action?: Fieldaction;
   leafValue?: string;
-  field?: MetadataField;
+  field?: MetadataField | FieldDictonary;
 }
 
 export enum Fieldaction {

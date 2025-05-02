@@ -15,10 +15,10 @@ import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
 import { DatasetService } from '../dataset.service';
-import { firstValueFrom } from 'rxjs';
+import { concat, firstValueFrom } from 'rxjs';
 import { MetadataRequest } from '../models/metadata-request';
 import { TreeNode } from 'primeng/api';
-import { Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
+import { Expandedvalue, Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 @Component({
@@ -250,7 +250,8 @@ export class SubmitComponent implements OnInit {
   }
 
   async newDataset(collectionId: string): Promise<boolean> {
-    const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, this.metadata));
+    const metadata = this.filteredMetadata();
+    const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, metadata));
     if (data.persistentId !== undefined) {
       this.pid = data.persistentId;
       this.credentialsService.credentials.dataset_id = data.persistentId;
@@ -322,6 +323,7 @@ export class SubmitComponent implements OnInit {
         content = content + ", " + d.value[i];
       }
       const id = "" + this.id++;
+      d.id = id;
       const data: Field = {
         id: id,
         parent: parent,
@@ -341,7 +343,7 @@ export class SubmitComponent implements OnInit {
           parent: parent,
           name: d.typeName,
           action: Fieldaction.Copy,
-          field: d,
+          field: v,
         };
         rowDataMap.set(id, {
           data: data,
@@ -350,6 +352,7 @@ export class SubmitComponent implements OnInit {
       });
     } else {
       const id = "" + this.id++;
+      d.id = id;
       const data: Field = {
         id: id,
         parent: parent,
@@ -368,5 +371,83 @@ export class SubmitComponent implements OnInit {
     Object.values(fieldDictonary).forEach((d) => {
       this.addToDataMap(d, parent, rowDataMap)
     })
+  }
+
+  filteredMetadata(): Metadata | undefined {
+    if (!this.metadata || !this.rootNodeChildren || this.rootNodeChildren.length === 0) {
+      return undefined;
+    }
+    let res: MetadataField[] = [];
+    this.metadata.datasetVersion.metadataBlocks.citation.fields.forEach((f) => {
+      if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
+        const field: MetadataField = {
+          expandedvalue: f.expandedvalue,
+          multiple: f.multiple,
+          typeClass: f.typeClass,
+          typeName: f.typeName,
+          value: f.value,
+        };
+        res = res.concat(field);
+      } else if (f.value && Array.isArray(f.value) && f.value.length > 0 && typeof f.value[0] !== "string") {
+        const dicts = this.customValue(f.value as FieldDictonary[]);
+        if (dicts.length > 0) {
+          const field: MetadataField = {
+            expandedvalue: f.expandedvalue,
+            multiple: f.multiple,
+            typeClass: f.typeClass,
+            typeName: f.typeName,
+            value: dicts,
+          };
+          res = res.concat(field);
+        }
+      }
+    })
+    return {
+      datasetVersion: {
+        metadataBlocks: {
+          citation: {
+            displayName: this.metadata.datasetVersion.metadataBlocks.citation.displayName,
+            fields: res,
+            name: this.metadata.datasetVersion.metadataBlocks.citation.name,
+          }
+        }
+      }
+    };
+  }
+
+  customValue(metadataFields: FieldDictonary[]): FieldDictonary[] {
+    let res: FieldDictonary[] = [];
+    metadataFields.forEach((d) => {
+      let dict: FieldDictonary = {};
+      Object.keys(d).forEach((k) => {
+        let f = d[k];
+        if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
+          const field: MetadataField = {
+            expandedvalue: f.expandedvalue,
+            multiple: f.multiple,
+            typeClass: f.typeClass,
+            typeName: f.typeName,
+            value: f.value,
+          };
+          dict[k] = field;
+        } else if (f.value && Array.isArray(f.value) && f.value.length > 0 && typeof f.value[0] !== "string") {
+          const dicts = this.customValue(f.value as FieldDictonary[]);
+          if (dicts.length > 0) {
+            const field: MetadataField = {
+              expandedvalue: f.expandedvalue,
+              multiple: f.multiple,
+              typeClass: f.typeClass,
+              typeName: f.typeName,
+              value: this.customValue(f.value as FieldDictonary[]),
+            };
+            dict[k] = field;
+          }
+        }
+      });
+      if (Object.keys(dict).length > 0) {
+        res = res.concat(dict);
+      }
+    });
+    return res;
   }
 }
