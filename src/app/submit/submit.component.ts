@@ -270,8 +270,8 @@ export class SubmitComponent implements OnInit {
     MetadatafieldComponent.toggleNodeAction(this.root!);
   }
 
-  rowClass(field: TreeNode<Field>): string {
-    switch (field.data?.action) {
+  rowClass(field: Field): string {
+    switch (field.action) {
         case Fieldaction.Ignore:
             return '';
         case Fieldaction.Copy:
@@ -296,7 +296,7 @@ export class SubmitComponent implements OnInit {
       id: uuidv4(),
       path: "",
       name: "",
-      action: Fieldaction.Ignore,
+      action: Fieldaction.Copy,
     }
 
     const rowDataMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
@@ -310,7 +310,7 @@ export class SubmitComponent implements OnInit {
             id: uuidv4(),
             path: path,
             name: d.typeName,
-            action: Fieldaction.Ignore,
+            action: Fieldaction.Copy,
             leafValue: (typeof d.value === "string") ? d.value as string : undefined,
             field: d,
           }
@@ -338,7 +338,7 @@ export class SubmitComponent implements OnInit {
             id: uuidv4(),
             path: path,
             name: d.typeName,
-            action: Fieldaction.Ignore,
+            action: Fieldaction.Copy,
             leafValue: (typeof d.value === "string") ? d.value as string : undefined,
             field: d,
           }

@@ -12,9 +12,10 @@ import { Field, Fieldaction } from '../models/field';
 })
 export class MetadatafieldComponent implements OnInit {
 
+  @Input("field") field?: Field;
   @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
-  @Input("rowNode") rowNode: TreeNode<Field> = {};
-
+  
+  rowNode?: TreeNode<Field>;
 
   static icon_ignore = "pi pi-stop";
   static icon_copy = "pi pi-check-square";
@@ -23,11 +24,11 @@ export class MetadatafieldComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
-    this.rowNode = [...this.rowNodeMap.values()].find((x) => x.data?.id === this.rowNode.data?.id)!;
+    this.rowNode = [...this.rowNodeMap.values()].find((x) => x.data?.id === this.field?.id);
   }
 
   action(): string {
-    return MetadatafieldComponent.actionIcon(this.rowNode);
+    return this.rowNode ? MetadatafieldComponent.actionIcon(this.rowNode) : MetadatafieldComponent.icon_ignore;
   }
 
   public static actionIcon(node: TreeNode<Field>): string {
@@ -44,11 +45,13 @@ export class MetadatafieldComponent implements OnInit {
   }
 
   sourceFile(): string {
-    return `${this.rowNode.data?.name}`;
+    return `${this.field?.name}`;
   }
 
   toggleAction(): void {
-    MetadatafieldComponent.toggleNodeAction(this.rowNode);
+    if (this.rowNode) {
+      MetadatafieldComponent.toggleNodeAction(this.rowNode);
+    }
     this.updateFolderActions(this.rowNodeMap.get("")!);
   }
 
