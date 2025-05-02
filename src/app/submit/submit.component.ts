@@ -270,8 +270,8 @@ export class SubmitComponent implements OnInit {
     MetadatafieldComponent.toggleNodeAction(this.root!);
   }
 
-  rowClass(field: Field): string {
-    switch (field.action) {
+  rowClass(field: TreeNode<Field>): string {
+    switch (field.data?.action) {
         case Fieldaction.Ignore:
             return '';
         case Fieldaction.Copy:
