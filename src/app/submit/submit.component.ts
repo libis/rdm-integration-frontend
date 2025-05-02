@@ -20,7 +20,6 @@ import { MetadataRequest } from '../models/metadata-request';
 import { TreeNode } from 'primeng/api';
 import { Field, Fieldaction, FieldDictonary, Metadata } from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
-import {v4 as uuidv4} from 'uuid';
 
 @Component({
   selector: 'app-submit',
@@ -56,6 +55,8 @@ export class SubmitComponent implements OnInit {
   root?: TreeNode<Field>;
   rootNodeChildren: TreeNode<Field>[] = [];
   rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
+
+  id = 0;
 
   constructor(
     private dataStateService: DataStateService,
@@ -298,7 +299,7 @@ export class SubmitComponent implements OnInit {
 
   mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
     const rootData: Field = {
-      id: uuidv4(),
+      id: ("" + this.id++),
       path: "",
       name: "",
       action: Fieldaction.Copy,
@@ -311,14 +312,14 @@ export class SubmitComponent implements OnInit {
 
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
         const data: Field = {
-            id: uuidv4(),
+            id: ("" + this.id++),
             path: "",
             name: d.typeName,
             action: Fieldaction.Copy,
             leafValue: (typeof d.value === "string") ? d.value as string : undefined,
             field: d,
           }
-          
+
           if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
             let content = d.value[0];
             for(let i = 1; i < d.value.length; i++) {
@@ -341,7 +342,7 @@ export class SubmitComponent implements OnInit {
   mapChildField(path: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
     Object.values(fieldDictonary).forEach((d) => {
         const data: Field = {
-            id: uuidv4(),
+            id: ("" + this.id++),
             path: path,
             name: d.typeName,
             action: Fieldaction.Copy,
