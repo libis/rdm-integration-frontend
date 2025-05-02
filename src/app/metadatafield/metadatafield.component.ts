@@ -46,8 +46,12 @@ export class MetadatafieldComponent implements OnInit {
     }
   }
 
-  sourceFile(): string {
+  name(): string {
     return `${this.field.name}`;
+  }
+
+  value(): string {
+    return `${this.field.leafValue}`;
   }
 
   toggleAction(): void {
