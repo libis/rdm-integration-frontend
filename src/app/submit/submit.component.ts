@@ -138,7 +138,9 @@ export class SubmitComponent implements OnInit {
           };
         this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
         const rowDataMap = this.mapFields(this.metadata);
-        rowDataMap.forEach(v => this.addChild(v, rowDataMap));
+        rowDataMap.forEach(v => {
+          this.addChild(v, rowDataMap)
+        });
         this.root = rowDataMap.get("");
         this.rowNodeMap = rowDataMap;
         if (this.root?.children) {
@@ -314,13 +316,20 @@ export class SubmitComponent implements OnInit {
             leafValue: (typeof d.value === "string") ? d.value as string : undefined,
             field: d,
           }
-          rowDataMap.set(path, {
+          if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
+            let content = d.value[0];
+            for(let i = 1; i < d.value.length; i++) {
+              content = content + ", " + d.value[i];
+            }
+          } else if (d.value && typeof d.value !== "string") {
+            (d.value as FieldDictonary[]).forEach((v) => {
+              this.mapChildField(d.typeName, v, rowDataMap);
+            });
+          }
+
+          rowDataMap.set(d.typeName, {
             data: data,
           });
-
-          if (d.value && typeof d.value !== "string") {
-            (d.value as FieldDictonary[]).forEach((v) => this.mapChildField(d.typeName, v, rowDataMap));
-          }
       });
     return rowDataMap;
   }
@@ -334,7 +343,7 @@ export class SubmitComponent implements OnInit {
             leafValue: (typeof d.value === "string") ? d.value as string : undefined,
             field: d,
           }
-          rowDataMap.set(path, {
+          rowDataMap.set(path + "/" + d.typeName, {
             data: data,
           });
 

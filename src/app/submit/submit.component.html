@@ -1,22 +1,33 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
 <div class="row justify-content-between sticky-menu">
   <span class="col-auto">
-    <button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+    <button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i
+        class="pi pi-angle-double-left"></i>&nbsp;Return</button>
   </span>
 
   <span class="col-auto">
-    <button pButton pRipple type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Go to compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
-    <button pButton pRipple type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
-    <button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton pRipple type="button" [hidden]="!done || !hasAccessToCompute"
+      class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Go to
+      compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton pRipple type="button" [attr.hidden]="done ? null : ''"
+      class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()"
+      title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i
+        class="pi pi-angle-double-right"></i></button>
+    <button pButton pRipple type="button" [attr.hidden]="done ? '' : null"
+      class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes"
+      [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
-<br/>
+<br />
 
-<h4 style="margin: 3rem; text-align: center;"><i [class]="icon_warning" style="color:red"></i> Make sure not to openly publish sensitive information, copyrighted materials or third-party libraries.</h4>
+<h4 style="margin: 3rem; text-align: center;"><i [class]="icon_warning" style="color:red"></i> Make sure not to openly
+  publish sensitive information, copyrighted materials or third-party libraries.</h4>
 <p-dialog header="Submit" position="topright" [modal]="true" [(visible)]="popup">
-  <p class="m-0">Click on "OK" to start the update/transfer. You can close the window and the transfer will continue.</p>
-  <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the update/transfer has been unsuccessful.</p>
+  <p class="m-0">Click on "OK" to start the update/transfer. You can close the window and the transfer will continue.
+  </p>
+  <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the update/transfer has been
+    unsuccessful.</p>
   <br><br>
   <div style="text-align: right;">
     <div class="field-checkbox" [hidden]="!sendMails()">
@@ -32,26 +43,23 @@
 <table class="table">
   <tbody>
     <tr class="file-list-header" [hidden]="!metadata">
-        <th><i [class]="icon_copy"></i> Metadata that will be copied</th>
-        <p-treeTable [value]="rootNodeChildren">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th style="text-align: left;">Field</th>
-                    <th class="icon_col" style="text-align: right;">
-                        <button pButton pRipple label='' type="button"
-                            class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
-                                [class]="action()"></i></button>
-                    </th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-                <tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
-                    [style]="rowClass(rowData)">
-            </ng-template>
-        </p-treeTable>
+      <th><i [class]="icon_copy"></i> Metadata that will be copied</th>
     </tr>
-    <tr [hidden]="!metadata">
-        <span>{{metadata}}</span>
+    <tr class="file-list-header" [hidden]="!metadata">
+      <p-treeTable [value]="rootNodeChildren">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="text-align: left;">Field</th>
+            <th class="icon_col" style="text-align: right;"> 
+              <button pButton pRipple label='' type="button" class="p-button-sm p-button-outlined p-button-secondary"
+              (click)="toggleAction()"><i [class]="action()"></i></button>
+            </th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+          <tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode" [style]="rowClass(rowData)">
+        </ng-template>
+      </p-treeTable>
     </tr>
     <tr class="file-list-header">
       <th><i [class]="icon_copy"></i> Files that will be created</th>

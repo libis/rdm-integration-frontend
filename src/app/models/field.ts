@@ -18,7 +18,7 @@ export interface MetadataField {
   multiple: boolean;
   typeClass: string;
   typeName: string;
-  value: string | FieldDictonary[];
+  value: string | FieldDictonary[] | string[];
 }
 
 export interface FieldDictonary {
