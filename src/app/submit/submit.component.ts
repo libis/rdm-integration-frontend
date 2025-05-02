@@ -310,20 +310,21 @@ export class SubmitComponent implements OnInit {
     });
 
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
-        const path = ""
         const data: Field = {
             id: uuidv4(),
-            path: path,
+            path: "",
             name: d.typeName,
             action: Fieldaction.Copy,
             leafValue: (typeof d.value === "string") ? d.value as string : undefined,
             field: d,
           }
+          
           if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
             let content = d.value[0];
             for(let i = 1; i < d.value.length; i++) {
               content = content + ", " + d.value[i];
             }
+            data.leafValue = content;
           } else if (d.value && typeof d.value !== "string") {
             (d.value as FieldDictonary[]).forEach((v) => {
               this.mapChildField(d.typeName, v, rowDataMap);
@@ -352,7 +353,7 @@ export class SubmitComponent implements OnInit {
           });
 
           if (d.value && typeof d.value !== "string") {
-            (d.value as FieldDictonary[]).forEach((v) => this.mapChildField(path + d.typeName, v, rowDataMap));
+            (d.value as FieldDictonary[]).forEach((v) => this.mapChildField(path + "/" + d.typeName, v, rowDataMap));
           }
     })
   }
