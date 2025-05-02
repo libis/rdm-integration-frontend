@@ -18,7 +18,7 @@ export class MetadatafieldComponent implements OnInit {
 
 
   static icon_ignore = "pi pi-stop";
-  static icon_download = "pi pi-check-square";
+  static icon_copy = "pi pi-check-square";
   static icon_custom = "pi pi-exclamation-triangle";
 
   constructor() { }
@@ -34,8 +34,8 @@ export class MetadatafieldComponent implements OnInit {
     switch (node.data?.action) {
       case Fieldaction.Ignore:
         return this.icon_ignore;
-      case Fieldaction.Download:
-        return this.icon_download;
+      case Fieldaction.Copy:
+        return this.icon_copy;
       case Fieldaction.Custom:
         return this.icon_custom;
       default:
@@ -75,9 +75,9 @@ export class MetadatafieldComponent implements OnInit {
   public static toggleNodeAction(node: TreeNode<Field>): void {
     switch (node.data?.action) {
       case Fieldaction.Ignore:
-        MetadatafieldComponent.setNodeAction(node, Fieldaction.Download);
+        MetadatafieldComponent.setNodeAction(node, Fieldaction.Copy);
         break;
-      case Fieldaction.Download:
+      case Fieldaction.Copy:
         MetadatafieldComponent.setNodeAction(node, Fieldaction.Ignore);
         break;
       default:

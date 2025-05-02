@@ -41,7 +41,5 @@ export enum Fieldaction {
     Ignore = 0,
     Copy = 1,
     Update = 2,
-    Delete = 3,
     Custom = 4,
-    Download = 5,
 }

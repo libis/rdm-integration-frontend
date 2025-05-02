@@ -262,16 +262,11 @@ export class SubmitComponent implements OnInit {
   }
 
   action(): string {
-    if (this.root) {
-      return MetadatafieldComponent.actionIcon(this.root);
-    }
-    return MetadatafieldComponent.icon_ignore;
+    return MetadatafieldComponent.actionIcon(this.root!);
   }
   
   toggleAction(): void {
-    if (this.root) {
-        MetadatafieldComponent.toggleNodeAction(this.root);
-    }
+    MetadatafieldComponent.toggleNodeAction(this.root!);
   }
 
   rowClass(field: Field): string {
