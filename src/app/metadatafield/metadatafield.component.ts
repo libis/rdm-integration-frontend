@@ -51,7 +51,7 @@ export class MetadatafieldComponent implements OnInit {
   }
 
   value(): string {
-    return `${this.field.leafValue}`;
+    return this.field.leafValue ? `${this.field.leafValue}` : '';
   }
 
   toggleAction(): void {
