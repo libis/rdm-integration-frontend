@@ -1,4 +1,4 @@
- 
+
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit } from '@angular/core';
@@ -128,26 +128,27 @@ export class SubmitComponent implements OnInit {
     this.deleted = this.toDelete();
     this.data = [...this.created, ...this.updated, ...this.deleted];
     if (this.pid.endsWith(':New Dataset')) {
-        const credentials = this.credentialsService.credentials;
-        const req: MetadataRequest = {
-            pluginId: credentials.pluginId,
-            plugin: credentials.plugin,
-            repoName: credentials.repo_name,
-            url: credentials.url,
-            option: credentials.option,
-            user: credentials.user,
-            token: credentials.token,
-          };
-        this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
-        const rowDataMap = this.mapFields(this.metadata);
-        rowDataMap.forEach(v => {
-          this.addChild(v, rowDataMap)
-        });
-        this.root = rowDataMap.get("");
-        this.rowNodeMap = rowDataMap;
-        if (this.root?.children) {
-            this.rootNodeChildren = this.root.children;
-        }
+      const credentials = this.credentialsService.credentials;
+      const req: MetadataRequest = {
+        pluginId: credentials.pluginId,
+        plugin: credentials.plugin,
+        repoName: credentials.repo_name,
+        url: credentials.url,
+        option: credentials.option,
+        user: credentials.user,
+        token: credentials.token,
+      };
+      this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
+      const rowDataMap = this.mapFields(this.metadata);
+      rowDataMap.forEach(v => {
+        console.log(v.data?.path + " -> " + v.data?.name + " -> " + v.data?.leafValue);
+        this.addChild(v, rowDataMap)
+      });
+      this.root = rowDataMap.get("");
+      this.rowNodeMap = rowDataMap;
+      if (this.root?.children) {
+        this.rootNodeChildren = this.root.children;
+      }
     }
   }
 
@@ -209,11 +210,11 @@ export class SubmitComponent implements OnInit {
     }
 
     if (this.pid.endsWith(':New Dataset')) {
-        const ids = this.pid.split(':')
-        const ok = await this.newDataset(ids[0]);
-        if (!ok) {
-            return;
-        }
+      const ids = this.pid.split(':')
+      const ok = await this.newDataset(ids[0]);
+      if (!ok) {
+        return;
+      }
     }
 
     const httpSubscription = this.submitService.submit(selected, this.sendEmailOnSuccess).subscribe({
@@ -244,7 +245,7 @@ export class SubmitComponent implements OnInit {
   }
 
   goToCompute() {
-    this.router.navigate(['/compute'], {queryParams: {pid: this.pid}});
+    this.router.navigate(['/compute'], { queryParams: { pid: this.pid } });
   }
 
   sendMails(): boolean {
@@ -254,12 +255,12 @@ export class SubmitComponent implements OnInit {
   async newDataset(collectionId: string): Promise<boolean> {
     const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, this.metadata));
     if (data.persistentId !== undefined) {
-        this.pid = data.persistentId;
-        this.credentialsService.credentials.dataset_id = data.persistentId;
-        return true;
+      this.pid = data.persistentId;
+      this.credentialsService.credentials.dataset_id = data.persistentId;
+      return true;
     } else {
-        alert("creating new dataset failed");
-        return false;
+      alert("creating new dataset failed");
+      return false;
     }
   }
 
@@ -269,21 +270,21 @@ export class SubmitComponent implements OnInit {
     }
     return MetadatafieldComponent.icon_ignore;
   }
-  
+
   toggleAction(): void {
     if (this.root) {
-        MetadatafieldComponent.toggleNodeAction(this.root);
+      MetadatafieldComponent.toggleNodeAction(this.root);
     }
   }
 
   rowClass(field: Field): string {
     switch (field.action) {
-        case Fieldaction.Ignore:
-            return '';
-        case Fieldaction.Copy:
-            return 'background-color: #c3e6cb; color: black';
-        case Fieldaction.Custom:
-            return 'background-color: #FFFAA0; color: black';
+      case Fieldaction.Ignore:
+        return '';
+      case Fieldaction.Copy:
+        return 'background-color: #c3e6cb; color: black';
+      case Fieldaction.Custom:
+        return 'background-color: #FFFAA0; color: black';
     }
     return '';
   }
@@ -299,7 +300,6 @@ export class SubmitComponent implements OnInit {
 
   mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
     const rootData: Field = {
-      id: ("" + this.id++),
       path: "",
       name: "",
       action: Fieldaction.Copy,
@@ -311,51 +311,77 @@ export class SubmitComponent implements OnInit {
     });
 
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
-        const data: Field = {
-            id: ("" + this.id++),
-            path: "",
-            name: d.typeName,
-            action: Fieldaction.Copy,
-            leafValue: (typeof d.value === "string") ? d.value as string : undefined,
-            field: d,
-          }
+      const data: Field = {
+        path: "",
+        name: d.typeName,
+        action: Fieldaction.Copy,
+        leafValue: (typeof d.value === "string") ? d.value as string : undefined,
+        field: d,
+      }
 
-          if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
-            let content = d.value[0];
-            for(let i = 1; i < d.value.length; i++) {
-              content = content + ", " + d.value[i];
-            }
-            data.leafValue = content;
-          } else if (d.value && typeof d.value !== "string") {
-            (d.value as FieldDictonary[]).forEach((v) => {
-              this.mapChildField(d.typeName, v, rowDataMap);
-            });
-          }
-
-          rowDataMap.set(d.typeName, {
+      if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
+        let content = d.value[0];
+        for (let i = 1; i < d.value.length; i++) {
+          content = content + ", " + d.value[i];
+        }
+        data.leafValue = content;
+        const path = ("" + this.id++);
+        rowDataMap.set(path, {
+          data: data,
+        });
+      } else if (d.value && typeof d.value !== "string") {
+        (d.value as FieldDictonary[]).forEach((v) => {
+          const path = ("" + this.id++);
+          rowDataMap.set(path, {
             data: data,
           });
-      });
+          this.mapChildField(path, v, rowDataMap);
+        });
+      } else {
+        const path = ("" + this.id++);
+        rowDataMap.set(path, {
+          data: data,
+        });
+      }
+
+    });
     return rowDataMap;
   }
 
   mapChildField(path: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
     Object.values(fieldDictonary).forEach((d) => {
-        const data: Field = {
-            id: ("" + this.id++),
-            path: path,
-            name: d.typeName,
-            action: Fieldaction.Copy,
-            leafValue: (typeof d.value === "string") ? d.value as string : undefined,
-            field: d,
-          }
-          rowDataMap.set(path + "/" + d.typeName, {
+      const data: Field = {
+        path: path,
+        name: d.typeName,
+        action: Fieldaction.Copy,
+        leafValue: (typeof d.value === "string") ? d.value as string : undefined,
+        field: d,
+      }
+
+      if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
+        let content = d.value[0];
+        for (let i = 1; i < d.value.length; i++) {
+          content = content + ", " + d.value[i];
+        }
+        data.leafValue = content;
+        const path = ("" + this.id++);
+        rowDataMap.set(path, {
+          data: data,
+        });
+      } else if (d.value && typeof d.value !== "string") {
+        (d.value as FieldDictonary[]).forEach((v) => {
+          const path = ("" + this.id++);
+          rowDataMap.set(path, {
             data: data,
           });
-
-          if (d.value && typeof d.value !== "string") {
-            (d.value as FieldDictonary[]).forEach((v) => this.mapChildField(path + "/" + d.typeName, v, rowDataMap));
-          }
+          this.mapChildField(path, v, rowDataMap);
+        });
+      } else {
+        const path = ("" + this.id++);
+        rowDataMap.set(path, {
+          data: data,
+        });
+      }
     })
   }
 }

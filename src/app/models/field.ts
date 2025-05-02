@@ -30,7 +30,6 @@ export interface Expandedvalue {
 }
 
 export interface Field {
-  id: string;
   path?: string;
   name?: string;
   action?: Fieldaction;
