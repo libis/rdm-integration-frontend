@@ -18,7 +18,7 @@ import { DatasetService } from '../dataset.service';
 import { firstValueFrom } from 'rxjs';
 import { MetadataRequest } from '../models/metadata-request';
 import { TreeNode } from 'primeng/api';
-import { Field, Fieldaction, FieldDictonary, Metadata } from '../models/field';
+import { Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 @Component({
@@ -140,10 +140,7 @@ export class SubmitComponent implements OnInit {
       };
       this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
       const rowDataMap = this.mapFields(this.metadata);
-      rowDataMap.forEach(v => {
-        console.log(v.data?.path + " -> " + v.data?.name + " -> " + v.data?.leafValue);
-        this.addChild(v, rowDataMap)
-      });
+      rowDataMap.forEach(v => this.addChild(v, rowDataMap));
       this.root = rowDataMap.get("");
       this.rowNodeMap = rowDataMap;
       if (this.root?.children) {
@@ -290,17 +287,18 @@ export class SubmitComponent implements OnInit {
   }
 
   addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {
-    if (v.data?.path === "" && v.data.name == "") {
+    if (v.data?.id == "") {
       return;
     }
-    const parent = rowDataMap.get(v.data!.path!)!;
+    const parent = rowDataMap.get(v.data!.parent!)!;
     const children = parent.children ? parent.children : [];
     parent.children = children.concat(v);
   }
 
   mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
     const rootData: Field = {
-      path: "",
+      id: "",
+      parent: "",
       name: "",
       action: Fieldaction.Copy,
     }
@@ -311,77 +309,64 @@ export class SubmitComponent implements OnInit {
     });
 
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
-      const data: Field = {
-        path: "",
-        name: d.typeName,
-        action: Fieldaction.Copy,
-        leafValue: (typeof d.value === "string") ? d.value as string : undefined,
-        field: d,
-      }
-
-      if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
-        let content = d.value[0];
-        for (let i = 1; i < d.value.length; i++) {
-          content = content + ", " + d.value[i];
-        }
-        data.leafValue = content;
-        const path = ("" + this.id++);
-        rowDataMap.set(path, {
-          data: data,
-        });
-      } else if (d.value && typeof d.value !== "string") {
-        (d.value as FieldDictonary[]).forEach((v) => {
-          const path = ("" + this.id++);
-          rowDataMap.set(path, {
-            data: data,
-          });
-          this.mapChildField(path, v, rowDataMap);
-        });
-      } else {
-        const path = ("" + this.id++);
-        rowDataMap.set(path, {
-          data: data,
-        });
-      }
+      this.addToDataMap(d, "", rowDataMap);
 
     });
     return rowDataMap;
   }
 
-  mapChildField(path: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
-    Object.values(fieldDictonary).forEach((d) => {
+  private addToDataMap(d: MetadataField, parent: string, rowDataMap: Map<string, TreeNode<Field>>) {
+    if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
+      let content = d.value[0];
+      for (let i = 1; i < d.value.length; i++) {
+        content = content + ", " + d.value[i];
+      }
+      const id = "" + this.id++;
       const data: Field = {
-        path: path,
+        id: id,
+        parent: parent,
         name: d.typeName,
         action: Fieldaction.Copy,
-        leafValue: (typeof d.value === "string") ? d.value as string : undefined,
+        leafValue: content,
         field: d,
-      }
+      };
+      rowDataMap.set(id, {
+        data: data,
+      });
+    } else if (d.value && typeof d.value !== "string") {
+      (d.value as FieldDictonary[]).forEach((v) => {
+        const id = "" + this.id++;
+        const data: Field = {
+          id: id,
+          parent: parent,
+          name: d.typeName,
+          action: Fieldaction.Copy,
+          field: d,
+        };
+        rowDataMap.set(id, {
+          data: data,
+        });
+        this.mapChildField(id, v, rowDataMap);
+      });
+    } else {
+      const id = "" + this.id++;
+      const data: Field = {
+        id: id,
+        parent: parent,
+        name: d.typeName,
+        action: Fieldaction.Copy,
+        leafValue: d.value,
+        field: d,
+      };
+      rowDataMap.set(id, {
+        data: data,
+      });
+    }
+  }
 
-      if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
-        let content = d.value[0];
-        for (let i = 1; i < d.value.length; i++) {
-          content = content + ", " + d.value[i];
-        }
-        data.leafValue = content;
-        const path = ("" + this.id++);
-        rowDataMap.set(path, {
-          data: data,
-        });
-      } else if (d.value && typeof d.value !== "string") {
-        (d.value as FieldDictonary[]).forEach((v) => {
-          const path = ("" + this.id++);
-          rowDataMap.set(path, {
-            data: data,
-          });
-          this.mapChildField(path, v, rowDataMap);
-        });
-      } else {
-        const path = ("" + this.id++);
-        rowDataMap.set(path, {
-          data: data,
-        });
-      }
+  mapChildField(parent: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
+    Object.values(fieldDictonary).forEach((d) => {
+      this.addToDataMap(d, parent, rowDataMap)
     })
   }
 }
