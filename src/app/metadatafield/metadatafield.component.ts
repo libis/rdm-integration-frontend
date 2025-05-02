@@ -12,7 +12,6 @@ import { Field, Fieldaction } from '../models/field';
 })
 export class MetadatafieldComponent implements OnInit {
 
-  @Input("field") field: Field = {};
   @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
   @Input("rowNode") rowNode: TreeNode<Field> = {};
 
@@ -24,6 +23,7 @@ export class MetadatafieldComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
+    this.rowNode = [...this.rowNodeMap.values()].find((x) => x.data?.id === this.rowNode.data?.id)!;
   }
 
   action(): string {
@@ -44,7 +44,7 @@ export class MetadatafieldComponent implements OnInit {
   }
 
   sourceFile(): string {
-    return `${this.field.name}`;
+    return `${this.rowNode.data?.name}`;
   }
 
   toggleAction(): void {

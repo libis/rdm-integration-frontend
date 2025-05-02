@@ -20,6 +20,7 @@ import { MetadataRequest } from '../models/metadata-request';
 import { TreeNode } from 'primeng/api';
 import { Field, Fieldaction, FieldDictonary, Metadata } from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
+import {v4 as uuidv4} from 'uuid';
 
 @Component({
   selector: 'app-submit',
@@ -275,7 +276,7 @@ export class SubmitComponent implements OnInit {
             return '';
         case Fieldaction.Copy:
             return 'background-color: #c3e6cb; color: black';
-        case Fieldaction.Custom:
+        case Fieldaction.Custom:https://www.uuidgenerator.net/dev-corner/vb-net
             return 'background-color: #FFFAA0; color: black';
     }
     return '';
@@ -292,6 +293,7 @@ export class SubmitComponent implements OnInit {
 
   mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
     const rootData: Field = {
+      id: uuidv4(),
       path: "",
       name: "",
       action: Fieldaction.Ignore,
@@ -305,6 +307,7 @@ export class SubmitComponent implements OnInit {
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
         const path = ""
         const data: Field = {
+            id: uuidv4(),
             path: path,
             name: d.typeName,
             action: Fieldaction.Ignore,
@@ -332,6 +335,7 @@ export class SubmitComponent implements OnInit {
   mapChildField(path: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
     Object.values(fieldDictonary).forEach((d) => {
         const data: Field = {
+            id: uuidv4(),
             path: path,
             name: d.typeName,
             action: Fieldaction.Ignore,
