@@ -1,3 +1,5 @@
+import { CompareResult } from "./compare-result";
+
 export interface MetadataRequest {
 	pluginId?: string;
 	plugin?: string;
@@ -6,4 +8,5 @@ export interface MetadataRequest {
 	option?: string;
 	user?: string;
 	token?: string;
+	compareResult: CompareResult | null;
 }
