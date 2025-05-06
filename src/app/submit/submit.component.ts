@@ -137,6 +137,7 @@ export class SubmitComponent implements OnInit {
         option: credentials.option,
         user: credentials.user,
         token: credentials.token,
+        dvToken: credentials.dataverse_token,
         compareResult: this.dataStateService.getCurrentValue(),
       };
       this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));

@@ -8,5 +8,6 @@ export interface MetadataRequest {
 	option?: string;
 	user?: string;
 	token?: string;
+	dvToken?: string;
 	compareResult: CompareResult | null;
 }
