@@ -15,10 +15,10 @@ import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
 import { DatasetService } from '../dataset.service';
-import { concat, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { MetadataRequest } from '../models/metadata-request';
 import { TreeNode } from 'primeng/api';
-import { Expandedvalue, Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
+import { Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 @Component({
@@ -421,9 +421,9 @@ export class SubmitComponent implements OnInit {
   customValue(metadataFields: FieldDictonary[]): FieldDictonary[] {
     let res: FieldDictonary[] = [];
     metadataFields.forEach((d) => {
-      let dict: FieldDictonary = {};
+      const dict: FieldDictonary = {};
       Object.keys(d).forEach((k) => {
-        let f = d[k];
+        const f = d[k];
         if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
           const field: MetadataField = {
             expandedvalue: f.expandedvalue,
