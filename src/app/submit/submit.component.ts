@@ -212,6 +212,7 @@ export class SubmitComponent implements OnInit {
       const ids = this.pid.split(':')
       const ok = await this.newDataset(ids[0]);
       if (!ok) {
+        this.disabled = false;
         return;
       }
     }
@@ -254,7 +255,7 @@ export class SubmitComponent implements OnInit {
   async newDataset(collectionId: string): Promise<boolean> {
     const metadata = this.filteredMetadata();
     const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, metadata));
-    if (data.persistentId !== undefined) {
+    if (data.persistentId !== undefined && data.persistentId !== "") {
       this.pid = data.persistentId;
       this.credentialsService.credentials.dataset_id = data.persistentId;
       return true;
