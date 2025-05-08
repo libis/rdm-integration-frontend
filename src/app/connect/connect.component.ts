@@ -328,7 +328,8 @@ export class ConnectComponent implements OnInit {
     const subscr = this.http.post<string>('api/common/useremail', this.dataverseToken).subscribe({
       next: (useremail) => {
         subscr.unsubscribe();
-        if (useremail == "") {
+        console.log(useremail)
+        if (useremail !== "") {
           const err = this.parseAndCheckFields();
           if (err !== undefined) {
             alert(err);
