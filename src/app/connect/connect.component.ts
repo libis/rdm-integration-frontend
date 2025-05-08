@@ -17,6 +17,7 @@ import { OauthService } from '../oauth.service';
 import { Select } from 'primeng/select';
 import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { RepoLookupRequest } from '../models/repo-lookup';
+import { HttpClient } from '@angular/common/http';
 
 const new_dataset = 'New Dataset';
 
@@ -88,6 +89,7 @@ export class ConnectComponent implements OnInit {
     private pluginService: PluginService,
     private route: ActivatedRoute,
     private oauth: OauthService,
+    private http: HttpClient,
   ) {
     this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
@@ -322,7 +324,7 @@ export class ConnectComponent implements OnInit {
    * CONNECT *
    ***********/
 
-  connect() {
+  async connect() {
     const err = this.parseAndCheckFields();
     if (err !== undefined) {
       alert(err);
@@ -350,7 +352,20 @@ export class ConnectComponent implements OnInit {
       localStorage.setItem("dataverseToken", this.dataverseToken!);
     }
 
-    this.router.navigate(['/compare', this.datasetId]);
+    const subscr = this.http.post<string>('api/common/useremail', this.dataverseToken).subscribe({
+      next: (useremail) => {
+        subscr.unsubscribe();
+        if (useremail !== "") {
+          this.router.navigate(['/compare', this.datasetId]);
+        } else {
+          alert("Unknown user: you need to generate a valid Dataverse API token first")
+        }
+      },
+      error: () => {
+        subscr.unsubscribe();
+        alert("Unknown user: you need to generate a valid Dataverse API token first")
+      }
+    });
   }
 
   parseAndCheckFields(): string | undefined {
