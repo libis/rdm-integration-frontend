@@ -142,32 +142,32 @@ export class ConnectComponent implements OnInit {
           const callback = params['callback'];
           if (callback) {
             const p = this.pluginService.getGlobusPlugin()
-              if (p) {
-                this.plugin = "globus";
-                this.pluginId = "globus";
-                if (!datasetPid) {
-                  const callbackUrl = atob(callback);
-                  const parts = callbackUrl.split('/');
-                  if (parts.length > 6) {
-                    const datasetDbId = parts[6];
-                    const g = callbackUrl.split('?');
-                    const globusParams = g[g.length - 1].split("&");
-                    let downloadId: string | undefined = undefined;
-                    globusParams.forEach(p => {
-                      if (p.startsWith('downloadId=')) {
-                        downloadId = p.substring('downloadId='.length);
-                      }
-                    });
-                    const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
-                      this.datasetId = x.persistentId;
-                      versionSubscription.unsubscribe();
-                      if (downloadId) {
-                        this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
-                      }
-                    });
-                  }
+            if (p) {
+              this.plugin = "globus";
+              this.pluginId = "globus";
+              if (!datasetPid) {
+                const callbackUrl = atob(callback);
+                const parts = callbackUrl.split('/');
+                if (parts.length > 6) {
+                  const datasetDbId = parts[6];
+                  const g = callbackUrl.split('?');
+                  const globusParams = g[g.length - 1].split("&");
+                  let downloadId: string | undefined = undefined;
+                  globusParams.forEach(p => {
+                    if (p.startsWith('downloadId=')) {
+                      downloadId = p.substring('downloadId='.length);
+                    }
+                  });
+                  const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
+                    this.datasetId = x.persistentId;
+                    versionSubscription.unsubscribe();
+                    if (downloadId) {
+                      this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
+                    }
+                  });
                 }
               }
+            }
           }
           return;
         }
@@ -325,37 +325,37 @@ export class ConnectComponent implements OnInit {
    ***********/
 
   async connect() {
-    const err = this.parseAndCheckFields();
-    if (err !== undefined) {
-      alert(err);
-      return;
-    }
-    const tokenName = this.pluginService.getPlugin(this.pluginId).tokenName
-    if (this.token !== undefined && tokenName !== undefined && tokenName !== '') {
-      localStorage.setItem(tokenName, this.token);
-    }
-    const creds: Credentials = {
-      pluginId: this.pluginId,
-      plugin: this.plugin,
-      repo_name: this.getRepoName(),
-      url: this.url,
-      option: this.option,
-      user: this.user,
-      token: this.token,
-      dataset_id: this.datasetId,
-      newly_created: this.datasetId === new_dataset,
-      dataverse_token: this.dataverseToken,
-    }
-    this.dataStateService.initializeState(creds);
-
-    if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
-      localStorage.setItem("dataverseToken", this.dataverseToken!);
-    }
-
     const subscr = this.http.post<string>('api/common/useremail', this.dataverseToken).subscribe({
       next: (useremail) => {
         subscr.unsubscribe();
-        if (useremail !== "") {
+        if (useremail == "") {
+          const err = this.parseAndCheckFields();
+          if (err !== undefined) {
+            alert(err);
+            return;
+          }
+          const tokenName = this.pluginService.getPlugin(this.pluginId).tokenName
+          if (this.token !== undefined && tokenName !== undefined && tokenName !== '') {
+            localStorage.setItem(tokenName, this.token);
+          }
+          const creds: Credentials = {
+            pluginId: this.pluginId,
+            plugin: this.plugin,
+            repo_name: this.getRepoName(),
+            url: this.url,
+            option: this.option,
+            user: this.user,
+            token: this.token,
+            dataset_id: this.datasetId,
+            newly_created: this.datasetId === new_dataset,
+            dataverse_token: this.dataverseToken,
+          }
+          this.dataStateService.initializeState(creds);
+
+          if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
+            localStorage.setItem("dataverseToken", this.dataverseToken!);
+          }
+
           this.router.navigate(['/compare', this.datasetId]);
         } else {
           alert("Unknown user: you need to generate a valid Dataverse API token first")
