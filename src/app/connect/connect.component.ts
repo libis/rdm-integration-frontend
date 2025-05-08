@@ -362,9 +362,10 @@ export class ConnectComponent implements OnInit {
           alert("Unknown user: you need to generate a valid Dataverse API token first")
         }
       },
-      error: () => {
+      error: (err) => {
         subscr.unsubscribe();
-        alert("Unknown user: you need to generate a valid Dataverse API token first")
+        console.log(err);
+        alert("Error getting user: you need to generate a valid Dataverse API token first")
       }
     });
   }
