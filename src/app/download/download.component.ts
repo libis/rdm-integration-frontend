@@ -364,12 +364,12 @@ export class DownloadComponent implements OnInit, OnDestroy {
           httpSubscription.unsubscribe();
           alert(
             'download is requested and can be monitored in Dataverse UI or Globus UI with the following submission ID: ' +
-              submissionId,
+              `${submissionId}`,
           );
         },
         error: (err) => {
           httpSubscription.unsubscribe();
-          alert(err);
+            alert(`${err}`);
         },
       });
   }
