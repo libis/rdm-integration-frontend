@@ -11,20 +11,22 @@ import { ComputeRequest } from '../models/compare-result';
   selector: 'tr[app-executablefile]',
   standalone: false,
   templateUrl: './executablefile.component.html',
-  styleUrl: './executablefile.component.scss'
+  styleUrl: './executablefile.component.scss',
 })
 export class ExecutablefileComponent implements OnInit {
-
-  @Input("datafile") datafile: Datafile = {};
-  @Input("loading") loading = true;
-  @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
-  @Input("rowNode") rowNode: TreeNode<Datafile> = {};
-  @Input("pid") pid?: string;
-  @Input("dv_token") dv_token?: string;
+  @Input('datafile') datafile: Datafile = {};
+  @Input('loading') loading = true;
+  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
+    string,
+    TreeNode<Datafile>
+  >();
+  @Input('rowNode') rowNode: TreeNode<Datafile> = {};
+  @Input('pid') pid?: string;
+  @Input('dv_token') dv_token?: string;
 
   @Output('computeClicked') computeClicked = new EventEmitter<ComputeRequest>();
 
-  icon_play = "pi pi-play";
+  icon_play = 'pi pi-play';
 
   node: TreeNode<Datafile> = {};
   queue?: string;
@@ -32,10 +34,15 @@ export class ExecutablefileComponent implements OnInit {
   spinning = false;
   computeEnabled = false;
 
-  constructor(private pluginService: PluginService, public dataService: DataService) { }
+  constructor(
+    private pluginService: PluginService,
+    public dataService: DataService,
+  ) {}
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(this.datafile.id! + (this.datafile.attributes?.isFile ? ":file" : ""))!; // avoid collisions between folders and files having the same path and name
+    this.node = this.rowNodeMap.get(
+      this.datafile.id! + (this.datafile.attributes?.isFile ? ':file' : ''),
+    )!; // avoid collisions between folders and files having the same path and name
     const splitted = this.datafile.name?.split('.');
     if (this.datafile.attributes?.isFile && splitted && splitted?.length > 0) {
       this.queues = this.pluginService.getQueues(splitted[splitted.length - 1]);
@@ -48,24 +55,26 @@ export class ExecutablefileComponent implements OnInit {
     }
     this.spinning = true;
     this.computeEnabled = false;
-    const subscription = this.dataService.checkAccessToQueue(this.pid, this.dv_token, this.queue).subscribe({
-      next: (access) => {
-        subscription.unsubscribe();
-        if (access.access) {
-          this.computeEnabled = true;
-        } else {
+    const subscription = this.dataService
+      .checkAccessToQueue(this.pid, this.dv_token, this.queue)
+      .subscribe({
+        next: (access) => {
+          subscription.unsubscribe();
+          if (access.access) {
+            this.computeEnabled = true;
+          } else {
+            this.queue = undefined;
+            alert(access.message);
+          }
+          this.spinning = false;
+        },
+        error: (err) => {
+          subscription.unsubscribe();
+          alert('checking access to queue failed: ' + err.error);
+          this.spinning = false;
           this.queue = undefined;
-          alert(access.message);
-        }
-        this.spinning = false;
-      },
-      error: (err) => {
-        subscription.unsubscribe();
-        alert("checking access to queue failed: " + err.error);
-        this.spinning = false;
-        this.queue = undefined;
-      }
-    });
+        },
+      });
   }
 
   compute(): void {

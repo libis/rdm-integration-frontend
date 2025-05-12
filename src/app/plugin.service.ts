@@ -7,12 +7,11 @@ import { Config, RepoPlugin } from './models/plugin';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PluginService {
-
   private config: Config = {
-    dataverseHeader: "Unknown header: configuration failed",
+    dataverseHeader: 'Unknown header: configuration failed',
     collectionOptionsHidden: true,
     createNewDatasetEnabled: false,
     datasetFieldEditable: false,
@@ -30,34 +29,38 @@ export class PluginService {
   private defaultPlugin: RepoPlugin = {
     id: 'defaultPlugin',
     plugin: 'defaultPlugin',
-    name: "Unknown repository type",
-    pluginName: "Unknown plugin",
+    name: 'Unknown repository type',
+    pluginName: 'Unknown plugin',
     parseSourceUrlField: false,
     repoNameFieldHasSearch: false,
     repoNameFieldHasInit: false,
     showTokenGetter: false,
   };
 
-  constructor(private http: HttpClient) {
-  }
+  constructor(private http: HttpClient) {}
 
   async setConfig() {
-    const c = await firstValueFrom(this.http.get<Config>(`api/frontend/config`));
+    const c = await firstValueFrom(
+      this.http.get<Config>(`api/frontend/config`),
+    );
     this.config = c;
-    this.config.plugins.forEach(p => {
-      p.showTokenGetter = p.tokenGetter !== undefined && p.tokenGetter.URL !== undefined && p.tokenGetter.URL !== '';
+    this.config.plugins.forEach((p) => {
+      p.showTokenGetter =
+        p.tokenGetter !== undefined &&
+        p.tokenGetter.URL !== undefined &&
+        p.tokenGetter.URL !== '';
       this.allPlugins.set(p.id, p);
     });
   }
 
   getGlobusPlugin(): RepoPlugin | undefined {
-    return this.config.plugins.find(p => p.id === 'globus');
+    return this.config.plugins.find((p) => p.id === 'globus');
   }
 
   getPlugins(): SelectItem<string>[] {
     const res: SelectItem<string>[] = [];
     const added = new Set<string>();
-    this.config.plugins.forEach(x => {
+    this.config.plugins.forEach((x) => {
       if (!added.has(x.plugin)) {
         added.add(x.plugin);
         res.push({ value: x.plugin, label: x.pluginName });
@@ -68,7 +71,7 @@ export class PluginService {
 
   getPluginIds(plugin?: string): SelectItem<string>[] {
     const res: SelectItem<string>[] = [];
-    this.config.plugins.forEach(x => {
+    this.config.plugins.forEach((x) => {
       if (x.plugin == plugin) {
         res.push({ value: x.id, label: x.name });
       }
@@ -84,7 +87,7 @@ export class PluginService {
     if (plugin) {
       return plugin;
     }
-    return this.defaultPlugin
+    return this.defaultPlugin;
   }
 
   dataverseHeader(): string {
@@ -133,11 +136,12 @@ export class PluginService {
   }
 
   getQueues(extension: string): SelectItem<string>[] {
-    return this.config.queues ?
-      this.config.queues.
-        filter((queue) => queue.fileExtensions.includes(extension)).
-        map((queue) => { return { label: queue.label, value: queue.value } }) :
-      [];
+    return this.config.queues
+      ? this.config.queues
+          .filter((queue) => queue.fileExtensions.includes(extension))
+          .map((queue) => {
+            return { label: queue.label, value: queue.value };
+          })
+      : [];
   }
-
 }

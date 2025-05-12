@@ -6,22 +6,23 @@ import { Observable } from 'rxjs';
 import { TokenResponse } from './models/oauth';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class OauthService {
-
   token_url = 'api/common/oauthtoken';
 
-  constructor(
-    private http: HttpClient
-  ) { }
+  constructor(private http: HttpClient) {}
 
-  getToken(pluginId: string, code: string, nonce: string): Observable<TokenResponse> {
+  getToken(
+    pluginId: string,
+    code: string,
+    nonce: string,
+  ): Observable<TokenResponse> {
     const req = {
       pluginId: pluginId,
       code: code,
       nonce: nonce,
-    }
+    };
     return this.http.post<TokenResponse>(this.token_url, req);
   }
 }

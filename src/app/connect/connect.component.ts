@@ -1,4 +1,3 @@
-
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, ViewChild } from '@angular/core';
@@ -9,13 +8,20 @@ import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { SelectItem, TreeNode } from 'primeng/api';
-import { DomSanitizer, SafeStyle } from "@angular/platform-browser";
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
 import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { Select } from 'primeng/select';
-import { debounceTime, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+  Subscription,
+} from 'rxjs';
 import { RepoLookupRequest } from '../models/repo-lookup';
 import { HttpClient } from '@angular/common/http';
 
@@ -25,16 +31,16 @@ const new_dataset = 'New Dataset';
   selector: 'app-connect',
   standalone: false,
   templateUrl: './connect.component.html',
-  styleUrls: ['./connect.component.scss']
+  styleUrls: ['./connect.component.scss'],
 })
 export class ConnectComponent implements OnInit {
-
   @ViewChild('repoSelect') repoNameSelect!: Select;
 
   // CONSTANTS
 
   DEBOUNCE_TIME = 750;
-  DOI_SELECT_WIDTH: SafeStyle = this.sanitizer.bypassSecurityTrustStyle("calc(100% - 12rem)");
+  DOI_SELECT_WIDTH: SafeStyle =
+    this.sanitizer.bypassSecurityTrustStyle('calc(100% - 12rem)');
 
   // NG MODEL FIELDS
 
@@ -53,7 +59,7 @@ export class ConnectComponent implements OnInit {
 
   // ITEMS IN SELECTS
 
-  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' }
+  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
   loadingItems: SelectItem<string>[] = [this.loadingItem];
   plugins: SelectItem<string>[] = [];
   pluginIds: SelectItem<string>[] = [];
@@ -61,7 +67,9 @@ export class ConnectComponent implements OnInit {
   branchItems: SelectItem<string>[] = [];
   collectionItems: SelectItem<string>[] = [];
   doiItems: SelectItem<string>[] = [];
-  rootOptions: TreeNode<string>[] = [{ label: 'Expand and select', data: '', leaf: false, selectable: true }];
+  rootOptions: TreeNode<string>[] = [
+    { label: 'Expand and select', data: '', leaf: false, selectable: true },
+  ];
   selectedOption?: TreeNode<string>;
 
   // INTERNAL STATE VARIABLES
@@ -93,134 +101,236 @@ export class ConnectComponent implements OnInit {
   ) {
     this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
-      map(searchText => this.repoNameSearch(searchText)),
+      map((searchText) => this.repoNameSearch(searchText)),
     );
     this.collectionSearchResultsObservable = this.collectionSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
-      map(searchText => this.collectionSearch(searchText)),
+      map((searchText) => this.collectionSearch(searchText)),
     );
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
-      map(searchText => this.datasetSearch(searchText)),
+      map((searchText) => this.datasetSearch(searchText)),
     );
   }
 
   async ngOnInit() {
     await this.pluginService.setConfig();
-    const dvToken = localStorage.getItem("dataverseToken");
+    const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
     }
-    this.repoSearchResultsSubscription = this.repoSearchResultsObservable.subscribe({
-      next: x => x.then(v => this.repoNames = v)
-        .catch(err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }]),
-      error: err => this.repoNames = [{ label: 'search failed: ' + err.message, value: err.message }],
-    });
-    this.collectionSearchResultsSubscription = this.collectionSearchResultsObservable.subscribe({
-      next: x => x.then(v => this.collectionItems = v)
-        .catch(err => this.collectionItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
-      error: err => this.collectionItems = [{ label: 'search failed: ' + err.message, value: err.message }],
-    });
-    this.datasetSearchResultsSubscription = this.datasetSearchResultsObservable.subscribe({
-      next: x => x.then(v => this.doiItems = v)
-        .catch(err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }]),
-      error: err => this.doiItems = [{ label: 'search failed: ' + err.message, value: err.message }],
-    });
-    this.route.queryParams
-      .subscribe(params => {
-        const stateString = params['state'];
-        if (stateString === undefined || stateString === null || stateString === '') {
-          const datasetPid = params['datasetPid'];
-          if (datasetPid !== undefined && datasetPid !== null || datasetPid !== '') {
-            this.doiItems = [{ label: datasetPid, value: datasetPid }, this.loadingItem];
-            this.datasetId = datasetPid;
-          }
-          const apiToken = params['apiToken'];
-          if (apiToken) {
-            this.dataverseToken = apiToken;
-          }
-          const callback = params['callback'];
-          if (callback) {
-            const p = this.pluginService.getGlobusPlugin()
-            if (p) {
-              this.plugin = "globus";
-              this.pluginId = "globus";
-              if (!datasetPid) {
-                const callbackUrl = atob(callback);
-                const parts = callbackUrl.split('/');
-                if (parts.length > 6) {
-                  const datasetDbId = parts[6];
-                  const g = callbackUrl.split('?');
-                  const globusParams = g[g.length - 1].split("&");
-                  let downloadId: string | undefined = undefined;
-                  globusParams.forEach(p => {
-                    if (p.startsWith('downloadId=')) {
-                      downloadId = p.substring('downloadId='.length);
-                    }
-                  });
-                  const versionSubscription = this.datasetService.getDatasetVersion(datasetDbId, apiToken).subscribe(x => {
+    this.repoSearchResultsSubscription =
+      this.repoSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => (this.repoNames = v))
+            .catch(
+              (err) =>
+                (this.repoNames = [
+                  {
+                    label: 'search failed: ' + err.message,
+                    value: err.message,
+                  },
+                ]),
+            ),
+        error: (err) =>
+          (this.repoNames = [
+            { label: 'search failed: ' + err.message, value: err.message },
+          ]),
+      });
+    this.collectionSearchResultsSubscription =
+      this.collectionSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => (this.collectionItems = v))
+            .catch(
+              (err) =>
+                (this.collectionItems = [
+                  {
+                    label: 'search failed: ' + err.message,
+                    value: err.message,
+                  },
+                ]),
+            ),
+        error: (err) =>
+          (this.collectionItems = [
+            { label: 'search failed: ' + err.message, value: err.message },
+          ]),
+      });
+    this.datasetSearchResultsSubscription =
+      this.datasetSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => (this.doiItems = v))
+            .catch(
+              (err) =>
+                (this.doiItems = [
+                  {
+                    label: 'search failed: ' + err.message,
+                    value: err.message,
+                  },
+                ]),
+            ),
+        error: (err) =>
+          (this.doiItems = [
+            { label: 'search failed: ' + err.message, value: err.message },
+          ]),
+      });
+    this.route.queryParams.subscribe((params) => {
+      const stateString = params['state'];
+      if (
+        stateString === undefined ||
+        stateString === null ||
+        stateString === ''
+      ) {
+        const datasetPid = params['datasetPid'];
+        if (
+          (datasetPid !== undefined && datasetPid !== null) ||
+          datasetPid !== ''
+        ) {
+          this.doiItems = [
+            { label: datasetPid, value: datasetPid },
+            this.loadingItem,
+          ];
+          this.datasetId = datasetPid;
+        }
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken = apiToken;
+        }
+        const callback = params['callback'];
+        if (callback) {
+          const p = this.pluginService.getGlobusPlugin();
+          if (p) {
+            this.plugin = 'globus';
+            this.pluginId = 'globus';
+            if (!datasetPid) {
+              const callbackUrl = atob(callback);
+              const parts = callbackUrl.split('/');
+              if (parts.length > 6) {
+                const datasetDbId = parts[6];
+                const g = callbackUrl.split('?');
+                const globusParams = g[g.length - 1].split('&');
+                let downloadId: string | undefined = undefined;
+                globusParams.forEach((p) => {
+                  if (p.startsWith('downloadId=')) {
+                    downloadId = p.substring('downloadId='.length);
+                  }
+                });
+                const versionSubscription = this.datasetService
+                  .getDatasetVersion(datasetDbId, apiToken)
+                  .subscribe((x) => {
                     this.datasetId = x.persistentId;
                     versionSubscription.unsubscribe();
                     if (downloadId) {
-                      this.router.navigate(['/download'], { queryParams: { downloadId: downloadId, datasetPid: x.persistentId, apiToken: apiToken } });
+                      this.router.navigate(['/download'], {
+                        queryParams: {
+                          downloadId: downloadId,
+                          datasetPid: x.persistentId,
+                          apiToken: apiToken,
+                        },
+                      });
                     }
                   });
-                }
               }
             }
           }
-          return;
         }
-        const loginState: LoginState = JSON.parse(params['state']);
-        if (loginState.download) {
-          this.router.navigate(['/download'], { queryParams: params });
-        }
-        this.sourceUrl = loginState.sourceUrl;
-        this.url = loginState.url;
-        this.repoName = loginState.repoName;
-        this.selectedRepoName = loginState.repoName;
-        this.foundRepoName = loginState.repoName;
-        this.user = loginState.user;
+        return;
+      }
+      const loginState: LoginState = JSON.parse(params['state']);
+      if (loginState.download) {
+        this.router.navigate(['/download'], { queryParams: params });
+      }
+      this.sourceUrl = loginState.sourceUrl;
+      this.url = loginState.url;
+      this.repoName = loginState.repoName;
+      this.selectedRepoName = loginState.repoName;
+      this.foundRepoName = loginState.repoName;
+      this.user = loginState.user;
 
-        if (loginState.plugin !== undefined && loginState.plugin.value !== undefined) {
-          this.plugins = [{ label: loginState.plugin.label, value: loginState.plugin.value! }];
-          this.plugin = loginState.plugin.value;
-        }
+      if (
+        loginState.plugin !== undefined &&
+        loginState.plugin.value !== undefined
+      ) {
+        this.plugins = [
+          { label: loginState.plugin.label, value: loginState.plugin.value! },
+        ];
+        this.plugin = loginState.plugin.value;
+      }
 
-        if (loginState.pluginId !== undefined && loginState.pluginId.value !== undefined) {
-          this.pluginIds = [{ label: loginState.pluginId.label, value: loginState.pluginId.value! }];
-          this.pluginId = loginState.pluginId.value;
-          this.pluginIdSelectHidden = loginState.pluginId.hidden!;
-        } else {
-          this.pluginIdSelectHidden = true;
-        }
+      if (
+        loginState.pluginId !== undefined &&
+        loginState.pluginId.value !== undefined
+      ) {
+        this.pluginIds = [
+          {
+            label: loginState.pluginId.label,
+            value: loginState.pluginId.value!,
+          },
+        ];
+        this.pluginId = loginState.pluginId.value;
+        this.pluginIdSelectHidden = loginState.pluginId.hidden!;
+      } else {
+        this.pluginIdSelectHidden = true;
+      }
 
-        if (loginState.option !== undefined && loginState.option.value !== undefined) {
-          this.branchItems = [{ label: loginState.option.label, value: loginState.option.value! }, this.loadingItem];
-          this.option = loginState.option?.value;
-        }
+      if (
+        loginState.option !== undefined &&
+        loginState.option.value !== undefined
+      ) {
+        this.branchItems = [
+          { label: loginState.option.label, value: loginState.option.value! },
+          this.loadingItem,
+        ];
+        this.option = loginState.option?.value;
+      }
 
-        if (loginState.datasetId !== undefined && loginState.datasetId.value !== undefined) {
-          this.doiItems = [{ label: loginState.datasetId.label, value: loginState.datasetId.value! }, this.loadingItem];
-          this.datasetId = loginState.datasetId?.value;
-        }
+      if (
+        loginState.datasetId !== undefined &&
+        loginState.datasetId.value !== undefined
+      ) {
+        this.doiItems = [
+          {
+            label: loginState.datasetId.label,
+            value: loginState.datasetId.value!,
+          },
+          this.loadingItem,
+        ];
+        this.datasetId = loginState.datasetId?.value;
+      }
 
-        if (loginState.collectionId !== undefined && loginState.collectionId.value !== undefined) {
-          this.collectionItems = [{ label: loginState.collectionId.label, value: loginState.collectionId.value! }, this.loadingItem];
-          this.collectionId = loginState.collectionId?.value;
-        }
+      if (
+        loginState.collectionId !== undefined &&
+        loginState.collectionId.value !== undefined
+      ) {
+        this.collectionItems = [
+          {
+            label: loginState.collectionId.label,
+            value: loginState.collectionId.value!,
+          },
+          this.loadingItem,
+        ];
+        this.collectionId = loginState.collectionId?.value;
+      }
 
-        const code = params['code'];
-        if (loginState.nonce && this.pluginId !== undefined && code !== undefined) {
-          const tokenSubscription = this.oauth.getToken(this.pluginId, code, loginState.nonce).subscribe(x => {
+      const code = params['code'];
+      if (
+        loginState.nonce &&
+        this.pluginId !== undefined &&
+        code !== undefined
+      ) {
+        const tokenSubscription = this.oauth
+          .getToken(this.pluginId, code, loginState.nonce)
+          .subscribe((x) => {
             this.token = x.session_id;
             if (!this.pluginService.isStoreDvToken()) {
-              localStorage.removeItem("dataverseToken");
+              localStorage.removeItem('dataverseToken');
             }
             tokenSubscription.unsubscribe();
           });
-        }
-      });
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -234,7 +344,10 @@ export class ConnectComponent implements OnInit {
    ***********************/
 
   hasOauthConfig(): boolean {
-    return this.pluginService.getPlugin(this.pluginId).tokenGetter?.oauth_client_id !== undefined;
+    return (
+      this.pluginService.getPlugin(this.pluginId).tokenGetter
+        ?.oauth_client_id !== undefined
+    );
   }
 
   isAuthorized(): boolean {
@@ -251,7 +364,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     if (this.dataverseToken !== undefined) {
-      localStorage.setItem("dataverseToken", this.dataverseToken!);
+      localStorage.setItem('dataverseToken', this.dataverseToken!);
     }
     const tg = this.pluginService.getPlugin(this.pluginId).tokenGetter!;
     let url = this.url + (tg.URL === undefined ? '' : tg.URL);
@@ -275,24 +388,30 @@ export class ConnectComponent implements OnInit {
         datasetId: this.getItem(this.doiItems, this.datasetId),
         collectionId: this.getItem(this.collectionItems, this.collectionId),
         nonce: nonce,
+      };
+      let clId = '?client_id=';
+      if (url.includes('?')) {
+        clId = '&client_id=';
       }
-      let clId = '?client_id='
-      if (url.includes("?")) {
-        clId = '&client_id='
-      }
-      url = url + clId + encodeURIComponent(tg.oauth_client_id) +
-        '&redirect_uri=' + encodeURIComponent(this.pluginService.getRedirectUri()) +
-        '&response_type=code&state=' + encodeURIComponent(JSON.stringify(loginState));
+      url =
+        url +
+        clId +
+        encodeURIComponent(tg.oauth_client_id) +
+        '&redirect_uri=' +
+        encodeURIComponent(this.pluginService.getRedirectUri()) +
+        '&response_type=code&state=' +
+        encodeURIComponent(JSON.stringify(loginState));
       // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
       location.href = url;
     } else {
-      window.open(url, "_blank");
+      window.open(url, '_blank');
     }
   }
 
   newNonce(length: number): string {
     let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const charactersLength = characters.length;
     let counter = 0;
     while (counter < length) {
@@ -306,8 +425,8 @@ export class ConnectComponent implements OnInit {
     if (value === undefined) {
       return undefined;
     }
-    const label = items.find(x => x.value === value)?.label
-    return { label: label, value: value }
+    const label = items.find((x) => x.value === value)?.label;
+    return { label: label, value: value };
   }
 
   // API TOKEN FIELD
@@ -325,49 +444,64 @@ export class ConnectComponent implements OnInit {
    ***********/
 
   async connect() {
-    const subscr = this.http.post<string>('api/common/useremail', this.dataverseToken).subscribe({
-      next: (useremail) => {
-        subscr.unsubscribe();
-        console.log(useremail)
-        if (useremail !== "") {
-          const err = this.parseAndCheckFields();
-          if (err !== undefined) {
-            alert(err);
-            return;
-          }
-          const tokenName = this.pluginService.getPlugin(this.pluginId).tokenName
-          if (this.token !== undefined && tokenName !== undefined && tokenName !== '') {
-            localStorage.setItem(tokenName, this.token);
-          }
-          const creds: Credentials = {
-            pluginId: this.pluginId,
-            plugin: this.plugin,
-            repo_name: this.getRepoName(),
-            url: this.url,
-            option: this.option,
-            user: this.user,
-            token: this.token,
-            dataset_id: this.datasetId,
-            newly_created: this.datasetId === new_dataset,
-            dataverse_token: this.dataverseToken,
-          }
-          this.dataStateService.initializeState(creds);
+    const subscr = this.http
+      .post<string>('api/common/useremail', this.dataverseToken)
+      .subscribe({
+        next: (useremail) => {
+          subscr.unsubscribe();
+          console.log(useremail);
+          if (useremail !== '') {
+            const err = this.parseAndCheckFields();
+            if (err !== undefined) {
+              alert(err);
+              return;
+            }
+            const tokenName = this.pluginService.getPlugin(
+              this.pluginId,
+            ).tokenName;
+            if (
+              this.token !== undefined &&
+              tokenName !== undefined &&
+              tokenName !== ''
+            ) {
+              localStorage.setItem(tokenName, this.token);
+            }
+            const creds: Credentials = {
+              pluginId: this.pluginId,
+              plugin: this.plugin,
+              repo_name: this.getRepoName(),
+              url: this.url,
+              option: this.option,
+              user: this.user,
+              token: this.token,
+              dataset_id: this.datasetId,
+              newly_created: this.datasetId === new_dataset,
+              dataverse_token: this.dataverseToken,
+            };
+            this.dataStateService.initializeState(creds);
 
-          if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
-            localStorage.setItem("dataverseToken", this.dataverseToken!);
-          }
+            if (
+              this.dataverseToken !== undefined &&
+              this.pluginService.isStoreDvToken()
+            ) {
+              localStorage.setItem('dataverseToken', this.dataverseToken!);
+            }
 
-          this.router.navigate(['/compare', this.datasetId]);
-        } else {
-          alert("Unknown user: you need to generate a valid Dataverse API token first")
-        }
-      },
-      error: (err) => {
-        subscr.unsubscribe();
-        console.log(err);
-        alert("Error getting user: you need to generate a valid Dataverse API token first")
-      }
-    });
+            this.router.navigate(['/compare', this.datasetId]);
+          } else {
+            alert(
+              'Unknown user: you need to generate a valid Dataverse API token first',
+            );
+          }
+        },
+        error: (err) => {
+          subscr.unsubscribe();
+          console.log(err);
+          alert(
+            'Error getting user: you need to generate a valid Dataverse API token first',
+          );
+        },
+      });
   }
 
   parseAndCheckFields(): string | undefined {
@@ -422,7 +556,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     let toSplit = this.sourceUrl!;
-    if (toSplit.endsWith("/")) {
+    if (toSplit.endsWith('/')) {
       toSplit = toSplit.substring(0, toSplit.length - 1);
     }
     let splitted = toSplit.split('://');
@@ -431,14 +565,14 @@ export class ConnectComponent implements OnInit {
       if (splitted?.length > 2) {
         this.url = 'https://' + splitted[0];
         this.repoName = splitted.slice(1, splitted.length).join('/');
-        if (this.repoName.endsWith(".git")) {
+        if (this.repoName.endsWith('.git')) {
           this.repoName = this.repoName.substring(0, this.repoName.length - 4);
         }
       } else {
-        return "Malformed source url";
+        return 'Malformed source url';
       }
     } else {
-      return "Malformed source url";
+      return 'Malformed source url';
     }
     return;
   }
@@ -498,8 +632,10 @@ export class ConnectComponent implements OnInit {
   }
 
   getRepoNamePlaceholder(): string {
-    const v = this.pluginService.getPlugin(this.pluginId).repoNameFieldPlaceholder;
-    return v === undefined ? "" : v;
+    const v = this.pluginService.getPlugin(
+      this.pluginId,
+    ).repoNameFieldPlaceholder;
+    return v === undefined ? '' : v;
   }
 
   repoNameFieldEditable(): boolean {
@@ -531,19 +667,32 @@ export class ConnectComponent implements OnInit {
       alert('URL is missing');
       return;
     }
-    if (this.getUsernameFieldName() && (this.user === undefined || this.user === '')) {
+    if (
+      this.getUsernameFieldName() &&
+      (this.user === undefined || this.user === '')
+    ) {
       alert(this.getUsernameFieldName() + ' is missing');
       return;
     }
-    if (this.getRepoNameFieldName() && (this.getRepoName() === undefined || this.getRepoName() === '') && !isSearch) {
+    if (
+      this.getRepoNameFieldName() &&
+      (this.getRepoName() === undefined || this.getRepoName() === '') &&
+      !isSearch
+    ) {
       alert(this.getRepoNameFieldName() + ' is missing');
       return;
     }
-    if (this.getTokenFieldName() && (this.token === undefined || this.token === '')) {
+    if (
+      this.getTokenFieldName() &&
+      (this.token === undefined || this.token === '')
+    ) {
       alert(this.getTokenFieldName() + ' is missing');
       return;
     }
-    if (this.branchItems.length !== 0 && this.branchItems.find(x => x === this.loadingItem) === undefined) {
+    if (
+      this.branchItems.length !== 0 &&
+      this.branchItems.find((x) => x === this.loadingItem) === undefined
+    ) {
       return;
     }
 
@@ -581,7 +730,7 @@ export class ConnectComponent implements OnInit {
   async repoNameSearch(searchTerm: string): Promise<SelectItem<string>[]> {
     const req = this.getRepoLookupRequest(true);
     if (req === undefined) {
-      return [{ label: 'error', value: "error" }];
+      return [{ label: 'error', value: 'error' }];
     }
     req.repoName = searchTerm;
     return await firstValueFrom(this.repoLookupService.search(req));
@@ -589,10 +738,17 @@ export class ConnectComponent implements OnInit {
 
   onRepoNameSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+      this.repoNames = [
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ];
       return;
     }
-    this.repoNames = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+    this.repoNames = [
+      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+    ];
     this.repoSearchSubject.next(searchTerm);
   }
 
@@ -604,7 +760,12 @@ export class ConnectComponent implements OnInit {
       this.repoNames = [{ label: 'loading...', value: 'start' }];
       this.repoSearchSubject.next('');
     } else {
-      this.repoNames = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+      this.repoNames = [
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ];
     }
   }
 
@@ -615,7 +776,8 @@ export class ConnectComponent implements OnInit {
   }
 
   getSourceUrlPlaceholder(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).sourceUrlFieldPlaceholder;
+    return this.pluginService.getPlugin(this.pluginId)
+      .sourceUrlFieldPlaceholder;
   }
 
   getSourceUrlValue(): string | undefined {
@@ -630,7 +792,9 @@ export class ConnectComponent implements OnInit {
 
   getPluginRepoNames(): SelectItem<string>[] {
     const res: SelectItem<string>[] = [];
-    this.pluginService.getPlugin(this.pluginId).repoNameFieldValues?.forEach(x => res.push({ label: x, value: x }));
+    this.pluginService
+      .getPlugin(this.pluginId)
+      .repoNameFieldValues?.forEach((x) => res.push({ label: x, value: x }));
     return res;
   }
 
@@ -645,8 +809,10 @@ export class ConnectComponent implements OnInit {
   }
 
   getOptionPlaceholder(): string {
-    const v = this.pluginService.getPlugin(this.pluginId).optionFieldPlaceholder;
-    return v === undefined ? "" : v;
+    const v = this.pluginService.getPlugin(
+      this.pluginId,
+    ).optionFieldPlaceholder;
+    return v === undefined ? '' : v;
   }
 
   getOptions(node?: TreeNode<string>): void {
@@ -663,7 +829,14 @@ export class ConnectComponent implements OnInit {
       next: (items: SelectItem<string>[]) => {
         if (items && node) {
           const nodes: TreeNode<string>[] = [];
-          items.forEach(i => nodes.push({ label: i.label, data: i.value, leaf: false, selectable: true }))
+          items.forEach((i) =>
+            nodes.push({
+              label: i.label,
+              data: i.value,
+              leaf: false,
+              selectable: true,
+            }),
+          );
           node.children = nodes;
           this.optionsLoading = false;
         } else if (items && items.length > 0) {
@@ -674,7 +847,7 @@ export class ConnectComponent implements OnInit {
         httpSubscription.unsubscribe();
       },
       error: (err) => {
-        alert("branch lookup failed: " + err.error);
+        alert('branch lookup failed: ' + err.error);
         this.branchItems = [];
         this.option = undefined;
         this.optionsLoading = false;
@@ -683,7 +856,9 @@ export class ConnectComponent implements OnInit {
   }
 
   isOptionFieldInteractive(): boolean {
-    return this.pluginService.getPlugin(this.pluginId).optionFieldInteractive ? true : false;
+    return this.pluginService.getPlugin(this.pluginId).optionFieldInteractive
+      ? true
+      : false;
   }
 
   optionSelected(node: TreeNode<string>): void {
@@ -726,8 +901,10 @@ export class ConnectComponent implements OnInit {
   }
 
   getDataverseToken(): void {
-    const url = this.pluginService.getExternalURL() + '/dataverseuser.xhtml?selectTab=apiTokenTab';
-    window.open(url, "_blank");
+    const url =
+      this.pluginService.getExternalURL() +
+      '/dataverseuser.xhtml?selectTab=apiTokenTab';
+    window.open(url, '_blank');
   }
 
   onUserChange() {
@@ -735,42 +912,66 @@ export class ConnectComponent implements OnInit {
     this.collectionItems = [];
     this.datasetId = undefined;
     this.collectionId = undefined;
-    if (this.dataverseToken !== undefined && this.pluginService.isStoreDvToken()) {
-      localStorage.setItem("dataverseToken", this.dataverseToken!);
+    if (
+      this.dataverseToken !== undefined &&
+      this.pluginService.isStoreDvToken()
+    ) {
+      localStorage.setItem('dataverseToken', this.dataverseToken!);
     }
   }
 
   // DV OBJECTS: COMMON
 
-  getDvObjectOptions(objectType: string, dvItems: SelectItem<string>[], setter: (comp: ConnectComponent, items: SelectItem<string>[]) => void): void {
-    if (dvItems.length !== 0 && dvItems.find(x => x === this.loadingItem) === undefined) {
+  getDvObjectOptions(
+    objectType: string,
+    dvItems: SelectItem<string>[],
+    setter: (comp: ConnectComponent, items: SelectItem<string>[]) => void,
+  ): void {
+    if (
+      dvItems.length !== 0 &&
+      dvItems.find((x) => x === this.loadingItem) === undefined
+    ) {
       return;
     }
     setter(this, this.loadingItems);
 
-    const httpSubscription = this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), objectType, undefined, this.dataverseToken).subscribe({
-      next: (items: SelectItem<string>[]) => {
-        if (items && items.length > 0) {
-          setter(this, items);
-        } else {
+    const httpSubscription = this.dvObjectLookupService
+      .getItems(
+        this.collectionId ? this.collectionId! : '',
+        objectType,
+        undefined,
+        this.dataverseToken,
+      )
+      .subscribe({
+        next: (items: SelectItem<string>[]) => {
+          if (items && items.length > 0) {
+            setter(this, items);
+          } else {
+            setter(this, []);
+          }
+          httpSubscription.unsubscribe();
+        },
+        error: (err) => {
+          alert('doi lookup failed: ' + err.error);
           setter(this, []);
-        }
-        httpSubscription.unsubscribe();
-      },
-      error: (err) => {
-        alert("doi lookup failed: " + err.error);
-        setter(this, []);
-      },
-    });
+        },
+      });
   }
 
   // COLLECTIONS
 
   getCollectionOptions(): void {
-    this.getDvObjectOptions("Dataverse", this.collectionItems, this.setCollectionItems)
+    this.getDvObjectOptions(
+      'Dataverse',
+      this.collectionItems,
+      this.setCollectionItems,
+    );
   }
 
-  setCollectionItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
+  setCollectionItems(
+    comp: ConnectComponent,
+    items: SelectItem<string>[],
+  ): void {
     comp.collectionItems = items;
     comp.collectionId = undefined;
   }
@@ -790,21 +991,35 @@ export class ConnectComponent implements OnInit {
 
   onCollectionSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.collectionItems = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+      this.collectionItems = [
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ];
       return;
     }
-    this.collectionItems = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+    this.collectionItems = [
+      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+    ];
     this.collectionSearchSubject.next(searchTerm);
   }
 
   async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), "Dataverse", searchTerm, this.dataverseToken));
+    return await firstValueFrom(
+      this.dvObjectLookupService.getItems(
+        this.collectionId ? this.collectionId! : '',
+        'Dataverse',
+        searchTerm,
+        this.dataverseToken,
+      ),
+    );
   }
 
   // DATASETS
 
   getDoiOptions(): void {
-    this.getDvObjectOptions("Dataset", this.doiItems, this.setDoiItems)
+    this.getDvObjectOptions('Dataset', this.doiItems, this.setDoiItems);
   }
 
   setDoiItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
@@ -816,28 +1031,43 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.datasetFieldEditable();
   }
 
-  // NEW DATASET 
+  // NEW DATASET
 
   createNewDatasetEnabled(): boolean {
     return this.pluginService.createNewDatasetEnabled();
   }
 
   newDataset() {
-    const datasetId = (this.collectionId ? this.collectionId! : "") + ':' + new_dataset
+    const datasetId =
+      (this.collectionId ? this.collectionId! : '') + ':' + new_dataset;
     this.doiItems = [{ label: new_dataset, value: datasetId }];
     this.datasetId = datasetId;
   }
 
   onDatasetSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems = [{ label: 'start typing to search (at least three letters)', value: 'start' }];
+      this.doiItems = [
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ];
       return;
     }
-    this.doiItems = [{ label: 'searching "' + searchTerm + '"...', value: searchTerm }];
+    this.doiItems = [
+      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+    ];
     this.datasetSearchSubject.next(searchTerm);
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(this.dvObjectLookupService.getItems((this.collectionId ? this.collectionId! : ""), "Dataset", searchTerm, this.dataverseToken));
+    return await firstValueFrom(
+      this.dvObjectLookupService.getItems(
+        this.collectionId ? this.collectionId! : '',
+        'Dataset',
+        searchTerm,
+        this.dataverseToken,
+      ),
+    );
   }
 }

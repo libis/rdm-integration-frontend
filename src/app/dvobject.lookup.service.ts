@@ -6,15 +6,19 @@ import { Observable } from 'rxjs';
 import { SelectItem } from 'primeng/api';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DvObjectLookupService {
-
   url = 'api/common/dvobjects';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  getItems(collectionId: string, objectType: string, searchTerm?: string, token?: string): Observable<SelectItem<string>[]> {
+  getItems(
+    collectionId: string,
+    objectType: string,
+    searchTerm?: string,
+    token?: string,
+  ): Observable<SelectItem<string>[]> {
     const req = {
       token: token,
       collectionId: collectionId,

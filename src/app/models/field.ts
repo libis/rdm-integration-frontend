@@ -1,17 +1,17 @@
 export interface Metadata {
-    datasetVersion: DatasetVersion;
+  datasetVersion: DatasetVersion;
 }
 export interface DatasetVersion {
-    metadataBlocks: Metadatablocks;
+  metadataBlocks: Metadatablocks;
 }
 export interface Metadatablocks {
-    citation: CitationBlock;
+  citation: CitationBlock;
 }
 
 export interface CitationBlock {
-    displayName: string;
-    fields: MetadataField[];
-    name: string;
+  displayName: string;
+  fields: MetadataField[];
+  name: string;
 }
 
 export interface MetadataField {
@@ -28,7 +28,7 @@ export interface FieldDictonary {
 }
 
 export interface Expandedvalue {
-    [index: string]: string;
+  [index: string]: string;
 }
 
 export interface Field {
@@ -41,8 +41,8 @@ export interface Field {
 }
 
 export enum Fieldaction {
-    Ignore = 0,
-    Copy = 1,
-    Update = 2,
-    Custom = 4,
+  Ignore = 0,
+  Copy = 1,
+  Update = 2,
+  Custom = 4,
 }

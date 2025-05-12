@@ -10,7 +10,10 @@ import { CompareComponent } from './compare/compare.component';
 import { ConnectComponent } from './connect/connect.component';
 import { DatafileComponent } from './datafile/datafile.component';
 import { SubmitComponent } from './submit/submit.component';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { SubmittedFileComponent } from './submitted-file/submitted-file.component';
 import { TreeTableModule } from 'primeng/treetable';
@@ -93,7 +96,7 @@ import { definePreset } from '@primeng/themes';
               700: '{blue.700}',
               800: '{blue.800}',
               900: '{blue.900}',
-              950: '{blue.950}'
+              950: '{blue.950}',
             },
             colorScheme: {
               light: {
@@ -109,8 +112,8 @@ import { definePreset } from '@primeng/themes';
                   700: '{zinc.700}',
                   800: '{zinc.800}',
                   900: '{zinc.900}',
-                  950: '{zinc.950}'
-                }
+                  950: '{zinc.950}',
+                },
               },
               dark: {
                 surface: {
@@ -125,15 +128,15 @@ import { definePreset } from '@primeng/themes';
                   700: '{zinc.700}',
                   800: '{zinc.800}',
                   900: '{zinc.900}',
-                  950: '{zinc.950}'
-                }
-              }
-            }
-          }
+                  950: '{zinc.950}',
+                },
+              },
+            },
+          },
         }),
-      }
-    })
+      },
+    }),
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

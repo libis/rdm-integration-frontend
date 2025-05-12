@@ -8,28 +8,36 @@ import { DataService } from './data.service';
   selector: 'app-root',
   standalone: false,
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
   title = 'datasync';
 
-  constructor(private primengConfig: PrimeNG, public dataService: DataService) { }
+  constructor(
+    private primengConfig: PrimeNG,
+    public dataService: DataService,
+  ) {}
   ngOnInit(): void {
     this.primengConfig.ripple.set(true);
-    const dvToken = localStorage.getItem("dataverseToken");
-    const subscription = this.dataService.checkAccessToQueue('', dvToken ? dvToken : '', '').subscribe({
-      next: (access) => {
-        subscription.unsubscribe();
-        if (!access.access) {
-          const computeLink = document.getElementById('navbar-compute-li') as HTMLElement;
-          computeLink?.style.setProperty('display', 'none')
-        }
-      },
-      error: () => {
-        const computeLink = document.getElementById('navbar-compute-li') as HTMLElement;
-        computeLink?.style.setProperty('display', 'none')
-      }
-    });
+    const dvToken = localStorage.getItem('dataverseToken');
+    const subscription = this.dataService
+      .checkAccessToQueue('', dvToken ? dvToken : '', '')
+      .subscribe({
+        next: (access) => {
+          subscription.unsubscribe();
+          if (!access.access) {
+            const computeLink = document.getElementById(
+              'navbar-compute-li',
+            ) as HTMLElement;
+            computeLink?.style.setProperty('display', 'none');
+          }
+        },
+        error: () => {
+          const computeLink = document.getElementById(
+            'navbar-compute-li',
+          ) as HTMLElement;
+          computeLink?.style.setProperty('display', 'none');
+        },
+      });
   }
-
 }

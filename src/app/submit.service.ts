@@ -8,16 +8,21 @@ import { Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SubmitService {
-
   store_url = 'api/common/store';
-  download_url = "api/common/download";
+  download_url = 'api/common/download';
 
-  constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
+  constructor(
+    private http: HttpClient,
+    private credentialsService: CredentialsService,
+  ) {}
 
-  submit(selected: Datafile[], sendEmailOnSuccess: boolean): Observable<StoreResult> {
+  submit(
+    selected: Datafile[],
+    sendEmailOnSuccess: boolean,
+  ): Observable<StoreResult> {
     const credentials = this.credentialsService.credentials;
     const req = {
       plugin: credentials.plugin,
@@ -38,11 +43,19 @@ export class SubmitService {
     return this.http.post<StoreResult>(this.store_url, req);
   }
 
-  download(selected: Datafile[], endpoint: string | undefined, option: string | undefined, globusToken: string | undefined, pid: string | undefined, dvToken: string | undefined, downloadId: string | undefined): Observable<string> {
+  download(
+    selected: Datafile[],
+    endpoint: string | undefined,
+    option: string | undefined,
+    globusToken: string | undefined,
+    pid: string | undefined,
+    dvToken: string | undefined,
+    downloadId: string | undefined,
+  ): Observable<string> {
     const req = {
       plugin: 'globus',
       streamParams: {
-        pluginId: "globus",
+        pluginId: 'globus',
         repoName: endpoint,
         option: option,
         token: globusToken,

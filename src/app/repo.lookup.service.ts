@@ -7,14 +7,13 @@ import { SelectItem } from 'primeng/api';
 import { RepoLookupRequest } from './models/repo-lookup';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RepoLookupService {
-
   url = 'api/plugin/options';
   search_url = 'api/plugin/search';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   getOptions(req: RepoLookupRequest): Observable<SelectItem<string>[]> {
     return this.http.post<SelectItem<string>[]>(this.url, req);

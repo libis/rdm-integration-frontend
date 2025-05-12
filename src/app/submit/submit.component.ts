@@ -1,4 +1,3 @@
-
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit } from '@angular/core';
@@ -9,7 +8,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
-import { Location } from '@angular/common'
+import { Location } from '@angular/common';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
@@ -18,25 +17,30 @@ import { DatasetService } from '../dataset.service';
 import { firstValueFrom } from 'rxjs';
 import { MetadataRequest } from '../models/metadata-request';
 import { TreeNode } from 'primeng/api';
-import { Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
+import {
+  Field,
+  Fieldaction,
+  FieldDictonary,
+  Metadata,
+  MetadataField,
+} from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 @Component({
   selector: 'app-submit',
   standalone: false,
   templateUrl: './submit.component.html',
-  styleUrls: ['./submit.component.scss']
+  styleUrls: ['./submit.component.scss'],
 })
 export class SubmitComponent implements OnInit {
+  icon_warning = 'pi pi-exclamation-triangle';
+  icon_copy = 'pi pi-copy';
+  icon_update = 'pi pi-clone';
+  icon_delete = 'pi pi-trash';
 
-  icon_warning = "pi pi-exclamation-triangle";
-  icon_copy = "pi pi-copy";
-  icon_update = "pi pi-clone";
-  icon_delete = "pi pi-trash";
-
-  data: Datafile[] = [];// this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
-  pid = "";
-  datasetUrl = "";
+  data: Datafile[] = []; // this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
+  pid = '';
+  datasetUrl = '';
 
   // local state derived from this.data:
   created: Datafile[] = [];
@@ -69,52 +73,62 @@ export class SubmitComponent implements OnInit {
     public dataService: DataService,
     private credentialsService: CredentialsService,
     private datasetService: DatasetService,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
-    const subscription = this.dataService.checkAccessToQueue('', this.credentialsService.credentials.dataverse_token, '').subscribe({
-      next: (access) => {
-        subscription.unsubscribe();
-        this.hasAccessToCompute = access.access;
-      },
-      error: () => {
-        subscription.unsubscribe();
-      }
-    });
+    const subscription = this.dataService
+      .checkAccessToQueue(
+        '',
+        this.credentialsService.credentials.dataverse_token,
+        '',
+      )
+      .subscribe({
+        next: (access) => {
+          subscription.unsubscribe();
+          this.hasAccessToCompute = access.access;
+        },
+        error: () => {
+          subscription.unsubscribe();
+        },
+      });
   }
 
   getDataSubscription(): void {
-    const dataSubscription = this.dataUpdatesService.updateData(this.data, this.pid).subscribe({
-      next: async (res: CompareResult) => {
-        dataSubscription?.unsubscribe();
-        if (res.data !== undefined) {
-          this.setData(res.data);
-        }
-        if (!this.hasUnfinishedDataFiles()) {
-          this.done = true;
-        } else {
-          await this.utils.sleep(1000);
-          this.getDataSubscription();
-        }
-      },
-      error: (err) => {
-        dataSubscription?.unsubscribe();
-        alert("getting status of data failed: " + err.error);
-        this.router.navigate(['/connect']);
-      },
-    });
+    const dataSubscription = this.dataUpdatesService
+      .updateData(this.data, this.pid)
+      .subscribe({
+        next: async (res: CompareResult) => {
+          dataSubscription?.unsubscribe();
+          if (res.data !== undefined) {
+            this.setData(res.data);
+          }
+          if (!this.hasUnfinishedDataFiles()) {
+            this.done = true;
+          } else {
+            await this.utils.sleep(1000);
+            this.getDataSubscription();
+          }
+        },
+        error: (err) => {
+          dataSubscription?.unsubscribe();
+          alert('getting status of data failed: ' + err.error);
+          this.router.navigate(['/connect']);
+        },
+      });
   }
 
   hasUnfinishedDataFiles(): boolean {
-    return this.created.some((d) => d.status !== Filestatus.Equal) ||
+    return (
+      this.created.some((d) => d.status !== Filestatus.Equal) ||
       this.updated.some((d) => d.status !== Filestatus.Equal) ||
-      this.deleted.some((d) => d.status !== Filestatus.New);
+      this.deleted.some((d) => d.status !== Filestatus.New)
+    );
   }
 
   loadData(): void {
     const value = this.dataStateService.getCurrentValue();
-    this.pid = (value && value.id) ? value.id : "";
+    this.pid = value && value.id ? value.id : '';
     const data = value?.data;
     if (data) {
       this.setData(data);
@@ -140,10 +154,12 @@ export class SubmitComponent implements OnInit {
         dvToken: credentials.dataverse_token,
         compareResult: this.dataStateService.getCurrentValue(),
       };
-      this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
+      this.metadata = await firstValueFrom(
+        this.datasetService.getMetadata(req),
+      );
       const rowDataMap = this.mapFields(this.metadata);
-      rowDataMap.forEach(v => this.addChild(v, rowDataMap));
-      this.root = rowDataMap.get("");
+      rowDataMap.forEach((v) => this.addChild(v, rowDataMap));
+      this.root = rowDataMap.get('');
       this.rowNodeMap = rowDataMap;
       if (this.root?.children) {
         this.rootNodeChildren = this.root.children;
@@ -153,40 +169,44 @@ export class SubmitComponent implements OnInit {
 
   toCreate(): Datafile[] {
     const result: Datafile[] = [];
-    this.data.forEach(datafile => {
+    this.data.forEach((datafile) => {
       if (datafile.action === Fileaction.Copy) {
         result.push(datafile);
       }
-    })
+    });
     return result;
   }
 
   toUpdate(): Datafile[] {
     const result: Datafile[] = [];
-    this.data.forEach(datafile => {
+    this.data.forEach((datafile) => {
       if (datafile.action === Fileaction.Update) {
         result.push(datafile);
       }
-    })
+    });
     return result;
   }
 
   toDelete(): Datafile[] {
     const result: Datafile[] = [];
-    this.data.forEach(datafile => {
+    this.data.forEach((datafile) => {
       if (datafile.action === Fileaction.Delete) {
-        if (datafile.attributes?.remoteHashType === undefined || datafile.attributes?.remoteHashType === '') { // file from unknown origin, by setting the hash type to not empty value we can detect in comparison that the file got deleted
-          datafile.attributes!.remoteHashType = 'unknown'
-          datafile.attributes!.remoteHash = 'unknown'
+        if (
+          datafile.attributes?.remoteHashType === undefined ||
+          datafile.attributes?.remoteHashType === ''
+        ) {
+          // file from unknown origin, by setting the hash type to not empty value we can detect in comparison that the file got deleted
+          datafile.attributes!.remoteHashType = 'unknown';
+          datafile.attributes!.remoteHash = 'unknown';
         }
         result.push(datafile);
       }
-    })
+    });
     return result;
   }
 
   submit() {
-    if (this.credentialsService.credentials.plugin === "globus") {
+    if (this.credentialsService.credentials.plugin === 'globus') {
       this.continueSubmit();
     } else {
       this.popup = true;
@@ -197,10 +217,11 @@ export class SubmitComponent implements OnInit {
     this.popup = false;
     this.disabled = true;
     const selected: Datafile[] = [];
-    this.data.forEach(datafile => {
-      const action = datafile.action === undefined ? Fileaction.Ignore : datafile.action;
+    this.data.forEach((datafile) => {
+      const action =
+        datafile.action === undefined ? Fileaction.Ignore : datafile.action;
       if (action != Fileaction.Ignore) {
-        selected.push(datafile)
+        selected.push(datafile);
       }
     });
     if (selected.length === 0) {
@@ -209,7 +230,7 @@ export class SubmitComponent implements OnInit {
     }
 
     if (this.pid.endsWith(':New Dataset')) {
-      const ids = this.pid.split(':')
+      const ids = this.pid.split(':');
       const ok = await this.newDataset(ids[0]);
       if (!ok) {
         this.disabled = false;
@@ -217,23 +238,26 @@ export class SubmitComponent implements OnInit {
       }
     }
 
-    const httpSubscription = this.submitService.submit(selected, this.sendEmailOnSuccess).subscribe({
-      next: (data: StoreResult) => {
-        if (data.status !== "OK") {// this should not happen
-          alert("store failed, status: " + data.status);
+    const httpSubscription = this.submitService
+      .submit(selected, this.sendEmailOnSuccess)
+      .subscribe({
+        next: (data: StoreResult) => {
+          if (data.status !== 'OK') {
+            // this should not happen
+            alert('store failed, status: ' + data.status);
+            this.router.navigate(['/connect']);
+          } else {
+            this.getDataSubscription();
+            this.submitted = true;
+            this.datasetUrl = data.datasetUrl!;
+          }
+          httpSubscription.unsubscribe();
+        },
+        error: (err) => {
+          alert('store failed: ' + err.error);
           this.router.navigate(['/connect']);
-        } else {
-          this.getDataSubscription();
-          this.submitted = true;
-          this.datasetUrl = data.datasetUrl!;
-        }
-        httpSubscription.unsubscribe();
-      },
-      error: (err) => {
-        alert("store failed: " + err.error);
-        this.router.navigate(['/connect']);
-      },
-    });
+        },
+      });
   }
 
   back(): void {
@@ -241,7 +265,7 @@ export class SubmitComponent implements OnInit {
   }
 
   goToDataset() {
-    window.open(this.datasetUrl, "_blank");
+    window.open(this.datasetUrl, '_blank');
   }
 
   goToCompute() {
@@ -254,13 +278,19 @@ export class SubmitComponent implements OnInit {
 
   async newDataset(collectionId: string): Promise<boolean> {
     const metadata = this.filteredMetadata();
-    const data = await firstValueFrom(this.datasetService.newDataset((collectionId), this.credentialsService.credentials.dataverse_token, metadata));
-    if (data.persistentId !== undefined && data.persistentId !== "") {
+    const data = await firstValueFrom(
+      this.datasetService.newDataset(
+        collectionId,
+        this.credentialsService.credentials.dataverse_token,
+        metadata,
+      ),
+    );
+    if (data.persistentId !== undefined && data.persistentId !== '') {
       this.pid = data.persistentId;
       this.credentialsService.credentials.dataset_id = data.persistentId;
       return true;
     } else {
-      alert("creating new dataset failed");
+      alert('creating new dataset failed');
       return false;
     }
   }
@@ -291,7 +321,7 @@ export class SubmitComponent implements OnInit {
   }
 
   addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {
-    if (v.data?.id == "") {
+    if (v.data?.id == '') {
       return;
     }
     const parent = rowDataMap.get(v.data!.parent!)!;
@@ -301,31 +331,42 @@ export class SubmitComponent implements OnInit {
 
   mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
     const rootData: Field = {
-      id: "",
-      parent: "",
-      name: "",
+      id: '',
+      parent: '',
+      name: '',
       action: Fieldaction.Copy,
-    }
+    };
 
-    const rowDataMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
-    rowDataMap.set("", {
+    const rowDataMap: Map<string, TreeNode<Field>> = new Map<
+      string,
+      TreeNode<Field>
+    >();
+    rowDataMap.set('', {
       data: rootData,
     });
 
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
-      this.addToDataMap(d, "", rowDataMap);
-
+      this.addToDataMap(d, '', rowDataMap);
     });
     return rowDataMap;
   }
 
-  private addToDataMap(d: MetadataField, parent: string, rowDataMap: Map<string, TreeNode<Field>>) {
-    if (d.value && Array.isArray(d.value) && d.value.length > 0 && typeof d.value[0] === "string") {
+  private addToDataMap(
+    d: MetadataField,
+    parent: string,
+    rowDataMap: Map<string, TreeNode<Field>>,
+  ) {
+    if (
+      d.value &&
+      Array.isArray(d.value) &&
+      d.value.length > 0 &&
+      typeof d.value[0] === 'string'
+    ) {
       let content = d.value[0];
       for (let i = 1; i < d.value.length; i++) {
-        content = content + ", " + d.value[i];
+        content = content + ', ' + d.value[i];
       }
-      const id = "" + this.id++;
+      const id = '' + this.id++;
       d.id = id;
       const data: Field = {
         id: id,
@@ -338,9 +379,9 @@ export class SubmitComponent implements OnInit {
       rowDataMap.set(id, {
         data: data,
       });
-    } else if (d.value && typeof d.value !== "string") {
+    } else if (d.value && typeof d.value !== 'string') {
       (d.value as FieldDictonary[]).forEach((v) => {
-        const id = "" + this.id++;
+        const id = '' + this.id++;
         const data: Field = {
           id: id,
           parent: parent,
@@ -354,7 +395,7 @@ export class SubmitComponent implements OnInit {
         this.mapChildField(id, v, rowDataMap);
       });
     } else {
-      const id = "" + this.id++;
+      const id = '' + this.id++;
       d.id = id;
       const data: Field = {
         id: id,
@@ -370,14 +411,22 @@ export class SubmitComponent implements OnInit {
     }
   }
 
-  mapChildField(parent: string, fieldDictonary: FieldDictonary, rowDataMap: Map<string, TreeNode<Field>>) {
+  mapChildField(
+    parent: string,
+    fieldDictonary: FieldDictonary,
+    rowDataMap: Map<string, TreeNode<Field>>,
+  ) {
     Object.values(fieldDictonary).forEach((d) => {
-      this.addToDataMap(d, parent, rowDataMap)
-    })
+      this.addToDataMap(d, parent, rowDataMap);
+    });
   }
 
   filteredMetadata(): Metadata | undefined {
-    if (!this.metadata || !this.rootNodeChildren || this.rootNodeChildren.length === 0) {
+    if (
+      !this.metadata ||
+      !this.rootNodeChildren ||
+      this.rootNodeChildren.length === 0
+    ) {
       return undefined;
     }
     let res: MetadataField[] = [];
@@ -391,7 +440,12 @@ export class SubmitComponent implements OnInit {
           value: f.value,
         };
         res = res.concat(field);
-      } else if (f.value && Array.isArray(f.value) && f.value.length > 0 && typeof f.value[0] !== "string") {
+      } else if (
+        f.value &&
+        Array.isArray(f.value) &&
+        f.value.length > 0 &&
+        typeof f.value[0] !== 'string'
+      ) {
         const dicts = this.customValue(f.value as FieldDictonary[]);
         if (dicts.length > 0) {
           const field: MetadataField = {
@@ -404,17 +458,18 @@ export class SubmitComponent implements OnInit {
           res = res.concat(field);
         }
       }
-    })
+    });
     return {
       datasetVersion: {
         metadataBlocks: {
           citation: {
-            displayName: this.metadata.datasetVersion.metadataBlocks.citation.displayName,
+            displayName:
+              this.metadata.datasetVersion.metadataBlocks.citation.displayName,
             fields: res,
             name: this.metadata.datasetVersion.metadataBlocks.citation.name,
-          }
-        }
-      }
+          },
+        },
+      },
     };
   }
 
@@ -433,7 +488,12 @@ export class SubmitComponent implements OnInit {
             value: f.value,
           };
           dict[k] = field;
-        } else if (f.value && Array.isArray(f.value) && f.value.length > 0 && typeof f.value[0] !== "string") {
+        } else if (
+          f.value &&
+          Array.isArray(f.value) &&
+          f.value.length > 0 &&
+          typeof f.value[0] !== 'string'
+        ) {
           const dicts = this.customValue(f.value as FieldDictonary[]);
           if (dicts.length > 0) {
             const field: MetadataField = {

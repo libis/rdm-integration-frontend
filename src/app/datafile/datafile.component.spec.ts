@@ -8,9 +8,8 @@ describe('DatafileComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ DatafileComponent ]
-    })
-    .compileComponents();
+      declarations: [DatafileComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(DatafileComponent);
     component = fixture.componentInstance;

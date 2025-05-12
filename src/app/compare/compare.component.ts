@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
+
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit } from '@angular/core';
@@ -18,17 +18,16 @@ import { UtilsService } from '../utils.service';
   selector: 'app-compare',
   standalone: false,
   templateUrl: './compare.component.html',
-  styleUrls: ['./compare.component.scss']
+  styleUrls: ['./compare.component.scss'],
 })
 export class CompareComponent implements OnInit {
-
-  icon_noaction = "pi pi-stop";
-  icon_update = "pi pi-copy";
-  icon_mirror = "pi pi-sync";
-  icon_submit = "pi pi-save";
-  icon_compare = "pi pi-flag";
-  icon_action = "pi pi-bolt";
-  icon_warning = "pi pi-exclamation-triangle";
+  icon_noaction = 'pi pi-stop';
+  icon_update = 'pi pi-copy';
+  icon_mirror = 'pi pi-sync';
+  icon_submit = 'pi pi-save';
+  icon_compare = 'pi pi-flag';
+  icon_action = 'pi pi-bolt';
+  icon_warning = 'pi pi-exclamation-triangle';
 
   disabled = true;
   loading = true;
@@ -39,36 +38,51 @@ export class CompareComponent implements OnInit {
 
   data: CompareResult = {};
   rootNodeChildren: TreeNode<Datafile>[] = [];
-  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
+  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
+    string,
+    TreeNode<Datafile>
+  >();
 
   filterItems: any[] = [
     {
       label: '(New files)',
       icon: 'pi pi-plus-circle',
-      iconStyle: { 'color': 'green' },
+      iconStyle: { color: 'green' },
       title: "Files that aren't in the dataset yet",
       fileStatus: Filestatus.New,
-    }, {
+    },
+    {
       label: '(Changed files)',
       icon: 'pi pi-exclamation-circle',
-      iconStyle: { 'color': 'blue' },
-      title: 'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
+      iconStyle: { color: 'blue' },
+      title:
+        'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
       fileStatus: Filestatus.Updated,
-    }, {
+    },
+    {
       label: '(Unchanged files)',
       icon: 'pi pi-check-circle',
-      iconStyle: { 'color': 'black' },
-      title: 'Files that are the same in the dataset and the active data repository',
+      iconStyle: { color: 'black' },
+      title:
+        'Files that are the same in the dataset and the active data repository',
       fileStatus: Filestatus.Equal,
-    }, {
+    },
+    {
       label: '(Files only in RDR)',
       icon: 'pi pi-minus-circle',
-      iconStyle: { 'color': 'red' },
-      title: 'Files that are only in the dataset, but not in the active data repository',
+      iconStyle: { color: 'red' },
+      title:
+        'Files that are only in the dataset, but not in the active data repository',
       fileStatus: Filestatus.Deleted,
-    }];
+    },
+  ];
 
-  selectedFilterItems: any[] = [this.filterItems[0], this.filterItems[1], this.filterItems[2], this.filterItems[3]];
+  selectedFilterItems: any[] = [
+    this.filterItems[0],
+    this.filterItems[1],
+    this.filterItems[2],
+    this.filterItems[3],
+  ];
 
   constructor(
     public dataUpdatesService: DataUpdatesService,
@@ -78,66 +92,74 @@ export class CompareComponent implements OnInit {
     private folderActionUpdateService: FolderActionUpdateService,
     private pluginService: PluginService,
     private utils: UtilsService,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     if (this.dataStateService.getCurrentValue() != null) {
-      this.dataStateService.initializeState(this.credentialsService.credentials);
+      this.dataStateService.initializeState(
+        this.credentialsService.credentials,
+      );
     }
     this.setUpdatedDataSubscription();
   }
 
   setUpdatedDataSubscription() {
-    const initialStateSubscription = this.dataStateService.getObservableState().subscribe((data) => {
-      if (data !== null) {
-        initialStateSubscription.unsubscribe();
-        this.setData(data);
-        if (data.data && data.id) {
-          this.maxFileSize = data.maxFileSize;
-          this.rejected = data.rejected;
-          if (this.data.status !== ResultStatus.Updating) {
-            this.disabled = false;
-            this.loading = false;
-          } else {
-            this.getUpdatedData(0);
+    const initialStateSubscription = this.dataStateService
+      .getObservableState()
+      .subscribe((data) => {
+        if (data !== null) {
+          initialStateSubscription.unsubscribe();
+          this.setData(data);
+          if (data.data && data.id) {
+            this.maxFileSize = data.maxFileSize;
+            this.rejected = data.rejected;
+            if (this.data.status !== ResultStatus.Updating) {
+              this.disabled = false;
+              this.loading = false;
+            } else {
+              this.getUpdatedData(0);
+            }
           }
         }
-      }
-    });
+      });
   }
 
   getUpdatedData(cnt: number): void {
-    const subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe(async (data: CompareResult) => {
-      cnt++;
-      subscription.unsubscribe();
-      if (data.data && data.id) {
-        this.setData(data);
-      }
-      if (this.data.status !== ResultStatus.Updating) {
-        this.disabled = false;
-        this.loading = false;
-      } else if (cnt > 10) {
-        this.loading = false;
-        this.refreshHidden = false;
-      } else {
-        await this.utils.sleep(1000);
-        this.getUpdatedData(cnt);
-      }
-    });
+    const subscription = this.dataUpdatesService
+      .updateData(this.data.data!, this.data.id!)
+      .subscribe(async (data: CompareResult) => {
+        cnt++;
+        subscription.unsubscribe();
+        if (data.data && data.id) {
+          this.setData(data);
+        }
+        if (this.data.status !== ResultStatus.Updating) {
+          this.disabled = false;
+          this.loading = false;
+        } else if (cnt > 10) {
+          this.loading = false;
+          this.refreshHidden = false;
+        } else {
+          await this.utils.sleep(1000);
+          this.getUpdatedData(cnt);
+        }
+      });
   }
 
   refresh(): void {
-    const subscription = this.dataUpdatesService.updateData(this.data.data!, this.data.id!).subscribe((data) => {
-      subscription.unsubscribe();
-      if (data.data && data.id) {
-        this.setData(data);
-      }
-      if (this.data.status !== ResultStatus.Updating) {
-        this.disabled = false;
-      } else {
-        this.refreshHidden = true;
-      }
-    });
+    const subscription = this.dataUpdatesService
+      .updateData(this.data.data!, this.data.id!)
+      .subscribe((data) => {
+        subscription.unsubscribe();
+        if (data.data && data.id) {
+          this.setData(data);
+        }
+        if (this.data.status !== ResultStatus.Updating) {
+          this.disabled = false;
+        } else {
+          this.refreshHidden = true;
+        }
+      });
   }
 
   rowClass(datafile: Datafile): string {
@@ -157,17 +179,17 @@ export class CompareComponent implements OnInit {
   }
 
   noActionSelection(): void {
-    this.rowNodeMap.forEach(rowNode => {
+    this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
       }
-      datafile.action = Fileaction.Ignore
+      datafile.action = Fileaction.Ignore;
     });
   }
 
   updateSelection(): void {
-    this.rowNodeMap.forEach(rowNode => {
+    this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
@@ -190,7 +212,7 @@ export class CompareComponent implements OnInit {
   }
 
   mirrorSelection(): void {
-    this.rowNodeMap.forEach(rowNode => {
+    this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
       if (datafile.hidden) {
         return;
@@ -228,9 +250,11 @@ export class CompareComponent implements OnInit {
 
   filterOn(filters: any[]): void {
     const nodes: TreeNode<Datafile>[] = [];
-    this.rowNodeMap.forEach(rowNode => {
+    this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
-      datafile.hidden = !datafile.attributes?.isFile || !filters.some(i => datafile.status === i.fileStatus);
+      datafile.hidden =
+        !datafile.attributes?.isFile ||
+        !filters.some((i) => datafile.status === i.fileStatus);
       if (!datafile.hidden) {
         nodes.push(rowNode);
       }
@@ -240,11 +264,11 @@ export class CompareComponent implements OnInit {
   }
 
   filterOff(): void {
-    this.rowNodeMap.forEach(rowNode => {
+    this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
       datafile.hidden = false;
     });
-    this.rootNodeChildren = this.rowNodeMap.get("")!.children!;
+    this.rootNodeChildren = this.rowNodeMap.get('')!.children!;
     this.isInFilterMode = false;
     this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
   }
@@ -260,8 +284,8 @@ export class CompareComponent implements OnInit {
       return;
     }
     const rowDataMap = this.utils.mapDatafiles(data.data);
-    rowDataMap.forEach(v => this.utils.addChild(v, rowDataMap));
-    const rootNode = rowDataMap.get("");
+    rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
+    const rootNode = rowDataMap.get('');
     this.rowNodeMap = rowDataMap;
     if (rootNode?.children) {
       this.updateFoldersStatus(rootNode);
@@ -273,13 +297,13 @@ export class CompareComponent implements OnInit {
     if (node.data?.status !== undefined) {
       return;
     }
-    node.children?.forEach(v => this.updateFoldersStatus(v));
+    node.children?.forEach((v) => this.updateFoldersStatus(v));
 
     let allDeleted = true;
     let allNew = true;
     let allEqual = true;
     let anyUnknown = false;
-    node.children?.forEach(v => {
+    node.children?.forEach((v) => {
       allDeleted = allDeleted && v.data?.status === Filestatus.Deleted;
       allNew = allNew && v.data?.status === Filestatus.New;
       allEqual = allEqual && v.data?.status === Filestatus.Equal;
@@ -287,20 +311,22 @@ export class CompareComponent implements OnInit {
     });
 
     let status;
-    if (anyUnknown) status = Filestatus.Unknown
-    else if (allEqual) status = Filestatus.Equal
-    else if (allDeleted) status = Filestatus.Deleted
-    else if (allNew) status = Filestatus.New
+    if (anyUnknown) status = Filestatus.Unknown;
+    else if (allEqual) status = Filestatus.Equal;
+    else if (allDeleted) status = Filestatus.Deleted;
+    else if (allNew) status = Filestatus.New;
     else status = Filestatus.Updated;
     node.data!.status = status;
   }
 
   back(): void {
-    location.href = "connect";
+    location.href = 'connect';
   }
 
   repo(): string {
-    return this.pluginService.getPlugin(this.credentialsService.credentials.pluginId).name;
+    return this.pluginService.getPlugin(
+      this.credentialsService.credentials.pluginId,
+    ).name;
   }
 
   dataverseHeader(): string {

@@ -8,10 +8,9 @@ describe('ExecutablefileComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ExecutablefileComponent]
-    })
-    .compileComponents();
-    
+      imports: [ExecutablefileComponent],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(ExecutablefileComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

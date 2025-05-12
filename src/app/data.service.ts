@@ -1,25 +1,34 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Injectable } from '@angular/core';
-import { AccessResponse, CachedComputeResponse, CachedResponse, CompareResult, ComputeRequest, Key } from './models/compare-result';
+import {
+  AccessResponse,
+  CachedComputeResponse,
+  CachedResponse,
+  CompareResult,
+  ComputeRequest,
+  Key,
+} from './models/compare-result';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DataService {
-
   compare_url = 'api/plugin/compare';
   common_get_cached_data_url = 'api/common/cached';
-  common_get_executable_files_url = "api/common/executable";
-  common_get_check_access_files_url = "api/common/checkaccess";
-  common_compute_url = "api/common/compute";
-  common_get_cached_compute_res_url = "api/common/cachedcompute";
-  common_get_downloadable_files_url = "api/common/downloadable";
+  common_get_executable_files_url = 'api/common/executable';
+  common_get_check_access_files_url = 'api/common/checkaccess';
+  common_compute_url = 'api/common/compute';
+  common_get_cached_compute_res_url = 'api/common/cachedcompute';
+  common_get_downloadable_files_url = 'api/common/downloadable';
 
-  constructor(private http: HttpClient, private credentialsService: CredentialsService) { }
+  constructor(
+    private http: HttpClient,
+    private credentialsService: CredentialsService,
+  ) {}
 
   getData(): Observable<Key> {
     const credentials = this.credentialsService.credentials;
@@ -43,21 +52,34 @@ export class DataService {
     return this.http.post<CachedResponse>(this.common_get_cached_data_url, key);
   }
 
-  getExecutableFiles(pid: string, dataverse_token?: string): Observable<CompareResult> {
+  getExecutableFiles(
+    pid: string,
+    dataverse_token?: string,
+  ): Observable<CompareResult> {
     const req = {
       persistentId: pid,
       dataverseKey: dataverse_token,
     };
-    return this.http.post<CompareResult>(this.common_get_executable_files_url, req);
+    return this.http.post<CompareResult>(
+      this.common_get_executable_files_url,
+      req,
+    );
   }
 
-  checkAccessToQueue(pid?: string, dataverse_token?: string, queue?: string): Observable<AccessResponse> {
+  checkAccessToQueue(
+    pid?: string,
+    dataverse_token?: string,
+    queue?: string,
+  ): Observable<AccessResponse> {
     const req = {
       persistentId: pid,
       dataverseKey: dataverse_token,
       queue: queue,
     };
-    return this.http.post<AccessResponse>(this.common_get_check_access_files_url, req);
+    return this.http.post<AccessResponse>(
+      this.common_get_check_access_files_url,
+      req,
+    );
   }
 
   compute(req: ComputeRequest): Observable<Key> {
@@ -65,14 +87,23 @@ export class DataService {
   }
 
   getCachedComputeData(key: Key): Observable<CachedComputeResponse> {
-    return this.http.post<CachedComputeResponse>(this.common_get_cached_compute_res_url, key);
+    return this.http.post<CachedComputeResponse>(
+      this.common_get_cached_compute_res_url,
+      key,
+    );
   }
 
-  getDownloadableFiles(pid: string, dataverse_token?: string): Observable<CompareResult> {
+  getDownloadableFiles(
+    pid: string,
+    dataverse_token?: string,
+  ): Observable<CompareResult> {
     const req = {
       persistentId: pid,
       dataverseKey: dataverse_token,
     };
-    return this.http.post<CompareResult>(this.common_get_downloadable_files_url, req);
+    return this.http.post<CompareResult>(
+      this.common_get_downloadable_files_url,
+      req,
+    );
   }
 }

@@ -8,24 +8,28 @@ import { Field, Fieldaction } from '../models/field';
   selector: 'tr[app-metadatafield]',
   standalone: false,
   templateUrl: './metadatafield.component.html',
-  styleUrls: ['./metadatafield.component.scss']
+  styleUrls: ['./metadatafield.component.scss'],
 })
 export class MetadatafieldComponent implements OnInit {
+  @Input('field') field: Field = {};
+  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Field>> = new Map<
+    string,
+    TreeNode<Field>
+  >();
+  @Input('rowNode') rowNode: TreeNode<Field> = {};
 
-  @Input("field") field: Field = {};
-  @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
-  @Input("rowNode") rowNode: TreeNode<Field> = {};
-
-  static icon_ignore = "pi pi-stop";
-  static icon_copy = "pi pi-check-square";
-  static icon_custom = "pi pi-exclamation-triangle";
+  static icon_ignore = 'pi pi-stop';
+  static icon_copy = 'pi pi-check-square';
+  static icon_custom = 'pi pi-exclamation-triangle';
 
   node: TreeNode<Field> = {};
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
-    const foundNode = [...this.rowNodeMap.values()].find((x) => x.data?.id === this.field.id);
+    const foundNode = [...this.rowNodeMap.values()].find(
+      (x) => x.data?.id === this.field.id,
+    );
     this.node = foundNode ? foundNode : this.rowNode;
   }
 
@@ -56,14 +60,14 @@ export class MetadatafieldComponent implements OnInit {
 
   toggleAction(): void {
     MetadatafieldComponent.toggleNodeAction(this.node);
-    this.updateFolderActions(this.rowNodeMap.get("")!);
+    this.updateFolderActions(this.rowNodeMap.get('')!);
   }
 
   updateFolderActions(node: TreeNode<Field>): Fieldaction {
     if (node.children && node.children.length > 0) {
       let res: Fieldaction | undefined = undefined;
       for (const child of node.children) {
-        const childAction = this.updateFolderActions(child)
+        const childAction = this.updateFolderActions(child);
         if (res !== undefined && res !== childAction) {
           res = Fieldaction.Custom;
         } else if (res === undefined) {
@@ -93,8 +97,11 @@ export class MetadatafieldComponent implements OnInit {
     }
   }
 
-  private static setNodeAction(node: TreeNode<Field>, action: Fieldaction): void {
+  private static setNodeAction(
+    node: TreeNode<Field>,
+    action: Fieldaction,
+  ): void {
     node.data!.action = action;
-    node.children?.forEach(v => this.setNodeAction(v, action));
+    node.children?.forEach((v) => this.setNodeAction(v, action));
   }
 }

@@ -8,24 +8,28 @@ import { Datafile, Fileaction } from '../models/datafile';
   selector: 'tr[app-downloadablefile]',
   standalone: false,
   templateUrl: './downladablefile.component.html',
-  styleUrls: ['./downladablefile.component.scss']
+  styleUrls: ['./downladablefile.component.scss'],
 })
 export class DownladablefileComponent implements OnInit {
-
-  @Input("datafile") datafile: Datafile = {};
-  @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
-  @Input("rowNode") rowNode: TreeNode<Datafile> = {};
+  @Input('datafile') datafile: Datafile = {};
+  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
+    string,
+    TreeNode<Datafile>
+  >();
+  @Input('rowNode') rowNode: TreeNode<Datafile> = {};
 
   node: TreeNode<Datafile> = {};
 
-  static icon_ignore = "pi pi-stop";
-  static icon_download = "pi pi-check-square";
-  static icon_custom = "pi pi-exclamation-triangle";
+  static icon_ignore = 'pi pi-stop';
+  static icon_download = 'pi pi-check-square';
+  static icon_custom = 'pi pi-exclamation-triangle';
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(this.datafile.id! + (this.datafile.attributes?.isFile ? ":file" : ""))!; // avoid collisions between folders and files having the same path and name
+    this.node = this.rowNodeMap.get(
+      this.datafile.id! + (this.datafile.attributes?.isFile ? ':file' : ''),
+    )!; // avoid collisions between folders and files having the same path and name
   }
 
   action(): string {
@@ -51,14 +55,14 @@ export class DownladablefileComponent implements OnInit {
 
   toggleAction(): void {
     DownladablefileComponent.toggleNodeAction(this.node);
-    this.updateFolderActions(this.rowNodeMap.get("")!);
+    this.updateFolderActions(this.rowNodeMap.get('')!);
   }
 
   updateFolderActions(node: TreeNode<Datafile>): Fileaction {
     if (node.children && node.children.length > 0) {
       let res: Fileaction | undefined = undefined;
       for (const child of node.children) {
-        const childAction = this.updateFolderActions(child)
+        const childAction = this.updateFolderActions(child);
         if (res !== undefined && res !== childAction) {
           res = Fileaction.Custom;
         } else if (res === undefined) {
@@ -88,8 +92,11 @@ export class DownladablefileComponent implements OnInit {
     }
   }
 
-  private static setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
+  private static setNodeAction(
+    node: TreeNode<Datafile>,
+    action: Fileaction,
+  ): void {
     node.data!.action = action;
-    node.children?.forEach(v => this.setNodeAction(v, action));
+    node.children?.forEach((v) => this.setNodeAction(v, action));
   }
 }

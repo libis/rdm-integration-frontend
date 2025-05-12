@@ -1,4 +1,3 @@
- 
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, Input, OnInit } from '@angular/core';
@@ -10,37 +9,41 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
   selector: 'tr[app-datafile]',
   standalone: false,
   templateUrl: './datafile.component.html',
-  styleUrls: ['./datafile.component.scss']
+  styleUrls: ['./datafile.component.scss'],
 })
 export class DatafileComponent implements OnInit {
+  @Input('datafile') datafile: Datafile = {};
+  @Input('loading') loading = true;
+  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
+    string,
+    TreeNode<Datafile>
+  >();
+  @Input('rowNode') rowNode: TreeNode<Datafile> = {};
+  @Input('isInFilter') isInFilter = false;
 
-  @Input("datafile") datafile: Datafile = {};
-  @Input("loading") loading = true;
-  @Input("rowNodeMap") rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<string, TreeNode<Datafile>>();
-  @Input("rowNode") rowNode: TreeNode<Datafile> = {};
-  @Input("isInFilter") isInFilter = false;
+  icon_unknown = 'pi pi-question-circle';
 
-  icon_unknown = "pi pi-question-circle";
+  icon_new = 'pi pi-plus-circle';
+  icon_deleted = 'pi pi-minus-circle';
+  icon_equal = 'pi pi-check-circle';
+  icon_not_equal = 'pi pi-exclamation-circle';
+  icon_spinner = 'pi pi-spin pi-spinner';
+  icon_refresh = 'pi pi-refresh';
 
-  icon_new = "pi pi-plus-circle";
-  icon_deleted = "pi pi-minus-circle";
-  icon_equal = "pi pi-check-circle";
-  icon_not_equal = "pi pi-exclamation-circle";
-  icon_spinner = "pi pi-spin pi-spinner"
-  icon_refresh = "pi pi-refresh"
-
-  icon_ignore = "pi pi-stop";
-  icon_copy = "pi pi-copy";
-  icon_update = "pi pi-clone";
-  icon_delete = "pi pi-trash";
-  icon_custom = "pi pi-exclamation-triangle";
+  icon_ignore = 'pi pi-stop';
+  icon_copy = 'pi pi-copy';
+  icon_update = 'pi pi-clone';
+  icon_delete = 'pi pi-trash';
+  icon_custom = 'pi pi-exclamation-triangle';
 
   node: TreeNode<Datafile> = {};
 
-  constructor(private folderActionUpdateService: FolderActionUpdateService) { }
+  constructor(private folderActionUpdateService: FolderActionUpdateService) {}
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(this.datafile.id! + (this.datafile.attributes?.isFile ? ":file" : ""))!; // avoid collisions between folders and files having the same path and name
+    this.node = this.rowNodeMap.get(
+      this.datafile.id! + (this.datafile.attributes?.isFile ? ':file' : ''),
+    )!; // avoid collisions between folders and files having the same path and name
   }
 
   sourceFile(): string {
@@ -56,18 +59,18 @@ export class DatafileComponent implements OnInit {
   comparison(color: boolean): string {
     switch (Number(this.datafile.status)) {
       case Filestatus.New:
-        return color ? "green" : this.icon_new;
+        return color ? 'green' : this.icon_new;
       case Filestatus.Equal:
-        return color ? "black" : this.icon_equal;
+        return color ? 'black' : this.icon_equal;
       case Filestatus.Updated:
-        return color ? "blue" : this.icon_not_equal;
+        return color ? 'blue' : this.icon_not_equal;
       case Filestatus.Deleted:
-        return color ? "red" : this.icon_deleted;
+        return color ? 'red' : this.icon_deleted;
     }
     if (this.loading) {
-      return color ? "black" : this.icon_spinner;
+      return color ? 'black' : this.icon_spinner;
     }
-    return color ? "black" : this.icon_refresh;
+    return color ? 'black' : this.icon_refresh;
   }
 
   action(): string {
@@ -87,10 +90,13 @@ export class DatafileComponent implements OnInit {
   }
 
   targetFile(): string {
-    if (this.datafile.status === Filestatus.New && this.datafile.action !== Fileaction.Copy) {
+    if (
+      this.datafile.status === Filestatus.New &&
+      this.datafile.action !== Fileaction.Copy
+    ) {
       return '';
     }
-    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
+    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`;
   }
 
   toggleAction(): void {
@@ -123,12 +129,18 @@ export class DatafileComponent implements OnInit {
   }
 
   setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
-    const isFileFileInFolder = node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
-    node.data!.action = isFileFileInFolder ? this.getFileInFolderAction(node, action) : action;
-    node.children?.forEach(v => this.setNodeAction(v, action));
+    const isFileFileInFolder =
+      node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
+    node.data!.action = isFileFileInFolder
+      ? this.getFileInFolderAction(node, action)
+      : action;
+    node.children?.forEach((v) => this.setNodeAction(v, action));
   }
 
-  getFileInFolderAction(node: TreeNode<Datafile>, action: Fileaction): Fileaction {
+  getFileInFolderAction(
+    node: TreeNode<Datafile>,
+    action: Fileaction,
+  ): Fileaction {
     if (action === Fileaction.Delete && node.data!.status === Filestatus.New) {
       return Fileaction.Ignore;
     }
@@ -150,13 +162,13 @@ export class DatafileComponent implements OnInit {
   targetFileClass(): string {
     switch (this.datafile.action) {
       case Fileaction.Delete:
-        return "text-decoration-line-through";
+        return 'text-decoration-line-through';
       case Fileaction.Copy:
-        return "fst-italic fw-bold";
+        return 'fst-italic fw-bold';
       case Fileaction.Update:
-        return "fw-bold";
+        return 'fw-bold';
       case Fileaction.Ignore:
-        return "text-muted";
+        return 'text-muted';
     }
     return '';
   }

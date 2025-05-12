@@ -1,9 +1,9 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 export interface NewDatasetResponse {
-	persistentId?: string,
+  persistentId?: string;
 }
 
 export interface DatasetVersionResponse {
-	persistentId?: string,
+  persistentId?: string;
 }

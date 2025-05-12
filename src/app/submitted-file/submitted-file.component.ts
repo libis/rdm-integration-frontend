@@ -7,10 +7,9 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
   selector: 'tr[app-submitted-file]',
   standalone: false,
   templateUrl: './submitted-file.component.html',
-  styleUrls: ['./submitted-file.component.scss']
+  styleUrls: ['./submitted-file.component.scss'],
 })
 export class SubmittedFileComponent implements OnInit {
-
   @Input() datafile: Datafile = {};
   @Input('isSubmitted') isSubmitted = false;
 
@@ -23,19 +22,21 @@ export class SubmittedFileComponent implements OnInit {
   }
 
   file(): string {
-    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`
+    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`;
   }
 
   iconClass(): string {
     if (this.isReady()) {
-      return "pi pi-check";
+      return 'pi pi-check';
     }
-    return "pi pi-spin pi-spinner";
+    return 'pi pi-spin pi-spinner';
   }
 
   isReady(): boolean {
     const isDelete = this.datafile.action === Fileaction.Delete;
-    return (isDelete && (this.datafile.status === Filestatus.New)) || (!isDelete && this.datafile.status === Filestatus.Equal);
+    return (
+      (isDelete && this.datafile.status === Filestatus.New) ||
+      (!isDelete && this.datafile.status === Filestatus.Equal)
+    );
   }
-
 }

@@ -14,11 +14,11 @@ const routes: Routes = [
   { path: 'compare/:id', component: CompareComponent },
   { path: 'submit', component: SubmitComponent },
   { path: 'compute', component: ComputeComponent },
-  { path: 'download', component: DownloadComponent }
+  { path: 'download', component: DownloadComponent },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes, { useHash: true })],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

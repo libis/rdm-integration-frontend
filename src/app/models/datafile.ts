@@ -5,7 +5,7 @@ export enum Filestatus {
   New = 1,
   Updated = 2,
   Deleted = 3,
-  Unknown = 4
+  Unknown = 4,
 }
 
 export enum Fileaction {
@@ -24,22 +24,22 @@ export interface Datafile {
   action?: Fileaction;
   hidden?: boolean;
   id?: string;
-  attributes?: Attributes
+  attributes?: Attributes;
 }
 
 export interface Attributes {
-	url?: string;
-	remoteHash?: string;
-	remoteHashType?: string;
-	remoteFileSize?: number;
-	isFile?: boolean;
-	destinationFile?: DestinationFile;
+  url?: string;
+  remoteHash?: string;
+  remoteHashType?: string;
+  remoteFileSize?: number;
+  isFile?: boolean;
+  destinationFile?: DestinationFile;
 }
 
 export interface DestinationFile {
-	id?: number;
-	fileSize?: number;
-	hash?: string;
-	hashType?: string;
-	storageIdentifier?: string;
+  id?: number;
+  fileSize?: number;
+  hash?: string;
+  hashType?: string;
+  storageIdentifier?: string;
 }
