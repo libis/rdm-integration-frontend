@@ -361,6 +361,8 @@ export class DownloadComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (submissionId) => {
+          console.log('all is well: ');
+          console.log(submissionId);
           httpSubscription.unsubscribe();
           alert(
             'download is requested and can be monitored in the Globus UI with the following submission ID: ' +
@@ -368,8 +370,10 @@ export class DownloadComponent implements OnInit, OnDestroy {
           );
         },
         error: (err) => {
-          httpSubscription.unsubscribe();
+          console.log('something went wrong: ');
+          console.log(`${err.error}`);
           alert('download request failed: ' + err.error);
+          httpSubscription.unsubscribe();
         },
       });
   }
