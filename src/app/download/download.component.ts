@@ -369,7 +369,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           httpSubscription.unsubscribe();
-            alert("download request failed: " + err.error);
+          alert('download request failed: ' + err.error);
         },
       });
   }
