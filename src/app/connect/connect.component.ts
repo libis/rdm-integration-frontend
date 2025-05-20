@@ -126,17 +126,17 @@ export class ConnectComponent implements OnInit {
             .then((v) => (this.repoNames = v))
             .catch(
               (err) =>
-                (this.repoNames = [
-                  {
-                    label: 'search failed: ' + err.message,
-                    value: err.message,
-                  },
-                ]),
+              (this.repoNames = [
+                {
+                  label: 'search failed: ' + err.message,
+                  value: err.message,
+                },
+              ]),
             ),
         error: (err) =>
-          (this.repoNames = [
-            { label: 'search failed: ' + err.message, value: err.message },
-          ]),
+        (this.repoNames = [
+          { label: 'search failed: ' + err.message, value: err.message },
+        ]),
       });
     this.collectionSearchResultsSubscription =
       this.collectionSearchResultsObservable.subscribe({
@@ -145,17 +145,17 @@ export class ConnectComponent implements OnInit {
             .then((v) => (this.collectionItems = v))
             .catch(
               (err) =>
-                (this.collectionItems = [
-                  {
-                    label: 'search failed: ' + err.message,
-                    value: err.message,
-                  },
-                ]),
+              (this.collectionItems = [
+                {
+                  label: 'search failed: ' + err.message,
+                  value: err.message,
+                },
+              ]),
             ),
         error: (err) =>
-          (this.collectionItems = [
-            { label: 'search failed: ' + err.message, value: err.message },
-          ]),
+        (this.collectionItems = [
+          { label: 'search failed: ' + err.message, value: err.message },
+        ]),
       });
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
@@ -164,17 +164,17 @@ export class ConnectComponent implements OnInit {
             .then((v) => (this.doiItems = v))
             .catch(
               (err) =>
-                (this.doiItems = [
-                  {
-                    label: 'search failed: ' + err.message,
-                    value: err.message,
-                  },
-                ]),
+              (this.doiItems = [
+                {
+                  label: 'search failed: ' + err.message,
+                  value: err.message,
+                },
+              ]),
             ),
         error: (err) =>
-          (this.doiItems = [
-            { label: 'search failed: ' + err.message, value: err.message },
-          ]),
+        (this.doiItems = [
+          { label: 'search failed: ' + err.message, value: err.message },
+        ]),
       });
     this.route.queryParams.subscribe((params) => {
       const stateString = params['state'];
@@ -358,7 +358,7 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.pluginId).showTokenGetter!;
   }
 
-  getRepoToken() {
+  getRepoToken(scopes: string | undefined) {
     if (this.pluginId === undefined) {
       alert('Repository type is missing');
       return;
@@ -402,6 +402,18 @@ export class ConnectComponent implements OnInit {
         '&response_type=code&state=' +
         encodeURIComponent(JSON.stringify(loginState));
       // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
+      if (scopes) {
+        if (url.includes('scope=')) {
+          let scopeStr = url.substring(url.indexOf('scope'));
+          const and = scopeStr.lastIndexOf('&')
+          if (and > 0) {
+            scopeStr = scopeStr.substring(0, and);
+          }
+          url.replace(scopeStr, 'scope=' + encodeURIComponent(scopes));
+        } else {
+          url = url + 'scope=' + encodeURIComponent(scopes);
+        }
+      }
       location.href = url;
     } else {
       window.open(url, '_blank');
@@ -847,10 +859,17 @@ export class ConnectComponent implements OnInit {
         httpSubscription.unsubscribe();
       },
       error: (err) => {
-        alert('branch lookup failed: ' + err.error);
-        this.branchItems = [];
-        this.option = undefined;
-        this.optionsLoading = false;
+        const errStr: string = err.error;
+        const scopesStr = '*scopes*'
+        if (errStr.includes(scopesStr)) {
+          const scopes = errStr.substring(errStr.indexOf(scopesStr) + scopesStr.length, errStr.lastIndexOf(scopesStr));
+          this.getRepoToken(scopes);
+        } else {
+          alert('branch lookup failed: ' + err.error);
+          this.branchItems = [];
+          this.option = undefined;
+          this.optionsLoading = false;
+        }
       },
     });
   }
