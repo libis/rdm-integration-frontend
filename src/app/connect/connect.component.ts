@@ -403,12 +403,9 @@ export class ConnectComponent implements OnInit {
         encodeURIComponent(JSON.stringify(loginState));
       // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
       if (scopes) {
-        console.log('scopes: ' + scopes);
-        console.log('url: ' + url);
         if (url.includes('scope=')) {
-          console.log('replacing scope');
           let scopeStr = url.substring(url.indexOf('scope='));
-          const and = scopeStr.lastIndexOf('&')
+          const and = scopeStr.indexOf('&')
           if (and > 0) {
             scopeStr = scopeStr.substring(0, and);
           }
