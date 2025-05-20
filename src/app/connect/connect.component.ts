@@ -126,17 +126,17 @@ export class ConnectComponent implements OnInit {
             .then((v) => (this.repoNames = v))
             .catch(
               (err) =>
-              (this.repoNames = [
-                {
-                  label: 'search failed: ' + err.message,
-                  value: err.message,
-                },
-              ]),
+                (this.repoNames = [
+                  {
+                    label: 'search failed: ' + err.message,
+                    value: err.message,
+                  },
+                ]),
             ),
         error: (err) =>
-        (this.repoNames = [
-          { label: 'search failed: ' + err.message, value: err.message },
-        ]),
+          (this.repoNames = [
+            { label: 'search failed: ' + err.message, value: err.message },
+          ]),
       });
     this.collectionSearchResultsSubscription =
       this.collectionSearchResultsObservable.subscribe({
@@ -145,17 +145,17 @@ export class ConnectComponent implements OnInit {
             .then((v) => (this.collectionItems = v))
             .catch(
               (err) =>
-              (this.collectionItems = [
-                {
-                  label: 'search failed: ' + err.message,
-                  value: err.message,
-                },
-              ]),
+                (this.collectionItems = [
+                  {
+                    label: 'search failed: ' + err.message,
+                    value: err.message,
+                  },
+                ]),
             ),
         error: (err) =>
-        (this.collectionItems = [
-          { label: 'search failed: ' + err.message, value: err.message },
-        ]),
+          (this.collectionItems = [
+            { label: 'search failed: ' + err.message, value: err.message },
+          ]),
       });
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
@@ -164,17 +164,17 @@ export class ConnectComponent implements OnInit {
             .then((v) => (this.doiItems = v))
             .catch(
               (err) =>
-              (this.doiItems = [
-                {
-                  label: 'search failed: ' + err.message,
-                  value: err.message,
-                },
-              ]),
+                (this.doiItems = [
+                  {
+                    label: 'search failed: ' + err.message,
+                    value: err.message,
+                  },
+                ]),
             ),
         error: (err) =>
-        (this.doiItems = [
-          { label: 'search failed: ' + err.message, value: err.message },
-        ]),
+          (this.doiItems = [
+            { label: 'search failed: ' + err.message, value: err.message },
+          ]),
       });
     this.route.queryParams.subscribe((params) => {
       const stateString = params['state'];
@@ -405,11 +405,11 @@ export class ConnectComponent implements OnInit {
       if (scopes) {
         if (url.includes('scope=')) {
           let scopeStr = url.substring(url.indexOf('scope='));
-          const and = scopeStr.indexOf('&')
+          const and = scopeStr.indexOf('&');
           if (and > 0) {
             scopeStr = scopeStr.substring(0, and);
           }
-          console.log('scopeStr: ' + scopeStr)
+          console.log('scopeStr: ' + scopeStr);
           url = url.replace(scopeStr, 'scope=' + encodeURIComponent(scopes));
         } else {
           url = url + '&scope=' + encodeURIComponent(scopes);
@@ -861,9 +861,12 @@ export class ConnectComponent implements OnInit {
       },
       error: (err) => {
         const errStr: string = err.error;
-        const scopesStr = '*scopes*'
+        const scopesStr = '*scopes*';
         if (errStr.includes(scopesStr)) {
-          const scopes = errStr.substring(errStr.indexOf(scopesStr) + scopesStr.length, errStr.lastIndexOf(scopesStr));
+          const scopes = errStr.substring(
+            errStr.indexOf(scopesStr) + scopesStr.length,
+            errStr.lastIndexOf(scopesStr),
+          );
           this.getRepoToken(scopes);
         } else {
           alert('branch lookup failed: ' + err.error);
