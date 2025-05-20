@@ -403,15 +403,19 @@ export class ConnectComponent implements OnInit {
         encodeURIComponent(JSON.stringify(loginState));
       // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
       if (scopes) {
+        console.log('scopes: ' + scopes);
+        console.log('url: ' + url);
         if (url.includes('scope=')) {
-          let scopeStr = url.substring(url.indexOf('scope'));
+          console.log('replacing scope');
+          let scopeStr = url.substring(url.indexOf('scope='));
           const and = scopeStr.lastIndexOf('&')
           if (and > 0) {
             scopeStr = scopeStr.substring(0, and);
           }
-          url.replace(scopeStr, 'scope=' + encodeURIComponent(scopes));
+          console.log('scopeStr: ' + scopeStr)
+          url = url.replace(scopeStr, 'scope=' + encodeURIComponent(scopes));
         } else {
-          url = url + 'scope=' + encodeURIComponent(scopes);
+          url = url + '&scope=' + encodeURIComponent(scopes);
         }
       }
       location.href = url;
