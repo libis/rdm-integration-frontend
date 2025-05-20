@@ -358,7 +358,7 @@ export class ConnectComponent implements OnInit {
     return this.pluginService.getPlugin(this.pluginId).showTokenGetter!;
   }
 
-  getRepoToken(scopes: string | undefined) {
+  getRepoToken(scopes?: string) {
     if (this.pluginId === undefined) {
       alert('Repository type is missing');
       return;
