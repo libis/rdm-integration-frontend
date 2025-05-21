@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
@@ -68,7 +68,7 @@ export class ConnectComponent implements OnInit {
   private oauth = inject(OauthService);
   private http = inject(HttpClient);
 
-  @ViewChild('repoSelect') repoNameSelect!: Select;
+  readonly repoNameSelect = viewChild.required<Select>('repoSelect');
 
   // CONSTANTS
 
@@ -835,7 +835,7 @@ export class ConnectComponent implements OnInit {
   }
 
   showRepoName() {
-    this.repoNameSelect.show();
+    this.repoNameSelect().show();
   }
 
   // BRANCHES/FOLDERS/OTHER OPTIONS
