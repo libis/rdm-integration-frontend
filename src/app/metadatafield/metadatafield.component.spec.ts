@@ -8,7 +8,7 @@ describe('MetadatafieldComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [MetadatafieldComponent],
+      imports: [MetadatafieldComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MetadatafieldComponent);

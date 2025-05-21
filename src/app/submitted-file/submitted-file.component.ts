@@ -5,7 +5,6 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
   selector: 'tr[app-submitted-file]',
-  standalone: false,
   templateUrl: './submitted-file.component.html',
   styleUrls: ['./submitted-file.component.scss'],
 })

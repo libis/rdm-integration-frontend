@@ -3,12 +3,15 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { Field, Fieldaction } from '../models/field';
+import { TreeTableModule } from 'primeng/treetable';
+import { ButtonDirective } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
 
 @Component({
   selector: 'tr[app-metadatafield]',
-  standalone: false,
   templateUrl: './metadatafield.component.html',
   styleUrls: ['./metadatafield.component.scss'],
+  imports: [TreeTableModule, ButtonDirective, Ripple],
 })
 export class MetadatafieldComponent implements OnInit {
   @Input('field') field: Field = {};

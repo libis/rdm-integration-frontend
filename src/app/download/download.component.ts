@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { PluginService } from '../plugin.service';
 import {
   debounceTime,
@@ -24,12 +24,30 @@ import { LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { SubmitService } from '../submit.service';
 import { RepoPlugin } from '../models/plugin';
+import { ButtonDirective, Button } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
+import { FormsModule } from '@angular/forms';
+import { FloatLabel } from 'primeng/floatlabel';
+import { Select } from 'primeng/select';
+import { TreeTableModule } from 'primeng/treetable';
+import { Tree } from 'primeng/tree';
 
 @Component({
   selector: 'app-download',
-  standalone: false,
   templateUrl: './download.component.html',
   styleUrl: './download.component.scss',
+  imports: [
+    ButtonDirective,
+    Ripple,
+    FormsModule,
+    FloatLabel,
+    Select,
+    TreeTableModule,
+    PrimeTemplate,
+    DownladablefileComponent,
+    Tree,
+    Button,
+  ],
 })
 export class DownloadComponent implements OnInit, OnDestroy {
   // CONSTANTS

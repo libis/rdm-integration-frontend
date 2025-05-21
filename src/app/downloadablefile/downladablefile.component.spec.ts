@@ -8,7 +8,7 @@ describe('DownladablefileComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [DownladablefileComponent],
+      imports: [DownladablefileComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DownladablefileComponent);

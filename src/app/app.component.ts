@@ -3,12 +3,13 @@
 import { Component, OnInit } from '@angular/core';
 import { PrimeNG } from 'primeng/config';
 import { DataService } from './data.service';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  standalone: false,
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
+  imports: [RouterOutlet],
 })
 export class AppComponent implements OnInit {
   title = 'datasync';

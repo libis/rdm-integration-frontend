@@ -4,12 +4,15 @@ import { Component, Input, OnInit } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { TreeTableModule } from 'primeng/treetable';
+import { ButtonDirective } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
 
 @Component({
   selector: 'tr[app-datafile]',
-  standalone: false,
   templateUrl: './datafile.component.html',
   styleUrls: ['./datafile.component.scss'],
+  imports: [TreeTableModule, ButtonDirective, Ripple],
 })
 export class DatafileComponent implements OnInit {
   @Input('datafile') datafile: Datafile = {};

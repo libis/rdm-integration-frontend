@@ -8,7 +8,7 @@ describe('DatafileComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [DatafileComponent],
+      imports: [DatafileComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DatafileComponent);

@@ -7,7 +7,7 @@ import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
@@ -24,14 +24,37 @@ import {
 } from 'rxjs';
 import { RepoLookupRequest } from '../models/repo-lookup';
 import { HttpClient } from '@angular/common/http';
+import { ButtonDirective } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
+import {
+  Accordion,
+  AccordionPanel,
+  AccordionHeader,
+  AccordionContent,
+} from 'primeng/accordion';
+import { FormsModule } from '@angular/forms';
+import { Skeleton } from 'primeng/skeleton';
+import { Tree } from 'primeng/tree';
 
 const new_dataset = 'New Dataset';
 
 @Component({
   selector: 'app-connect',
-  standalone: false,
   templateUrl: './connect.component.html',
   styleUrls: ['./connect.component.scss'],
+  imports: [
+    ButtonDirective,
+    Ripple,
+    Accordion,
+    AccordionPanel,
+    AccordionHeader,
+    AccordionContent,
+    Select,
+    FormsModule,
+    PrimeTemplate,
+    Skeleton,
+    Tree,
+  ],
 })
 export class ConnectComponent implements OnInit {
   @ViewChild('repoSelect') repoNameSelect!: Select;

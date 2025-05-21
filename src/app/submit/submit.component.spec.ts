@@ -8,7 +8,7 @@ describe('SubmitComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [SubmitComponent],
+      imports: [SubmitComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SubmitComponent);

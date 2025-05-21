@@ -8,7 +8,7 @@ describe('CompareComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CompareComponent],
+      imports: [CompareComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CompareComponent);

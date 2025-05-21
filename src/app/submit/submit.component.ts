@@ -8,7 +8,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
-import { Location } from '@angular/common';
+import { Location, NgFor } from '@angular/common';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
@@ -16,7 +16,7 @@ import { DataService } from '../data.service';
 import { DatasetService } from '../dataset.service';
 import { firstValueFrom } from 'rxjs';
 import { MetadataRequest } from '../models/metadata-request';
-import { TreeNode } from 'primeng/api';
+import { TreeNode, PrimeTemplate } from 'primeng/api';
 import {
   Field,
   Fieldaction,
@@ -25,12 +25,31 @@ import {
   MetadataField,
 } from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
+import { ButtonDirective, Button } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
+import { Dialog } from 'primeng/dialog';
+import { Checkbox } from 'primeng/checkbox';
+import { FormsModule } from '@angular/forms';
+import { TreeTableModule } from 'primeng/treetable';
+import { SubmittedFileComponent } from '../submitted-file/submitted-file.component';
 
 @Component({
   selector: 'app-submit',
-  standalone: false,
   templateUrl: './submit.component.html',
   styleUrls: ['./submit.component.scss'],
+  imports: [
+    ButtonDirective,
+    Ripple,
+    Dialog,
+    Checkbox,
+    FormsModule,
+    PrimeTemplate,
+    Button,
+    TreeTableModule,
+    MetadatafieldComponent,
+    NgFor,
+    SubmittedFileComponent,
+  ],
 })
 export class SubmitComponent implements OnInit {
   icon_warning = 'pi pi-exclamation-triangle';

@@ -6,12 +6,25 @@ import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { DataService } from '../data.service';
 import { ComputeRequest } from '../models/compare-result';
+import { TreeTableModule } from 'primeng/treetable';
+import { ProgressSpinner } from 'primeng/progressspinner';
+import { Select } from 'primeng/select';
+import { FormsModule } from '@angular/forms';
+import { ButtonDirective } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
 
 @Component({
   selector: 'tr[app-executablefile]',
-  standalone: false,
   templateUrl: './executablefile.component.html',
   styleUrl: './executablefile.component.scss',
+  imports: [
+    TreeTableModule,
+    ProgressSpinner,
+    Select,
+    FormsModule,
+    ButtonDirective,
+    Ripple,
+  ],
 })
 export class ExecutablefileComponent implements OnInit {
   @Input('datafile') datafile: Datafile = {};

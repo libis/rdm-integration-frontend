@@ -8,17 +8,33 @@ import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { TreeNode } from 'primeng/api';
+import { TreeNode, PrimeTemplate } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
+import { ButtonDirective } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
+import { NgFor } from '@angular/common';
+import { TreeTableModule } from 'primeng/treetable';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { TableModule } from 'primeng/table';
+import { DatafileComponent } from '../datafile/datafile.component';
 
 @Component({
   selector: 'app-compare',
-  standalone: false,
   templateUrl: './compare.component.html',
   styleUrls: ['./compare.component.scss'],
+  imports: [
+    ButtonDirective,
+    Ripple,
+    NgFor,
+    TreeTableModule,
+    PrimeTemplate,
+    OverlayPanelModule,
+    TableModule,
+    DatafileComponent,
+  ],
 })
 export class CompareComponent implements OnInit {
   icon_noaction = 'pi pi-stop';

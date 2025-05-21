@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { PluginService } from '../plugin.service';
 import {
   debounceTime,
@@ -22,12 +22,35 @@ import { Datafile } from '../models/datafile';
 import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
+import { ButtonDirective, Button } from 'primeng/button';
+import { Ripple } from 'primeng/ripple';
+import { FormsModule } from '@angular/forms';
+import { FloatLabel } from 'primeng/floatlabel';
+import { Select } from 'primeng/select';
+import { Dialog } from 'primeng/dialog';
+import { Checkbox } from 'primeng/checkbox';
+import { TreeTableModule } from 'primeng/treetable';
+import { ExecutablefileComponent } from '../executablefile/executablefile.component';
+import { AutosizeModule } from 'ngx-autosize';
 
 @Component({
   selector: 'app-compute',
-  standalone: false,
   templateUrl: './compute.component.html',
   styleUrl: './compute.component.scss',
+  imports: [
+    ButtonDirective,
+    Ripple,
+    FormsModule,
+    FloatLabel,
+    Select,
+    Dialog,
+    Checkbox,
+    PrimeTemplate,
+    Button,
+    TreeTableModule,
+    ExecutablefileComponent,
+    AutosizeModule,
+  ],
 })
 export class ComputeComponent implements OnInit, OnDestroy {
   icon_play = 'pi pi-play';
