@@ -47,8 +47,8 @@ import { SubmittedFileComponent } from '../submitted-file/submitted-file.compone
     Button,
     TreeTableModule,
     MetadatafieldComponent,
-    SubmittedFileComponent
-],
+    SubmittedFileComponent,
+  ],
 })
 export class SubmitComponent implements OnInit {
   private dataStateService = inject(DataStateService);

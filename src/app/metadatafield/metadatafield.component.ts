@@ -15,7 +15,9 @@ import { Ripple } from 'primeng/ripple';
 })
 export class MetadatafieldComponent implements OnInit {
   readonly field = input<Field>({});
-  readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(new Map<string, TreeNode<Field>>());
+  readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(
+    new Map<string, TreeNode<Field>>(),
+  );
   readonly rowNode = input<TreeNode<Field>>({});
 
   static icon_ignore = 'pi pi-stop';

@@ -33,15 +33,15 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { AppComponent } from './app/app.component';
 import Lara from '@primeng/themes/lara';
 import { provideRouter } from '@angular/router';
-import {routes} from './app/app.routs'
+import { routes } from './app/app.routs';
 
 if (environment.production) {
   enableProdMode();
 }
 
 bootstrapApplication(AppComponent, {
-    providers: [
-      provideRouter(routes),
+  providers: [
+    provideRouter(routes),
     importProvidersFrom(
       BrowserModule,
       NgbModule,

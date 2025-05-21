@@ -15,7 +15,9 @@ import { Ripple } from 'primeng/ripple';
 })
 export class DownladablefileComponent implements OnInit {
   readonly datafile = input<Datafile>({});
-  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(new Map<string, TreeNode<Datafile>>());
+  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(
+    new Map<string, TreeNode<Datafile>>(),
+  );
   readonly rowNode = input<TreeNode<Datafile>>({});
 
   node: TreeNode<Datafile> = {};

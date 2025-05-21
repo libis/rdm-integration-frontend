@@ -32,8 +32,8 @@ import { DatafileComponent } from '../datafile/datafile.component';
     PrimeTemplate,
     OverlayPanelModule,
     TableModule,
-    DatafileComponent
-],
+    DatafileComponent,
+  ],
 })
 export class CompareComponent implements OnInit {
   dataUpdatesService = inject(DataUpdatesService);

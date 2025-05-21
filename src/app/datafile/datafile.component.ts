@@ -19,7 +19,9 @@ export class DatafileComponent implements OnInit {
 
   readonly datafile = input<Datafile>({});
   readonly loading = input(true);
-  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(new Map<string, TreeNode<Datafile>>());
+  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(
+    new Map<string, TreeNode<Datafile>>(),
+  );
   readonly rowNode = input<TreeNode<Datafile>>({});
   readonly isInFilter = input(false);
 
