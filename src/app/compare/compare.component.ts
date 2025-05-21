@@ -15,7 +15,7 @@ import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { ButtonDirective } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
-import { NgFor } from '@angular/common';
+
 import { TreeTableModule } from 'primeng/treetable';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
@@ -28,13 +28,12 @@ import { DatafileComponent } from '../datafile/datafile.component';
   imports: [
     ButtonDirective,
     Ripple,
-    NgFor,
     TreeTableModule,
     PrimeTemplate,
     OverlayPanelModule,
     TableModule,
-    DatafileComponent,
-  ],
+    DatafileComponent
+],
 })
 export class CompareComponent implements OnInit {
   icon_noaction = 'pi pi-stop';

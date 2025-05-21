@@ -8,7 +8,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { Router } from '@angular/router';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
-import { Location, NgFor } from '@angular/common';
+import { Location } from '@angular/common';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
@@ -47,9 +47,8 @@ import { SubmittedFileComponent } from '../submitted-file/submitted-file.compone
     Button,
     TreeTableModule,
     MetadatafieldComponent,
-    NgFor,
-    SubmittedFileComponent,
-  ],
+    SubmittedFileComponent
+],
 })
 export class SubmitComponent implements OnInit {
   icon_warning = 'pi pi-exclamation-triangle';
