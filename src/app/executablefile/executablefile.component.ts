@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, EventEmitter, OnInit, Output, inject, input } from '@angular/core';
+import { Component, OnInit, inject, input, output } from '@angular/core';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
@@ -37,7 +37,7 @@ export class ExecutablefileComponent implements OnInit {
   readonly pid = input<string>();
   readonly dv_token = input<string>();
 
-  @Output('computeClicked') computeClicked = new EventEmitter<ComputeRequest>();
+  readonly computeClicked = output<ComputeRequest>({ alias: 'computeClicked' });
 
   icon_play = 'pi pi-play';
 
