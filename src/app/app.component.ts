@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { PrimeNG } from 'primeng/config';
 import { DataService } from './data.service';
 import { RouterOutlet } from '@angular/router';
@@ -12,12 +12,12 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
 })
 export class AppComponent implements OnInit {
+  private primengConfig = inject(PrimeNG);
+  dataService = inject(DataService);
+
   title = 'datasync';
 
-  constructor(
-    private primengConfig: PrimeNG,
-    public dataService: DataService,
-  ) {}
+  constructor() {}
   ngOnInit(): void {
     this.primengConfig.ripple.set(true);
     const dvToken = localStorage.getItem('dataverseToken');

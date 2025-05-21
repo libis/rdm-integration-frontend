@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { PluginService } from '../plugin.service';
 import {
@@ -50,6 +50,15 @@ import { Tree } from 'primeng/tree';
   ],
 })
 export class DownloadComponent implements OnInit, OnDestroy {
+  private dvObjectLookupService = inject(DvObjectLookupService);
+  private pluginService = inject(PluginService);
+  dataService = inject(DataService);
+  submit = inject(SubmitService);
+  private utils = inject(UtilsService);
+  private route = inject(ActivatedRoute);
+  private repoLookupService = inject(RepoLookupService);
+  private oauth = inject(OauthService);
+
   // CONSTANTS
   DEBOUNCE_TIME = 750;
 
@@ -93,16 +102,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
   globusPlugin?: RepoPlugin;
   downloadId?: string;
 
-  constructor(
-    private dvObjectLookupService: DvObjectLookupService,
-    private pluginService: PluginService,
-    public dataService: DataService,
-    public submit: SubmitService,
-    private utils: UtilsService,
-    private route: ActivatedRoute,
-    private repoLookupService: RepoLookupService,
-    private oauth: OauthService,
-  ) {
+  constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.datasetSearch(searchText)),

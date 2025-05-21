@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { StoreResult } from './models/store-result';
 import { HttpClient } from '@angular/common/http';
 import { Datafile } from './models/datafile';
@@ -11,13 +11,13 @@ import { CredentialsService } from './credentials.service';
   providedIn: 'root',
 })
 export class SubmitService {
+  private http = inject(HttpClient);
+  private credentialsService = inject(CredentialsService);
+
   store_url = 'api/common/store';
   download_url = 'api/common/download';
 
-  constructor(
-    private http: HttpClient,
-    private credentialsService: CredentialsService,
-  ) {}
+  constructor() {}
 
   submit(
     selected: Datafile[],

@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { SelectItem } from 'primeng/api';
 import { Config, RepoPlugin } from './models/plugin';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +10,8 @@ import { firstValueFrom } from 'rxjs';
   providedIn: 'root',
 })
 export class PluginService {
+  private http = inject(HttpClient);
+
   private config: Config = {
     dataverseHeader: 'Unknown header: configuration failed',
     collectionOptionsHidden: true,
@@ -37,7 +39,7 @@ export class PluginService {
     showTokenGetter: false,
   };
 
-  constructor(private http: HttpClient) {}
+  constructor() {}
 
   async setConfig() {
     const c = await firstValueFrom(

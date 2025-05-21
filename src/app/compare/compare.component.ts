@@ -2,7 +2,7 @@
 
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
@@ -36,6 +36,14 @@ import { DatafileComponent } from '../datafile/datafile.component';
 ],
 })
 export class CompareComponent implements OnInit {
+  dataUpdatesService = inject(DataUpdatesService);
+  dataStateService = inject(DataStateService);
+  private credentialsService = inject(CredentialsService);
+  private router = inject(Router);
+  private folderActionUpdateService = inject(FolderActionUpdateService);
+  private pluginService = inject(PluginService);
+  private utils = inject(UtilsService);
+
   icon_noaction = 'pi pi-stop';
   icon_update = 'pi pi-copy';
   icon_mirror = 'pi pi-sync';
@@ -99,15 +107,7 @@ export class CompareComponent implements OnInit {
     this.filterItems[3],
   ];
 
-  constructor(
-    public dataUpdatesService: DataUpdatesService,
-    public dataStateService: DataStateService,
-    private credentialsService: CredentialsService,
-    private router: Router,
-    private folderActionUpdateService: FolderActionUpdateService,
-    private pluginService: PluginService,
-    private utils: UtilsService,
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     if (this.dataStateService.getCurrentValue() != null) {

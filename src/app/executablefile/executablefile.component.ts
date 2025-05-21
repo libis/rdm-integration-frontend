@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
@@ -27,6 +27,9 @@ import { Ripple } from 'primeng/ripple';
   ],
 })
 export class ExecutablefileComponent implements OnInit {
+  private pluginService = inject(PluginService);
+  dataService = inject(DataService);
+
   @Input('datafile') datafile: Datafile = {};
   @Input('loading') loading = true;
   @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
@@ -47,10 +50,7 @@ export class ExecutablefileComponent implements OnInit {
   spinning = false;
   computeEnabled = false;
 
-  constructor(
-    private pluginService: PluginService,
-    public dataService: DataService,
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     this.node = this.rowNodeMap.get(

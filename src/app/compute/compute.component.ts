@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { PluginService } from '../plugin.service';
 import {
@@ -53,6 +53,12 @@ import { AutosizeModule } from 'ngx-autosize';
   ],
 })
 export class ComputeComponent implements OnInit, OnDestroy {
+  private dvObjectLookupService = inject(DvObjectLookupService);
+  private pluginService = inject(PluginService);
+  dataService = inject(DataService);
+  private utils = inject(UtilsService);
+  private route = inject(ActivatedRoute);
+
   icon_play = 'pi pi-play';
 
   // CONSTANTS
@@ -84,13 +90,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
   datasetSearchResultsSubscription?: Subscription;
   req?: ComputeRequest;
 
-  constructor(
-    private dvObjectLookupService: DvObjectLookupService,
-    private pluginService: PluginService,
-    public dataService: DataService,
-    private utils: UtilsService,
-    private route: ActivatedRoute,
-  ) {
+  constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.datasetSearch(searchText)),

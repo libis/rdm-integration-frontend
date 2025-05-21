@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { DataUpdatesService } from '../data.updates.service';
 import { DataStateService } from '../data.state.service';
 import { SubmitService } from '../submit.service';
@@ -51,6 +51,17 @@ import { SubmittedFileComponent } from '../submitted-file/submitted-file.compone
 ],
 })
 export class SubmitComponent implements OnInit {
+  private dataStateService = inject(DataStateService);
+  private dataUpdatesService = inject(DataUpdatesService);
+  private submitService = inject(SubmitService);
+  private location = inject(Location);
+  private pluginService = inject(PluginService);
+  private router = inject(Router);
+  private utils = inject(UtilsService);
+  dataService = inject(DataService);
+  private credentialsService = inject(CredentialsService);
+  private datasetService = inject(DatasetService);
+
   icon_warning = 'pi pi-exclamation-triangle';
   icon_copy = 'pi pi-copy';
   icon_update = 'pi pi-clone';
@@ -80,18 +91,7 @@ export class SubmitComponent implements OnInit {
 
   id = 0;
 
-  constructor(
-    private dataStateService: DataStateService,
-    private dataUpdatesService: DataUpdatesService,
-    private submitService: SubmitService,
-    private location: Location,
-    private pluginService: PluginService,
-    private router: Router,
-    private utils: UtilsService,
-    public dataService: DataService,
-    private credentialsService: CredentialsService,
-    private datasetService: DatasetService,
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     this.loadData();

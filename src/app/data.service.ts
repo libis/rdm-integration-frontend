@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   AccessResponse,
   CachedComputeResponse,
@@ -17,6 +17,9 @@ import { CredentialsService } from './credentials.service';
   providedIn: 'root',
 })
 export class DataService {
+  private http = inject(HttpClient);
+  private credentialsService = inject(CredentialsService);
+
   compare_url = 'api/plugin/compare';
   common_get_cached_data_url = 'api/common/cached';
   common_get_executable_files_url = 'api/common/executable';
@@ -25,10 +28,7 @@ export class DataService {
   common_get_cached_compute_res_url = 'api/common/cachedcompute';
   common_get_downloadable_files_url = 'api/common/downloadable';
 
-  constructor(
-    private http: HttpClient,
-    private credentialsService: CredentialsService,
-  ) {}
+  constructor() {}
 
   getData(): Observable<Key> {
     const credentials = this.credentialsService.credentials;

@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Credentials } from '../models/credentials';
 import { DataStateService } from '../data.state.service';
@@ -57,6 +57,17 @@ const new_dataset = 'New Dataset';
   ],
 })
 export class ConnectComponent implements OnInit {
+  private router = inject(Router);
+  private dataStateService = inject(DataStateService);
+  private datasetService = inject(DatasetService);
+  private sanitizer = inject(DomSanitizer);
+  private dvObjectLookupService = inject(DvObjectLookupService);
+  private repoLookupService = inject(RepoLookupService);
+  private pluginService = inject(PluginService);
+  private route = inject(ActivatedRoute);
+  private oauth = inject(OauthService);
+  private http = inject(HttpClient);
+
   @ViewChild('repoSelect') repoNameSelect!: Select;
 
   // CONSTANTS
@@ -110,18 +121,7 @@ export class ConnectComponent implements OnInit {
   collectionSearchResultsSubscription?: Subscription;
   datasetSearchResultsSubscription?: Subscription;
 
-  constructor(
-    private router: Router,
-    private dataStateService: DataStateService,
-    private datasetService: DatasetService,
-    private sanitizer: DomSanitizer,
-    private dvObjectLookupService: DvObjectLookupService,
-    private repoLookupService: RepoLookupService,
-    private pluginService: PluginService,
-    private route: ActivatedRoute,
-    private oauth: OauthService,
-    private http: HttpClient,
-  ) {
+  constructor() {
     this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.repoNameSearch(searchText)),

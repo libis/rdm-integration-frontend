@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
@@ -13,15 +13,15 @@ import { UtilsService } from './utils.service';
   providedIn: 'root',
 })
 export class DataStateService {
+  private credentialsService = inject(CredentialsService);
+  private dataService = inject(DataService);
+  private router = inject(Router);
+  private utils = inject(UtilsService);
+
   private state: BehaviorSubject<CompareResult | null> =
     new BehaviorSubject<CompareResult | null>(null);
 
-  constructor(
-    private credentialsService: CredentialsService,
-    private dataService: DataService,
-    private router: Router,
-    private utils: UtilsService,
-  ) {}
+  constructor() {}
 
   initializeState(creds: Credentials): void {
     this.resetState();

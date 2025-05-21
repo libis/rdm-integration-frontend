@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
@@ -11,12 +11,12 @@ import { CompareResult } from './models/compare-result';
   providedIn: 'root',
 })
 export class DataUpdatesService {
+  private http = inject(HttpClient);
+  private credentialsService = inject(CredentialsService);
+
   common_compare_url = 'api/common/compare';
 
-  constructor(
-    private http: HttpClient,
-    private credentialsService: CredentialsService,
-  ) {}
+  constructor() {}
 
   updateData(data: Datafile[], pid: string): Observable<CompareResult> {
     const req = {

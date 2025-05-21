@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
@@ -15,6 +15,8 @@ import { Ripple } from 'primeng/ripple';
   imports: [TreeTableModule, ButtonDirective, Ripple],
 })
 export class DatafileComponent implements OnInit {
+  private folderActionUpdateService = inject(FolderActionUpdateService);
+
   @Input('datafile') datafile: Datafile = {};
   @Input('loading') loading = true;
   @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
@@ -41,7 +43,7 @@ export class DatafileComponent implements OnInit {
 
   node: TreeNode<Datafile> = {};
 
-  constructor(private folderActionUpdateService: FolderActionUpdateService) {}
+  constructor() {}
 
   ngOnInit(): void {
     this.node = this.rowNodeMap.get(
