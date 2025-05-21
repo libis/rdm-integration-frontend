@@ -12,7 +12,6 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import { definePreset } from '@primeng/themes';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { AppRoutingModule } from './app/app-routing.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AccordionModule } from 'primeng/accordion';
 import { FormsModule } from '@angular/forms';
@@ -33,16 +32,18 @@ import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { AppComponent } from './app/app.component';
 import Lara from '@primeng/themes/lara';
+import { provideRouter } from '@angular/router';
+import {routes} from './app/app.routs'
 
 if (environment.production) {
   enableProdMode();
 }
 
 bootstrapApplication(AppComponent, {
-  providers: [
+    providers: [
+      provideRouter(routes),
     importProvidersFrom(
       BrowserModule,
-      AppRoutingModule,
       NgbModule,
       AccordionModule,
       FormsModule,
