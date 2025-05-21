@@ -1,5 +1,5 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
-<td><p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>{{ sourceFile() }}</td>
+<td><p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler>{{ sourceFile() }}</td>
 <td style="text-align: center;"><i [class]="comparison(false)" [style]="'color:'+comparison(true)"></i></td>
 <td style="text-align: center;"><button pButton pRipple label='' type="button" class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i [class]="action()"></i></button></td>
-<td [class]="targetFileClass()"><p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>{{ targetFile() }}</td>
+<td [class]="targetFileClass()"><p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler>{{ targetFile() }}</td>

@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, Input, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
@@ -17,14 +17,11 @@ import { Ripple } from 'primeng/ripple';
 export class DatafileComponent implements OnInit {
   private folderActionUpdateService = inject(FolderActionUpdateService);
 
-  @Input('datafile') datafile: Datafile = {};
-  @Input('loading') loading = true;
-  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
-    string,
-    TreeNode<Datafile>
-  >();
-  @Input('rowNode') rowNode: TreeNode<Datafile> = {};
-  @Input('isInFilter') isInFilter = false;
+  readonly datafile = input<Datafile>({});
+  readonly loading = input(true);
+  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(new Map<string, TreeNode<Datafile>>());
+  readonly rowNode = input<TreeNode<Datafile>>({});
+  readonly isInFilter = input(false);
 
   icon_unknown = 'pi pi-question-circle';
 
@@ -46,23 +43,24 @@ export class DatafileComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(
-      this.datafile.id! + (this.datafile.attributes?.isFile ? ':file' : ''),
+    this.node = this.rowNodeMap().get(
+      this.datafile().id! + (this.datafile().attributes?.isFile ? ':file' : ''),
     )!; // avoid collisions between folders and files having the same path and name
   }
 
   sourceFile(): string {
-    if (this.datafile.status == Filestatus.Deleted) {
+    const datafile = this.datafile();
+    if (datafile.status == Filestatus.Deleted) {
       return '';
     }
-    if (this.isInFilter) {
-      return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`;
+    if (this.isInFilter()) {
+      return `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
     }
-    return `${this.datafile.name}`;
+    return `${datafile.name}`;
   }
 
   comparison(color: boolean): string {
-    switch (Number(this.datafile.status)) {
+    switch (Number(this.datafile().status)) {
       case Filestatus.New:
         return color ? 'green' : this.icon_new;
       case Filestatus.Equal:
@@ -72,14 +70,14 @@ export class DatafileComponent implements OnInit {
       case Filestatus.Deleted:
         return color ? 'red' : this.icon_deleted;
     }
-    if (this.loading) {
+    if (this.loading()) {
       return color ? 'black' : this.icon_spinner;
     }
     return color ? 'black' : this.icon_refresh;
   }
 
   action(): string {
-    switch (Number(this.datafile.action)) {
+    switch (Number(this.datafile().action)) {
       case Fileaction.Ignore:
         return this.icon_ignore;
       case Fileaction.Copy:
@@ -95,19 +93,21 @@ export class DatafileComponent implements OnInit {
   }
 
   targetFile(): string {
+    const datafile = this.datafile();
     if (
-      this.datafile.status === Filestatus.New &&
-      this.datafile.action !== Fileaction.Copy
+      datafile.status === Filestatus.New &&
+      datafile.action !== Fileaction.Copy
     ) {
       return '';
     }
-    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`;
+    return `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
   }
 
   toggleAction(): void {
-    switch (this.datafile.action) {
+    const datafile = this.datafile();
+    switch (datafile.action) {
       case Fileaction.Ignore:
-        switch (this.datafile.status) {
+        switch (datafile.status) {
           case Filestatus.New:
             this.setNodeAction(this.node, Fileaction.Copy);
             break;
@@ -120,7 +120,7 @@ export class DatafileComponent implements OnInit {
         }
         break;
       case Fileaction.Update:
-        if (this.datafile.attributes?.isFile) {
+        if (datafile.attributes?.isFile) {
           this.setNodeAction(this.node, Fileaction.Delete);
         } else {
           this.setNodeAction(this.node, Fileaction.Ignore);
@@ -130,12 +130,12 @@ export class DatafileComponent implements OnInit {
         this.setNodeAction(this.node, Fileaction.Ignore);
         break;
     }
-    this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
+    this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap());
   }
 
   setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
     const isFileFileInFolder =
-      node.data?.attributes?.isFile && !this.datafile.attributes?.isFile;
+      node.data?.attributes?.isFile && !this.datafile().attributes?.isFile;
     node.data!.action = isFileFileInFolder
       ? this.getFileInFolderAction(node, action)
       : action;
@@ -165,7 +165,7 @@ export class DatafileComponent implements OnInit {
   }
 
   targetFileClass(): string {
-    switch (this.datafile.action) {
+    switch (this.datafile().action) {
       case Fileaction.Delete:
         return 'text-decoration-line-through';
       case Fileaction.Copy:

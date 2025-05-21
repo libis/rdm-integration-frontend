@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { Field, Fieldaction } from '../models/field';
 import { TreeTableModule } from 'primeng/treetable';
@@ -14,12 +14,9 @@ import { Ripple } from 'primeng/ripple';
   imports: [TreeTableModule, ButtonDirective, Ripple],
 })
 export class MetadatafieldComponent implements OnInit {
-  @Input('field') field: Field = {};
-  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Field>> = new Map<
-    string,
-    TreeNode<Field>
-  >();
-  @Input('rowNode') rowNode: TreeNode<Field> = {};
+  readonly field = input<Field>({});
+  readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(new Map<string, TreeNode<Field>>());
+  readonly rowNode = input<TreeNode<Field>>({});
 
   static icon_ignore = 'pi pi-stop';
   static icon_copy = 'pi pi-check-square';
@@ -30,10 +27,10 @@ export class MetadatafieldComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    const foundNode = [...this.rowNodeMap.values()].find(
-      (x) => x.data?.id === this.field.id,
+    const foundNode = [...this.rowNodeMap().values()].find(
+      (x) => x.data?.id === this.field().id,
     );
-    this.node = foundNode ? foundNode : this.rowNode;
+    this.node = foundNode ? foundNode : this.rowNode();
   }
 
   action(): string {
@@ -54,16 +51,17 @@ export class MetadatafieldComponent implements OnInit {
   }
 
   name(): string {
-    return `${this.field.name}`;
+    return `${this.field().name}`;
   }
 
   value(): string {
-    return this.field.leafValue ? `${this.field.leafValue}` : '';
+    const field = this.field();
+    return field.leafValue ? `${field.leafValue}` : '';
   }
 
   toggleAction(): void {
     MetadatafieldComponent.toggleNodeAction(this.node);
-    this.updateFolderActions(this.rowNodeMap.get('')!);
+    this.updateFolderActions(this.rowNodeMap().get('')!);
   }
 
   updateFolderActions(node: TreeNode<Field>): Fieldaction {

@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, input } from '@angular/core';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
@@ -30,15 +30,12 @@ export class ExecutablefileComponent implements OnInit {
   private pluginService = inject(PluginService);
   dataService = inject(DataService);
 
-  @Input('datafile') datafile: Datafile = {};
-  @Input('loading') loading = true;
-  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
-    string,
-    TreeNode<Datafile>
-  >();
-  @Input('rowNode') rowNode: TreeNode<Datafile> = {};
-  @Input('pid') pid?: string;
-  @Input('dv_token') dv_token?: string;
+  readonly datafile = input<Datafile>({});
+  readonly loading = input(true);
+  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(new Map<string, TreeNode<Datafile>>());
+  readonly rowNode = input<TreeNode<Datafile>>({});
+  readonly pid = input<string>();
+  readonly dv_token = input<string>();
 
   @Output('computeClicked') computeClicked = new EventEmitter<ComputeRequest>();
 
@@ -53,11 +50,12 @@ export class ExecutablefileComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(
-      this.datafile.id! + (this.datafile.attributes?.isFile ? ':file' : ''),
+    this.node = this.rowNodeMap().get(
+      this.datafile().id! + (this.datafile().attributes?.isFile ? ':file' : ''),
     )!; // avoid collisions between folders and files having the same path and name
-    const splitted = this.datafile.name?.split('.');
-    if (this.datafile.attributes?.isFile && splitted && splitted?.length > 0) {
+    const datafile = this.datafile();
+    const splitted = datafile.name?.split('.');
+    if (datafile.attributes?.isFile && splitted && splitted?.length > 0) {
       this.queues = this.pluginService.getQueues(splitted[splitted.length - 1]);
     }
   }
@@ -69,7 +67,7 @@ export class ExecutablefileComponent implements OnInit {
     this.spinning = true;
     this.computeEnabled = false;
     const subscription = this.dataService
-      .checkAccessToQueue(this.pid, this.dv_token, this.queue)
+      .checkAccessToQueue(this.pid(), this.dv_token(), this.queue)
       .subscribe({
         next: (access) => {
           subscription.unsubscribe();
@@ -92,10 +90,10 @@ export class ExecutablefileComponent implements OnInit {
 
   compute(): void {
     this.computeClicked.emit({
-      persistentId: this.pid!,
-      dataverseKey: this.dv_token,
+      persistentId: this.pid()!,
+      dataverseKey: this.dv_token(),
       queue: this.queue!,
-      executable: this.datafile.id!,
+      executable: this.datafile().id!,
       sendEmailOnSuccess: false,
     });
   }

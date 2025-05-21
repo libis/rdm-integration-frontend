@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { Datafile, Fileaction } from '../models/datafile';
 import { TreeTableModule } from 'primeng/treetable';
@@ -14,12 +14,9 @@ import { Ripple } from 'primeng/ripple';
   imports: [TreeTableModule, ButtonDirective, Ripple],
 })
 export class DownladablefileComponent implements OnInit {
-  @Input('datafile') datafile: Datafile = {};
-  @Input('rowNodeMap') rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
-    string,
-    TreeNode<Datafile>
-  >();
-  @Input('rowNode') rowNode: TreeNode<Datafile> = {};
+  readonly datafile = input<Datafile>({});
+  readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(new Map<string, TreeNode<Datafile>>());
+  readonly rowNode = input<TreeNode<Datafile>>({});
 
   node: TreeNode<Datafile> = {};
 
@@ -30,8 +27,8 @@ export class DownladablefileComponent implements OnInit {
   constructor() {}
 
   ngOnInit(): void {
-    this.node = this.rowNodeMap.get(
-      this.datafile.id! + (this.datafile.attributes?.isFile ? ':file' : ''),
+    this.node = this.rowNodeMap().get(
+      this.datafile().id! + (this.datafile().attributes?.isFile ? ':file' : ''),
     )!; // avoid collisions between folders and files having the same path and name
   }
 
@@ -53,12 +50,12 @@ export class DownladablefileComponent implements OnInit {
   }
 
   sourceFile(): string {
-    return `${this.datafile.name}`;
+    return `${this.datafile().name}`;
   }
 
   toggleAction(): void {
     DownladablefileComponent.toggleNodeAction(this.node);
-    this.updateFolderActions(this.rowNodeMap.get('')!);
+    this.updateFolderActions(this.rowNodeMap().get('')!);
   }
 
   updateFolderActions(node: TreeNode<Datafile>): Fileaction {

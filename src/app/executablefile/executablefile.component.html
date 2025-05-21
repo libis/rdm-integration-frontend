@@ -1,7 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<td style="text-align: left;"><p-treeTableToggler [rowNode]="rowNode"></p-treeTableToggler>{{ datafile.name }}</td>
+<td style="text-align: left;"><p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler>{{ datafile().name }}</td>
 <td style="text-align: right;">
-    <div [hidden]="!datafile.attributes?.isFile">
+    <div [hidden]="!datafile().attributes?.isFile">
         <p-progressSpinner [hidden]="!spinning" styleClass="w-1rem h-1rem" ariaLabel="loading"></p-progressSpinner>
         <p-select appendTo="body" [options]="queues"
                 [filter]="true" filterBy="label" [resetFilterOnHide]="true"

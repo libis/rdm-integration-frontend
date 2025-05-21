@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit, input } from '@angular/core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 @Component({
@@ -9,8 +9,8 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
   styleUrls: ['./submitted-file.component.scss'],
 })
 export class SubmittedFileComponent implements OnInit {
-  @Input() datafile: Datafile = {};
-  @Input('isSubmitted') isSubmitted = false;
+  readonly datafile = input<Datafile>({});
+  readonly isSubmitted = input(false);
 
   constructor() {
     // empty
@@ -21,7 +21,8 @@ export class SubmittedFileComponent implements OnInit {
   }
 
   file(): string {
-    return `${this.datafile.path ? this.datafile.path + '/' : ''}${this.datafile.name}`;
+    const datafile = this.datafile();
+    return `${datafile.path ? datafile.path + '/' : ''}${this.datafile().name}`;
   }
 
   iconClass(): string {
@@ -32,10 +33,11 @@ export class SubmittedFileComponent implements OnInit {
   }
 
   isReady(): boolean {
-    const isDelete = this.datafile.action === Fileaction.Delete;
+    const isDelete = this.datafile().action === Fileaction.Delete;
+    const datafile = this.datafile();
     return (
-      (isDelete && this.datafile.status === Filestatus.New) ||
-      (!isDelete && this.datafile.status === Filestatus.Equal)
+      (isDelete && datafile.status === Filestatus.New) ||
+      (!isDelete && datafile.status === Filestatus.Equal)
     );
   }
 }
