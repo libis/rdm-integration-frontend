@@ -32,7 +32,7 @@ import { AutosizeModule } from 'ngx-autosize';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { AppComponent } from './app/app.component';
 import Lara from '@primeng/themes/lara';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withHashLocation } from '@angular/router';
 import { routes } from './app/app.routs';
 
 if (environment.production) {
@@ -41,7 +41,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes),
+    provideRouter(routes, withHashLocation()),
     importProvidersFrom(
       BrowserModule,
       NgbModule,
