@@ -58,7 +58,7 @@
         <th>{{ repo() }}</th>
         <th class="icon_col" style="text-align: center;">
           <span title="Comparison status">
-            <p-overlayPanel #op appendTo="body">
+            <p-popover #op appendTo="body">
               <p-table [value]="filterItems" [(selection)]="selectedFilterItems" dataKey="label">
                 <ng-template pTemplate="header">
                   <tr>
@@ -78,7 +78,7 @@
                 </ng-template>
               </p-table>
               <button pButton type="button" class="p-button-link" (click)="showAll()" title="Show all">Show all...</button>
-            </p-overlayPanel>
+            </p-popover>
             <button pButton pRipple type="button" class="p-button-sm p-button-raised" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
           </span>
         </th>

@@ -17,7 +17,7 @@ import { ButtonDirective } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 
 import { TreeTableModule } from 'primeng/treetable';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
 import { DatafileComponent } from '../datafile/datafile.component';
 
@@ -30,7 +30,7 @@ import { DatafileComponent } from '../datafile/datafile.component';
     Ripple,
     TreeTableModule,
     PrimeTemplate,
-    OverlayPanelModule,
+    PopoverModule,
     TableModule,
     DatafileComponent,
   ],

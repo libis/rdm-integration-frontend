@@ -20,7 +20,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -51,7 +51,7 @@ bootstrapApplication(AppComponent, {
       TableModule,
       ButtonModule,
       RippleModule,
-      OverlayPanelModule,
+      PopoverModule,
       SelectModule,
       FloatLabelModule,
       SkeletonModule,
