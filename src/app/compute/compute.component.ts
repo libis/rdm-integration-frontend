@@ -1,17 +1,17 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
+import { Subscription } from 'rxjs';
+
+// Services
 import { PluginService } from '../plugin.service';
-import {
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-  Subscription,
-} from 'rxjs';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
+import { DataService } from '../data.service';
+import { UtilsService } from '../utils.service';
+import { ActivatedRoute } from '@angular/router';
+import { NotificationService } from '../shared/notification.service';
+
+// Models
 import {
   CachedComputeResponse,
   CompareResult,
@@ -19,9 +19,9 @@ import {
   Key,
 } from '../models/compare-result';
 import { Datafile } from '../models/datafile';
-import { DataService } from '../data.service';
-import { UtilsService } from '../utils.service';
-import { ActivatedRoute } from '@angular/router';
+
+// PrimeNG
+import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 import { FormsModule } from '@angular/forms';
@@ -30,8 +30,25 @@ import { Select } from 'primeng/select';
 import { Dialog } from 'primeng/dialog';
 import { Checkbox } from 'primeng/checkbox';
 import { TreeTableModule } from 'primeng/treetable';
+
+// Components
 import { ExecutablefileComponent } from '../executablefile/executablefile.component';
+
+// Third-party
 import { AutosizeModule } from 'ngx-autosize';
+
+// RxJS
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+} from 'rxjs';
+
+// Constants and types
+import { APP_CONSTANTS } from '../shared/constants';
+import { SubscriptionManager } from '../shared/types';
 
 @Component({
   selector: 'app-compute',
@@ -52,17 +69,22 @@ import { AutosizeModule } from 'ngx-autosize';
     AutosizeModule,
   ],
 })
-export class ComputeComponent implements OnInit, OnDestroy {
-  private dvObjectLookupService = inject(DvObjectLookupService);
-  private pluginService = inject(PluginService);
+export class ComputeComponent implements OnInit, OnDestroy, SubscriptionManager {
+  private readonly dvObjectLookupService = inject(DvObjectLookupService);
+  private readonly pluginService = inject(PluginService);
   dataService = inject(DataService);
-  private utils = inject(UtilsService);
-  private route = inject(ActivatedRoute);
+  private readonly utils = inject(UtilsService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly notificationService = inject(NotificationService);
 
-  icon_play = 'pi pi-play';
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
+
+  // Icon constants
+  readonly icon_play = APP_CONSTANTS.ICONS.PLAY;
 
   // CONSTANTS
-  DEBOUNCE_TIME = 750;
+  readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -123,19 +145,24 @@ export class ComputeComponent implements OnInit, OnDestroy {
               (err) =>
                 (this.doiItems = [
                   {
-                    label: 'search failed: ' + err.message,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.doiItems = [
-            { label: 'search failed: ' + err.message, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
+    // Clean up all subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.clear();
+    
+    // Clean up existing observable subscriptions
     this.datasetSearchResultsSubscription?.unsubscribe();
   }
 
@@ -184,7 +211,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
           httpSubscription.unsubscribe();
         },
         error: (err) => {
-          alert('doi lookup failed: ' + err.error);
+          this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems = [];
           this.datasetId = undefined;
         },
@@ -207,7 +234,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
       return;
     }
     this.doiItems = [
-      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.datasetSearchSubject.next(searchTerm);
   }
@@ -240,7 +267,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           subscription.unsubscribe();
-          alert('getting executable files failed: ' + err.error);
+          this.notificationService.showError(`Getting executable files failed: ${err.error}`);
         },
       });
   }
@@ -277,7 +304,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         httpSubscription.unsubscribe();
-        alert(err);
+        this.notificationService.showError(err);
       },
     });
   }
@@ -296,7 +323,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
             this.output = res.res;
           }
           if (res.err && res.err !== '') {
-            alert(res.err);
+            this.notificationService.showError(res.err);
           } else {
             this.outputDisabled = false;
           }
@@ -311,7 +338,7 @@ export class ComputeComponent implements OnInit, OnDestroy {
       error: (err) => {
         subscription.unsubscribe();
         this.loading = false;
-        alert('getting computation results failed: ' + err.error);
+        this.notificationService.showError(`Getting computation results failed: ${err.error}`);
       },
     });
   }

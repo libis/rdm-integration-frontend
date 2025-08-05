@@ -1,22 +1,26 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { Subscription, firstValueFrom } from 'rxjs';
+
+// Services
 import { DataUpdatesService } from '../data.updates.service';
 import { DataStateService } from '../data.state.service';
 import { SubmitService } from '../submit.service';
-import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { Router } from '@angular/router';
-import { StoreResult } from '../models/store-result';
-import { CompareResult } from '../models/compare-result';
-import { Location } from '@angular/common';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
 import { DatasetService } from '../dataset.service';
-import { firstValueFrom } from 'rxjs';
+import { NotificationService } from '../shared/notification.service';
+
+// Models
+import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { StoreResult } from '../models/store-result';
+import { CompareResult } from '../models/compare-result';
 import { MetadataRequest } from '../models/metadata-request';
-import { TreeNode, PrimeTemplate } from 'primeng/api';
 import {
   Field,
   Fieldaction,
@@ -24,14 +28,23 @@ import {
   Metadata,
   MetadataField,
 } from '../models/field';
-import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
+
+// PrimeNG
+import { TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 import { Dialog } from 'primeng/dialog';
 import { Checkbox } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
 import { TreeTableModule } from 'primeng/treetable';
+
+// Components
+import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 import { SubmittedFileComponent } from '../submitted-file/submitted-file.component';
+
+// Constants and types
+import { APP_CONSTANTS } from '../shared/constants';
+import { SubscriptionManager } from '../shared/types';
 
 @Component({
   selector: 'app-submit',
@@ -50,22 +63,27 @@ import { SubmittedFileComponent } from '../submitted-file/submitted-file.compone
     SubmittedFileComponent,
   ],
 })
-export class SubmitComponent implements OnInit {
-  private dataStateService = inject(DataStateService);
-  private dataUpdatesService = inject(DataUpdatesService);
-  private submitService = inject(SubmitService);
-  private location = inject(Location);
-  private pluginService = inject(PluginService);
-  private router = inject(Router);
-  private utils = inject(UtilsService);
+export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
+  private readonly dataStateService = inject(DataStateService);
+  private readonly dataUpdatesService = inject(DataUpdatesService);
+  private readonly submitService = inject(SubmitService);
+  private readonly location = inject(Location);
+  private readonly pluginService = inject(PluginService);
+  private readonly router = inject(Router);
+  private readonly utils = inject(UtilsService);
   dataService = inject(DataService);
-  private credentialsService = inject(CredentialsService);
-  private datasetService = inject(DatasetService);
+  private readonly credentialsService = inject(CredentialsService);
+  private readonly datasetService = inject(DatasetService);
+  private readonly notificationService = inject(NotificationService);
 
-  icon_warning = 'pi pi-exclamation-triangle';
-  icon_copy = 'pi pi-copy';
-  icon_update = 'pi pi-clone';
-  icon_delete = 'pi pi-trash';
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
+
+  // Icon constants
+  readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
+  readonly icon_copy = APP_CONSTANTS.ICONS.UPDATE;
+  readonly icon_update = 'pi pi-clone';
+  readonly icon_delete = 'pi pi-trash';
 
   data: Datafile[] = []; // this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
   pid = '';
@@ -91,7 +109,7 @@ export class SubmitComponent implements OnInit {
 
   id = 0;
 
-  constructor() {}
+  constructor() { }
 
   ngOnInit(): void {
     this.loadData();
@@ -112,6 +130,12 @@ export class SubmitComponent implements OnInit {
       });
   }
 
+  ngOnDestroy(): void {
+    // Clean up all subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.clear();
+  }
+
   getDataSubscription(): void {
     const dataSubscription = this.dataUpdatesService
       .updateData(this.data, this.pid)
@@ -130,7 +154,7 @@ export class SubmitComponent implements OnInit {
         },
         error: (err) => {
           dataSubscription?.unsubscribe();
-          alert('getting status of data failed: ' + err.error);
+          this.notificationService.showError(`Getting status of data failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
       });
@@ -262,7 +286,7 @@ export class SubmitComponent implements OnInit {
         next: (data: StoreResult) => {
           if (data.status !== 'OK') {
             // this should not happen
-            alert('store failed, status: ' + data.status);
+            this.notificationService.showError(`Store failed, status: ${data.status}`);
             this.router.navigate(['/connect']);
           } else {
             this.getDataSubscription();
@@ -272,7 +296,7 @@ export class SubmitComponent implements OnInit {
           httpSubscription.unsubscribe();
         },
         error: (err) => {
-          alert('store failed: ' + err.error);
+          this.notificationService.showError(`Store failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
       });
@@ -308,7 +332,7 @@ export class SubmitComponent implements OnInit {
       this.credentialsService.credentials.dataset_id = data.persistentId;
       return true;
     } else {
-      alert('creating new dataset failed');
+      this.notificationService.showError('Creating new dataset failed');
       return false;
     }
   }
@@ -382,9 +406,9 @@ export class SubmitComponent implements OnInit {
     ) {
       let content = d.value[0];
       for (let i = 1; i < d.value.length; i++) {
-        content = content + ', ' + d.value[i];
+        content = `${content}, ${d.value[i]}`;
       }
-      const id = '' + this.id++;
+      const id = `${this.id++}`;
       d.id = id;
       const data: Field = {
         id: id,
@@ -399,7 +423,7 @@ export class SubmitComponent implements OnInit {
       });
     } else if (d.value && typeof d.value !== 'string') {
       (d.value as FieldDictonary[]).forEach((v) => {
-        const id = '' + this.id++;
+        const id = `${this.id++}`;
         const data: Field = {
           id: id,
           parent: parent,
@@ -413,7 +437,7 @@ export class SubmitComponent implements OnInit {
         this.mapChildField(id, v, rowDataMap);
       });
     } else {
-      const id = '' + this.id++;
+      const id = `${this.id++}`;
       d.id = id;
       const data: Field = {
         id: id,

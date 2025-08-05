@@ -56,7 +56,7 @@ export class DatafileComponent implements OnInit {
       return '';
     }
     if (this.isInFilter()) {
-      return `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
+      return `${datafile.path ? `${datafile.path  }/` : ''}${datafile.name}`;
     }
     return `${datafile.name}`;
   }
@@ -102,7 +102,7 @@ export class DatafileComponent implements OnInit {
     ) {
       return '';
     }
-    return `${datafile.path ? datafile.path + '/' : ''}${datafile.name}`;
+    return `${datafile.path ? `${datafile.path  }/` : ''}${datafile.name}`;
   }
 
   toggleAction(): void {

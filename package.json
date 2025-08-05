@@ -5,9 +5,16 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless",
+    "lint": "eslint \"src/**/*.{js,ts}\"",
+    "lint:fix": "eslint \"src/**/*.{js,ts}\" --fix",
+    "pretty": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
+    "pretty:check": "prettier --check \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
+    "analyze": "ng build --configuration production --source-map && npx webpack-bundle-analyzer dist/datasync/*.js",
+    "serve:prod": "ng serve --configuration production"
   },
   "private": true,
   "dependencies": {
@@ -53,6 +60,7 @@
     "prettier": "^3.5.3",
     "terser": "^5.39.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.1"
+    "typescript-eslint": "^8.32.1",
+    "webpack-bundle-analyzer": "^4.10.2"
   }
 }

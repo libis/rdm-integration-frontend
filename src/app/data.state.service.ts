@@ -8,6 +8,7 @@ import { DataService } from './data.service';
 import { CachedResponse, CompareResult, Key } from './models/compare-result';
 import { Credentials } from './models/credentials';
 import { UtilsService } from './utils.service';
+import { NotificationService } from './shared/notification.service';
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +18,7 @@ export class DataStateService {
   private dataService = inject(DataService);
   private router = inject(Router);
   private utils = inject(UtilsService);
+  private notificationService = inject(NotificationService);
 
   private state: BehaviorSubject<CompareResult | null> =
     new BehaviorSubject<CompareResult | null>(null);
@@ -33,7 +35,7 @@ export class DataStateService {
       },
       error: (err) => {
         subscription.unsubscribe();
-        alert('getting data failed: ' + err.error);
+        this.notificationService.showError(`Getting data failed: ${err.error}`);
         this.router.navigate(['/connect']);
       },
     });
@@ -56,7 +58,7 @@ export class DataStateService {
             this.state.next(null);
           }
           if (res.err && res.err !== '') {
-            alert(res.err);
+            this.notificationService.showError(res.err);
           }
         } else {
           await this.utils.sleep(1000);
@@ -65,7 +67,7 @@ export class DataStateService {
       },
       error: (err) => {
         subscription.unsubscribe();
-        alert('comparing failed: ' + err.error);
+        this.notificationService.showError(`Comparing failed: ${err.error}`);
         this.router.navigate(['/connect']);
       },
     });

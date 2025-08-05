@@ -1,29 +1,29 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject, viewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { Credentials } from '../models/credentials';
+import { Subscription } from 'rxjs';
+
+// Services
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
-import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
-import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { PluginService } from '../plugin.service';
 import { ActivatedRoute } from '@angular/router';
-import { Item, LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
-import { Select } from 'primeng/select';
-import {
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-  Subscription,
-} from 'rxjs';
-import { RepoLookupRequest } from '../models/repo-lookup';
 import { HttpClient } from '@angular/common/http';
+import { NotificationService } from '../shared/notification.service';
+
+// Models
+import { Credentials } from '../models/credentials';
+import { Item, LoginState } from '../models/oauth';
+import { RepoLookupRequest } from '../models/repo-lookup';
+
+// PrimeNG
+import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import { Select } from 'primeng/select';
 import { ButtonDirective } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 import {
@@ -35,6 +35,19 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Skeleton } from 'primeng/skeleton';
 import { Tree } from 'primeng/tree';
+
+// RxJS
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+} from 'rxjs';
+
+// Constants and types
+import { APP_CONSTANTS } from '../shared/constants';
+import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
 
@@ -56,25 +69,29 @@ const new_dataset = 'New Dataset';
     Tree,
   ],
 })
-export class ConnectComponent implements OnInit {
-  private router = inject(Router);
-  private dataStateService = inject(DataStateService);
-  private datasetService = inject(DatasetService);
-  private sanitizer = inject(DomSanitizer);
-  private dvObjectLookupService = inject(DvObjectLookupService);
-  private repoLookupService = inject(RepoLookupService);
-  private pluginService = inject(PluginService);
-  private route = inject(ActivatedRoute);
-  private oauth = inject(OauthService);
-  private http = inject(HttpClient);
+export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager {
+  private readonly router = inject(Router);
+  private readonly dataStateService = inject(DataStateService);
+  private readonly datasetService = inject(DatasetService);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly dvObjectLookupService = inject(DvObjectLookupService);
+  private readonly repoLookupService = inject(RepoLookupService);
+  private readonly pluginService = inject(PluginService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly oauth = inject(OauthService);
+  private readonly http = inject(HttpClient);
+  private readonly notificationService = inject(NotificationService);
+
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
 
   readonly repoNameSelect = viewChild.required<Select>('repoSelect');
 
   // CONSTANTS
-
-  DEBOUNCE_TIME = 750;
-  DOI_SELECT_WIDTH: SafeStyle =
+  readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
+  readonly DOI_SELECT_WIDTH: SafeStyle =
     this.sanitizer.bypassSecurityTrustStyle('calc(100% - 12rem)');
+  readonly NEW_DATASET = new_dataset;
 
   // NG MODEL FIELDS
 
@@ -151,14 +168,14 @@ export class ConnectComponent implements OnInit {
               (err) =>
                 (this.repoNames = [
                   {
-                    label: 'search failed: ' + err.message,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.repoNames = [
-            { label: 'search failed: ' + err.message, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.collectionSearchResultsSubscription =
@@ -170,14 +187,14 @@ export class ConnectComponent implements OnInit {
               (err) =>
                 (this.collectionItems = [
                   {
-                    label: 'search failed: ' + err.message,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.collectionItems = [
-            { label: 'search failed: ' + err.message, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.datasetSearchResultsSubscription =
@@ -189,14 +206,14 @@ export class ConnectComponent implements OnInit {
               (err) =>
                 (this.doiItems = [
                   {
-                    label: 'search failed: ' + err.message,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.doiItems = [
-            { label: 'search failed: ' + err.message, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.route.queryParams.subscribe((params) => {
@@ -244,6 +261,7 @@ export class ConnectComponent implements OnInit {
                   .getDatasetVersion(datasetDbId, apiToken)
                   .subscribe((x) => {
                     this.datasetId = x.persistentId;
+                    this.subscriptions.delete(versionSubscription);
                     versionSubscription.unsubscribe();
                     if (downloadId) {
                       this.router.navigate(['/download'], {
@@ -255,6 +273,7 @@ export class ConnectComponent implements OnInit {
                       });
                     }
                   });
+                this.subscriptions.add(versionSubscription);
               }
             }
           }
@@ -350,13 +369,20 @@ export class ConnectComponent implements OnInit {
             if (!this.pluginService.isStoreDvToken()) {
               localStorage.removeItem('dataverseToken');
             }
+            this.subscriptions.delete(tokenSubscription);
             tokenSubscription.unsubscribe();
           });
+        this.subscriptions.add(tokenSubscription);
       }
     });
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
+    // Clean up all subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.clear();
+    
+    // Clean up existing observable subscriptions
     this.repoSearchResultsSubscription?.unsubscribe();
     this.collectionSearchResultsSubscription?.unsubscribe();
     this.datasetSearchResultsSubscription?.unsubscribe();
@@ -383,7 +409,7 @@ export class ConnectComponent implements OnInit {
 
   getRepoToken(scopes?: string) {
     if (this.pluginId === undefined) {
-      alert('Repository type is missing');
+      this.notificationService.showError('Repository type is missing');
       return;
     }
     if (this.dataverseToken !== undefined) {
@@ -417,13 +443,13 @@ export class ConnectComponent implements OnInit {
         clId = '&client_id=';
       }
       url =
-        url +
+        `${url +
         clId +
-        encodeURIComponent(tg.oauth_client_id) +
-        '&redirect_uri=' +
-        encodeURIComponent(this.pluginService.getRedirectUri()) +
-        '&response_type=code&state=' +
-        encodeURIComponent(JSON.stringify(loginState));
+        encodeURIComponent(tg.oauth_client_id) 
+        }&redirect_uri=${ 
+        encodeURIComponent(this.pluginService.getRedirectUri()) 
+        }&response_type=code&state=${ 
+        encodeURIComponent(JSON.stringify(loginState))}`;
       // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
       if (scopes) {
         if (url.includes('scope=')) {
@@ -432,10 +458,9 @@ export class ConnectComponent implements OnInit {
           if (and > 0) {
             scopeStr = scopeStr.substring(0, and);
           }
-          console.log('scopeStr: ' + scopeStr);
-          url = url.replace(scopeStr, 'scope=' + encodeURIComponent(scopes));
+          url = url.replace(scopeStr, `scope=${encodeURIComponent(scopes)}`);
         } else {
-          url = url + '&scope=' + encodeURIComponent(scopes);
+          url = `${url  }&scope=${  encodeURIComponent(scopes)}`;
         }
       }
       location.href = url;
@@ -485,11 +510,10 @@ export class ConnectComponent implements OnInit {
       .subscribe({
         next: (useremail) => {
           subscr.unsubscribe();
-          console.log(useremail);
           if (useremail !== '') {
             const err = this.parseAndCheckFields();
             if (err !== undefined) {
-              alert(err);
+              this.notificationService.showError(err);
               return;
             }
             const tokenName = this.pluginService.getPlugin(
@@ -525,15 +549,15 @@ export class ConnectComponent implements OnInit {
 
             this.router.navigate(['/compare', this.datasetId]);
           } else {
-            alert(
+            this.notificationService.showError(
               'Unknown user: you need to generate a valid Dataverse API token first',
             );
           }
         },
         error: (err) => {
           subscr.unsubscribe();
-          console.log(err);
-          alert(
+          console.error(err);
+          this.notificationService.showError(
             'Error getting user: you need to generate a valid Dataverse API token first',
           );
         },
@@ -570,14 +594,14 @@ export class ConnectComponent implements OnInit {
       const s = strings[i];
       if (s === undefined || s === '' || s === 'loading') {
         cnt++;
-        res = res + '\n- ' + names[i];
+        res = `${res  }\n- ${  names[i]}`;
       }
     }
 
     const err = this.parseUrl();
     if (err) {
       cnt++;
-      res = res + '\n\n' + err;
+      res = `${res  }\n\n${  err}`;
     }
 
     if (cnt === 0) {
@@ -599,7 +623,7 @@ export class ConnectComponent implements OnInit {
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
-        this.url = 'https://' + splitted[0];
+        this.url = `https://${  splitted[0]}`;
         this.repoName = splitted.slice(1, splitted.length).join('/');
         if (this.repoName.endsWith('.git')) {
           this.repoName = this.repoName.substring(0, this.repoName.length - 4);
@@ -691,23 +715,23 @@ export class ConnectComponent implements OnInit {
 
   getRepoLookupRequest(isSearch: boolean): RepoLookupRequest | undefined {
     if (this.pluginId === undefined) {
-      alert('Repository type is missing');
+      this.notificationService.showError('Repository type is missing');
       return;
     }
     const err = this.parseUrl();
     if (err) {
-      alert(err);
+      this.notificationService.showError(err);
       return;
     }
     if (this.url === undefined || this.url === '') {
-      alert('URL is missing');
+      this.notificationService.showError('URL is missing');
       return;
     }
     if (
       this.getUsernameFieldName() &&
       (this.user === undefined || this.user === '')
     ) {
-      alert(this.getUsernameFieldName() + ' is missing');
+      this.notificationService.showError(`${this.getUsernameFieldName()} is missing`);
       return;
     }
     if (
@@ -715,14 +739,14 @@ export class ConnectComponent implements OnInit {
       (this.getRepoName() === undefined || this.getRepoName() === '') &&
       !isSearch
     ) {
-      alert(this.getRepoNameFieldName() + ' is missing');
+      this.notificationService.showError(`${this.getRepoNameFieldName()} is missing`);
       return;
     }
     if (
       this.getTokenFieldName() &&
       (this.token === undefined || this.token === '')
     ) {
-      alert(this.getTokenFieldName() + ' is missing');
+      this.notificationService.showError(`${this.getTokenFieldName()} is missing`);
       return;
     }
     if (
@@ -783,7 +807,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     this.repoNames = [
-      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.repoSearchSubject.next(searchTerm);
   }
@@ -892,7 +916,7 @@ export class ConnectComponent implements OnInit {
           );
           this.getRepoToken(scopes);
         } else {
-          alert('branch lookup failed: ' + err.error);
+          this.notificationService.showError(`Branch lookup failed: ${err.error}`);
           this.branchItems = [];
           this.option = undefined;
           this.optionsLoading = false;
@@ -948,8 +972,8 @@ export class ConnectComponent implements OnInit {
 
   getDataverseToken(): void {
     const url =
-      this.pluginService.getExternalURL() +
-      '/dataverseuser.xhtml?selectTab=apiTokenTab';
+      `${this.pluginService.getExternalURL() 
+      }/dataverseuser.xhtml?selectTab=apiTokenTab`;
     window.open(url, '_blank');
   }
 
@@ -998,7 +1022,7 @@ export class ConnectComponent implements OnInit {
           httpSubscription.unsubscribe();
         },
         error: (err) => {
-          alert('doi lookup failed: ' + err.error);
+          this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           setter(this, []);
         },
       });
@@ -1046,7 +1070,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     this.collectionItems = [
-      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.collectionSearchSubject.next(searchTerm);
   }
@@ -1085,7 +1109,7 @@ export class ConnectComponent implements OnInit {
 
   newDataset() {
     const datasetId =
-      (this.collectionId ? this.collectionId! : '') + ':' + new_dataset;
+      `${this.collectionId ? this.collectionId! : ''  }:${  new_dataset}`;
     this.doiItems = [{ label: new_dataset, value: datasetId }];
     this.datasetId = datasetId;
   }
@@ -1101,7 +1125,7 @@ export class ConnectComponent implements OnInit {
       return;
     }
     this.doiItems = [
-      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.datasetSearchSubject.next(searchTerm);
   }

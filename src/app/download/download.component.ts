@@ -1,29 +1,28 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
+import { Subscription } from 'rxjs';
+
+// Services
 import { PluginService } from '../plugin.service';
-import {
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-  Subscription,
-} from 'rxjs';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { CompareResult } from '../models/compare-result';
-import { Datafile, Fileaction } from '../models/datafile';
 import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
-import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
-import { RepoLookupRequest } from '../models/repo-lookup';
 import { RepoLookupService } from '../repo.lookup.service';
-import { LoginState } from '../models/oauth';
 import { OauthService } from '../oauth.service';
 import { SubmitService } from '../submit.service';
+import { NotificationService } from '../shared/notification.service';
+
+// Models
+import { CompareResult } from '../models/compare-result';
+import { Datafile, Fileaction } from '../models/datafile';
+import { RepoLookupRequest } from '../models/repo-lookup';
+import { LoginState } from '../models/oauth';
 import { RepoPlugin } from '../models/plugin';
+
+// PrimeNG
+import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 import { FormsModule } from '@angular/forms';
@@ -31,6 +30,22 @@ import { FloatLabel } from 'primeng/floatlabel';
 import { Select } from 'primeng/select';
 import { TreeTableModule } from 'primeng/treetable';
 import { Tree } from 'primeng/tree';
+
+// Components
+import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
+
+// RxJS
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+} from 'rxjs';
+
+// Constants and types
+import { APP_CONSTANTS } from '../shared/constants';
+import { SubscriptionManager } from '../shared/types';
 
 @Component({
   selector: 'app-download',
@@ -49,18 +64,22 @@ import { Tree } from 'primeng/tree';
     Button,
   ],
 })
-export class DownloadComponent implements OnInit, OnDestroy {
-  private dvObjectLookupService = inject(DvObjectLookupService);
-  private pluginService = inject(PluginService);
+export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager {
+  private readonly dvObjectLookupService = inject(DvObjectLookupService);
+  private readonly pluginService = inject(PluginService);
   dataService = inject(DataService);
   submit = inject(SubmitService);
-  private utils = inject(UtilsService);
-  private route = inject(ActivatedRoute);
-  private repoLookupService = inject(RepoLookupService);
-  private oauth = inject(OauthService);
+  private readonly utils = inject(UtilsService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly repoLookupService = inject(RepoLookupService);
+  private readonly oauth = inject(OauthService);
+  private readonly notificationService = inject(NotificationService);
+
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
 
   // CONSTANTS
-  DEBOUNCE_TIME = 750;
+  readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -165,14 +184,14 @@ export class DownloadComponent implements OnInit, OnDestroy {
               (err) =>
                 (this.doiItems = [
                   {
-                    label: 'search failed: ' + err.message,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.doiItems = [
-            { label: 'search failed: ' + err.message, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.repoSearchResultsSubscription =
@@ -184,14 +203,14 @@ export class DownloadComponent implements OnInit, OnDestroy {
               (err) =>
                 (this.repoNames = [
                   {
-                    label: 'search failed: ' + err.message,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.repoNames = [
-            { label: 'search failed: ' + err.message, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
   }
@@ -257,7 +276,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
           httpSubscription.unsubscribe();
         },
         error: (err) => {
-          alert('doi lookup failed: ' + err.error);
+          this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems = [];
           this.datasetId = undefined;
         },
@@ -280,7 +299,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
       return;
     }
     this.doiItems = [
-      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.datasetSearchSubject.next(searchTerm);
   }
@@ -313,7 +332,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           subscription.unsubscribe();
-          alert('getting downloadable files failed: ' + err.error);
+          this.notificationService.showError(`Getting downloadable files failed: ${err.error}`);
         },
       });
   }
@@ -379,18 +398,15 @@ export class DownloadComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (submissionId) => {
-          console.log('all is well: ');
-          console.log(submissionId);
           httpSubscription.unsubscribe();
-          alert(
-            'download is requested and can be monitored in the Globus UI with the following submission ID: ' +
-              submissionId,
+          this.notificationService.showSuccess(
+            `Download is requested and can be monitored in the Globus UI with the following submission ID: ${submissionId}`,
           );
         },
         error: (err) => {
-          console.log('something went wrong: ');
-          console.log(`${err.error}`);
-          alert('download request failed: ' + err.error);
+          console.error('something went wrong: ');
+          console.error(`${err.error}`);
+          this.notificationService.showError(`Download request failed: ${err.error}`);
           httpSubscription.unsubscribe();
         },
       });
@@ -423,7 +439,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
       (this.getRepoName() === undefined || this.getRepoName() === '') &&
       !isSearch
     ) {
-      alert(this.getRepoNameFieldName() + ' is missing');
+      this.notificationService.showError(`${this.getRepoNameFieldName()} is missing`);
       return;
     }
     if (
@@ -464,7 +480,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
       return;
     }
     this.repoNames = [
-      { label: 'searching "' + searchTerm + '"...', value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.repoSearchSubject.next(searchTerm);
   }
@@ -526,7 +542,7 @@ export class DownloadComponent implements OnInit, OnDestroy {
         httpSubscription.unsubscribe();
       },
       error: (err) => {
-        alert('branch lookup failed: ' + err.error);
+        this.notificationService.showError(`Branch lookup failed: ${err.error}`);
         this.branchItems = [];
         this.option = undefined;
         this.optionsLoading = false;
@@ -556,7 +572,6 @@ export class DownloadComponent implements OnInit, OnDestroy {
     }
     const tg = this.globusPlugin?.tokenGetter;
     if (tg === undefined) {
-      console.log('globus plugin not found');
       return;
     }
     let url =
@@ -577,13 +592,13 @@ export class DownloadComponent implements OnInit, OnDestroy {
         clId = '&client_id=';
       }
       url =
-        url +
+        `${url +
         clId +
-        encodeURIComponent(tg.oauth_client_id) +
-        '&redirect_uri=' +
-        this.pluginService.getRedirectUri() +
-        '&response_type=code&state=' +
-        encodeURIComponent(JSON.stringify(loginState));
+        encodeURIComponent(tg.oauth_client_id) 
+        }&redirect_uri=${ 
+        this.pluginService.getRedirectUri() 
+        }&response_type=code&state=${ 
+        encodeURIComponent(JSON.stringify(loginState))}`;
       location.href = url;
     } else {
       window.open(url, '_blank');

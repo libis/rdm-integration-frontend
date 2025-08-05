@@ -1,25 +1,37 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
+
+// Services
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
-import { CompareResult, ResultStatus } from '../models/compare-result';
-import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { TreeNode, PrimeTemplate } from 'primeng/api';
 import { CredentialsService } from '../credentials.service';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
+
+// Models
+import { CompareResult, ResultStatus } from '../models/compare-result';
+import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+
+// PrimeNG
+import { TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
-
 import { TreeTableModule } from 'primeng/treetable';
 import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
+
+// Components
 import { DatafileComponent } from '../datafile/datafile.component';
+
+// Constants and types
+import { APP_CONSTANTS } from '../shared/constants';
+import { FilterItem, SubscriptionManager } from '../shared/types';
 
 @Component({
   selector: 'app-compare',
@@ -35,22 +47,26 @@ import { DatafileComponent } from '../datafile/datafile.component';
     DatafileComponent,
   ],
 })
-export class CompareComponent implements OnInit {
-  dataUpdatesService = inject(DataUpdatesService);
-  dataStateService = inject(DataStateService);
-  private credentialsService = inject(CredentialsService);
-  private router = inject(Router);
-  private folderActionUpdateService = inject(FolderActionUpdateService);
-  private pluginService = inject(PluginService);
-  private utils = inject(UtilsService);
+export class CompareComponent implements OnInit, OnDestroy, SubscriptionManager {
+  private readonly dataUpdatesService = inject(DataUpdatesService);
+  private readonly dataStateService = inject(DataStateService);
+  private readonly credentialsService = inject(CredentialsService);
+  private readonly router = inject(Router);
+  private readonly folderActionUpdateService = inject(FolderActionUpdateService);
+  private readonly pluginService = inject(PluginService);
+  private readonly utils = inject(UtilsService);
 
-  icon_noaction = 'pi pi-stop';
-  icon_update = 'pi pi-copy';
-  icon_mirror = 'pi pi-sync';
-  icon_submit = 'pi pi-save';
-  icon_compare = 'pi pi-flag';
-  icon_action = 'pi pi-bolt';
-  icon_warning = 'pi pi-exclamation-triangle';
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
+
+  // Icon constants
+  readonly icon_noaction = APP_CONSTANTS.ICONS.NO_ACTION;
+  readonly icon_update = APP_CONSTANTS.ICONS.UPDATE;
+  readonly icon_mirror = APP_CONSTANTS.ICONS.MIRROR;
+  readonly icon_submit = APP_CONSTANTS.ICONS.SUBMIT;
+  readonly icon_compare = APP_CONSTANTS.ICONS.COMPARE;
+  readonly icon_action = APP_CONSTANTS.ICONS.ACTION;
+  readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
 
   disabled = true;
   loading = true;
@@ -66,46 +82,42 @@ export class CompareComponent implements OnInit {
     TreeNode<Datafile>
   >();
 
-  filterItems: any[] = [
+  // Filter configuration
+  readonly filterItems: FilterItem[] = [
     {
       label: '(New files)',
-      icon: 'pi pi-plus-circle',
-      iconStyle: { color: 'green' },
+      icon: APP_CONSTANTS.ICONS.NEW_FILE,
+      iconStyle: { color: APP_CONSTANTS.COLORS.SUCCESS },
       title: "Files that aren't in the dataset yet",
       fileStatus: Filestatus.New,
     },
     {
       label: '(Changed files)',
-      icon: 'pi pi-exclamation-circle',
-      iconStyle: { color: 'blue' },
+      icon: APP_CONSTANTS.ICONS.CHANGED_FILE,
+      iconStyle: { color: APP_CONSTANTS.COLORS.INFO },
       title:
         'Files that are not the same in the dataset and the active data repository, but share the same file name and/or file path',
       fileStatus: Filestatus.Updated,
     },
     {
       label: '(Unchanged files)',
-      icon: 'pi pi-check-circle',
-      iconStyle: { color: 'black' },
+      icon: APP_CONSTANTS.ICONS.UNCHANGED_FILE,
+      iconStyle: { color: APP_CONSTANTS.COLORS.NEUTRAL },
       title:
         'Files that are the same in the dataset and the active data repository',
       fileStatus: Filestatus.Equal,
     },
     {
       label: '(Files only in RDR)',
-      icon: 'pi pi-minus-circle',
-      iconStyle: { color: 'red' },
+      icon: APP_CONSTANTS.ICONS.DELETED_FILE,
+      iconStyle: { color: APP_CONSTANTS.COLORS.DANGER },
       title:
         'Files that are only in the dataset, but not in the active data repository',
       fileStatus: Filestatus.Deleted,
     },
   ];
 
-  selectedFilterItems: any[] = [
-    this.filterItems[0],
-    this.filterItems[1],
-    this.filterItems[2],
-    this.filterItems[3],
-  ];
+  selectedFilterItems: FilterItem[] = [...this.filterItems];
 
   constructor() {}
 
@@ -118,11 +130,18 @@ export class CompareComponent implements OnInit {
     this.setUpdatedDataSubscription();
   }
 
-  setUpdatedDataSubscription() {
+  ngOnDestroy(): void {
+    // Clean up all subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.clear();
+  }
+
+  private setUpdatedDataSubscription(): void {
     const initialStateSubscription = this.dataStateService
       .getObservableState()
       .subscribe((data) => {
         if (data !== null) {
+          this.subscriptions.delete(initialStateSubscription);
           initialStateSubscription.unsubscribe();
           this.setData(data);
           if (data.data && data.id) {
@@ -137,13 +156,15 @@ export class CompareComponent implements OnInit {
           }
         }
       });
+    this.subscriptions.add(initialStateSubscription);
   }
 
-  getUpdatedData(cnt: number): void {
+  private getUpdatedData(cnt: number): void {
     const subscription = this.dataUpdatesService
       .updateData(this.data.data!, this.data.id!)
       .subscribe(async (data: CompareResult) => {
         cnt++;
+        this.subscriptions.delete(subscription);
         subscription.unsubscribe();
         if (data.data && data.id) {
           this.setData(data);
@@ -151,20 +172,22 @@ export class CompareComponent implements OnInit {
         if (this.data.status !== ResultStatus.Updating) {
           this.disabled = false;
           this.loading = false;
-        } else if (cnt > 10) {
+        } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
           this.loading = false;
           this.refreshHidden = false;
         } else {
-          await this.utils.sleep(1000);
+          await this.utils.sleep(APP_CONSTANTS.RETRY_SLEEP_DURATION);
           this.getUpdatedData(cnt);
         }
       });
+    this.subscriptions.add(subscription);
   }
 
   refresh(): void {
     const subscription = this.dataUpdatesService
       .updateData(this.data.data!, this.data.id!)
       .subscribe((data) => {
+        this.subscriptions.delete(subscription);
         subscription.unsubscribe();
         if (data.data && data.id) {
           this.setData(data);
@@ -175,20 +198,21 @@ export class CompareComponent implements OnInit {
           this.refreshHidden = true;
         }
       });
+    this.subscriptions.add(subscription);
   }
 
   rowClass(datafile: Datafile): string {
     switch (datafile.action) {
       case Fileaction.Ignore:
-        return '';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.IGNORE;
       case Fileaction.Copy:
-        return 'background-color: #c3e6cb; color: black';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.COPY;
       case Fileaction.Update:
-        return 'background-color: #b8daff; color: black';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.UPDATE;
       case Fileaction.Delete:
-        return 'background-color: #f5c6cb; color: black';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.DELETE;
       case Fileaction.Custom:
-        return 'background-color: #FFFAA0; color: black';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.CUSTOM;
     }
     return '';
   }
@@ -258,12 +282,11 @@ export class CompareComponent implements OnInit {
   }
 
   showAll(): void {
-    this.selectedFilterItems = [];
-    this.selectedFilterItems.push(...this.filterItems);
+    this.selectedFilterItems = [...this.filterItems];
     this.filterOff();
   }
 
-  filterOn(filters: any[]): void {
+  private filterOn(filters: FilterItem[]): void {
     const nodes: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
@@ -278,7 +301,7 @@ export class CompareComponent implements OnInit {
     this.isInFilterMode = true;
   }
 
-  filterOff(): void {
+  private filterOff(): void {
     this.rowNodeMap.forEach((rowNode) => {
       const datafile = rowNode.data!;
       datafile.hidden = false;
@@ -293,7 +316,7 @@ export class CompareComponent implements OnInit {
     this.router.navigate(['/submit']);
   }
 
-  setData(data: CompareResult): void {
+  private setData(data: CompareResult): void {
     this.data = data;
     if (!data.data || data.data.length === 0) {
       return;
@@ -308,7 +331,7 @@ export class CompareComponent implements OnInit {
     }
   }
 
-  updateFoldersStatus(node: TreeNode<Datafile>): void {
+  private updateFoldersStatus(node: TreeNode<Datafile>): void {
     if (node.data?.status !== undefined) {
       return;
     }
@@ -335,7 +358,7 @@ export class CompareComponent implements OnInit {
   }
 
   back(): void {
-    location.href = 'connect';
+    this.router.navigate(['/connect']);
   }
 
   repo(): string {

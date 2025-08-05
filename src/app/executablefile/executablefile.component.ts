@@ -5,6 +5,7 @@ import { SelectItem, TreeNode } from 'primeng/api';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { DataService } from '../data.service';
+import { NotificationService } from '../shared/notification.service';
 import { ComputeRequest } from '../models/compare-result';
 import { TreeTableModule } from 'primeng/treetable';
 import { ProgressSpinner } from 'primeng/progressspinner';
@@ -29,6 +30,7 @@ import { Ripple } from 'primeng/ripple';
 export class ExecutablefileComponent implements OnInit {
   private pluginService = inject(PluginService);
   dataService = inject(DataService);
+  private notificationService = inject(NotificationService);
 
   readonly datafile = input<Datafile>({});
   readonly loading = input(true);
@@ -77,13 +79,13 @@ export class ExecutablefileComponent implements OnInit {
             this.computeEnabled = true;
           } else {
             this.queue = undefined;
-            alert(access.message);
+            this.notificationService.showError(access.message);
           }
           this.spinning = false;
         },
         error: (err) => {
           subscription.unsubscribe();
-          alert('checking access to queue failed: ' + err.error);
+          this.notificationService.showError(`Checking access to queue failed: ${err.error}`);
           this.spinning = false;
           this.queue = undefined;
         },
