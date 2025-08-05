@@ -17,6 +17,9 @@
     "serve:prod": "ng serve --configuration production"
   },
   "private": true,
+  "resolutions": {
+    "typescript": "~5.8.3"
+  },
   "dependencies": {
     "@angular/animations": "^20.1.4",
     "@angular/cli": "^20.1.4",
@@ -59,7 +62,7 @@
     "karma-jasmine-html-reporter": "^2.1.0",
     "prettier": "^3.5.3",
     "terser": "^5.39.2",
-    "typescript": "^5.8.3",
+    "typescript": "~5.8.3",
     "typescript-eslint": "^8.32.1",
     "webpack-bundle-analyzer": "^4.10.2"
   }
