@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "../rdm-integration"
+		},
+		{
+			"path": "../ai-context"
+		},
+		{
+			"path": "../dataverse"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "automatic"
+	}
+}
