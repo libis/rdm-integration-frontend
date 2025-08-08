@@ -3,6 +3,7 @@
 import { Component, OnInit, OnDestroy, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 // Services
 import { DataStateService } from '../data.state.service';
@@ -56,6 +57,7 @@ const new_dataset = 'New Dataset';
   templateUrl: './connect.component.html',
   styleUrls: ['./connect.component.scss'],
   imports: [
+    CommonModule,
     ButtonDirective,
     Ripple,
     Accordion,
@@ -128,6 +130,8 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
   url?: string;
   pluginIdSelectHidden = true;
   optionsLoading = false;
+  showNewDatasetCreatedMessage = false;
+  showOtherOptions = false;
   repoSearchSubject: Subject<string> = new Subject();
   collectionSearchSubject: Subject<string> = new Subject();
   datasetSearchSubject: Subject<string> = new Subject();
@@ -1093,7 +1097,13 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
   }
 
   setDoiItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
-    comp.doiItems = items;
+    // Add "Create new dataset" option to the beginning of the list
+    const createNewOption: SelectItem<string> = {
+      label: '+ Create new dataset',
+      value: 'CREATE_NEW_DATASET'
+    };
+    
+    comp.doiItems = [createNewOption, ...items];
     comp.datasetId = undefined;
   }
 
@@ -1110,7 +1120,21 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
   newDataset() {
     const datasetId =
       `${this.collectionId ? this.collectionId! : ''  }:${  new_dataset}`;
-    this.doiItems = [{ label: new_dataset, value: datasetId }];
+    
+    // Create the new dataset option
+    const newDatasetOption: SelectItem<string> = { 
+      label: new_dataset, 
+      value: datasetId 
+    };
+    
+    // Add it to the dropdown options if not already there
+    const existingIndex = this.doiItems.findIndex(item => item.value === datasetId);
+    if (existingIndex === -1) {
+      // Remove the "Create new dataset" option temporarily and add the actual new dataset
+      const filteredItems = this.doiItems.filter(item => item.value !== 'CREATE_NEW_DATASET');
+      this.doiItems = [newDatasetOption, ...filteredItems];
+    }
+    
     this.datasetId = datasetId;
   }
 
@@ -1131,7 +1155,7 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(
+    const items = await firstValueFrom(
       this.dvObjectLookupService.getItems(
         this.collectionId ? this.collectionId! : '',
         'Dataset',
@@ -1139,5 +1163,30 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
         this.dataverseToken,
       ),
     );
+    
+    // Add "Create new dataset" option to the beginning of results
+    const createNewOption: SelectItem<string> = {
+      label: '+ Create new dataset',
+      value: 'CREATE_NEW_DATASET'
+    };
+    
+    return [createNewOption, ...items];
+  }
+
+  onDatasetSelectionChange(event: any) {
+    const selectedValue = event.value;
+    
+    if (selectedValue === 'CREATE_NEW_DATASET') {
+      // Handle creation of new dataset
+      this.newDataset();
+      this.showNewDatasetCreatedMessage = true;
+      
+      // Hide the message after 3 seconds
+      setTimeout(() => {
+        this.showNewDatasetCreatedMessage = false;
+      }, 3000);
+    } else {
+      this.showNewDatasetCreatedMessage = false;
+    }
   }
 }

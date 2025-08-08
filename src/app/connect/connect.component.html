@@ -92,12 +92,54 @@
                 </div>
                 <div class="mb-3">
                   <label for="datasetId" class="form-label">Dataset DOI</label>
-                  <div class="input-group">
-                    <p-select appendTo="body" [editable]="datasetFieldEditable()" [style.width]="DOI_SELECT_WIDTH" id="datasetId" [options]="doiItems" [filter]="true" filterBy="label" [resetFilterOnHide]="true" (onFilter)="onDatasetSearch($event.filter)" [(ngModel)]="datasetId" placeholder="Select dataset" (onClick)="getDoiOptions()"></p-select>
-                    <div class="input-group-append">
-                      <button style="width: 12rem; align-items: center; justify-content: center;" pButton pRipple type="button" class="p-button p-button-raised" (click)="newDataset()" title="https://github.com/IQSS/dataverse/pull/8940" [disabled]="!createNewDatasetEnabled()">Create new dataset</button>
+                  <p-select appendTo="body" 
+                           [editable]="datasetFieldEditable()" 
+                           id="datasetId" 
+                           [options]="doiItems" 
+                           [filter]="true" 
+                           filterBy="label" 
+                           [resetFilterOnHide]="true" 
+                           (onFilter)="onDatasetSearch($event.filter)" 
+                           [(ngModel)]="datasetId" 
+                           placeholder="Select dataset" 
+                           (onClick)="getDoiOptions()"
+                           (onChange)="onDatasetSelectionChange($event)">
+                    <ng-template pTemplate="option" let-option>
+                      <div class="flex align-items-center">
+                        <span [class]="option.value === 'CREATE_NEW_DATASET' ? 'font-bold text-primary' : ''">
+                          {{ option.label }}
+                        </span>
+                      </div>
+                    </ng-template>
+                    <ng-template pTemplate="selectedItem" let-option>
+                      <div class="flex align-items-center">
+                        <span>{{ option.label }}</span>
+                      </div>
+                    </ng-template>
+                  </p-select>
+                  @if (showNewDatasetCreatedMessage) {
+                    <div class="mt-2">
+                      <p class="text-success mb-0">
+                        <i class="pi pi-check-circle"></i> New dataset created
+                      </p>
                     </div>
-                  </div>
+                  }
+                  @if (showOtherOptions) {
+                    <div class="mt-2">
+                      <hr class="my-2">
+                      <small class="text-muted">Other options</small>
+                      <div class="mt-2">
+                        <button pButton pRipple 
+                                type="button" 
+                                class="p-button p-button-raised p-button-sm p-button-outlined" 
+                                (click)="newDataset()" 
+                                [disabled]="!createNewDatasetEnabled()"
+                                title="Create a new dataset">
+                          Create new dataset
+                        </button>
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
       </p-accordion-content>
