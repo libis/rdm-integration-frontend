@@ -38,7 +38,8 @@ export class DatafileComponent implements OnInit {
   icon_copy = 'pi pi-copy';
   icon_update = 'pi pi-clone';
   icon_delete = 'pi pi-trash';
-  icon_custom = 'pi pi-exclamation-triangle';
+  // Use block for warning indicator
+  icon_custom = 'pi pi-stop';
 
   node: TreeNode<Datafile> = {};
 
@@ -76,6 +77,20 @@ export class DatafileComponent implements OnInit {
       return color ? 'black' : this.icon_spinner;
     }
     return color ? 'black' : this.icon_refresh;
+  }
+
+  comparisonTitle(): string {
+    switch (Number(this.datafile().status)) {
+      case Filestatus.New:
+        return 'New file in repository (not in dataset yet)';
+      case Filestatus.Equal:
+        return 'Unchanged file';
+      case Filestatus.Updated:
+        return 'Changed file between repository and dataset';
+      case Filestatus.Deleted:
+        return 'File only in dataset (deleted in repository)';
+    }
+    return this.loading() ? 'Loading status...' : 'Click refresh to re-check status';
   }
 
   action(): string {
@@ -178,5 +193,22 @@ export class DatafileComponent implements OnInit {
         return 'text-muted';
     }
     return '';
+  }
+
+  actionTitle(): string {
+    switch (this.datafile().action) {
+      case Fileaction.Ignore:
+        return 'Do nothing with this file';
+      case Fileaction.Copy:
+        return 'Copy this file to the dataset';
+      case Fileaction.Update:
+        return 'Update this file in the dataset';
+      case Fileaction.Delete:
+        return 'Delete this file from the dataset';
+      case Fileaction.Custom:
+        return 'Attention: the chosen action is not uniform for all files in this folder';
+      default:
+        return 'Select action';
+    }
   }
 }

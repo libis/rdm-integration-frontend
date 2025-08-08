@@ -21,7 +21,7 @@ export const APP_CONSTANTS = {
     SUBMIT: 'pi pi-save',
     COMPARE: 'pi pi-flag',
     ACTION: 'pi pi-bolt',
-    WARNING: 'pi pi-exclamation-triangle',
+  WARNING: 'pi pi-stop',
     FILTER: 'pi pi-filter',
     PLAY: 'pi pi-play',
     NEW_FILE: 'pi pi-plus-circle',
@@ -41,10 +41,11 @@ export const APP_CONSTANTS = {
   // File action styles
   FILE_ACTION_STYLES: {
     IGNORE: '',
-    COPY: 'background-color: #c3e6cb; color: black',
-    UPDATE: 'background-color: #b8daff; color: black',
-    DELETE: 'background-color: #f5c6cb; color: black',
-    CUSTOM: 'background-color: #FFFAA0; color: black',
+  COPY: 'background-color: #c3e6cb; color: black',
+  UPDATE: 'background-color: #b8daff; color: black',
+  DELETE: 'background-color: #f5c6cb; color: black',
+  // Non-uniform selection: grey/light blue tint
+  CUSTOM: 'background-color: #e7f1ff; color: #495057',
   }
 } as const;
 

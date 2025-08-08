@@ -5,8 +5,8 @@
   </span>
 
   <span class="col-auto">
-    <span class="p-buttonset">
-      <span style="font-size: 1.2rem;position:relative;top:-0.275rem;"><i [class]="icon_action"></i>&nbsp;Bulk select to:&nbsp;</span>
+    <span class="p-buttonset bulk-actions">
+      <span class="bulk-label">Select file actions</span>
       <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
@@ -23,7 +23,7 @@
     <button pButton pRipple type="button" class="p-button-sm p-button-raised" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
       <i class="pi pi-refresh"></i>&nbsp;Refresh
     </button>
-    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-raised" [ngClass]="hasSelection() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Confirm file selection&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
@@ -55,7 +55,7 @@
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
     <ng-template pTemplate="header">
       <tr>
-        <th>{{ repo() }}</th>
+  <th>{{ repo() }} <span [hidden]="!repoName()">({{ repoName() }})</span></th>
         <th class="icon_col" style="text-align: center;">
           <span title="Comparison status">
             <p-popover #op appendTo="body">
@@ -87,7 +87,16 @@
             <i [class]="icon_action"></i>
           </span>
         </th>
-        <th style="text-align:right;">{{dataverseHeader()}} (<a [href]="data!.url" target="_blank">{{ data!.id }}</a>)</th>
+        <th style="text-align:right;">
+          {{ isNewDataset() ? dataverseHeaderNoColon() : dataverseHeader() }}
+          (
+          @if (!isNewDataset()) {
+            <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+          } @else {
+            {{ displayDatasetId() }}
+          }
+          )
+        </th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">

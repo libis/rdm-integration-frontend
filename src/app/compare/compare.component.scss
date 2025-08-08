@@ -3,3 +3,23 @@
 .icon_col {
   width: 5rem;
 }
+
+.page-title {
+  margin: 0 0 0.5rem 0;
+}
+
+.bulk-actions button + button {
+  margin-left: 0.4rem; /* small sliver of whitespace between buttons */
+}
+
+/* Ensure filter and action icons show hover */
+th .pi:hover {
+  opacity: 0.9;
+}
+
+.bulk-label {
+  font-size: 1.2rem;
+  position: relative;
+  top: -0.1rem;
+  margin-right: 0.6rem;
+}

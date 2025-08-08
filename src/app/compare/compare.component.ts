@@ -3,6 +3,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -38,6 +39,7 @@ import { FilterItem, SubscriptionManager } from '../shared/types';
   templateUrl: './compare.component.html',
   styleUrls: ['./compare.component.scss'],
   imports: [
+  CommonModule,
     ButtonDirective,
     Ripple,
     TreeTableModule,
@@ -67,6 +69,8 @@ export class CompareComponent implements OnInit, OnDestroy, SubscriptionManager 
   readonly icon_compare = APP_CONSTANTS.ICONS.COMPARE;
   readonly icon_action = APP_CONSTANTS.ICONS.ACTION;
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
+  // nicer action header icon in table than lightning
+  readonly icon_status = APP_CONSTANTS.ICONS.FILTER;
 
   disabled = true;
   loading = true;
@@ -314,6 +318,52 @@ export class CompareComponent implements OnInit, OnDestroy, SubscriptionManager 
   submit(): void {
     this.dataStateService.updateState(this.data);
     this.router.navigate(['/submit']);
+  }
+
+  // UI helpers
+  hasSelection(): boolean {
+    // At least one file with an action other than Ignore
+    for (const [, node] of this.rowNodeMap) {
+      const d = node.data;
+      if (d?.attributes?.isFile && d.action !== undefined) {
+        // If any action except Ignore
+        if (d.action !== Fileaction.Ignore) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  repoName(): string | undefined {
+    return this.credentialsService.credentials.repo_name;
+  }
+
+  newlyCreated(): boolean {
+    return this.credentialsService.credentials.newly_created === true;
+  }
+
+  dataverseHeaderNoColon(): string {
+    const h = this.dataverseHeader();
+    return h.endsWith(':') ? h.substring(0, h.length - 1) : h;
+  }
+
+  // Safeguard for detecting a new dataset when credentials flag is missing
+  isNewDataset(): boolean {
+    if (this.newlyCreated()) return true;
+    const id = this.data?.id?.toLowerCase() || '';
+    return id.includes('new dataset') || id === '';
+  }
+
+  displayDatasetId(): string {
+    // When new, show a friendly text and avoid colon/link
+    if (!this.data?.id || this.data.id.trim() === '') {
+      return 'New Dataset';
+    }
+    // If backend sends something like ':New Dataset' keep only the label
+    const id = this.data.id.trim();
+    const clean = id.startsWith(':') ? id.substring(1).trim() : id;
+    return clean;
   }
 
   private setData(data: CompareResult): void {
