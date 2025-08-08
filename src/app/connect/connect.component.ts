@@ -614,6 +614,90 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
     return res;
   }
 
+  /**
+   * Checks if all required fields are valid without returning error messages
+   * Used for reactive validation to determine button state
+   */
+  isFormValid(): boolean {
+    // Check basic required fields
+    if (!this.pluginId || this.pluginId === 'loading') return false;
+    if (!this.datasetId || this.datasetId === 'loading') return false;
+    
+    // Check Dataverse token (required for connection)
+    if (!this.dataverseToken || this.dataverseToken.trim() === '') return false;
+
+    // Check plugin-specific required fields
+    if (this.getSourceUrlFieldName() && (!this.sourceUrl || this.sourceUrl.trim() === '')) return false;
+    if (this.getTokenFieldName() && (!this.token || this.token.trim() === '')) return false;
+    if (this.getOptionFieldName() && (!this.option || this.option === 'loading')) return false;
+    if (this.getUsernameFieldName() && (!this.user || this.user.trim() === '')) return false;
+    if (this.getRepoNameFieldName() && (!this.getRepoName() || this.getRepoName()!.trim() === '')) return false;
+
+    // Check URL parsing if applicable
+    if (this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
+      try {
+        const urlError = this.validateUrlParsing();
+        if (urlError) return false;
+      } catch {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Validates URL parsing without side effects
+   * Returns error string if invalid, undefined if valid
+   */
+  private validateUrlParsing(): string | undefined {
+    if (!this.sourceUrl) return 'Source URL is required';
+    
+    let toSplit = this.sourceUrl;
+    if (toSplit.endsWith('/')) {
+      toSplit = toSplit.substring(0, toSplit.length - 1);
+    }
+    
+    const splitted = toSplit.split('://');
+    if (splitted?.length !== 2) {
+      return 'Malformed source url';
+    }
+    
+    const pathParts = splitted[1].split('/');
+    if (pathParts?.length <= 2) {
+      return 'Malformed source url';
+    }
+    
+    return undefined;
+  }
+
+  /**
+   * Determines if the Connect button should be in ready state (blue/primary)
+   */
+  get isConnectReady(): boolean {
+    return this.isFormValid();
+  }
+
+  /**
+   * Determines the CSS classes for the Connect button
+   */
+  get connectButtonClass(): string {
+    const baseClasses = 'p-button-sm p-button-raised';
+    return this.isConnectReady 
+      ? `${baseClasses} p-button-primary`
+      : `${baseClasses} p-button-secondary`;
+  }
+
+  /**
+   * Triggers validation update - can be called from change handlers
+   * This method doesn't do anything but calling it ensures Angular's change detection
+   * picks up the validation state changes for the button styling
+   */
+  private triggerValidationUpdate(): void {
+    // Angular change detection will automatically update the getter-based properties
+    // This method is mainly for explicit triggering if needed
+  }
+
   parseUrl(): string | undefined {
     if (!this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
       this.url = this.getSourceUrlValue();

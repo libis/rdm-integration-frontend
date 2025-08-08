@@ -3,7 +3,7 @@
   <span class="col-auto"></span>
   
   <span class="col-auto">
-    <button style="float: right;" pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button style="float: right;" pButton pRipple type="button" [class]="connectButtonClass" [disabled]="!isConnectReady" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
