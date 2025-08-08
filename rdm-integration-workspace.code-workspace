@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "."
+		},
+		{
+			"path": "../rdm-dataverse-go-api"
 		}
 	],
 	"settings": {
