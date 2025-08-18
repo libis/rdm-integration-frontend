@@ -624,7 +624,7 @@ export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager 
     if (!this.datasetId || this.datasetId === 'loading') return false;
     
     // Check Dataverse token (required for connection)
-    if (!this.dataverseToken || this.dataverseToken.trim() === '') return false;
+    if (this.showDVToken() && (!this.dataverseToken || this.dataverseToken.trim() === '')) return false;
 
     // Check plugin-specific required fields
     if (this.getSourceUrlFieldName() && (!this.sourceUrl || this.sourceUrl.trim() === '')) return false;
