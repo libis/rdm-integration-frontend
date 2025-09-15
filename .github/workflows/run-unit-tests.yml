@@ -8,8 +8,6 @@ on:
     paths:
       - 'src/**/*.spec.ts'
       - 'karma.conf.js'
-      - 'angular.json'
-      - 'package.json'
 
 permissions:
   contents: read
@@ -35,7 +33,9 @@ jobs:
         shell: bash
         run: |
           if [ -f package.json ]; then
-            if node -e "const p=require('./package.json');process.exit(p.scripts&&p.scripts.test?0:1)"; then
+            if node -e "const p=require('./package.json');process.exit(p.scripts&&p.scripts['test:ci']?0:1)"; then
+              npm run test:ci --silent || (echo "::error::npm run test:ci failed"; exit 1)
+            elif node -e "const p=require('./package.json');process.exit(p.scripts&&p.scripts.test?0:1)"; then
               npm test --silent || (echo "::error::npm test failed"; exit 1)
             else
               echo "No test script defined; skipping Node tests";
