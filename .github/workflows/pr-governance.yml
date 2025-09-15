@@ -27,7 +27,7 @@ jobs:
       run_dependency_review: false
       run_codeql: false
       lint_command: 'npm run lint'
-      test_command: ''
+      test_command: 'npm run test:ci --silent'
       require_ui_transparency: true
       require_dpia_for_user_facing: true
       require_eval_for_high_risk: false

@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ComputeComponent } from './compute.component';
 
@@ -8,8 +11,17 @@ describe('ComputeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ComputeComponent],
-    }).compileComponents();
+      imports: [RouterTestingModule, ComputeComponent],
+      providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+      ],
+    })
+      // Shallow render to avoid PrimeNG TreeTable internal provider requirements during unit tests
+      .overrideComponent(ComputeComponent, {
+        set: { template: '<div></div>' },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(ComputeComponent);
     component = fixture.componentInstance;
