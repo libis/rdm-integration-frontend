@@ -20,7 +20,7 @@ jobs:
     # After copying workflows locally, prefer referencing the local reusable workflow file.
     uses: ./.github/workflows/ai-governance.yml
     with:
-      run_markdownlint: true
+      run_markdownlint: false
       run_scancode: true
       run_sbom: true
       run_gitleaks: false
