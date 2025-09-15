@@ -4,8 +4,8 @@
 @org_repo: https://github.com/libis/ai-transition
 @version: 0.6.0
 @workflows_source_api: https://api.github.com/repos/libis/ai-transition/contents/.github?ref=main
-@last_context_update: 2025-09-12T16:28:00Z
-@last_github_sync: 1970-01-01T00:00:00Z
+@last_context_update: 2025-09-15T00:00:00Z
+@last_github_sync: 2025-09-15T00:00:00Z
 @upstream_ref: main
 @suggestions_enabled: true
 @suggestions_policy: after_user_reads_context
@@ -13,6 +13,12 @@
 -->
 
 # AI Context — Reusable Governance (Pilot/Production)
+
+<!--
+AGENT_SPEC v1
+context_id: libis/rdm-integration-frontend.ai-context
+updated_at: 2025-09-15T00:00:00Z
+-->
 
 Purpose
 
@@ -37,115 +43,9 @@ On load (verify first)
 
 Important: Act only after the user invokes “read context”. Before making changes, enumerate planned edits and ask for confirmation.
 
-1. bootstrap
+Note: Bootstrap has already been completed for this repository; start with verify.
 
-- Goal: Use the downloaded .github (from the README script) and make minimal local fixes so workflows work immediately; only fetch from upstream if .github is missing.
-- Pre-check:
-  - If .github exists locally (downloaded via README Option A/B): skip copying; proceed to minimal fixes.
-  - If .github is missing:
-    - Preferred acquisition: download upstream tarball and copy .github exactly (no generation):
-      - gh: gh api repos/libis/ai-transition/tarball/main > src.tgz; tar -xzf; cp -R "<extracted>/.github/." .github/
-      - curl: curl -L -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/libis/ai-transition/tarball/main -o src.tgz; tar -xzf; cp -R
-    - Alternatively (slower), enumerate with the Content API: GET https://api.github.com/repos/libis/ai-transition/contents/.github?ref=main and copy by download_url.
-  - Always fetch live .github listing for verification and to capture upstream commit/state when available.
-- If approved:
-  - Algorithm (MUST do; smallest viable change):
-
-    - If .github exists locally: do not re-copy; use it as the source of truth for this repo.
-    - If .github is missing: copy the upstream `.github` exactly using the tarball method (preferred) or Content API; preserve structure and filenames.
-    - Never generate or modify workflow YAML during copy. No templating. No inline edits to the reusable workflow file contents.
-    - If a destination file already exists: show a diff and ask before overwrite. Default is no-overwrite.
-    - If upstream listing/download fails (403/404): stop and report; do not proceed with partial content.
-
-  - After copy (or when .github already exists) — minimal local fixes:
-
-    - Ensure `.github/workflows/pr-governance.yml` exists locally (from the copy/download).
-    - Normalize consumer references to LOCAL uses:
-      - Replace any occurrences of `uses: libis/ai-transition/.github/workflows/ai-governance.yml@<ref>` with `uses: ./.github/workflows/ai-governance.yml`.
-      - Do not reference `libis/ai-transition/.github/...@main` in downstream/private repos.
-    - Ensure `.github/pull_request_template.md` exists locally (copied as-is).
-
-  - If the current repo lacks a workflow that consumes the org governance reusable workflow:
-
-    - Workflows are copied from the upstream `.github` (see: https://api.github.com/repos/libis/ai-transition/contents/.github?ref=main) and already include a consumer workflow (e.g., `pr-governance.yml`) that uses the reusable workflow. After copying, prefer the local reference: `uses: ./.github/workflows/ai-governance.yml`.
-    - Note: the copied workflows enable a broad set of checks by default. Tailor inputs to the project and disable checks that don’t apply.
-    - Language awareness: detect the primary languages of the repo (via GitHub Linguist or simple file-glob heuristics) and turn off language-specific checks that aren’t relevant (e.g., Python-only checks when no `.py` files exist).
-    - If you add support for a language locally (new inputs/conditions), please contribute it upstream to `libis/ai-transition` so others can reuse it:
-      - Update `.github/workflows/ai-governance.yml` (conditional steps/inputs)
-      - Add/adjust brief docs in `templates/pilot-starter/README.md` and this `ai-context.md`
-      - Open a small PR (minimal diff, clear examples)
-    - If a consumer workflow is truly missing in the target repo (rare), propose adding a minimal one that reuses the local file: `uses: ./.github/workflows/ai-governance.yml` — do not include the example here.
-    - Optional language-specific tuning examples:
-      - No Python? Restrict Python-focused checks or agents to run only when `**/*.py` changes (use `paths:`) or disable the Python review workflow if present.
-      - Using JS/TS? Consider adding ESLint as a pre-step and wiring lint_command to surface results in PRs.
-      - Using Go/Java? Consider adding `golangci-lint`/SpotBugs locally and proposing a small upstream addition to the reusable workflow inputs to make it first-class.
-
-  - Ensure .github/pull_request_template.md exists; copy or propose alignment.
-  - Write/update .github/ai-transition-sync.json with schema:
-
-    ```json
-
-    {
-      "source_repo": "libis/ai-transition",
-      "source_ref": "<branch-or-sha>",
-      "synced_at": "<UTC ISO-8601>",
-      "files_copied": [".github/..."],
-      "upstream_commit": "<sha>"
-    }
-
-    ```
-
-  - Open a draft PR: "chore(ai): bootstrap governance workflows and PR template" with provenance.
-
-    - Use the open_pr command described below to standardize PR creation via GitHub CLI.
-
-  - Root ai-context.md handling (create or merge):
-
-    - Detect root-level `ai-context.md` in the target repo.
-      - If missing → Create from this template, then immediately “convert to project” (see below).
-      - If present and identical to this template (byte-equal or header markers match `@template_source` and `@version`) → Treat as fresh and “convert to project”.
-      - If present and customized → Use append-only integration as described below.
-
-    - Convert to project (fresh or identical-to-template case):
-      - Insert AGENT_SPEC v1 block right after the title. Set `context_id` to `<owner>/<repo>.ai-context` and `updated_at` to current UTC ISO-8601.
-      - Insert the “Runtime profile — VS Code GitHub Copilot Agent (gpt-5)” section if missing.
-      - Update Developer prompts: remove `bootstrap` (one-time); keep `verify`, `update_workflows`, `open_pr`, `log_provenance`, `record_update` (if used), `suggest_context_note`, `toggle_suggestions`.
-      - Update header comment timestamps: refresh `@last_context_update`; if workflows were copied, set `@last_github_sync`.
-      - Initialize or update a State block with `template_version`, `last_context_update`, `last_github_sync`, and `upstream_ref`.
-
-    - Append-only integration (customized file case):
-      - Detect the existing project context file (root-level) by common variants; first match wins (case-insensitive):
-        - `ai-context.md`, `ai_context.md`, `context-ai.md`, `ai.md`, `context.md`.
-      - Read the existing file without changes.
-      - Append, in order:
-        1) Two newline characters
-        2) A separator line: `---`
-        3) The heading: `## Reusable AI Governance Addendum`
-        4) The full contents of `templates/pilot-starter/reusable_context.md`
-      - Do not modify, reorder, or deduplicate the existing file’s sections. Do not rename the file. Do not inject placeholders.
-      - Optional: add a single-line note at the top of the existing file linking to the addendum (skip if intrusive).
-
-    - Always:
-      - Show planned changes and ask for confirmation before writing.
-      - Keep diffs minimal (smallest viable change); avoid refactors.
-      - Create a draft PR for the changes with labels [`ai`, `governance`] and AI-Assistance Provenance in the body.
-
-  - Prohibited actions (MUST NOT):
-
-    - Invent or regenerate workflow YAML instead of copying exact bytes from upstream.
-    - Reference `libis/ai-transition/.github/workflows/...@main` in downstream/private repos.
-    - Use `uses: ./.github/workflows/ai-governance.yml` before the file exists locally.
-    - Proceed when upstream `.github` cannot be listed or downloaded (403/404).
-
-  - Validation checklist (before opening PR):
-
-    - All expected `.github/**` files were written and are non-empty; directory structure preserved.
-    - `.github/workflows/pr-governance.yml` exists and uses `uses: ./.github/workflows/ai-governance.yml` (local).
-    - `.github/pull_request_template.md` exists locally.
-    - `.github/ai-transition-sync.json` created/updated with `source_repo`, `source_ref`, `synced_at` (UTC ISO-8601), `files_copied`, and `upstream_commit`.
-    - No placeholders like `<...>` remain in any auto-filled PR body; date is UTC ISO-8601 with trailing `Z`.
-
-2. verify
+1. verify
 
 - Goal: Check if this context and .github are up to date.
 - Steps:
@@ -160,7 +60,7 @@ Important: Act only after the user invokes “read context”. Before making cha
 
     - After running, update `last_verified_at` (UTC ISO-8601) in the State block.
 
-3. update_workflows
+2. update_workflows
 
 - Goal: Sync .github from the upstream project, preserving local customizations.
 - Steps:
@@ -171,7 +71,7 @@ Important: Act only after the user invokes “read context”. Before making cha
 
     - Use the open_pr command described below to standardize PR creation via GitHub CLI.
 
-4. log_provenance
+3. log_provenance
 
 - Goal: Add AI-Assistance provenance to the PR body.
 - Insert if missing:
@@ -184,7 +84,7 @@ Important: Act only after the user invokes “read context”. Before making cha
     - Reviewer confirms: [ ] No secrets/PII; [ ] Licensing respected
     - Notes: <optional>
 
-5. open_pr
+4. open_pr
 
 - Goal: Create a PR by committing to a new branch and invoking the GitHub CLI using the repo’s PR template at .github/pull_request_template.md.
 - Inputs (recommended):
@@ -240,18 +140,18 @@ Important: Act only after the user invokes “read context”. Before making cha
 
   - Labels: ensure default labels exist or create them if you have permissions; otherwise proceed without labels.
 
-6. record_update
+5. record_update
 
 - Goal: Update header timestamps when this context or .github sync changes.
 - Update @last_context_update after content changes.
 - Update @last_github_sync after workflow syncs. Keep ISO-8601.
 
-7. suggest_context_note
+6. suggest_context_note
 
 - Goal: While working, when relevant information emerges that would help future work, propose a small addition to this context.
 - Constraints: Only suggest after the user asks to "read context". Keep notes concise and reusable.
 
-8. toggle_suggestions
+7. toggle_suggestions
 
 - Goal: Respect per-user opt-out for suggestions.
 - Mechanism:
@@ -533,7 +433,6 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
 
 ## Developer prompts (after “read context”)
 
-- bootstrap → inspect upstream .github, propose copy + minimal consumer workflow if missing, then PR.
 - verify → report context/.github drift; propose update_workflows if needed.
 - update_workflows → sync .github with diffs and PR.
 - log_provenance → add the provenance block to the PR body if missing.
@@ -558,9 +457,9 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
 
 {
   "template_source": "https://github.com/libis/ai-transition/blob/main/templates/pilot-starter/ai-context.md",
-  "template_version": "0.5.2",
-  "last_context_update": "2025-09-10T00:00:00Z",
-  "last_github_sync": "1970-01-01T00:00:00Z",
+  "template_version": "0.6.0",
+  "last_context_update": "2025-09-15T00:00:00Z",
+  "last_github_sync": "2025-09-15T00:00:00Z",
   "last_verified_at": null,
   "upstream_ref": "main",
   "upstream_commit": null
