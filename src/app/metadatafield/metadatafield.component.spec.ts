@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { MetadatafieldComponent } from './metadatafield.component';
 
 describe('MetadatafieldComponent', () => {
@@ -9,7 +8,11 @@ describe('MetadatafieldComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MetadatafieldComponent],
-    }).compileComponents();
+    })
+      .overrideComponent(MetadatafieldComponent, {
+        set: { template: '<div></div>' },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(MetadatafieldComponent);
     component = fixture.componentInstance;

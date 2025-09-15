@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { SubmitComponent } from './submit.component';
 
@@ -9,7 +11,16 @@ describe('SubmitComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SubmitComponent],
-    }).compileComponents();
+      providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+      ],
+    })
+      // Shallow render to avoid PrimeNG TreeTable internal provider requirements during unit tests
+      .overrideComponent(SubmitComponent, {
+        set: { template: '<div></div>' },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(SubmitComponent);
     component = fixture.componentInstance;

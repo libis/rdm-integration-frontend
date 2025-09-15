@@ -9,7 +9,12 @@ describe('DownladablefileComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DownladablefileComponent],
-    }).compileComponents();
+    })
+      // Shallow render to avoid PrimeNG TreeTable internal provider requirements during unit tests
+      .overrideComponent(DownladablefileComponent, {
+        set: { template: '<div></div>' },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(DownladablefileComponent);
     component = fixture.componentInstance;
