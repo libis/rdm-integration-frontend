@@ -533,7 +533,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
@@ -552,7 +551,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
