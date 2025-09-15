@@ -5,6 +5,11 @@ name: Run Unit Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**/*.spec.ts'
+      - 'karma.conf.js'
+      - 'angular.json'
+      - 'package.json'
 
 permissions:
   contents: read
