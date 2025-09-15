@@ -413,7 +413,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const title = 
-              'Post-deploy AI compliance checklist (${process.env.GITHUB_SHA.slice(0,7)})\n';
+              `Post-deploy AI compliance checklist (${process.env.GITHUB_SHA.slice(0,7)})\n`;
             const body = 
               'This is an automated reminder for recent user-facing changes.\\n\\n\n' +
               `Checklist:\n` +
