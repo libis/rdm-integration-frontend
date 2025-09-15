@@ -32,11 +32,11 @@ on:
       lint_command:
         required: false
         type: string
-        default: ''
+        default: ""
       test_command:
         required: false
         type: string
-        default: ''
+        default: ""
       require_ui_transparency:
         required: false
         type: boolean
@@ -430,7 +430,6 @@ jobs:
               labels: ['post-deploy-compliance']
             });
 
-
   markdownlint:
     if: ${{ inputs.run_markdownlint }}
     runs-on: ubuntu-latest
@@ -438,7 +437,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
       - name: Install markdownlint-cli
         run: npm install -g markdownlint-cli@0.39.0
       - name: Lint Markdown
@@ -466,7 +465,7 @@ jobs:
       - name: Review dependencies for vulnerabilities & licenses
         uses: actions/dependency-review-action@v4
         with:
-          allow-licenses: 'MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, ISC, MPL-2.0'
+          allow-licenses: "MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, ISC, MPL-2.0"
           fail-on-severity: critical
 
   scancode:
@@ -532,7 +531,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
@@ -550,7 +549,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
