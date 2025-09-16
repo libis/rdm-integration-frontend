@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { Router, Navigation } from '@angular/router';
+import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription, firstValueFrom } from 'rxjs';
 
@@ -103,7 +103,11 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     const nav = this.router.getCurrentNavigation?.();
     if (nav?.extras?.state) {
       state = nav.extras.state as { metadata?: Metadata };
-    } else if (typeof window !== 'undefined' && window.history && window.history.state) {
+    } else if (
+      typeof window !== 'undefined' &&
+      window.history &&
+      window.history.state
+    ) {
       // Fallback for environments/tests where Router.getCurrentNavigation is not available
       state = window.history.state as { metadata?: Metadata };
     }
