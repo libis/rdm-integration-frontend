@@ -71,7 +71,7 @@ export class MetadataSelectorComponent implements OnInit {
 
   id = 0;
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     // Load metadata immediately for rendering in the tree table
@@ -91,9 +91,7 @@ export class MetadataSelectorComponent implements OnInit {
       dvToken: credentials.dataverse_token,
       compareResult: this.dataStateService.getCurrentValue(),
     };
-    this.metadata = await firstValueFrom(
-      this.datasetService.getMetadata(req),
-    );
+    this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
     const rowDataMap = this.mapFields(this.metadata);
     rowDataMap.forEach((v) => this.addChild(v, rowDataMap));
     this.root = rowDataMap.get('');

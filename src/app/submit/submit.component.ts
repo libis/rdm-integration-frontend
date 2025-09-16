@@ -91,20 +91,27 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   hasAccessToCompute = false;
   private incomingMetadata?: Metadata;
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.loadData();
     // Capture metadata from navigation state if coming from metadata-selector
     let state: { metadata?: Metadata } | undefined;
-    const routerMaybe = this.router as unknown as { getCurrentNavigation?: () => Navigation | null };
+    const routerMaybe = this.router as unknown as {
+      getCurrentNavigation?: () => Navigation | null;
+    };
     // Use Router.getCurrentNavigation when available
     if (typeof routerMaybe.getCurrentNavigation === 'function') {
       const nav = routerMaybe.getCurrentNavigation?.();
       state = (nav?.extras?.state as { metadata?: Metadata }) || undefined;
-    } else if (typeof history !== 'undefined' && (history as History & { state?: unknown }).state) {
+    } else if (
+      typeof history !== 'undefined' &&
+      (history as History & { state?: unknown }).state
+    ) {
       // Fallback for environments/tests where Router.getCurrentNavigation is not available
-      state = (history as History & { state?: unknown }).state as { metadata?: Metadata };
+      state = (history as History & { state?: unknown }).state as {
+        metadata?: Metadata;
+      };
     }
     if (state?.metadata) {
       this.incomingMetadata = state.metadata;
@@ -128,7 +135,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   ngOnDestroy(): void {
     // Clean up all subscriptions
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
   }
 
@@ -152,7 +159,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
         },
         error: (err) => {
           setTimeout(() => dataSubscription?.unsubscribe(), 0);
-          this.notificationService.showError(`Getting status of data failed: ${err.error}`);
+          this.notificationService.showError(
+            `Getting status of data failed: ${err.error}`,
+          );
           this.router.navigate(['/connect']);
         },
       });
@@ -261,7 +270,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
         next: (data: StoreResult) => {
           if (data.status !== 'OK') {
             // this should not happen
-            this.notificationService.showError(`Store failed, status: ${data.status}`);
+            this.notificationService.showError(
+              `Store failed, status: ${data.status}`,
+            );
             this.router.navigate(['/connect']);
           } else {
             this.getDataSubscription();

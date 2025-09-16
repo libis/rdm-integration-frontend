@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
@@ -48,15 +51,23 @@ describe('SubmitComponent', () => {
     };
 
     submitServiceStub = {
-      submit: jasmine.createSpy('submit').and.returnValue(of({ status: 'OK', datasetUrl: 'http://example.com' })),
+      submit: jasmine
+        .createSpy('submit')
+        .and.returnValue(
+          of({ status: 'OK', datasetUrl: 'http://example.com' }),
+        ),
     };
 
     datasetServiceStub = {
-      newDataset: jasmine.createSpy('newDataset').and.returnValue(of({ persistentId: 'doi:new' })),
+      newDataset: jasmine
+        .createSpy('newDataset')
+        .and.returnValue(of({ persistentId: 'doi:new' })),
     };
 
     dataUpdatesServiceStub = {
-      updateData: jasmine.createSpy('updateData').and.returnValue(of({ data: undefined } as any)),
+      updateData: jasmine
+        .createSpy('updateData')
+        .and.returnValue(of({ data: undefined } as any)),
     };
 
     notificationServiceStub = {
@@ -105,7 +116,11 @@ describe('SubmitComponent', () => {
     const files: Datafile[] = [
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
       { action: Fileaction.Update, status: Filestatus.Equal } as any,
-      { action: Fileaction.Delete, status: Filestatus.New, attributes: { remoteHashType: '', remoteHash: '' } } as any,
+      {
+        action: Fileaction.Delete,
+        status: Filestatus.New,
+        attributes: { remoteHashType: '', remoteHash: '' },
+      } as any,
       { action: Fileaction.Ignore, status: Filestatus.Equal } as any,
     ];
     await component.setData(files);
@@ -129,7 +144,7 @@ describe('SubmitComponent', () => {
       { action: Fileaction.Ignore, status: Filestatus.Equal } as any,
     ];
     await component.continueSubmit();
-    expect((routerStub.navigate as any)).toHaveBeenCalledWith(['/connect']);
+    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
   });
 
   it('continueSubmit should call submit service and mark submitted on OK', async () => {
@@ -151,25 +166,28 @@ describe('SubmitComponent', () => {
   });
 
   it('getDataSubscription should navigate to /connect and show error on failure', () => {
-    (dataUpdatesServiceStub.updateData as jasmine.Spy).and.returnValue(throwError(() => ({ error: 'boom' })));
+    (dataUpdatesServiceStub.updateData as jasmine.Spy).and.returnValue(
+      throwError(() => ({ error: 'boom' })),
+    );
     component.getDataSubscription();
     expect(notificationServiceStub.showError).toHaveBeenCalled();
-    expect((routerStub.navigate as any)).toHaveBeenCalledWith(['/connect']);
+    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
   });
 
   it('goToCompute should navigate to compute route with pid', () => {
     component.pid = 'doi:abc';
     component.goToCompute();
-    expect((routerStub.navigate as any)).toHaveBeenCalledWith(['/compute'], { queryParams: { pid: 'doi:abc' } });
+    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/compute'], {
+      queryParams: { pid: 'doi:abc' },
+    });
   });
 
   it('back should call Location.back', () => {
     component.back();
-    expect((locationStub.back as any)).toHaveBeenCalled();
+    expect(locationStub.back as any).toHaveBeenCalled();
   });
 
   it('sendMails should return plugin service value', () => {
     expect(component.sendMails()).toBeTrue();
   });
-
 });

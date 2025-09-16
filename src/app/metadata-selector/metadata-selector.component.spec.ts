@@ -1,4 +1,9 @@
-import { ComponentFixture, TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  flushMicrotasks,
+} from '@angular/core/testing';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
@@ -9,7 +14,13 @@ import { Router } from '@angular/router';
 import { MetadataSelectorComponent } from './metadata-selector.component';
 import { DatasetService } from '../dataset.service';
 import { Location } from '@angular/common';
-import { Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
+import {
+  Field,
+  Fieldaction,
+  FieldDictonary,
+  Metadata,
+  MetadataField,
+} from '../models/field';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 describe('MetadataSelectorComponent', () => {
@@ -120,8 +131,10 @@ describe('MetadataSelectorComponent', () => {
     expect(args[0]).toEqual(['/submit']);
     expect(args[1]).toBeDefined();
     expect(args[1].state).toBeDefined();
-  // metadata can be undefined if metadata hasn't loaded yet; we only assert the shape
-  expect(Object.prototype.hasOwnProperty.call(args[1].state, 'metadata')).toBeTrue();
+    // metadata can be undefined if metadata hasn't loaded yet; we only assert the shape
+    expect(
+      Object.prototype.hasOwnProperty.call(args[1].state, 'metadata'),
+    ).toBeTrue();
   });
 
   it('should load metadata and build tree map', fakeAsync(() => {
@@ -132,7 +145,7 @@ describe('MetadataSelectorComponent', () => {
     expect(component.root).toBeTruthy();
     expect(component.rootNodeChildren.length).toBeGreaterThan(0);
     // Expect names contain title, keyword, author
-    const names = component.rootNodeChildren.map(n => n.data?.name);
+    const names = component.rootNodeChildren.map((n) => n.data?.name);
     expect(names).toContain('title');
     expect(names).toContain('keyword');
     expect(names).toContain('author');
@@ -141,17 +154,30 @@ describe('MetadataSelectorComponent', () => {
   }));
 
   it('rowClass should reflect Fieldaction values', () => {
-    const base: Field = { id: 'x', parent: '', name: 'f', action: Fieldaction.Ignore };
-    expect(component.rowClass({ ...base, action: Fieldaction.Ignore })).toBe('');
-    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toContain('#c3e6cb');
-    expect(component.rowClass({ ...base, action: Fieldaction.Custom })).toContain('#FFFAA0');
+    const base: Field = {
+      id: 'x',
+      parent: '',
+      name: 'f',
+      action: Fieldaction.Ignore,
+    };
+    expect(component.rowClass({ ...base, action: Fieldaction.Ignore })).toBe(
+      '',
+    );
+    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toContain(
+      '#c3e6cb',
+    );
+    expect(
+      component.rowClass({ ...base, action: Fieldaction.Custom }),
+    ).toContain('#FFFAA0');
   });
 
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {
     // prepare a fake root and spy on static methods
     const root: any = { data: { name: 'root' } };
     component.root = root;
-    const iconSpy = spyOn(MetadatafieldComponent, 'actionIcon').and.returnValue('icon-x');
+    const iconSpy = spyOn(MetadatafieldComponent, 'actionIcon').and.returnValue(
+      'icon-x',
+    );
     const toggleSpy = spyOn(MetadatafieldComponent, 'toggleNodeAction');
     expect(component.action()).toBe('icon-x');
     component.toggleAction();
@@ -165,36 +191,46 @@ describe('MetadataSelectorComponent', () => {
     const fm = component.filteredMetadata();
     expect(fm).toBeTruthy();
     const fields = fm!.datasetVersion.metadataBlocks.citation.fields;
-    expect(fields.find(f => f.typeName === 'title')!.value).toBe('My Dataset');
-    expect((fields.find(f => f.typeName === 'keyword')!.value as string[]).length).toBe(2);
-    expect((fields.find(f => f.typeName === 'author')!.value as any[]).length).toBe(2);
+    expect(fields.find((f) => f.typeName === 'title')!.value).toBe(
+      'My Dataset',
+    );
+    expect(
+      (fields.find((f) => f.typeName === 'keyword')!.value as string[]).length,
+    ).toBe(2);
+    expect(
+      (fields.find((f) => f.typeName === 'author')!.value as any[]).length,
+    ).toBe(2);
   }));
 
   it('filteredMetadata should prune ignored primitive and nested values', fakeAsync(() => {
     flushMicrotasks();
     fixture.detectChanges();
     // Ignore the title node
-    const titleNode = Array.from(component.rowNodeMap.values()).find(n => n.data?.name === 'title');
+    const titleNode = Array.from(component.rowNodeMap.values()).find(
+      (n) => n.data?.name === 'title',
+    );
     expect(titleNode).toBeTruthy();
     if (titleNode && titleNode.data) {
       titleNode.data.action = Fieldaction.Ignore;
     }
     // For compound author, remove one dictionary completely by ignoring all its children
-    const authorNameNodes = Array.from(component.rowNodeMap.values()).filter(n => n.data?.name === 'authorName');
+    const authorNameNodes = Array.from(component.rowNodeMap.values()).filter(
+      (n) => n.data?.name === 'authorName',
+    );
     expect(authorNameNodes.length).toBeGreaterThan(0);
     const parentId = authorNameNodes[0].data!.parent!;
     // Ignore all children under this parent (e.g., authorName and authorAffiliation)
     Array.from(component.rowNodeMap.values())
-      .filter(n => n.data?.parent === parentId)
-      .forEach(n => (n.data!.action = Fieldaction.Ignore));
+      .filter((n) => n.data?.parent === parentId)
+      .forEach((n) => (n.data!.action = Fieldaction.Ignore));
 
     const fm = component.filteredMetadata();
     expect(fm).toBeTruthy();
     const fields = fm!.datasetVersion.metadataBlocks.citation.fields;
     // Title should be removed
-    expect(fields.find(f => f.typeName === 'title')).toBeUndefined();
+    expect(fields.find((f) => f.typeName === 'title')).toBeUndefined();
     // Author list should be smaller than original
-    const authors = fields.find(f => f.typeName === 'author')!.value as any[];
+    const authors = fields.find((f) => f.typeName === 'author')!.value as any[];
     expect(authors.length).toBe(1);
   }));
 
