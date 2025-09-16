@@ -31,7 +31,6 @@ import { MetadatafieldComponent } from '../metadatafield/metadatafield.component
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
-// SubscriptionManager not needed as we no longer manage subscriptions here
 
 @Component({
   selector: 'app-metadata-selector',
