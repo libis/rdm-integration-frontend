@@ -5,9 +5,13 @@
   </span>
 
   <span class="col-auto">
+    <span class="bulk-label">Overview of actions</span>
+  </span>
+
+  <span class="col-auto">
     <button pButton pRipple type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Go to compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
     <button pButton pRipple type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
-    <button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
