@@ -19,6 +19,13 @@ export const routes: Routes = [
       import('./submit/submit.component').then((m) => m.SubmitComponent),
   },
   {
+    path: 'metadata-selector',
+    loadComponent: () =>
+      import('./metadata-selector/metadata-selector.component').then(
+        (m) => m.MetadataSelectorComponent,
+      ),
+  },
+  {
     path: 'compute',
     loadComponent: () =>
       import('./compute/compute.component').then((m) => m.ComputeComponent),
