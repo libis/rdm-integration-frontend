@@ -285,7 +285,7 @@ export class MetadataSelectorComponent implements OnInit {
       const dict: FieldDictonary = {};
       Object.keys(d).forEach((k) => {
         const f = d[k];
-        if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
+        if (this.rowNodeMap.get(f.id!)?.data?.action === Fieldaction.Copy) {
           const field: MetadataField = {
             expandedvalue: f.expandedvalue,
             multiple: f.multiple,
