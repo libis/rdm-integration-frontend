@@ -30,11 +30,8 @@ import {
 
 // PrimeNG
 import { TreeNode, PrimeTemplate } from 'primeng/api';
-import { ButtonDirective, Button } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
-import { Dialog } from 'primeng/dialog';
-import { Checkbox } from 'primeng/checkbox';
-import { FormsModule } from '@angular/forms';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components
@@ -50,11 +47,7 @@ import { SubscriptionManager } from '../shared/types';
   styleUrls: ['./metadata-selector.component.scss'],
   imports: [
     ButtonDirective,
-    Button,
     Ripple,
-    Dialog,
-    Checkbox,
-    FormsModule,
     PrimeTemplate,
     TreeTableModule,
     MetadatafieldComponent,
@@ -95,8 +88,7 @@ export class MetadataSelectorComponent
   disabled = false;
   submitted = false;
   done = false;
-  sendEmailOnSuccess = false;
-  popup = false;
+  // No popup in metadata selector; direct navigation to submit page
   hasAccessToCompute = false;
 
   metadata?: Metadata;
@@ -248,15 +240,11 @@ export class MetadataSelectorComponent
   }
 
   submit() {
-    if (this.credentialsService.credentials.plugin === 'globus') {
-      this.continueSubmit();
-    } else {
-      this.popup = true;
-    }
+    // In metadata selector, clicking Submit should proceed immediately to the submit page
+    this.continueSubmit();
   }
 
   async continueSubmit() {
-    this.popup = false;
     this.disabled = true;
 
     // If this is a new dataset flow, first create the dataset based on selected metadata
