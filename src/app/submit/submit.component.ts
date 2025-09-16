@@ -100,7 +100,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     // Capture metadata from navigation state if coming from metadata-selector
     let state: { metadata?: Metadata } | undefined;
     // Use Router.getCurrentNavigation when available (only during navigation)
-    const nav = this.router.getCurrentNavigation?.();
+    const nav = this.router.getCurrentNavigation();
     if (nav?.extras?.state) {
       state = nav.extras.state as { metadata?: Metadata };
     } else if (
