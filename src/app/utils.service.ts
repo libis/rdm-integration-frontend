@@ -46,7 +46,7 @@ export class UtilsService {
     data.forEach((d) => {
       let path = '';
       d.path!.split('/').forEach((folder) => {
-        const id = path != '' ? `${path  }/${  folder}` : folder;
+        const id = path != '' ? `${path}/${folder}` : folder;
         const folderData: Datafile = {
           path: path,
           name: folder,
@@ -59,7 +59,7 @@ export class UtilsService {
         });
         path = id;
       });
-      rowDataMap.set(`${d.id!  }:file`, {
+      rowDataMap.set(`${d.id!}:file`, {
         // avoid collisions between folders and files having the same path and name
         data: d,
       });

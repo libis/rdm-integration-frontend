@@ -20,26 +20,17 @@ import { NotificationService } from '../shared/notification.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
-import { MetadataRequest } from '../models/metadata-request';
-import {
-  Field,
-  Fieldaction,
-  FieldDictonary,
-  Metadata,
-  MetadataField,
-} from '../models/field';
+import { Metadata } from '../models/field';
 
 // PrimeNG
-import { TreeNode, PrimeTemplate } from 'primeng/api';
+import { PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 import { Dialog } from 'primeng/dialog';
 import { Checkbox } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
-import { TreeTableModule } from 'primeng/treetable';
 
 // Components
-import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 import { SubmittedFileComponent } from '../submitted-file/submitted-file.component';
 
 // Constants and types
@@ -58,8 +49,6 @@ import { SubscriptionManager } from '../shared/types';
     FormsModule,
     PrimeTemplate,
     Button,
-    TreeTableModule,
-    MetadatafieldComponent,
     SubmittedFileComponent,
   ],
 })
@@ -78,6 +67,8 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
+  // Keep a handle only for polling, so we can cancel/replace safely
+  private dataStatusSub?: Subscription;
 
   // Icon constants
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
@@ -100,20 +91,37 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   sendEmailOnSuccess = false;
   popup = false;
   hasAccessToCompute = false;
+  private incomingMetadata?: Metadata;
 
-  metadata?: Metadata;
-
-  root?: TreeNode<Field>;
-  rootNodeChildren: TreeNode<Field>[] = [];
-  rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
-
-  id = 0;
-
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.loadData();
-    const subscription = this.dataService
+    // Capture metadata from navigation state if coming from metadata-selector
+    let state: { metadata?: Metadata } | undefined;
+    // Use Router.getCurrentNavigation when available (only during navigation). In tests/mocks this may be undefined.
+    const hasGetCurrentNavigation =
+      typeof (this.router as any).getCurrentNavigation === 'function';
+    const nav = hasGetCurrentNavigation
+      ? ((this.router as any).getCurrentNavigation() as { extras?: { state?: unknown } } | null)
+      : null;
+    if (nav?.extras?.state) {
+      state = nav.extras.state as { metadata?: Metadata };
+    } else if (
+      typeof window !== 'undefined' &&
+      typeof window.history !== 'undefined' &&
+      'state' in window.history
+    ) {
+      // Fallback for cases where component is reloaded or Router mock lacks the API
+      const histState = window.history.state as unknown;
+      if (histState && typeof histState === 'object') {
+        state = histState as { metadata?: Metadata };
+      }
+    }
+    if (state?.metadata) {
+      this.incomingMetadata = state.metadata;
+    }
+    const accessCheckSub = this.dataService
       .checkAccessToQueue(
         '',
         this.credentialsService.credentials.dataverse_token,
@@ -121,27 +129,29 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       )
       .subscribe({
         next: (access) => {
-          subscription.unsubscribe();
           this.hasAccessToCompute = access.access;
         },
         error: () => {
-          subscription.unsubscribe();
+          // ignore access check failures silently as before
         },
       });
+    this.subscriptions.add(accessCheckSub);
   }
 
   ngOnDestroy(): void {
     // Clean up all subscriptions
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
   }
 
   getDataSubscription(): void {
-    const dataSubscription = this.dataUpdatesService
+    // Ensure previous polling subscription is stopped before starting a new one
+    this.dataStatusSub?.unsubscribe();
+    this.dataStatusSub = this.dataUpdatesService
       .updateData(this.data, this.pid)
       .subscribe({
         next: async (res: CompareResult) => {
-          dataSubscription?.unsubscribe();
+          this.dataStatusSub?.unsubscribe();
           if (res.data !== undefined) {
             this.setData(res.data);
           }
@@ -153,11 +163,14 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
           }
         },
         error: (err) => {
-          dataSubscription?.unsubscribe();
-          this.notificationService.showError(`Getting status of data failed: ${err.error}`);
+          this.dataStatusSub?.unsubscribe();
+          this.notificationService.showError(
+            `Getting status of data failed: ${err.error}`,
+          );
           this.router.navigate(['/connect']);
         },
       });
+    this.subscriptions.add(this.dataStatusSub);
   }
 
   hasUnfinishedDataFiles(): boolean {
@@ -183,30 +196,6 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.updated = this.toUpdate();
     this.deleted = this.toDelete();
     this.data = [...this.created, ...this.updated, ...this.deleted];
-    if (this.pid.endsWith(':New Dataset')) {
-      const credentials = this.credentialsService.credentials;
-      const req: MetadataRequest = {
-        pluginId: credentials.pluginId,
-        plugin: credentials.plugin,
-        repoName: credentials.repo_name,
-        url: credentials.url,
-        option: credentials.option,
-        user: credentials.user,
-        token: credentials.token,
-        dvToken: credentials.dataverse_token,
-        compareResult: this.dataStateService.getCurrentValue(),
-      };
-      this.metadata = await firstValueFrom(
-        this.datasetService.getMetadata(req),
-      );
-      const rowDataMap = this.mapFields(this.metadata);
-      rowDataMap.forEach((v) => this.addChild(v, rowDataMap));
-      this.root = rowDataMap.get('');
-      this.rowNodeMap = rowDataMap;
-      if (this.root?.children) {
-        this.rootNodeChildren = this.root.children;
-      }
-    }
   }
 
   toCreate(): Datafile[] {
@@ -280,26 +269,28 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     }
 
-    const httpSubscription = this.submitService
+    const submitSub = this.submitService
       .submit(selected, this.sendEmailOnSuccess)
       .subscribe({
         next: (data: StoreResult) => {
           if (data.status !== 'OK') {
             // this should not happen
-            this.notificationService.showError(`Store failed, status: ${data.status}`);
+            this.notificationService.showError(
+              `Store failed, status: ${data.status}`,
+            );
             this.router.navigate(['/connect']);
           } else {
             this.getDataSubscription();
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
           }
-          httpSubscription.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`Store failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
       });
+    this.subscriptions.add(submitSub);
   }
 
   back(): void {
@@ -319,12 +310,11 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   async newDataset(collectionId: string): Promise<boolean> {
-    const metadata = this.filteredMetadata();
     const data = await firstValueFrom(
       this.datasetService.newDataset(
         collectionId,
         this.credentialsService.credentials.dataverse_token,
-        metadata,
+        this.incomingMetadata, // use metadata selected in metadata-selector when present
       ),
     );
     if (data.persistentId !== undefined && data.persistentId !== '') {
@@ -335,224 +325,5 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.notificationService.showError('Creating new dataset failed');
       return false;
     }
-  }
-
-  action(): string {
-    if (this.root) {
-      return MetadatafieldComponent.actionIcon(this.root);
-    }
-    return MetadatafieldComponent.icon_ignore;
-  }
-
-  toggleAction(): void {
-    if (this.root) {
-      MetadatafieldComponent.toggleNodeAction(this.root);
-    }
-  }
-
-  rowClass(field: Field): string {
-    switch (field.action) {
-      case Fieldaction.Ignore:
-        return '';
-      case Fieldaction.Copy:
-        return 'background-color: #c3e6cb; color: black';
-      case Fieldaction.Custom:
-        return 'background-color: #FFFAA0; color: black';
-    }
-    return '';
-  }
-
-  addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {
-    if (v.data?.id == '') {
-      return;
-    }
-    const parent = rowDataMap.get(v.data!.parent!)!;
-    const children = parent.children ? parent.children : [];
-    parent.children = children.concat(v);
-  }
-
-  mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
-    const rootData: Field = {
-      id: '',
-      parent: '',
-      name: '',
-      action: Fieldaction.Copy,
-    };
-
-    const rowDataMap: Map<string, TreeNode<Field>> = new Map<
-      string,
-      TreeNode<Field>
-    >();
-    rowDataMap.set('', {
-      data: rootData,
-    });
-
-    metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
-      this.addToDataMap(d, '', rowDataMap);
-    });
-    return rowDataMap;
-  }
-
-  private addToDataMap(
-    d: MetadataField,
-    parent: string,
-    rowDataMap: Map<string, TreeNode<Field>>,
-  ) {
-    if (
-      d.value &&
-      Array.isArray(d.value) &&
-      d.value.length > 0 &&
-      typeof d.value[0] === 'string'
-    ) {
-      let content = d.value[0];
-      for (let i = 1; i < d.value.length; i++) {
-        content = `${content}, ${d.value[i]}`;
-      }
-      const id = `${this.id++}`;
-      d.id = id;
-      const data: Field = {
-        id: id,
-        parent: parent,
-        name: d.typeName,
-        action: Fieldaction.Copy,
-        leafValue: content,
-        field: d,
-      };
-      rowDataMap.set(id, {
-        data: data,
-      });
-    } else if (d.value && typeof d.value !== 'string') {
-      (d.value as FieldDictonary[]).forEach((v) => {
-        const id = `${this.id++}`;
-        const data: Field = {
-          id: id,
-          parent: parent,
-          name: d.typeName,
-          action: Fieldaction.Copy,
-          field: v,
-        };
-        rowDataMap.set(id, {
-          data: data,
-        });
-        this.mapChildField(id, v, rowDataMap);
-      });
-    } else {
-      const id = `${this.id++}`;
-      d.id = id;
-      const data: Field = {
-        id: id,
-        parent: parent,
-        name: d.typeName,
-        action: Fieldaction.Copy,
-        leafValue: d.value,
-        field: d,
-      };
-      rowDataMap.set(id, {
-        data: data,
-      });
-    }
-  }
-
-  mapChildField(
-    parent: string,
-    fieldDictonary: FieldDictonary,
-    rowDataMap: Map<string, TreeNode<Field>>,
-  ) {
-    Object.values(fieldDictonary).forEach((d) => {
-      this.addToDataMap(d, parent, rowDataMap);
-    });
-  }
-
-  filteredMetadata(): Metadata | undefined {
-    if (
-      !this.metadata ||
-      !this.rootNodeChildren ||
-      this.rootNodeChildren.length === 0
-    ) {
-      return undefined;
-    }
-    let res: MetadataField[] = [];
-    this.metadata.datasetVersion.metadataBlocks.citation.fields.forEach((f) => {
-      if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
-        const field: MetadataField = {
-          expandedvalue: f.expandedvalue,
-          multiple: f.multiple,
-          typeClass: f.typeClass,
-          typeName: f.typeName,
-          value: f.value,
-        };
-        res = res.concat(field);
-      } else if (
-        f.value &&
-        Array.isArray(f.value) &&
-        f.value.length > 0 &&
-        typeof f.value[0] !== 'string'
-      ) {
-        const dicts = this.customValue(f.value as FieldDictonary[]);
-        if (dicts.length > 0) {
-          const field: MetadataField = {
-            expandedvalue: f.expandedvalue,
-            multiple: f.multiple,
-            typeClass: f.typeClass,
-            typeName: f.typeName,
-            value: dicts,
-          };
-          res = res.concat(field);
-        }
-      }
-    });
-    return {
-      datasetVersion: {
-        metadataBlocks: {
-          citation: {
-            displayName:
-              this.metadata.datasetVersion.metadataBlocks.citation.displayName,
-            fields: res,
-            name: this.metadata.datasetVersion.metadataBlocks.citation.name,
-          },
-        },
-      },
-    };
-  }
-
-  customValue(metadataFields: FieldDictonary[]): FieldDictonary[] {
-    let res: FieldDictonary[] = [];
-    metadataFields.forEach((d) => {
-      const dict: FieldDictonary = {};
-      Object.keys(d).forEach((k) => {
-        const f = d[k];
-        if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
-          const field: MetadataField = {
-            expandedvalue: f.expandedvalue,
-            multiple: f.multiple,
-            typeClass: f.typeClass,
-            typeName: f.typeName,
-            value: f.value,
-          };
-          dict[k] = field;
-        } else if (
-          f.value &&
-          Array.isArray(f.value) &&
-          f.value.length > 0 &&
-          typeof f.value[0] !== 'string'
-        ) {
-          const dicts = this.customValue(f.value as FieldDictonary[]);
-          if (dicts.length > 0) {
-            const field: MetadataField = {
-              expandedvalue: f.expandedvalue,
-              multiple: f.multiple,
-              typeClass: f.typeClass,
-              typeName: f.typeName,
-              value: this.customValue(f.value as FieldDictonary[]),
-            };
-            dict[k] = field;
-          }
-        }
-      });
-      if (Object.keys(dict).length > 0) {
-        res = res.concat(dict);
-      }
-    });
-    return res;
   }
 }

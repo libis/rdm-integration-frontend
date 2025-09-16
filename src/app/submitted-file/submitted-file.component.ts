@@ -22,7 +22,7 @@ export class SubmittedFileComponent implements OnInit {
 
   file(): string {
     const datafile = this.datafile();
-    return `${datafile.path ? `${datafile.path  }/` : ''}${this.datafile().name}`;
+    return `${datafile.path ? `${datafile.path}/` : ''}${this.datafile().name}`;
   }
 
   iconClass(): string {

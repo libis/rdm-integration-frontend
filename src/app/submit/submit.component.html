@@ -5,9 +5,13 @@
   </span>
 
   <span class="col-auto">
+    <span class="bulk-label">Overview of actions</span>
+  </span>
+
+  <span class="col-auto">
     <button pButton pRipple type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Go to compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
     <button pButton pRipple type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
-    <button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
@@ -31,28 +35,6 @@
 
 <table class="table">
   <tbody>
-    <tr [hidden]="!metadata">
-      <th><i [class]="icon_copy"></i> Metadata that will be copied</th>
-    </tr>
-    <tr class="file-list-header" [hidden]="!metadata">
-      <p-treeTable [value]="rootNodeChildren">
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="text-align: left;">Field</th>
-            <th>Value</th>
-            <th class="icon_col" style="text-align: right;">
-              <button pButton pRipple label='' type="button"
-                class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
-              [class]="action()"></i></button>
-            </th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-          <tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
-            [style]="rowClass(rowData)">
-          </ng-template>
-        </p-treeTable>
-      </tr>
       <tr class="file-list-header">
         <th><i [class]="icon_copy"></i> Files that will be created</th>
       </tr>

@@ -1,0 +1,43 @@
+<!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
+<div class="row justify-content-between sticky-menu">
+	<span class="col-auto">
+		<button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+	</span>
+
+    <span class="col-auto">
+      <span class="bulk-label">Select metadata actions</span>
+    </span>
+
+	<span class="col-auto">
+		<button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Confirm metadata selection">Confirm metadata selection&nbsp;<i class="pi pi-angle-double-right"></i></button>
+	</span>
+</div>
+
+<br/>
+
+<table class="table">
+	<tbody>
+		<tr>
+			<th><i [class]="icon_copy"></i> Metadata that will be copied</th>
+		</tr>
+		<tr class="file-list-header">
+			<p-treeTable [value]="rootNodeChildren">
+				<ng-template pTemplate="header">
+					<tr>
+						<th style="text-align: left;">Metadata field</th>
+						<th>Value</th>
+						<th class="icon_col" style="text-align: right;">
+							<button pButton pRipple label='' type="button"
+								class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
+							[class]="action()"></i></button>
+						</th>
+					</tr>
+				</ng-template>
+				<ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+					<tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
+						[style]="rowClass(rowData)">
+					</ng-template>
+				</p-treeTable>
+			</tr>
+	</tbody>
+</table>
