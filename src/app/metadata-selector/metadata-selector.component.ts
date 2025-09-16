@@ -127,7 +127,7 @@ export class MetadataSelectorComponent implements OnInit {
   }
 
   addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {
-    if (v.data?.id == '') {
+    if (v.data?.id === '') {
       return;
     }
     const parent = rowDataMap.get(v.data!.parent!)!;
