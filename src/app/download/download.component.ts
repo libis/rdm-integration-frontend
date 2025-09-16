@@ -35,13 +35,7 @@ import { Tree } from 'primeng/tree';
 import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
 
 // RxJS
-import {
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-} from 'rxjs';
+import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
@@ -64,7 +58,9 @@ import { SubscriptionManager } from '../shared/types';
     Button,
   ],
 })
-export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager {
+export class DownloadComponent
+  implements OnInit, OnDestroy, SubscriptionManager
+{
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly pluginService = inject(PluginService);
   dataService = inject(DataService);
@@ -184,14 +180,14 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
               (err) =>
                 (this.doiItems = [
                   {
-                    label: `search failed: ${  err.message}`,
+                    label: `search failed: ${err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.doiItems = [
-            { label: `search failed: ${  err.message}`, value: err.message },
+            { label: `search failed: ${err.message}`, value: err.message },
           ]),
       });
     this.repoSearchResultsSubscription =
@@ -203,14 +199,14 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
               (err) =>
                 (this.repoNames = [
                   {
-                    label: `search failed: ${  err.message}`,
+                    label: `search failed: ${err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.repoNames = [
-            { label: `search failed: ${  err.message}`, value: err.message },
+            { label: `search failed: ${err.message}`, value: err.message },
           ]),
       });
   }
@@ -299,7 +295,7 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
       return;
     }
     this.doiItems = [
-      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
     ];
     this.datasetSearchSubject.next(searchTerm);
   }
@@ -332,7 +328,9 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
         },
         error: (err) => {
           subscription.unsubscribe();
-          this.notificationService.showError(`Getting downloadable files failed: ${err.error}`);
+          this.notificationService.showError(
+            `Getting downloadable files failed: ${err.error}`,
+          );
         },
       });
   }
@@ -406,7 +404,9 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
         error: (err) => {
           console.error('something went wrong: ');
           console.error(`${err.error}`);
-          this.notificationService.showError(`Download request failed: ${err.error}`);
+          this.notificationService.showError(
+            `Download request failed: ${err.error}`,
+          );
           httpSubscription.unsubscribe();
         },
       });
@@ -439,7 +439,9 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
       (this.getRepoName() === undefined || this.getRepoName() === '') &&
       !isSearch
     ) {
-      this.notificationService.showError(`${this.getRepoNameFieldName()} is missing`);
+      this.notificationService.showError(
+        `${this.getRepoNameFieldName()} is missing`,
+      );
       return;
     }
     if (
@@ -480,7 +482,7 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
       return;
     }
     this.repoNames = [
-      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
     ];
     this.repoSearchSubject.next(searchTerm);
   }
@@ -542,7 +544,9 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
         httpSubscription.unsubscribe();
       },
       error: (err) => {
-        this.notificationService.showError(`Branch lookup failed: ${err.error}`);
+        this.notificationService.showError(
+          `Branch lookup failed: ${err.error}`,
+        );
         this.branchItems = [];
         this.option = undefined;
         this.optionsLoading = false;
@@ -591,14 +595,11 @@ export class DownloadComponent implements OnInit, OnDestroy, SubscriptionManager
       if (url.includes('?')) {
         clId = '&client_id=';
       }
-      url =
-        `${url +
-        clId +
-        encodeURIComponent(tg.oauth_client_id) 
-        }&redirect_uri=${ 
-        this.pluginService.getRedirectUri() 
-        }&response_type=code&state=${ 
-        encodeURIComponent(JSON.stringify(loginState))}`;
+      url = `${
+        url + clId + encodeURIComponent(tg.oauth_client_id)
+      }&redirect_uri=${this.pluginService.getRedirectUri()}&response_type=code&state=${encodeURIComponent(
+        JSON.stringify(loginState),
+      )}`;
       location.href = url;
     } else {
       window.open(url, '_blank');
