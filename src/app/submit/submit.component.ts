@@ -67,6 +67,8 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
+  // Keep a handle only for polling, so we can cancel/replace safely
+  private dataStatusSub?: Subscription;
 
   // Icon constants
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
@@ -108,7 +110,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     if (state?.metadata) {
       this.incomingMetadata = state.metadata;
     }
-    const subscription = this.dataService
+    const accessCheckSub = this.dataService
       .checkAccessToQueue(
         '',
         this.credentialsService.credentials.dataverse_token,
@@ -116,13 +118,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       )
       .subscribe({
         next: (access) => {
-          subscription.unsubscribe();
           this.hasAccessToCompute = access.access;
         },
         error: () => {
-          subscription.unsubscribe();
+          // ignore access check failures silently as before
         },
       });
+    this.subscriptions.add(accessCheckSub);
   }
 
   ngOnDestroy(): void {
@@ -132,13 +134,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   getDataSubscription(): void {
-    let dataSubscription: Subscription | null = null;
-    dataSubscription = this.dataUpdatesService
+    // Ensure previous polling subscription is stopped before starting a new one
+    this.dataStatusSub?.unsubscribe();
+    this.dataStatusSub = this.dataUpdatesService
       .updateData(this.data, this.pid)
       .subscribe({
         next: async (res: CompareResult) => {
-          // Defer unsubscribe to ensure assignment completed even if emission is synchronous
-          setTimeout(() => dataSubscription?.unsubscribe(), 0);
+          this.dataStatusSub?.unsubscribe();
           if (res.data !== undefined) {
             this.setData(res.data);
           }
@@ -150,13 +152,14 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
           }
         },
         error: (err) => {
-          setTimeout(() => dataSubscription?.unsubscribe(), 0);
+          this.dataStatusSub?.unsubscribe();
           this.notificationService.showError(
             `Getting status of data failed: ${err.error}`,
           );
           this.router.navigate(['/connect']);
         },
       });
+    this.subscriptions.add(this.dataStatusSub);
   }
 
   hasUnfinishedDataFiles(): boolean {
@@ -255,8 +258,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     }
 
-    let httpSubscription: Subscription | null = null;
-    httpSubscription = this.submitService
+    const submitSub = this.submitService
       .submit(selected, this.sendEmailOnSuccess)
       .subscribe({
         next: (data: StoreResult) => {
@@ -271,14 +273,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
           }
-          setTimeout(() => httpSubscription?.unsubscribe(), 0);
         },
         error: (err) => {
-          setTimeout(() => httpSubscription?.unsubscribe(), 0);
           this.notificationService.showError(`Store failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
       });
+    this.subscriptions.add(submitSub);
   }
 
   back(): void {
