@@ -3,7 +3,7 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 
 // Services
 import { DataUpdatesService } from '../data.updates.service';
@@ -13,24 +13,23 @@ import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
-// import { DatasetService } from '../dataset.service';
+import { DatasetService } from '../dataset.service';
 import { NotificationService } from '../shared/notification.service';
 
 // Models
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
-// import { MetadataRequest } from '../models/metadata-request';
-// import { Field, Fieldaction, FieldDictonary, Metadata, MetadataField } from '../models/field';
+// Removed metadata-related imports as metadata selection is no longer handled here
 
 // PrimeNG
-// import { TreeNode, PrimeTemplate } from 'primeng/api';
+import { PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
 import { Ripple } from 'primeng/ripple';
 import { Dialog } from 'primeng/dialog';
 import { Checkbox } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
-// import { TreeTableModule } from 'primeng/treetable';
+// Removed TreeTableModule as metadata table is no longer used
 
 // Components
 import { SubmittedFileComponent } from '../submitted-file/submitted-file.component';
@@ -45,13 +44,12 @@ import { SubscriptionManager } from '../shared/types';
   styleUrls: ['./submit.component.scss'],
   imports: [
     ButtonDirective,
-    Button,
     Ripple,
     Dialog,
     Checkbox,
     FormsModule,
-    // PrimeTemplate,
-    // TreeTableModule, // no longer used here
+    PrimeTemplate,
+    Button,
     SubmittedFileComponent,
   ],
 })
@@ -65,7 +63,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly utils = inject(UtilsService);
   dataService = inject(DataService);
   private readonly credentialsService = inject(CredentialsService);
-  // private readonly datasetService = inject(DatasetService);
+  private readonly datasetService = inject(DatasetService);
   private readonly notificationService = inject(NotificationService);
 
   // Subscriptions for cleanup
@@ -93,17 +91,12 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   popup = false;
   hasAccessToCompute = false;
 
-  // Metadata selection is handled in MetadataSelectorComponent
+  // Removed metadata tree state as metadata selection is not part of Submit anymore
 
-  constructor() {}
+  constructor() { }
 
   ngOnInit(): void {
     this.loadData();
-    // If somehow navigated directly while creating a new dataset, send to metadata selection first
-    if (this.pid.endsWith(':New Dataset')) {
-      this.router.navigate(['/metadata-selector']);
-      return;
-    }
     const subscription = this.dataService
       .checkAccessToQueue(
         '',
@@ -123,12 +116,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   ngOnDestroy(): void {
     // Clean up all subscriptions
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.subscriptions.clear();
   }
 
   getDataSubscription(): void {
-    const dataSubscription = this.dataUpdatesService
+    let dataSubscription: Subscription | undefined;
+    dataSubscription = this.dataUpdatesService
       .updateData(this.data, this.pid)
       .subscribe({
         next: async (res: CompareResult) => {
@@ -145,9 +139,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
         },
         error: (err) => {
           dataSubscription?.unsubscribe();
-          this.notificationService.showError(
-            `Getting status of data failed: ${err.error}`,
-          );
+          this.notificationService.showError(`Getting status of data failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
       });
@@ -240,24 +232,30 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       return;
     }
 
-    // New dataset creation is handled in MetadataSelectorComponent
+    if (this.pid.endsWith(':New Dataset')) {
+      const ids = this.pid.split(':');
+      const ok = await this.newDataset(ids[0]);
+      if (!ok) {
+        this.disabled = false;
+        return;
+      }
+    }
 
-    const httpSubscription = this.submitService
+    let httpSubscription: Subscription | undefined;
+    httpSubscription = this.submitService
       .submit(selected, this.sendEmailOnSuccess)
       .subscribe({
         next: (data: StoreResult) => {
           if (data.status !== 'OK') {
             // this should not happen
-            this.notificationService.showError(
-              `Store failed, status: ${data.status}`,
-            );
+            this.notificationService.showError(`Store failed, status: ${data.status}`);
             this.router.navigate(['/connect']);
           } else {
             this.getDataSubscription();
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
           }
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`Store failed: ${err.error}`);
@@ -282,7 +280,21 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     return this.pluginService.sendMails();
   }
 
-  // New dataset creation moved to MetadataSelectorComponent
-
-  // Metadata helper methods removed; file submission only
+  async newDataset(collectionId: string): Promise<boolean> {
+    const data = await firstValueFrom(
+      this.datasetService.newDataset(
+        collectionId,
+        this.credentialsService.credentials.dataverse_token,
+        undefined, // no metadata selection in Submit; server may apply defaults
+      ),
+    );
+    if (data.persistentId !== undefined && data.persistentId !== '') {
+      this.pid = data.persistentId;
+      this.credentialsService.credentials.dataset_id = data.persistentId;
+      return true;
+    } else {
+      this.notificationService.showError('Creating new dataset failed');
+      return false;
+    }
+  }
 }
