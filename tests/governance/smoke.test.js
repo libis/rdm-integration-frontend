@@ -4,7 +4,7 @@
 
 function main() {
   // Output success message using console.log
-  console.log("Governance smoke: OK");
+  console.log('Governance smoke: OK');
   // Implicit success exit
 }
 

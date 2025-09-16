@@ -38,7 +38,13 @@ import { ExecutablefileComponent } from '../executablefile/executablefile.compon
 import { AutosizeModule } from 'ngx-autosize';
 
 // RxJS
-import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+} from 'rxjs';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
@@ -63,9 +69,7 @@ import { SubscriptionManager } from '../shared/types';
     AutosizeModule,
   ],
 })
-export class ComputeComponent
-  implements OnInit, OnDestroy, SubscriptionManager
-{
+export class ComputeComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly pluginService = inject(PluginService);
   dataService = inject(DataService);
@@ -141,23 +145,23 @@ export class ComputeComponent
               (err) =>
                 (this.doiItems = [
                   {
-                    label: `search failed: ${err.message}`,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.doiItems = [
-            { label: `search failed: ${err.message}`, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
   }
 
   ngOnDestroy(): void {
     // Clean up all subscriptions
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.subscriptions.clear();
-
+    
     // Clean up existing observable subscriptions
     this.datasetSearchResultsSubscription?.unsubscribe();
   }
@@ -230,7 +234,7 @@ export class ComputeComponent
       return;
     }
     this.doiItems = [
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.datasetSearchSubject.next(searchTerm);
   }
@@ -263,9 +267,7 @@ export class ComputeComponent
         },
         error: (err) => {
           subscription.unsubscribe();
-          this.notificationService.showError(
-            `Getting executable files failed: ${err.error}`,
-          );
+          this.notificationService.showError(`Getting executable files failed: ${err.error}`);
         },
       });
   }
@@ -336,9 +338,7 @@ export class ComputeComponent
       error: (err) => {
         subscription.unsubscribe();
         this.loading = false;
-        this.notificationService.showError(
-          `Getting computation results failed: ${err.error}`,
-        );
+        this.notificationService.showError(`Getting computation results failed: ${err.error}`);
       },
     });
   }

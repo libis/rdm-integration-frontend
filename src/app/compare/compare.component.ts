@@ -1,3 +1,5 @@
+ 
+
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
@@ -37,7 +39,7 @@ import { FilterItem, SubscriptionManager } from '../shared/types';
   templateUrl: './compare.component.html',
   styleUrls: ['./compare.component.scss'],
   imports: [
-    CommonModule,
+  CommonModule,
     ButtonDirective,
     Ripple,
     TreeTableModule,
@@ -47,16 +49,12 @@ import { FilterItem, SubscriptionManager } from '../shared/types';
     DatafileComponent,
   ],
 })
-export class CompareComponent
-  implements OnInit, OnDestroy, SubscriptionManager
-{
+export class CompareComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly dataUpdatesService = inject(DataUpdatesService);
   private readonly dataStateService = inject(DataStateService);
   private readonly credentialsService = inject(CredentialsService);
   private readonly router = inject(Router);
-  private readonly folderActionUpdateService = inject(
-    FolderActionUpdateService,
-  );
+  private readonly folderActionUpdateService = inject(FolderActionUpdateService);
   private readonly pluginService = inject(PluginService);
   private readonly utils = inject(UtilsService);
 
@@ -138,7 +136,7 @@ export class CompareComponent
 
   ngOnDestroy(): void {
     // Clean up all subscriptions
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.subscriptions.clear();
   }
 
@@ -319,11 +317,7 @@ export class CompareComponent
 
   submit(): void {
     this.dataStateService.updateState(this.data);
-    if (this.isNewDataset()) {
-      this.router.navigate(['/metadata-selector']);
-    } else {
-      this.router.navigate(['/submit']);
-    }
+    this.router.navigate(['/submit']);
   }
 
   // UI helpers

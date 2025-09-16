@@ -57,7 +57,7 @@ export class DatafileComponent implements OnInit {
       return '';
     }
     if (this.isInFilter()) {
-      return `${datafile.path ? `${datafile.path}/` : ''}${datafile.name}`;
+      return `${datafile.path ? `${datafile.path  }/` : ''}${datafile.name}`;
     }
     return `${datafile.name}`;
   }
@@ -90,9 +90,7 @@ export class DatafileComponent implements OnInit {
       case Filestatus.Deleted:
         return 'File only in dataset (deleted in repository)';
     }
-    return this.loading()
-      ? 'Loading status...'
-      : 'Click refresh to re-check status';
+    return this.loading() ? 'Loading status...' : 'Click refresh to re-check status';
   }
 
   action(): string {
@@ -119,7 +117,7 @@ export class DatafileComponent implements OnInit {
     ) {
       return '';
     }
-    return `${datafile.path ? `${datafile.path}/` : ''}${datafile.name}`;
+    return `${datafile.path ? `${datafile.path  }/` : ''}${datafile.name}`;
   }
 
   toggleAction(): void {

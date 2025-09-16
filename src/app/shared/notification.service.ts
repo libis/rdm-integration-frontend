@@ -4,9 +4,10 @@ import { Injectable } from '@angular/core';
  * Service for handling errors and user notifications
  */
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class NotificationService {
+  
   /**
    * Show an error message to the user
    * TODO: Replace with proper notification system (e.g., toast, snackbar)
@@ -51,7 +52,7 @@ export class NotificationService {
    */
   handleHttpError(error: unknown, context?: string): void {
     let message = 'An unexpected error occurred';
-
+    
     if (error && typeof error === 'object' && 'error' in error) {
       message = String(error.error);
     } else if (error && typeof error === 'object' && 'message' in error) {

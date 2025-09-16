@@ -38,7 +38,13 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tree } from 'primeng/tree';
 
 // RxJS
-import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+} from 'rxjs';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
@@ -65,9 +71,7 @@ const new_dataset = 'New Dataset';
     Tree,
   ],
 })
-export class ConnectComponent
-  implements OnInit, OnDestroy, SubscriptionManager
-{
+export class ConnectComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly router = inject(Router);
   private readonly dataStateService = inject(DataStateService);
   private readonly datasetService = inject(DatasetService);
@@ -168,14 +172,14 @@ export class ConnectComponent
               (err) =>
                 (this.repoNames = [
                   {
-                    label: `search failed: ${err.message}`,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.repoNames = [
-            { label: `search failed: ${err.message}`, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.collectionSearchResultsSubscription =
@@ -187,14 +191,14 @@ export class ConnectComponent
               (err) =>
                 (this.collectionItems = [
                   {
-                    label: `search failed: ${err.message}`,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.collectionItems = [
-            { label: `search failed: ${err.message}`, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.datasetSearchResultsSubscription =
@@ -206,14 +210,14 @@ export class ConnectComponent
               (err) =>
                 (this.doiItems = [
                   {
-                    label: `search failed: ${err.message}`,
+                    label: `search failed: ${  err.message}`,
                     value: err.message,
                   },
                 ]),
             ),
         error: (err) =>
           (this.doiItems = [
-            { label: `search failed: ${err.message}`, value: err.message },
+            { label: `search failed: ${  err.message}`, value: err.message },
           ]),
       });
     this.route.queryParams.subscribe((params) => {
@@ -379,9 +383,9 @@ export class ConnectComponent
 
   ngOnDestroy(): void {
     // Clean up all subscriptions
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.forEach(sub => sub.unsubscribe());
     this.subscriptions.clear();
-
+    
     // Clean up existing observable subscriptions
     this.repoSearchResultsSubscription?.unsubscribe();
     this.collectionSearchResultsSubscription?.unsubscribe();
@@ -442,13 +446,14 @@ export class ConnectComponent
       if (url.includes('?')) {
         clId = '&client_id=';
       }
-      url = `${
-        url + clId + encodeURIComponent(tg.oauth_client_id)
-      }&redirect_uri=${encodeURIComponent(
-        this.pluginService.getRedirectUri(),
-      )}&response_type=code&state=${encodeURIComponent(
-        JSON.stringify(loginState),
-      )}`;
+      url =
+        `${url +
+        clId +
+        encodeURIComponent(tg.oauth_client_id) 
+        }&redirect_uri=${ 
+        encodeURIComponent(this.pluginService.getRedirectUri()) 
+        }&response_type=code&state=${ 
+        encodeURIComponent(JSON.stringify(loginState))}`;
       // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
       if (scopes) {
         if (url.includes('scope=')) {
@@ -459,7 +464,7 @@ export class ConnectComponent
           }
           url = url.replace(scopeStr, `scope=${encodeURIComponent(scopes)}`);
         } else {
-          url = `${url}&scope=${encodeURIComponent(scopes)}`;
+          url = `${url  }&scope=${  encodeURIComponent(scopes)}`;
         }
       }
       location.href = url;
@@ -593,14 +598,14 @@ export class ConnectComponent
       const s = strings[i];
       if (s === undefined || s === '' || s === 'loading') {
         cnt++;
-        res = `${res}\n- ${names[i]}`;
+        res = `${res  }\n- ${  names[i]}`;
       }
     }
 
     const err = this.parseUrl();
     if (err) {
       cnt++;
-      res = `${res}\n\n${err}`;
+      res = `${res  }\n\n${  err}`;
     }
 
     if (cnt === 0) {
@@ -617,34 +622,16 @@ export class ConnectComponent
     // Check basic required fields
     if (!this.pluginId || this.pluginId === 'loading') return false;
     if (!this.datasetId || this.datasetId === 'loading') return false;
-
+    
     // Check Dataverse token (required for connection)
-    if (
-      this.showDVToken() &&
-      (!this.dataverseToken || this.dataverseToken.trim() === '')
-    )
-      return false;
+    if (this.showDVToken() && (!this.dataverseToken || this.dataverseToken.trim() === '')) return false;
 
     // Check plugin-specific required fields
-    if (
-      this.getSourceUrlFieldName() &&
-      (!this.sourceUrl || this.sourceUrl.trim() === '')
-    )
-      return false;
-    if (this.getTokenFieldName() && (!this.token || this.token.trim() === ''))
-      return false;
-    if (
-      this.getOptionFieldName() &&
-      (!this.option || this.option === 'loading')
-    )
-      return false;
-    if (this.getUsernameFieldName() && (!this.user || this.user.trim() === ''))
-      return false;
-    if (
-      this.getRepoNameFieldName() &&
-      (!this.getRepoName() || this.getRepoName()!.trim() === '')
-    )
-      return false;
+    if (this.getSourceUrlFieldName() && (!this.sourceUrl || this.sourceUrl.trim() === '')) return false;
+    if (this.getTokenFieldName() && (!this.token || this.token.trim() === '')) return false;
+    if (this.getOptionFieldName() && (!this.option || this.option === 'loading')) return false;
+    if (this.getUsernameFieldName() && (!this.user || this.user.trim() === '')) return false;
+    if (this.getRepoNameFieldName() && (!this.getRepoName() || this.getRepoName()!.trim() === '')) return false;
 
     // Check URL parsing if applicable
     if (this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
@@ -665,22 +652,22 @@ export class ConnectComponent
    */
   private validateUrlParsing(): string | undefined {
     if (!this.sourceUrl) return 'Source URL is required';
-
+    
     let toSplit = this.sourceUrl;
     if (toSplit.endsWith('/')) {
       toSplit = toSplit.substring(0, toSplit.length - 1);
     }
-
+    
     const splitted = toSplit.split('://');
     if (splitted?.length !== 2) {
       return 'Malformed source url';
     }
-
+    
     const pathParts = splitted[1].split('/');
     if (pathParts?.length <= 2) {
       return 'Malformed source url';
     }
-
+    
     return undefined;
   }
 
@@ -696,7 +683,7 @@ export class ConnectComponent
    */
   get connectButtonClass(): string {
     const baseClasses = 'p-button-sm p-button-raised';
-    return this.isConnectReady
+    return this.isConnectReady 
       ? `${baseClasses} p-button-primary`
       : `${baseClasses} p-button-secondary`;
   }
@@ -724,7 +711,7 @@ export class ConnectComponent
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
-        this.url = `https://${splitted[0]}`;
+        this.url = `https://${  splitted[0]}`;
         this.repoName = splitted.slice(1, splitted.length).join('/');
         if (this.repoName.endsWith('.git')) {
           this.repoName = this.repoName.substring(0, this.repoName.length - 4);
@@ -832,9 +819,7 @@ export class ConnectComponent
       this.getUsernameFieldName() &&
       (this.user === undefined || this.user === '')
     ) {
-      this.notificationService.showError(
-        `${this.getUsernameFieldName()} is missing`,
-      );
+      this.notificationService.showError(`${this.getUsernameFieldName()} is missing`);
       return;
     }
     if (
@@ -842,18 +827,14 @@ export class ConnectComponent
       (this.getRepoName() === undefined || this.getRepoName() === '') &&
       !isSearch
     ) {
-      this.notificationService.showError(
-        `${this.getRepoNameFieldName()} is missing`,
-      );
+      this.notificationService.showError(`${this.getRepoNameFieldName()} is missing`);
       return;
     }
     if (
       this.getTokenFieldName() &&
       (this.token === undefined || this.token === '')
     ) {
-      this.notificationService.showError(
-        `${this.getTokenFieldName()} is missing`,
-      );
+      this.notificationService.showError(`${this.getTokenFieldName()} is missing`);
       return;
     }
     if (
@@ -914,7 +895,7 @@ export class ConnectComponent
       return;
     }
     this.repoNames = [
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.repoSearchSubject.next(searchTerm);
   }
@@ -1023,9 +1004,7 @@ export class ConnectComponent
           );
           this.getRepoToken(scopes);
         } else {
-          this.notificationService.showError(
-            `Branch lookup failed: ${err.error}`,
-          );
+          this.notificationService.showError(`Branch lookup failed: ${err.error}`);
           this.branchItems = [];
           this.option = undefined;
           this.optionsLoading = false;
@@ -1080,7 +1059,9 @@ export class ConnectComponent
   }
 
   getDataverseToken(): void {
-    const url = `${this.pluginService.getExternalURL()}/dataverseuser.xhtml?selectTab=apiTokenTab`;
+    const url =
+      `${this.pluginService.getExternalURL() 
+      }/dataverseuser.xhtml?selectTab=apiTokenTab`;
     window.open(url, '_blank');
   }
 
@@ -1177,7 +1158,7 @@ export class ConnectComponent
       return;
     }
     this.collectionItems = [
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.collectionSearchSubject.next(searchTerm);
   }
@@ -1203,9 +1184,9 @@ export class ConnectComponent
     // Add "Create new dataset" option to the beginning of the list
     const createNewOption: SelectItem<string> = {
       label: '+ Create new dataset',
-      value: 'CREATE_NEW_DATASET',
+      value: 'CREATE_NEW_DATASET'
     };
-
+    
     comp.doiItems = [createNewOption, ...items];
     comp.datasetId = undefined;
   }
@@ -1221,26 +1202,23 @@ export class ConnectComponent
   }
 
   newDataset() {
-    const datasetId = `${this.collectionId ? this.collectionId! : ''}:${new_dataset}`;
-
+    const datasetId =
+      `${this.collectionId ? this.collectionId! : ''  }:${  new_dataset}`;
+    
     // Create the new dataset option
-    const newDatasetOption: SelectItem<string> = {
-      label: new_dataset,
-      value: datasetId,
+    const newDatasetOption: SelectItem<string> = { 
+      label: new_dataset, 
+      value: datasetId 
     };
-
+    
     // Add it to the dropdown options if not already there
-    const existingIndex = this.doiItems.findIndex(
-      (item) => item.value === datasetId,
-    );
+    const existingIndex = this.doiItems.findIndex(item => item.value === datasetId);
     if (existingIndex === -1) {
       // Remove the "Create new dataset" option temporarily and add the actual new dataset
-      const filteredItems = this.doiItems.filter(
-        (item) => item.value !== 'CREATE_NEW_DATASET',
-      );
+      const filteredItems = this.doiItems.filter(item => item.value !== 'CREATE_NEW_DATASET');
       this.doiItems = [newDatasetOption, ...filteredItems];
     }
-
+    
     this.datasetId = datasetId;
   }
 
@@ -1255,7 +1233,7 @@ export class ConnectComponent
       return;
     }
     this.doiItems = [
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
+      { label: `searching "${  searchTerm  }"...`, value: searchTerm },
     ];
     this.datasetSearchSubject.next(searchTerm);
   }
@@ -1269,24 +1247,24 @@ export class ConnectComponent
         this.dataverseToken,
       ),
     );
-
+    
     // Add "Create new dataset" option to the beginning of results
     const createNewOption: SelectItem<string> = {
       label: '+ Create new dataset',
-      value: 'CREATE_NEW_DATASET',
+      value: 'CREATE_NEW_DATASET'
     };
-
+    
     return [createNewOption, ...items];
   }
 
   onDatasetSelectionChange(event: any) {
     const selectedValue = event.value;
-
+    
     if (selectedValue === 'CREATE_NEW_DATASET') {
       // Handle creation of new dataset
       this.newDataset();
       this.showNewDatasetCreatedMessage = true;
-
+      
       // Hide the message after 3 seconds
       setTimeout(() => {
         this.showNewDatasetCreatedMessage = false;

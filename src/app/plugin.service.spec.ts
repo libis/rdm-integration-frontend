@@ -1,8 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
-} from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { PluginService } from './plugin.service';

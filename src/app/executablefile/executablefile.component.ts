@@ -85,9 +85,7 @@ export class ExecutablefileComponent implements OnInit {
         },
         error: (err) => {
           subscription.unsubscribe();
-          this.notificationService.showError(
-            `Checking access to queue failed: ${err.error}`,
-          );
+          this.notificationService.showError(`Checking access to queue failed: ${err.error}`);
           this.spinning = false;
           this.queue = undefined;
         },
