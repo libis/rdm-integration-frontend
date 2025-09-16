@@ -11,7 +11,6 @@ import { CredentialsService } from '../credentials.service';
 import { DatasetService } from '../dataset.service';
 
 // Models
-// import { StoreResult } from '../models/store-result';
 import { MetadataRequest } from '../models/metadata-request';
 import {
   Field,
