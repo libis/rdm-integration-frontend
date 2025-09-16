@@ -4,8 +4,12 @@
 		<button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
 	</span>
 
+    <span class="col-auto">
+      <span class="bulk-label">Select metadata actions</span>
+    </span>
+
 	<span class="col-auto">
-		<button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
+		<button pButton pRipple type="button" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Confirm metadata selection" [attr.disabled]="disabled ? '' : null">Confirm metadata selection&nbsp;<i class="pi pi-angle-double-right"></i></button>
 	</span>
 </div>
 
@@ -20,7 +24,7 @@
 			<p-treeTable [value]="rootNodeChildren">
 				<ng-template pTemplate="header">
 					<tr>
-						<th style="text-align: left;">Field</th>
+						<th style="text-align: left;">Metadata field</th>
 						<th>Value</th>
 						<th class="icon_col" style="text-align: right;">
 							<button pButton pRipple label='' type="button"

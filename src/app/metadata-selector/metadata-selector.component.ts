@@ -59,7 +59,6 @@ export class MetadataSelectorComponent implements OnInit {
   // Note: update/delete icons are not used in this component's template
 
   disabled = false;
-  done = false;
   // No popup in metadata selector; direct navigation to submit page
   hasAccessToCompute = false;
 
