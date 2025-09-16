@@ -237,7 +237,7 @@ export class MetadataSelectorComponent implements OnInit {
     }
     let res: MetadataField[] = [];
     this.metadata.datasetVersion.metadataBlocks.citation.fields.forEach((f) => {
-      if (this.rowNodeMap.get(f.id!)?.data?.action == Fieldaction.Copy) {
+      if (this.rowNodeMap.get(f.id!)?.data?.action === Fieldaction.Copy) {
         const field: MetadataField = {
           expandedvalue: f.expandedvalue,
           multiple: f.multiple,
