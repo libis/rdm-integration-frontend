@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, Navigation } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription, firstValueFrom } from 'rxjs';
 
@@ -20,7 +20,7 @@ import { NotificationService } from '../shared/notification.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
-// Removed metadata-related imports as metadata selection is no longer handled here
+import { Metadata } from '../models/field';
 
 // PrimeNG
 import { PrimeTemplate } from 'primeng/api';
@@ -29,7 +29,6 @@ import { Ripple } from 'primeng/ripple';
 import { Dialog } from 'primeng/dialog';
 import { Checkbox } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
-// Removed TreeTableModule as metadata table is no longer used
 
 // Components
 import { SubmittedFileComponent } from '../submitted-file/submitted-file.component';
@@ -90,13 +89,26 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   sendEmailOnSuccess = false;
   popup = false;
   hasAccessToCompute = false;
-
-  // Removed metadata tree state as metadata selection is not part of Submit anymore
+  private incomingMetadata?: Metadata;
 
   constructor() { }
 
   ngOnInit(): void {
     this.loadData();
+    // Capture metadata from navigation state if coming from metadata-selector
+    let state: { metadata?: Metadata } | undefined;
+    const routerMaybe = this.router as unknown as { getCurrentNavigation?: () => Navigation | null };
+    // Use Router.getCurrentNavigation when available
+    if (typeof routerMaybe.getCurrentNavigation === 'function') {
+      const nav = routerMaybe.getCurrentNavigation?.();
+      state = (nav?.extras?.state as { metadata?: Metadata }) || undefined;
+    } else if (typeof history !== 'undefined' && (history as History & { state?: unknown }).state) {
+      // Fallback for environments/tests where Router.getCurrentNavigation is not available
+      state = (history as History & { state?: unknown }).state as { metadata?: Metadata };
+    }
+    if (state?.metadata) {
+      this.incomingMetadata = state.metadata;
+    }
     const subscription = this.dataService
       .checkAccessToQueue(
         '',
@@ -121,12 +133,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   getDataSubscription(): void {
-    let dataSubscription: Subscription | undefined;
+    let dataSubscription: Subscription | null = null;
     dataSubscription = this.dataUpdatesService
       .updateData(this.data, this.pid)
       .subscribe({
         next: async (res: CompareResult) => {
-          dataSubscription?.unsubscribe();
+          // Defer unsubscribe to ensure assignment completed even if emission is synchronous
+          setTimeout(() => dataSubscription?.unsubscribe(), 0);
           if (res.data !== undefined) {
             this.setData(res.data);
           }
@@ -138,7 +151,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
           }
         },
         error: (err) => {
-          dataSubscription?.unsubscribe();
+          setTimeout(() => dataSubscription?.unsubscribe(), 0);
           this.notificationService.showError(`Getting status of data failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
@@ -241,7 +254,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     }
 
-    let httpSubscription: Subscription | undefined;
+    let httpSubscription: Subscription | null = null;
     httpSubscription = this.submitService
       .submit(selected, this.sendEmailOnSuccess)
       .subscribe({
@@ -255,9 +268,10 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
           }
-          httpSubscription?.unsubscribe();
+          setTimeout(() => httpSubscription?.unsubscribe(), 0);
         },
         error: (err) => {
+          setTimeout(() => httpSubscription?.unsubscribe(), 0);
           this.notificationService.showError(`Store failed: ${err.error}`);
           this.router.navigate(['/connect']);
         },
@@ -285,7 +299,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.datasetService.newDataset(
         collectionId,
         this.credentialsService.credentials.dataverse_token,
-        undefined, // no metadata selection in Submit; server may apply defaults
+        this.incomingMetadata, // use metadata selected in metadata-selector when present
       ),
     );
     if (data.persistentId !== undefined && data.persistentId !== '') {

@@ -5,23 +5,18 @@
 	</span>
 
 	<span class="col-auto">
-		<button pButton pRipple type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Go to compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
-		<button pButton pRipple type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
 		<button pButton pRipple type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-secondary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
 	</span>
 </div>
 
 <br/>
 
-<h4 style="margin: 3rem; text-align: center;"><i [class]="icon_warning" style="color:red"></i> Make sure not to openly publish sensitive information, copyrighted materials or third-party libraries.</h4>
-
-
 <table class="table">
 	<tbody>
-		<tr [hidden]="!metadata">
+		<tr>
 			<th><i [class]="icon_copy"></i> Metadata that will be copied</th>
 		</tr>
-		<tr class="file-list-header" [hidden]="!metadata">
+		<tr class="file-list-header">
 			<p-treeTable [value]="rootNodeChildren">
 				<ng-template pTemplate="header">
 					<tr>
