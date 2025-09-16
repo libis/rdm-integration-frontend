@@ -54,13 +54,7 @@ export class MetadataSelectorComponent implements OnInit {
   private readonly datasetService = inject(DatasetService);
 
   // Icon constants
-  readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
   readonly icon_copy = APP_CONSTANTS.ICONS.UPDATE;
-  // Note: update/delete icons are not used in this component's template
-
-  disabled = false;
-  // No popup in metadata selector; direct navigation to submit page
-  hasAccessToCompute = false;
 
   metadata?: Metadata;
 
