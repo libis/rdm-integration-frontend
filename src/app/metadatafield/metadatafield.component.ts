@@ -68,9 +68,31 @@ export class MetadatafieldComponent implements OnInit {
     // When it's a compound, it's a FieldDictionary and we don't show a source at this row level.
     // A safer check: if it has a 'value' and 'typeName', it's a MetadataField.
     const maybe = f as { typeName?: string; value?: unknown; source?: string };
-    return maybe && maybe.typeName !== undefined && maybe.value !== undefined
-      ? (maybe.source ?? '')
-      : '';
+    if (maybe && maybe.typeName !== undefined && maybe.value !== undefined) {
+      return maybe.source ?? '';
+    }
+    // Fallback for compound rows: derive source from the first leaf child that has a source
+    const derived = this.firstLeafSource(this.node);
+    return derived ?? '';
+  }
+
+  private firstLeafSource(node?: TreeNode<Field>): string | undefined {
+    if (!node) return undefined;
+    // If this node is a leaf with a MetadataField, return its source if present
+    const f = node.data?.field as
+      | { typeName?: string; value?: unknown; source?: string }
+      | undefined;
+    if (f && f.typeName !== undefined && f.value !== undefined && f.source) {
+      return f.source;
+    }
+    // Otherwise search children depth-first
+    if (node.children && node.children.length > 0) {
+      for (const ch of node.children) {
+        const s = this.firstLeafSource(ch);
+        if (s) return s;
+      }
+    }
+    return undefined;
   }
 
   toggleAction(): void {
