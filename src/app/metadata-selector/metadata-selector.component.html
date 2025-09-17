@@ -23,15 +23,16 @@
 		<tr class="file-list-header">
 			<p-treeTable [value]="rootNodeChildren">
 				<ng-template pTemplate="header">
-					<tr>
-						<th style="text-align: left;">Metadata field</th>
-						<th>Value</th>
-						<th class="icon_col" style="text-align: right;">
+						<tr>
+							<th style="text-align: left;">Metadata field</th>
+							<th>Value</th>
+							<th>Metadata source</th>
+							<th class="icon_col" style="text-align: right;">
 							<button pButton pRipple label='' type="button"
 								class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
 							[class]="action()"></i></button>
-						</th>
-					</tr>
+							</th>
+						</tr>
 				</ng-template>
 				<ng-template pTemplate="body" let-rowNode let-rowData="rowData">
 					<tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"

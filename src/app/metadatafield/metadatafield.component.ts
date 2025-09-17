@@ -61,6 +61,19 @@ export class MetadatafieldComponent implements OnInit {
     return field.leafValue ? `${field.leafValue}` : '';
   }
 
+  source(): string {
+    const f = this.node?.data?.field;
+    if (!f) return '';
+    // When the node is a leaf, field is a MetadataField and may carry `source`.
+    // When it's a compound, it's a FieldDictonary and we don't show a source at this row level.
+    const mf = f as unknown as Field;
+    // A safer check: if it has a 'value' and 'typeName', it's a MetadataField.
+    const maybe = f as { typeName?: string; value?: unknown; source?: string };
+    return maybe && maybe.typeName !== undefined && maybe.value !== undefined
+      ? (maybe.source ?? '')
+      : '';
+  }
+
   toggleAction(): void {
     MetadatafieldComponent.toggleNodeAction(this.node);
     this.updateFolderActions(this.rowNodeMap().get('')!);

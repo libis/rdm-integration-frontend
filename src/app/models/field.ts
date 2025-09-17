@@ -20,6 +20,9 @@ export interface MetadataField {
   multiple: boolean;
   typeClass: string;
   typeName: string;
+  // Optional provenance of this field (e.g., "codemeta.json", "CITATION.cff").
+  // This is for UI display only and is not forwarded on submit.
+  source?: string;
   value: string | FieldDictonary[] | string[];
 }
 

@@ -103,7 +103,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     const hasGetCurrentNavigation =
       typeof (this.router as any).getCurrentNavigation === 'function';
     const nav = hasGetCurrentNavigation
-      ? ((this.router as any).getCurrentNavigation() as { extras?: { state?: unknown } } | null)
+      ? ((this.router as any).getCurrentNavigation() as {
+          extras?: { state?: unknown };
+        } | null)
       : null;
     if (nav?.extras?.state) {
       state = nav.extras.state as { metadata?: Metadata };
