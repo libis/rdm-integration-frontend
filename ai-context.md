@@ -33,15 +33,9 @@ Scope
 - No repo-local CI logic beyond a small consumer workflow that reuses org workflows.
 - Excludes Annex III high-risk domains unless explicitly escalated.
 
-On load (verify first)
-
-- Compare this file’s @version/@last_context_update to upstream template.
-- List and compare .github in the current repo vs upstream .github in https://github.com/libis/ai-transition.
-- Report drift and offer actions only after confirmation.
-
 ## Commands the agent must support
 
-Important: Act only after the user invokes “read context”. Before making changes, enumerate planned edits and ask for confirmation.
+Important: Act only after the user invokes these commands. Before making changes, enumerate planned edits and ask for confirmation.
 
 Note: Bootstrap has already been completed for this repository; start with verify.
 
