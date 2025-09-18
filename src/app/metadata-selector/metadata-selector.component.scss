@@ -1,0 +1,59 @@
+/*
+	Styling notes for Metadata Selector
+	- Uses PrimeNG CSS variables so colors follow the active theme (light/dark).
+	- Removes the small bottom-left background gap by eliminating padding and
+		ensuring treetable wrapper inherits the background.
+	- Avoids hardcoded colors; uses semantic variables for accessibility.
+*/
+/* Ensure TreeTable area uses theme background in both light and dark modes */
+:host {
+	display: block;
+}
+
+.treetable-cell {
+	padding: 0; /* Remove inner gaps causing corner artifacts */
+}
+
+/* PrimeNG TreeTable wrapper adjustments */
+:host ::ng-deep .p-treetable {
+	width: 100%;
+	background: var(--p-content-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
+
+/* Header styling follows theme */
+:host ::ng-deep .p-treetable .p-treetable-thead > tr > th {
+	background: var(--p-accordion-header-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
+
+/* Body cells consistent with theme */
+:host ::ng-deep .p-treetable .p-treetable-tbody > tr > td {
+	background: var(--p-content-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
+
+/* Fill available width to avoid bottom-left missing background in some themes */
+:host ::ng-deep .p-treetable .p-treetable-wrapper {
+	background: var(--p-content-background);
+}
+
+/* Toggle icon column alignment */
+.icon_col {
+	width: 8rem;
+}
+
+/* Row highlight colors use semantic variables; mapping for existing inline styles remains */
+.copy-row {
+	background-color: color-mix(in srgb, var(--p-success-500) 20%, var(--p-content-background));
+	color: var(--p-text-color);
+}
+
+.custom-row {
+	background-color: color-mix(in srgb, var(--p-warning-500) 35%, var(--p-content-background));
+	color: var(--p-text-color);
+}
+

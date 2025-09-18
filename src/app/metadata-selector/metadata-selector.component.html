@@ -17,28 +17,31 @@
 
 <table class="table">
 	<tbody>
-		<tr>
-			<th><i [class]="icon_copy"></i> Metadata that will be copied</th>
-		</tr>
 		<tr class="file-list-header">
-			<p-treeTable [value]="rootNodeChildren">
-				<ng-template pTemplate="header">
-						<tr>
-							<th style="text-align: left;">Metadata field</th>
-							<th>Value</th>
-							<th>Metadata source</th>
-							<th class="icon_col" style="text-align: right;">
-							<button pButton pRipple label='' type="button"
-								class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
-							[class]="action()"></i></button>
-							</th>
-						</tr>
-				</ng-template>
-				<ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-					<tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
-						[style]="rowClass(rowData)">
-					</ng-template>
-				</p-treeTable>
+				<!-- Ensure tableColumnCount is defined in the component TypeScript and matches the number of columns -->
+				<th [attr.colspan]="treeTableColumnCount"><i [class]="icon_copy"></i> Metadata that will be copied</th>
+			</tr>
+			<tr>
+				<td class="treetable-cell" [attr.colspan]="treeTableColumnCount">
+					<p-treeTable [value]="rootNodeChildren">
+						<ng-template pTemplate="header">
+								<tr>
+									<th style="text-align: left;">Metadata field</th>
+									<th>Value</th>
+									<th>Metadata source</th>
+									<th class="icon_col" style="text-align: right;">
+										<button pButton pRipple label='' type="button"
+											class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
+											[class]="action()"></i></button>
+									</th>
+								</tr>
+						</ng-template>
+						<ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+							<tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
+								[style]="rowClass(rowData)">
+						</ng-template>
+					</p-treeTable>
+				</td>
 			</tr>
 	</tbody>
 </table>
