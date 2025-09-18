@@ -39,37 +39,43 @@
         <th><i [class]="icon_copy"></i> Files that will be created</th>
       </tr>
       <tr>
-        <table class="table">
-          <tbody>
-            @for (datafile of created; track datafile) {
-              <tr app-submitted-file [datafile]="datafile" [isSubmitted]="submitted"></tr>
-            }
-          </tbody>
-        </table>
+        <td class="inner-table-cell">
+          <table class="table">
+            <tbody>
+              @for (datafile of created; track datafile) {
+                <tr app-submitted-file [datafile]="datafile" [isSubmitted]="submitted"></tr>
+              }
+            </tbody>
+          </table>
+        </td>
       </tr>
       <tr class="file-list-header">
         <th><i [class]="icon_update"></i> Files that will be updated</th>
       </tr>
       <tr>
-        <table class="table">
-          <tbody>
-            @for (datafile of updated; track datafile) {
-              <tr app-submitted-file [datafile]="datafile" [isSubmitted]="submitted"></tr>
-            }
-          </tbody>
-        </table>
+        <td class="inner-table-cell">
+          <table class="table">
+            <tbody>
+              @for (datafile of updated; track datafile) {
+                <tr app-submitted-file [datafile]="datafile" [isSubmitted]="submitted"></tr>
+              }
+            </tbody>
+          </table>
+        </td>
       </tr>
       <tr class="file-list-header">
         <th><i [class]="icon_delete"></i> Files that will be deleted</th>
       </tr>
       <tr>
-        <table class="table">
-          <tbody>
-            @for (datafile of deleted; track datafile) {
-              <tr app-submitted-file [datafile]="datafile" [isSubmitted]="submitted"></tr>
-            }
-          </tbody>
-        </table>
+        <td class="inner-table-cell">
+          <table class="table">
+            <tbody>
+              @for (datafile of deleted; track datafile) {
+                <tr app-submitted-file [datafile]="datafile" [isSubmitted]="submitted"></tr>
+              }
+            </tbody>
+          </table>
+        </td>
       </tr>
     </tbody>
   </table>

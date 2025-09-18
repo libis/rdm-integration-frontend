@@ -1,0 +1,44 @@
+/*
+	Submit component theming fixes:
+	- Use PrimeNG theme CSS variables to respect light/dark modes.
+	- Ensure nested tables inherit background and text colors to avoid white blocks.
+*/
+
+:host {
+	display: block;
+}
+
+.inner-table-cell {
+	padding: 0;
+}
+
+/* Main table inherits themed background/text colors */
+:host ::ng-deep table.table {
+	width: 100%;
+	background: var(--p-content-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
+
+/* Section headers follow themed header background */
+:host ::ng-deep .file-list-header > th {
+	background: var(--p-accordion-header-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
+
+/* Nested tables should also inherit theme colors */
+:host ::ng-deep .inner-table-cell > table.table tbody > tr > td,
+:host ::ng-deep .inner-table-cell > table.table thead > tr > th {
+	background: var(--p-content-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
+
+/* Dialog content theming alignment */
+:host ::ng-deep .p-dialog .p-dialog-content,
+:host ::ng-deep .p-dialog .p-dialog-header {
+	background: var(--p-content-background);
+	color: var(--p-text-color);
+	border-color: var(--p-content-border-color);
+}
