@@ -18,10 +18,11 @@
 <table class="table">
 	<tbody>
 		<tr class="file-list-header">
-				<th colspan="4"><i [class]="icon_copy"></i> Metadata that will be copied</th>
+				<!-- Ensure tableColumnCount is defined in the component TypeScript and matches the number of columns -->
+				<th [attr.colspan]="tableColumnCount"><i [class]="icon_copy"></i> Metadata that will be copied</th>
 			</tr>
 			<tr>
-				<td class="treetable-cell" colspan="4">
+				<td class="treetable-cell" [attr.colspan]="tableColumnCount">
 					<p-treeTable [value]="rootNodeChildren">
 						<ng-template pTemplate="header">
 								<tr>
