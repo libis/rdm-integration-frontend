@@ -60,6 +60,8 @@ export class MetadataSelectorComponent implements OnInit {
   rootNodeChildren: TreeNode<Field>[] = [];
   rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
 
+  treeTableColumnCount = 4;
+
   id = 0;
 
   constructor() {}
