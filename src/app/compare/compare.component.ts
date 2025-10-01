@@ -370,9 +370,9 @@ export class CompareComponent
 
     const lastSegment = (path: string): string | undefined => {
       if (!path) return undefined;
-      const cleaned = path.replace(/\\/g, '/').replace(/\/+$/,'');
-      if (cleaned === '' || cleaned === '/' ) return undefined;
-      const parts = cleaned.split('/').filter(p => p.length > 0);
+      const cleaned = path.replace(/\\/g, '/').replace(/\/+$/, '');
+      if (cleaned === '' || cleaned === '/') return undefined;
+      const parts = cleaned.split('/').filter((p) => p.length > 0);
       if (parts.length === 0) return undefined;
       return parts[parts.length - 1];
     };

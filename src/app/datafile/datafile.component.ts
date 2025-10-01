@@ -195,21 +195,4 @@ export class DatafileComponent implements OnInit {
     }
     return '';
   }
-
-  actionTitle(): string {
-    switch (this.datafile().action) {
-      case Fileaction.Ignore:
-        return 'Do nothing with this file';
-      case Fileaction.Copy:
-        return 'Copy this file to the dataset';
-      case Fileaction.Update:
-        return 'Update this file in the dataset';
-      case Fileaction.Delete:
-        return 'Delete this file from the dataset';
-      case Fileaction.Custom:
-        return 'Attention: the chosen action is not uniform for all files in this folder';
-      default:
-        return 'Select action';
-    }
-  }
 }
