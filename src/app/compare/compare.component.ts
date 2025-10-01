@@ -349,6 +349,69 @@ export class CompareComponent
     return this.credentialsService.credentials.repo_name;
   }
 
+  /**
+   * Derives a short folder / collection indicator depending on the current plugin.
+   * This is used purely for UI context next to the plugin name.
+   *
+   * Conventions per plugin (based on backend implementations):
+   * - github / gitlab : repoName can be owner/repo[/sub/path]; show last segment only when depth > 2
+   * - onedrive        : repoName holds drive id; folder path comes from option (driveId/path/to/folder). We show the final folder segment from option if present.
+   * - globus          : repoName is endpoint id; option is folder path; show last segment of option (fallback '/' => undefined)
+   * - irods           : repoName is zone; option is collection path; show last collection segment (if not root '/').
+   * - sftp            : repoName unused for path; option is absolute/relative path; show last non-empty segment.
+   * - local           : repoName not used for path (local root from url); option is starting folder; show last segment.
+   * - osf / redcap / dataverse : no hierarchical folder context worth displaying (single dataset/container) => undefined.
+   */
+  folderName(): string | undefined {
+    const pluginId = this.credentialsService.credentials.pluginId;
+    const repoName = this.repoName();
+    const option = this.credentialsService.credentials.option || '';
+    if (!pluginId) return undefined;
+
+    const lastSegment = (path: string): string | undefined => {
+      if (!path) return undefined;
+      const cleaned = path.replace(/\\/g, '/').replace(/\/+$/,'');
+      if (cleaned === '' || cleaned === '/' ) return undefined;
+      const parts = cleaned.split('/').filter(p => p.length > 0);
+      if (parts.length === 0) return undefined;
+      return parts[parts.length - 1];
+    };
+
+    switch (pluginId) {
+      case 'github':
+      case 'gitlab': {
+        if (!repoName) return undefined;
+        const parts = repoName.split('/');
+        return parts.length > 2 ? parts[parts.length - 1] : undefined;
+      }
+      case 'onedrive': {
+        // option: driveId/path/inside/drive ; first segment is driveId
+        if (!option) return undefined;
+        const segs = option.split('/');
+        return segs.length > 1 ? segs[segs.length - 1] : undefined;
+      }
+      case 'globus': {
+        // option: /path/in/endpoint
+        return lastSegment(option);
+      }
+      case 'irods': {
+        // option is the collection absolute path, e.g. /zone/home/user/collection
+        return lastSegment(option);
+      }
+      case 'sftp': {
+        return lastSegment(option);
+      }
+      case 'local': {
+        return lastSegment(option);
+      }
+      case 'osf':
+      case 'redcap':
+      case 'dataverse':
+      default:
+        return undefined;
+    }
+  }
+
   newlyCreated(): boolean {
     return this.credentialsService.credentials.newly_created === true;
   }

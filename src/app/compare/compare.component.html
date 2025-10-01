@@ -87,7 +87,10 @@
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
     <ng-template pTemplate="header">
       <tr>
-  <th>{{ repo() }} <span [hidden]="!repoName()">({{ repoName() }})</span></th>
+  <th>
+    {{ repo() }}
+    <span [hidden]="!folderName()" [title]="repoName()">({{ folderName() }})</span>
+  </th>
         <th class="icon_col" style="text-align: center;">
           <span title="Comparison status">
             <p-popover #op appendTo="body">
