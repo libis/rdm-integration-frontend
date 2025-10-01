@@ -3,14 +3,14 @@
   <span class="col-auto"></span>
   
   <span class="col-auto">
-  <button style="float: right;" pButton type="button" [class]="connectButtonClass" [disabled]="!isConnectReady" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  <button style="float: right;" pButton type="button" [class]="connectButtonClass" [disabled]="!isConnectReady" (click)="connect()" [attr.title]="missingFieldsTitle()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
   <br/>
 
 <div style="height: 100% - 2rem; overflow: hidden;">
-  <p-accordion>
+  <p-accordion [multiple]="true" [(value)]="expandedPanels">
     <p-accordion-panel value="0">
       <p-accordion-header>Data/code source</p-accordion-header>
       <p-accordion-content>

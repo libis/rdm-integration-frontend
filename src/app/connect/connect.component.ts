@@ -26,7 +26,6 @@ import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { Select } from 'primeng/select';
 import { ButtonDirective } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 import {
   Accordion,
   AccordionPanel,
@@ -53,7 +52,6 @@ const new_dataset = 'New Dataset';
   imports: [
     CommonModule,
     ButtonDirective,
-    Ripple,
     Accordion,
     AccordionPanel,
     AccordionHeader,
@@ -120,6 +118,8 @@ export class ConnectComponent
     { label: 'Expand and select', data: '', leaf: false, selectable: true },
   ];
   selectedOption?: TreeNode<string>;
+  // Both accordion panels expanded by default
+  expandedPanels: string[] = ['0', '1'];
 
   // INTERNAL STATE VARIABLES
 
@@ -563,50 +563,59 @@ export class ConnectComponent
       });
   }
 
-  parseAndCheckFields(): string | undefined {
-    const strings: (string | undefined)[] = [this.pluginId, this.datasetId];
-    const names: string[] = ['Repository type', 'Dataset DOI'];
-    if (this.getSourceUrlFieldName()) {
-      strings.push(this.sourceUrl);
-      names.push(this.getSourceUrlFieldName()!);
-    }
-    if (this.getTokenFieldName()) {
-      strings.push(this.token);
-      names.push(this.getTokenFieldName()!);
-    }
-    if (this.getOptionFieldName()) {
-      strings.push(this.option);
-      names.push(this.getOptionFieldName()!);
-    }
-    if (this.getUsernameFieldName()) {
-      strings.push(this.user);
-      names.push(this.getUsernameFieldName()!);
-    }
-    if (this.getRepoNameFieldName()) {
-      strings.push(this.getRepoName());
-      names.push(this.getRepoNameFieldName()!);
-    }
-
-    let cnt = 0;
-    let res = 'One or more mandatory fields are missing:';
-    for (let i = 0; i < strings.length; i++) {
-      const s = strings[i];
-      if (s === undefined || s === '' || s === 'loading') {
-        cnt++;
-        res = `${res}\n- ${names[i]}`;
+  private gatherValidationIssues(): string[] {
+    const issues: string[] = [];
+    const required: { value: string | undefined; name: string }[] = [
+      { value: this.pluginId, name: 'Repository type' },
+      { value: this.datasetId, name: 'Dataset DOI' },
+    ];
+    if (this.getSourceUrlFieldName())
+      required.push({
+        value: this.sourceUrl,
+        name: this.getSourceUrlFieldName()!,
+      });
+    if (this.getTokenFieldName())
+      required.push({ value: this.token, name: this.getTokenFieldName()! });
+    if (this.getOptionFieldName())
+      required.push({ value: this.option, name: this.getOptionFieldName()! });
+    if (this.getUsernameFieldName())
+      required.push({ value: this.user, name: this.getUsernameFieldName()! });
+    if (this.getRepoNameFieldName())
+      required.push({
+        value: this.getRepoName(),
+        name: this.getRepoNameFieldName()!,
+      });
+    for (const r of required) {
+      if (r.value === undefined || r.value === '' || r.value === 'loading') {
+        issues.push(r.name);
       }
     }
-
     const err = this.parseUrl();
-    if (err) {
-      cnt++;
-      res = `${res}\n\n${err}`;
-    }
+    if (err) issues.push(err);
+    return issues;
+  }
 
-    if (cnt === 0) {
-      return undefined;
-    }
+  parseAndCheckFields(): string | undefined {
+    const issues = this.gatherValidationIssues();
+    if (issues.length === 0) return undefined;
+    let res = 'One or more mandatory fields are missing:';
+    issues.forEach((i) => {
+      if (
+        i.startsWith('Malformed') ||
+        i.startsWith('Source URL') ||
+        i.includes('invalid') ||
+        i.includes('://')
+      ) {
+        res = `${res}\n\n${i}`;
+      } else {
+        res = `${res}\n- ${i}`;
+      }
+    });
     return res;
+  }
+
+  missingFieldsTitle(): string {
+    return this.parseAndCheckFields() ?? 'Ready to connect';
   }
 
   /**
@@ -614,49 +623,7 @@ export class ConnectComponent
    * Used for reactive validation to determine button state
    */
   isFormValid(): boolean {
-    // Check basic required fields
-    if (!this.pluginId || this.pluginId === 'loading') return false;
-    if (!this.datasetId || this.datasetId === 'loading') return false;
-
-    // Check Dataverse token (required for connection)
-    if (
-      this.showDVToken() &&
-      (!this.dataverseToken || this.dataverseToken.trim() === '')
-    )
-      return false;
-
-    // Check plugin-specific required fields
-    if (
-      this.getSourceUrlFieldName() &&
-      (!this.sourceUrl || this.sourceUrl.trim() === '')
-    )
-      return false;
-    if (this.getTokenFieldName() && (!this.token || this.token.trim() === ''))
-      return false;
-    if (
-      this.getOptionFieldName() &&
-      (!this.option || this.option === 'loading')
-    )
-      return false;
-    if (this.getUsernameFieldName() && (!this.user || this.user.trim() === ''))
-      return false;
-    if (
-      this.getRepoNameFieldName() &&
-      (!this.getRepoName() || this.getRepoName()!.trim() === '')
-    )
-      return false;
-
-    // Check URL parsing if applicable
-    if (this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
-      try {
-        const urlError = this.validateUrlParsing();
-        if (urlError) return false;
-      } catch {
-        return false;
-      }
-    }
-
-    return true;
+    return this.gatherValidationIssues().length === 0;
   }
 
   /**
