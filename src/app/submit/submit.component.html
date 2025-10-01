@@ -15,13 +15,38 @@
 
 <br/>
 
+@if (transferStarted) {
+  <div class="container" style="max-width: 60rem;">
+    <div class="row align-items-center mb-2">
+      <div class="col-auto" style="min-width:10rem; font-weight:600;">Progress</div>
+      <div class="col">
+        <div class="progress" style="height: 0.75rem; background:#eee; border-radius:4px; overflow:hidden;">
+          <div class="progress-bar" [style.width.%]="progressRatio()*100" style="background:#007ad9; transition: width .4s ease;"></div>
+        </div>
+      </div>
+      <div class="col-auto small text-muted" style="min-width:11rem; text-align:right;">
+        {{ progressLabel() }}
+      </div>
+    </div>
+    <div class="row mb-3 small">
+      <div class="col" [hidden]="!isGlobus() || !submitted">
+        <strong>Globus:</strong> Transfer submitted to Globus; detailed progress can be checked on the dataset page. A checkmark here indicates the job was handed off, not that all bytes are moved.
+      </div>
+      <div class="col" [hidden]="isGlobus() || !submitted">
+        Status updates every few seconds until all selected actions complete.
+      </div>
+    </div>
+  </div>
+}
+
 <h4 style="margin: 3rem; text-align: center;"><i [class]="icon_warning" style="color:red"></i> Make sure not to openly publish sensitive information, copyrighted materials or third-party libraries.</h4>
 <p-dialog header="Submit" position="topright" [modal]="true" [(visible)]="popup">
   <p class="m-0">Click on "OK" to start the update/transfer. You can close the window and the transfer will continue.</p>
-  <p class="m-0" [hidden]="!sendMails()">You will receive an email to notify you if the update/transfer has been unsuccessful.</p>
+  <p class="m-0" [hidden]="!sendMails() || isGlobus()">You will receive an email to notify you if the update/transfer has been unsuccessful.</p>
+  <p class="m-0" [hidden]="!isGlobus()">Globus transfers run asynchronously; email on success may not be available for this source.</p>
   <br><br>
   <div style="text-align: right;">
-    <div class="field-checkbox" [hidden]="!sendMails()">
+    <div class="field-checkbox" [hidden]="!sendMails() || isGlobus()">
       <p-checkbox [(ngModel)]="sendEmailOnSuccess" [binary]="true" inputId="sendEmailOnSuccessCB"></p-checkbox>
       <label for="sendEmailOnSuccesCB">Email me when the update/transfer is completed</label>
     </div>

@@ -92,6 +92,47 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   private incomingMetadata?: Metadata;
   // Indicates whether the transfer (submit) process has started (after user confirms popup)
   transferStarted = false;
+  // Progress tracking (count-based only)
+  totalPlanned = 0; // created + updated + deleted (actions chosen)
+  completedCount = 0; // number of files whose final status reached equal/deleted-done state
+
+  // Globus specific flags/messages
+  isGlobus(): boolean {
+    return this.credentialsService.credentials.plugin === 'globus';
+  }
+
+  progressRatio(): number {
+    if (this.totalPlanned === 0) return 0;
+    return Math.min(1, this.completedCount / this.totalPlanned);
+  }
+
+  progressLabel(): string {
+    if (!this.transferStarted) return '';
+    return `${this.completedCount}/${this.totalPlanned} files processed`;
+  }
+
+  private recomputeProgress(): void {
+    this.totalPlanned =
+      this.created.length + this.updated.length + this.deleted.length;
+    // Completed definition:
+    //  - For create/update: status becomes Equal
+    //  - For delete: status becomes New (backend marks removed local file as New in dataset?) or no longer present in pending lists
+    let doneCreates = this.created.filter(
+      (d) => d.status === Filestatus.Equal,
+    ).length;
+    let doneUpdates = this.updated.filter(
+      (d) => d.status === Filestatus.Equal,
+    ).length;
+    // For deletions, backend marks status Equal once deletion applied OR may keep Delete until final comparison completes;
+    // fallback: treat not-equal as in-progress; if dataset refresh marks them Deleted->Equal eventually.
+    let doneDeletes = this.deleted.filter(
+      (d) => d.status === Filestatus.New || d.status === Filestatus.Equal,
+    ).length;
+    this.completedCount = doneCreates + doneUpdates + doneDeletes;
+    if (this.completedCount >= this.totalPlanned && this.totalPlanned > 0) {
+      this.done = true;
+    }
+  }
 
   constructor() {}
 
@@ -198,6 +239,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.updated = this.toUpdate();
     this.deleted = this.toDelete();
     this.data = [...this.created, ...this.updated, ...this.deleted];
+    this.recomputeProgress();
   }
 
   toCreate(): Datafile[] {
@@ -287,6 +329,8 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             this.getDataSubscription();
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
+            // Recompute initial progress baseline
+            this.recomputeProgress();
           }
         },
         error: (err) => {
