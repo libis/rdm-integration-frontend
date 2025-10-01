@@ -12,7 +12,6 @@ import { ProgressSpinner } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 
 @Component({
   selector: 'tr[app-executablefile]',
@@ -24,7 +23,6 @@ import { Ripple } from 'primeng/ripple';
     Select,
     FormsModule,
     ButtonDirective,
-    Ripple,
   ],
 })
 export class ExecutablefileComponent implements OnInit {

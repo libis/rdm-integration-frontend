@@ -25,7 +25,6 @@ import { Metadata } from '../models/field';
 // PrimeNG
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 import { Dialog } from 'primeng/dialog';
 import { Checkbox } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
@@ -43,7 +42,6 @@ import { SubscriptionManager } from '../shared/types';
   styleUrls: ['./submit.component.scss'],
   imports: [
     ButtonDirective,
-    Ripple,
     Dialog,
     Checkbox,
     FormsModule,

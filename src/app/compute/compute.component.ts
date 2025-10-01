@@ -23,7 +23,6 @@ import { Datafile } from '../models/datafile';
 // PrimeNG
 import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective, Button } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 import { FormsModule } from '@angular/forms';
 import { FloatLabel } from 'primeng/floatlabel';
 import { Select } from 'primeng/select';
@@ -50,7 +49,6 @@ import { SubscriptionManager } from '../shared/types';
   styleUrl: './compute.component.scss',
   imports: [
     ButtonDirective,
-    Ripple,
     FormsModule,
     FloatLabel,
     Select,

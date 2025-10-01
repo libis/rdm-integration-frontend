@@ -20,7 +20,6 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 // PrimeNG
 import { TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 import { TreeTableModule } from 'primeng/treetable';
 import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
@@ -39,7 +38,6 @@ import { FilterItem, SubscriptionManager } from '../shared/types';
   imports: [
     CommonModule,
     ButtonDirective,
-    Ripple,
     TreeTableModule,
     PrimeTemplate,
     PopoverModule,

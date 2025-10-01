@@ -3,7 +3,7 @@
   <span class="col-auto"></span>
   
   <span class="col-auto">
-    <button style="float: right;" pButton pRipple type="button" [class]="connectButtonClass" [disabled]="!isConnectReady" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  <button style="float: right;" pButton type="button" [class]="connectButtonClass" [disabled]="!isConnectReady" (click)="connect()">Connect and compare&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </span>
 </div>
 
@@ -23,7 +23,7 @@
               <label for="pluginId" class="form-label">Repository instance</label><br/>
               <p-select appendTo="body" id="pluginId" [options]="pluginIds" [(ngModel)]="pluginId" placeholder="Select the source" (onChange)="changePluginId()" (onClick)="getPluginIds()"></p-select>
             </div>
-            <button style="width: 12rem; align-items: center; justify-content: center;" pButton pRipple type="button" class="p-button p-button-raised" (click)="getRepoToken()" title="Get API token" [hidden]="!hasOauthConfig() || isAuthorized()">Authorize</button>
+            <button style="width: 12rem; align-items: center; justify-content: center;" pButton type="button" class="p-button p-button-raised" (click)="getRepoToken()" title="Get API token" [hidden]="!hasOauthConfig() || isAuthorized()">Authorize</button>
             <div [hidden]="hasOauthConfig() && !isAuthorized()">
               <div class="mb-3" [hidden]="getUsernameFieldName() === undefined">
                 <label for="username" class="form-label">{{ getUsernameFieldName() }}</label>
@@ -34,7 +34,7 @@
                 <div class="input-group">
                   <input type="password" class="form-control" id="repoToken" [placeholder]="getTokenPlaceholder()" [(ngModel)]="token" #ctrl="ngModel">
                   <div class="input-group-append">
-                    <button style="width: 12rem; align-items: center; justify-content: center;" pButton pRipple type="button" class="p-button p-button-raised" (click)="getRepoToken()" title="Get API token" [hidden]="!showRepoTokenGetter()">Get token</button>
+                    <button style="width: 12rem; align-items: center; justify-content: center;" pButton type="button" class="p-button p-button-raised" (click)="getRepoToken()" title="Get API token" [hidden]="!showRepoTokenGetter()">Get token</button>
                   </div>
                 </div>
               </div>
@@ -82,7 +82,7 @@
                   <div class="input-group">
                     <input type="password" class="form-control" id="dataverseToken" placeholder="Dataverse API token" [(ngModel)]="dataverseToken" #ctrl="ngModel" (onChange)="onUserChange()">
                     <div class="input-group-append">
-                      <button style="width: 12rem; align-items: center; justify-content: center;"pButton pRipple type="button" class="p-button p-button-raised" (click)="getDataverseToken()" title="Get API token" [hidden]="!showDVTokenGetter()">Get token</button>
+                      <button style="width: 12rem; align-items: center; justify-content: center;"pButton type="button" class="p-button p-button-raised" (click)="getDataverseToken()" title="Get API token" [hidden]="!showDVTokenGetter()">Get token</button>
                     </div>
                   </div>
                 </div>
@@ -129,7 +129,7 @@
                       <hr class="my-2">
                       <small class="text-muted">Other options</small>
                       <div class="mt-2">
-                        <button pButton pRipple 
+                        <button pButton 
                                 type="button" 
                                 class="p-button p-button-raised p-button-sm p-button-outlined" 
                                 (click)="newDataset()" 

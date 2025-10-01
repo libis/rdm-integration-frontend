@@ -23,7 +23,6 @@ import {
 // PrimeNG
 import { TreeNode, PrimeTemplate } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components
@@ -38,7 +37,6 @@ import { APP_CONSTANTS } from '../shared/constants';
   styleUrls: ['./metadata-selector.component.scss'],
   imports: [
     ButtonDirective,
-    Ripple,
     PrimeTemplate,
     TreeTableModule,
     MetadatafieldComponent,

@@ -6,13 +6,12 @@ import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { TreeTableModule } from 'primeng/treetable';
 import { ButtonDirective } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 
 @Component({
   selector: 'tr[app-datafile]',
   templateUrl: './datafile.component.html',
   styleUrls: ['./datafile.component.scss'],
-  imports: [TreeTableModule, ButtonDirective, Ripple],
+  imports: [TreeTableModule, ButtonDirective],
 })
 export class DatafileComponent implements OnInit {
   private folderActionUpdateService = inject(FolderActionUpdateService);

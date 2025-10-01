@@ -6,7 +6,7 @@
         <p-select appendTo="body" [options]="queues"
                 [filter]="true" filterBy="label" [resetFilterOnHide]="true"
                 [(ngModel)]="queue" placeholder="Select queue" (onChange)="onSelectQueue()"></p-select>
-        <button style="height: 3rem;" pButton pRipple label='Run on' type="button" [disabled]="!computeEnabled" (click)="compute()"><i [class]="icon_play"></i></button>
+    <button style="height: 3rem;" pButton label='Run on' type="button" [disabled]="!computeEnabled" (click)="compute()"><i [class]="icon_play"></i></button>
     </div>
     
 </td>

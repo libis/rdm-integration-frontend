@@ -5,13 +5,12 @@ import { TreeNode } from 'primeng/api';
 import { Datafile, Fileaction } from '../models/datafile';
 import { TreeTableModule } from 'primeng/treetable';
 import { ButtonDirective } from 'primeng/button';
-import { Ripple } from 'primeng/ripple';
 
 @Component({
   selector: 'tr[app-downloadablefile]',
   templateUrl: './downladablefile.component.html',
   styleUrls: ['./downladablefile.component.scss'],
-  imports: [TreeTableModule, ButtonDirective, Ripple],
+  imports: [TreeTableModule, ButtonDirective],
 })
 export class DownladablefileComponent implements OnInit {
   readonly datafile = input<Datafile>({});

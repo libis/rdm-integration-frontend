@@ -1,7 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 <div class="row justify-content-between sticky-menu">
     <span class="col-auto">
-        <button style="height: 3rem;" pButton pRipple type="button"
+    <button style="height: 3rem;" pButton type="button"
             class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i
                 class="pi pi-angle-double-left"></i>&nbsp;Home</button>
     </span>
@@ -32,7 +32,7 @@
                 <tr>
                     <th style="text-align: left;"><a [href]="data!.url" target="_blank">{{ data!.id }}</a></th>
                     <th class="icon_col" style="text-align: right;">
-                        <button pButton pRipple label='' type="button"
+                        <button pButton label='' type="button"
                             class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
                                 [class]="action()"></i></button>
                     </th>

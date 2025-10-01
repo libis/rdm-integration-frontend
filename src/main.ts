@@ -17,8 +17,6 @@ import { FormsModule } from '@angular/forms';
 import { TreeTableModule } from 'primeng/treetable';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -49,7 +47,6 @@ bootstrapApplication(AppComponent, {
       TreeTableModule,
       TableModule,
       ButtonModule,
-      RippleModule,
       PopoverModule,
       SelectModule,
       FloatLabelModule,
@@ -64,6 +61,7 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimationsAsync(),
     providePrimeNG({
+      ripple: false, // disable ripple effects globally
       theme: {
         preset: definePreset(Lara, {
           semantic: {
@@ -118,6 +116,5 @@ bootstrapApplication(AppComponent, {
         }),
       },
     }),
-    provideAnimations(),
   ],
 }).catch((err) => console.error(err));
