@@ -154,6 +154,72 @@ export class ConnectComponent
   }
 
   async ngOnInit() {
+    // If we navigated back from Compare with a snapshot, restore it before doing anything else
+    if (
+      typeof window !== 'undefined' &&
+      window.history?.state?.connectSnapshot
+    ) {
+      const snap = window.history.state.connectSnapshot as Credentials;
+      // Only assign fields that exist in snapshot
+      this.plugin = snap.plugin;
+      this.pluginId = snap.pluginId;
+      this.user = snap.user;
+      this.token = snap.token;
+      this.repoName = snap.repo_name;
+      this.selectedRepoName = snap.repo_name;
+      this.foundRepoName = snap.repo_name;
+      this.option = snap.option;
+      this.dataverseToken = snap.dataverse_token || this.dataverseToken;
+      this.datasetId = snap.dataset_id;
+      // Restore collectionId if provided directly in snapshot state (explicit request)
+      if ((window.history.state.collectionId || (snap as any)).collectionId) {
+        const cId =
+          window.history.state.collectionId || (snap as any).collectionId;
+        if (typeof cId === 'string') {
+          this.collectionId = cId;
+        }
+      }
+      // Pre-populate select item arrays so UI shows restored values
+      if (this.plugin) {
+        this.plugins = [{ label: this.plugin, value: this.plugin }];
+      }
+      if (this.pluginId) {
+        this.pluginIds = [{ label: this.pluginId, value: this.pluginId }];
+      }
+      if (this.repoName) {
+        this.repoNames = [
+          { label: this.repoName, value: this.repoName },
+          this.loadingItem,
+        ];
+      }
+      if (this.option) {
+        this.branchItems = [
+          { label: this.option, value: this.option },
+          this.loadingItem,
+        ];
+      }
+      if (this.datasetId) {
+        this.doiItems = [
+          { label: this.datasetId, value: this.datasetId },
+          this.loadingItem,
+        ];
+      }
+      // Restore collectionItems if present (array of SelectItem)
+      if (
+        window.history.state.collectionItems &&
+        Array.isArray(window.history.state.collectionItems)
+      ) {
+        this.collectionItems = [
+          ...window.history.state.collectionItems,
+          this.loadingItem,
+        ];
+      } else if (this.collectionId) {
+        this.collectionItems = [
+          { label: this.collectionId, value: this.collectionId },
+          this.loadingItem,
+        ];
+      }
+    }
     await this.pluginService.setConfig();
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
@@ -546,7 +612,12 @@ export class ConnectComponent
               localStorage.setItem('dataverseToken', this.dataverseToken!);
             }
 
-            this.router.navigate(['/compare', this.datasetId]);
+            this.router.navigate(['/compare', this.datasetId], {
+              state: {
+                collectionId: this.collectionId,
+                collectionItems: this.collectionItems,
+              },
+            });
           } else {
             this.notificationService.showError(
               'Unknown user: you need to generate a valid Dataverse API token first',

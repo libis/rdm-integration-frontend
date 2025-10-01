@@ -481,7 +481,17 @@ export class CompareComponent
   }
 
   back(): void {
-    this.router.navigate(['/connect']);
+    // Navigate back with a snapshot of current credentials and related selection lists
+    const creds = { ...this.credentialsService.credentials } as any;
+    // Attempt to include collection context if present in credentials (future-proof)
+    this.router.navigate(['/connect'], {
+      state: {
+        connectSnapshot: creds,
+        // collectionItems restored from history if Connect passed them forward initially
+        collectionId: (this.credentialsService.credentials as any).collectionId,
+        // Note: individual collection items are maintained in navigation state originating from Connect
+      },
+    });
   }
 
   repo(): string {
