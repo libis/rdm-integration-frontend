@@ -98,7 +98,11 @@ export class MetadataSelectorComponent implements OnInit {
   }
 
   back(): void {
-    this.location.back();
+    const value = this.dataStateService.getCurrentValue();
+    const datasetId = value?.id;
+    this.router.navigate(['/compare', datasetId], {
+      state: { preserveCompare: true },
+    });
   }
 
   action(): string {

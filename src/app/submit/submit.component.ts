@@ -298,7 +298,12 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   back(): void {
-    this.location.back();
+    // Explicitly navigate back to compare preserving existing DataStateService state
+    const value = this.dataStateService.getCurrentValue();
+    const datasetId = value?.id || this.pid;
+    this.router.navigate(['/compare', datasetId], {
+      state: { preserveCompare: true },
+    });
   }
 
   goToDataset() {

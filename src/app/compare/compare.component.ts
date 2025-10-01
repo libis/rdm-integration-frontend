@@ -129,7 +129,10 @@ export class CompareComponent
   constructor() {}
 
   ngOnInit(): void {
-    if (this.dataStateService.getCurrentValue() != null) {
+    // Only initialize (which triggers a fresh compare fetch) if we have no existing state.
+    // This preserves prior file action selections when navigating back from
+    // metadata-selector or submit components.
+    if (this.dataStateService.getCurrentValue() == null) {
       this.dataStateService.initializeState(
         this.credentialsService.credentials,
       );
