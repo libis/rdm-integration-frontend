@@ -135,3 +135,11 @@ button {
 .p-select-overlay {
     min-width: 100%;
 }
+
+/* Unified page title styling */
+.page-title {
+    font-size: 1.25rem; /* larger than base (roughly h5/h4 blend) */
+    font-weight: 600;
+    color: var(--p-text-color);
+    line-height: 1.4;
+}

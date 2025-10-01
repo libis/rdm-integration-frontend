@@ -90,6 +90,8 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   popup = false;
   hasAccessToCompute = false;
   private incomingMetadata?: Metadata;
+  // Indicates whether the transfer (submit) process has started (after user confirms popup)
+  transferStarted = false;
 
   constructor() {}
 
@@ -265,6 +267,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       const ok = await this.newDataset(ids[0]);
       if (!ok) {
         this.disabled = false;
+        this.transferStarted = false; // dataset creation failed; revert title
         return;
       }
     }
@@ -280,6 +283,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             );
             this.router.navigate(['/connect']);
           } else {
+            this.transferStarted = true; // flip title only after successful submission acknowledgement
             this.getDataSubscription();
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;

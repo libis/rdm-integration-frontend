@@ -1,18 +1,16 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
-<div class="row justify-content-between sticky-menu">
-  <span class="col-auto">
-  <button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
-  </span>
-
-  <span class="col-auto">
-    <span class="bulk-label">Overview of actions</span>
-  </span>
-
-  <span class="col-auto">
-  <button pButton type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Go to compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
-  <button pButton type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
-  <button pButton type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Submit&nbsp;<i class="pi pi-angle-double-right"></i></button>
-  </span>
+<div class="row justify-content-between align-items-center sticky-menu">
+  <div class="col-auto">
+    <button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+  </div>
+  <div class="col text-center">
+    <h2 class="page-title m-0">{{ transferStarted ? 'Transfer status' : 'Transfer preview' }}</h2>
+  </div>
+  <div class="col-auto">
+    <button pButton type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Start transfer&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  </div>
 </div>
 
 <br/>

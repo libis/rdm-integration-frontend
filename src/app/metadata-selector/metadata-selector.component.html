@@ -1,16 +1,14 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
-<div class="row justify-content-between sticky-menu">
-	<span class="col-auto">
+<div class="row justify-content-between align-items-center sticky-menu">
+	<div class="col-auto">
 		<button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
-	</span>
-
-    <span class="col-auto">
-      <span class="bulk-label">Select metadata actions</span>
-    </span>
-
-	<span class="col-auto">
+	</div>
+    <div class="col text-center">
+      <h2 class="page-title m-0">Select metadata actions</h2>
+    </div>
+	<div class="col-auto">
 		<button pButton type="button" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Confirm metadata selection">Confirm metadata selection&nbsp;<i class="pi pi-angle-double-right"></i></button>
-	</span>
+	</div>
 </div>
 
 <br/>

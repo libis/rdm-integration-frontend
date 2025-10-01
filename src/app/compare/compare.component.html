@@ -1,30 +1,33 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
-<div class="row justify-content-between sticky-menu">
-  <span class="col-auto">
-  <button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
-  </span>
+<div class="row justify-content-between align-items-center sticky-menu">
+  <div class="col-auto">
+    <button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+  </div>
+  <div class="col text-center">
+    <h2 class="page-title m-0">Select file actions</h2>
+  </div>
+  <div class="col-auto">
+    <button pButton type="button" class="p-button-sm p-button-raised" [ngClass]="hasSelection() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" title="Go to next step" [attr.disabled]="disabled ? '' : null">Select file action&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  </div>
+</div>
 
-  <span class="col-auto">
-    <span class="p-buttonset bulk-actions">
-      <span class="bulk-label">Select file actions</span>
-  <button pButton type="button" class="p-button-sm p-button-raised" (click)="mirrorSelection()" title="Copy all new and changed files to Dataverse and delete in Dataverse the files that do not exist in the repository" [attr.disabled]="disabled ? '' : null">
+<div class="row g-2 mt-2 mb-2">
+  <div class="col-auto">
+    <div class="p-buttonset">
+      <button pButton type="button" class="p-button-sm p-button-raised" (click)="mirrorSelection()" title="Copy all new and changed files; remove missing" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
-  <button pButton type="button" class="p-button-sm p-button-raised" (click)="updateSelection()" title="Copy all new and changed files to Dataverse" [attr.disabled]="disabled ? '' : null">
+      <button pButton type="button" class="p-button-sm p-button-raised" (click)="updateSelection()" title="Copy new and changed files" [attr.disabled]="disabled ? '' : null">
         <i [class]="icon_update"></i>&nbsp;Copy
       </button>
-  <button pButton type="button" class="p-button-sm p-button-raised" (click)="noActionSelection()" title="Do not copy or delete files in Dataverse" [attr.disabled]="disabled ? '' : null">
-        <i [class]="icon_noaction"></i>&nbsp;Clear selection
+      <button pButton type="button" class="p-button-sm p-button-raised" (click)="noActionSelection()" title="Clear selection (no actions)" [attr.disabled]="disabled ? '' : null">
+        <i [class]="icon_noaction"></i>&nbsp;Clear
       </button>
-    </span>
-  </span>
-
-  <span class="col-auto">
-  <button pButton type="button" class="p-button-sm p-button-raised" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
-      <i class="pi pi-refresh"></i>&nbsp;Refresh
-    </button>
-  <button style="float: right;" pButton type="button" class="p-button-sm p-button-raised" [ngClass]="hasSelection() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Confirm file selection&nbsp;<i class="pi pi-angle-double-right"></i></button>
-  </span>
+      <button pButton type="button" class="p-button-sm p-button-raised" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+        <i class="pi pi-refresh"></i>&nbsp;Refresh
+      </button>
+    </div>
+  </div>
 </div>
 
 <br/>
