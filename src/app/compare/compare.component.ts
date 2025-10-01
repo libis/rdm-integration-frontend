@@ -79,7 +79,10 @@ export class CompareComponent
   refreshHidden = true;
   isInFilterMode = false;
   maxFileSize?: number;
-  rejected?: string[];
+  rejectedSize?: string[];
+  rejectedName?: string[];
+  allowedFileNamePattern?: string;
+  allowedFolderPathPattern?: string;
 
   data: CompareResult = {};
   rootNodeChildren: TreeNode<Datafile>[] = [];
@@ -152,7 +155,10 @@ export class CompareComponent
           this.setData(data);
           if (data.data && data.id) {
             this.maxFileSize = data.maxFileSize;
-            this.rejected = data.rejected;
+            this.rejectedSize = data.rejectedSize;
+            this.rejectedName = data.rejectedName;
+            this.allowedFileNamePattern = data.allowedFileNamePattern;
+            this.allowedFolderPathPattern = data.allowedFolderPathPattern;
             if (this.data.status !== ResultStatus.Updating) {
               this.disabled = false;
               this.loading = false;

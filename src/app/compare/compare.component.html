@@ -29,27 +29,56 @@
 
 <br/>
 
-<div [hidden]="rejected === undefined || rejected.length === 0">
-  <table class="table">
-    <tbody>
-      <tr class="file-list-header">
-        <th><i [class]="icon_warning" style="color:red"></i> Files that exceed the file size limit ({{ maxFileSize }} bytes) or have not allowed characters in the name and cannot be uploaded:</th>
-      </tr>
-      <tr>
+@if ((rejectedSize && rejectedSize.length) || (rejectedName && rejectedName.length)) {
+  <div class="mb-3">
+    @if (rejectedSize && rejectedSize.length) {
+      <div>
         <table class="table">
           <tbody>
-            @for (fileName of rejected; track fileName) {
-              <tr>
-                <td><span>{{ fileName }}</span></td>
-              </tr>
-            }
+            <tr class="file-list-header">
+              <th><i [class]="icon_warning" style="color:red"></i> Files exceeding maximum allowed size ({{ maxFileSize }} bytes):</th>
+            </tr>
+            <tr>
+              <table class="table">
+                <tbody>
+                  @for (fileName of rejectedSize; track fileName) {
+                    <tr><td><span>{{ fileName }}</span></td></tr>
+                  }
+                </tbody>
+              </table>
+            </tr>
           </tbody>
         </table>
-      </tr>
-    </tbody>
-  </table>
-  <br/>
-</div>
+      </div>
+    }
+    @if (rejectedName && rejectedName.length) {
+      <div>
+        <table class="table">
+          <tbody>
+            <tr class="file-list-header">
+              <th><i [class]="icon_warning" style="color:red"></i> Files with unsupported characters (allowed patterns shown below):</th>
+            </tr>
+            <tr>
+              <table class="table">
+                <tbody>
+                  @for (fileName of rejectedName; track fileName) {
+                    <tr><td><span>{{ fileName }}</span></td></tr>
+                  }
+                </tbody>
+              </table>
+            </tr>
+            <tr>
+              <td class="small text-muted px-3 pb-2">
+                Allowed file name pattern: <code>{{ allowedFileNamePattern }}</code><br/>
+                Allowed folder path pattern: <code>{{ allowedFolderPathPattern }}</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+}
 
 <div height="100% - 2em; overflow: hidden;">
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
