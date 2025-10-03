@@ -4,7 +4,7 @@
     <button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
   </div>
   <div class="col text-center">
-    <h2 class="page-title m-0">Select file actions</h2>
+    <h2 class="page-title m-0">Confirm file actions</h2>
   </div>
   <div class="col-auto">
     <button pButton type="button" class="p-button-sm p-button-raised" [ngClass]="canProceed() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" [title]="proceedTitle()" [attr.disabled]="(!canProceed() || disabled) ? '' : null">Select file action&nbsp;<i class="pi pi-angle-double-right"></i></button>

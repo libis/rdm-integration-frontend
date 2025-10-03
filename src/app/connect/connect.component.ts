@@ -239,6 +239,27 @@ export class ConnectComponent
   private restoreFromDatasetPid(
     params: Record<string, string | undefined>,
   ): void {
+    // If a datasetPid/apiToken is supplied explicitly, treat this as an authoritative navigation
+    // and clear any previously persisted snapshot (fresh connect screen with only provided values).
+    if (params['datasetPid'] || params['apiToken']) {
+      this.snapshotStorage.clearConnect();
+      // Also clear current in-memory fields (but keep datasetId once set below)
+      this.plugin = undefined;
+      this.pluginId = undefined;
+      this.user = undefined;
+      this.token = undefined;
+      this.repoName = undefined;
+      this.selectedRepoName = undefined;
+      this.foundRepoName = undefined;
+      this.option = undefined;
+      this.collectionId = undefined; // allow explicit collectionId if later provided
+      this.plugins = [];
+      this.pluginIds = [];
+      this.repoNames = [];
+      this.branchItems = [];
+      this.collectionItems = [];
+      this.doiItems = [];
+    }
     const datasetPid = params['datasetPid'];
     if (datasetPid) {
       this.ensureSelectContains(
