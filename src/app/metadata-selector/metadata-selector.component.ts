@@ -106,7 +106,7 @@ export class MetadataSelectorComponent implements OnInit {
       this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
     }
     this.router.navigate(['/compare', datasetId], {
-      state: { preserveCompare: true },
+      state: { preserveCompare: true, fromMetadata: true },
     });
   }
 

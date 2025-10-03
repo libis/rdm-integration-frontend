@@ -191,6 +191,16 @@ describe('SubmitComponent', () => {
     expect(args[0]).toEqual(['/compare', 'doi:123']);
   });
 
+  it('back should navigate to metadata-selector when incomingMetadata present', () => {
+    // Simulate having come from metadata-selector by assigning private field
+    (component as any).incomingMetadata = { datasetVersion: { metadataBlocks: { citation: { fields: [] } } } } as any;
+    component.back();
+    expect(routerStub.navigate as any).toHaveBeenCalled();
+    const args = (routerStub.navigate as any).calls.mostRecent().args;
+    expect(args[0]).toEqual(['/metadata-selector']);
+    expect(args[1]?.state?.fromSubmit).toBeTrue();
+  });
+
   it('sendMails should return plugin service value', () => {
     expect(component.sendMails()).toBeTrue();
   });

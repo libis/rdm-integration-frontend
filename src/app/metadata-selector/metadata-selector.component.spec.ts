@@ -252,5 +252,8 @@ describe('MetadataSelectorComponent', () => {
     expect(routerNavigateSpy).toHaveBeenCalled();
     const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
     expect(args[0][0]).toBe('/compare');
+    // Expect breadcrumb flags for coming from metadata selector
+    expect(args[1]?.state?.fromMetadata).toBeTrue();
+    expect(args[1]?.state?.preserveCompare).toBeTrue();
   });
 });

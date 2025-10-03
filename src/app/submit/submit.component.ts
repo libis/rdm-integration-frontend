@@ -318,9 +318,15 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     const value = this.dataStateService.getCurrentValue();
     const datasetId = value?.id || this.pid;
     if (datasetId) this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
-    this.router.navigate(['/compare', datasetId], {
-      state: { preserveCompare: true },
-    });
+    // Determine navigation origin: if we received incomingMetadata it means we passed through metadata-selector.
+    if (this.incomingMetadata) {
+      // Return to metadata selector (one logical step back)
+      this.router.navigate(['/metadata-selector'], { state: { fromSubmit: true } });
+    } else {
+      this.router.navigate(['/compare', datasetId], {
+        state: { preserveCompare: true },
+      });
+    }
   }
 
   goToDataset() {

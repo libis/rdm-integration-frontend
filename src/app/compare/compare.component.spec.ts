@@ -47,6 +47,31 @@ describe('CompareComponent', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['/connect']);
   });
 
+  it('back() navigates to metadata-selector when history.state.fromMetadata is set', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+    (component as any).credentialsService = { credentials: { dataset_id: 'doi:10.X/TEST' } };
+    component['data'] = { id: 'doi:10.X/TEST' } as any;
+    // Simulate breadcrumb left by metadata-selector -> compare transition
+    window.history.pushState({ fromMetadata: true }, '', '/');
+    component.back();
+    expect(navigateSpy).toHaveBeenCalledWith(['/metadata-selector'], { state: { fromCompare: true } });
+  });
+
+  it('submit() navigates to metadata-selector with state when new dataset path', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+    // Stub required services/fields for submit()
+    (component as any).dataStateService = { updateState: jasmine.createSpy('updateState') };
+    (component as any).credentialsService = { credentials: { newly_created: true } };
+    component['data'] = { id: '' } as any; // new dataset heuristic
+    component.submit();
+    expect(navigateSpy).toHaveBeenCalled();
+    const args = (navigateSpy.calls.mostRecent().args || []) as any[];
+    expect(args[0]).toEqual(['/metadata-selector']);
+    expect(args[1]?.state?.fromCompare).toBeTrue();
+  });
+
   describe('canProceed() logic', () => {
     function setCreds(creds: any) {
       (component as any).credentialsService = { credentials: creds };
