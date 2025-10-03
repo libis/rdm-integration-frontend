@@ -296,6 +296,20 @@ export class CompareComponent
     }
   }
 
+  canProceed(): boolean {
+    // If not new dataset → require at least one selected file.
+    if (!this.isNewDataset()) {
+      return this.hasSelection();
+    }
+    // New dataset: user may proceed even with zero file selection (metadata-only) as long as
+    // there is metadata context (always true for a new dataset scenario). We still fall back
+    // to file selection rule if backend indicates there is effectively no dataset creation
+    // (e.g., empty id but also no ability to add metadata). If id is empty we allow; if id
+    // exists and equals a placeholder 'New Dataset' we allow. Otherwise default to selection rule.
+    // Simplify: allow when new OR when has selection.
+    return true;
+  }
+
   // UI helpers
   hasSelection(): boolean {
     // At least one file with an action other than Ignore

@@ -7,7 +7,7 @@
     <h2 class="page-title m-0">Select file actions</h2>
   </div>
   <div class="col-auto">
-    <button pButton type="button" class="p-button-sm p-button-raised" [ngClass]="hasSelection() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" title="Go to next step" [attr.disabled]="disabled ? '' : null">Select file action&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button pButton type="button" class="p-button-sm p-button-raised" [ngClass]="hasSelection() || isNewDataset() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" title="Go to next step" [attr.disabled]="(!canProceed() || disabled) ? '' : null">Select file action&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </div>
 </div>
 
