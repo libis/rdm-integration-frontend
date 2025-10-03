@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, OnDestroy, inject, viewChild } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 
@@ -37,7 +37,14 @@ import { Skeleton } from 'primeng/skeleton';
 import { Tree } from 'primeng/tree';
 
 // RxJS
-import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+  filter,
+} from 'rxjs';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
@@ -151,73 +158,27 @@ export class ConnectComponent
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.datasetSearch(searchText)),
     );
+
+    // Handle scenario where Angular reuses the component instance (no ngOnInit re-run)
+    // when navigating back from Compare using router.navigate. We listen for navigation events
+    // and attempt a one-time lazy restoration if datasetId wasn't already restored.
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => {
+        if (
+          typeof window !== 'undefined' &&
+          (window.history?.state?.connectSnapshot ||
+            window.history?.state?.datasetId) &&
+          (this.datasetId === undefined || this.datasetId === '')
+        ) {
+          this.restoreFromState();
+        }
+      });
   }
 
   async ngOnInit() {
     // If we navigated back from Compare with a snapshot, restore it before doing anything else
-    if (
-      typeof window !== 'undefined' &&
-      window.history?.state?.connectSnapshot
-    ) {
-      const snap = window.history.state.connectSnapshot as Credentials;
-      // Only assign fields that exist in snapshot
-      this.plugin = snap.plugin;
-      this.pluginId = snap.pluginId;
-      this.user = snap.user;
-      this.token = snap.token;
-      this.repoName = snap.repo_name;
-      this.selectedRepoName = snap.repo_name;
-      this.foundRepoName = snap.repo_name;
-      this.option = snap.option;
-      this.dataverseToken = snap.dataverse_token || this.dataverseToken;
-      const navState: any = window.history.state || {};
-      // Unified restoration (snapshot primary for dataset, nav state primary for collection)
-      this.datasetId = snap.dataset_id || navState.datasetId || this.datasetId;
-      this.collectionId =
-        navState.collectionId ||
-        (snap as any).collectionId ||
-        this.collectionId;
-      // Pre-populate select item arrays so UI shows restored values
-      if (this.plugin) {
-        this.plugins = [{ label: this.plugin, value: this.plugin }];
-      }
-      if (this.pluginId) {
-        this.pluginIds = [{ label: this.pluginId, value: this.pluginId }];
-      }
-      if (this.repoName) {
-        this.repoNames = [
-          { label: this.repoName, value: this.repoName },
-          this.loadingItem,
-        ];
-      }
-      if (this.option) {
-        this.branchItems = [
-          { label: this.option, value: this.option },
-          this.loadingItem,
-        ];
-      }
-      if (this.datasetId) {
-        this.doiItems = [
-          { label: this.datasetId, value: this.datasetId },
-          this.loadingItem,
-        ];
-      }
-      // Restore collectionItems if present (array of SelectItem)
-      if (
-        window.history.state.collectionItems &&
-        Array.isArray(window.history.state.collectionItems)
-      ) {
-        this.collectionItems = [
-          ...window.history.state.collectionItems,
-          this.loadingItem,
-        ];
-      } else if (this.collectionId) {
-        this.collectionItems = [
-          { label: this.collectionId, value: this.collectionId },
-          this.loadingItem,
-        ];
-      }
-    }
+    this.restoreFromState();
     await this.pluginService.setConfig();
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
@@ -439,6 +400,74 @@ export class ConnectComponent
         this.subscriptions.add(tokenSubscription);
       }
     });
+  }
+
+  private restoreFromState(): void {
+    if (
+      typeof window === 'undefined' ||
+      !window.history?.state?.connectSnapshot
+    ) {
+      return;
+    }
+    const snap = window.history.state.connectSnapshot as Credentials;
+    const navState: any = window.history.state || {};
+    // Basic field restoration
+    this.plugin = this.plugin || snap.plugin;
+    this.pluginId = this.pluginId || snap.pluginId;
+    this.user = this.user || snap.user;
+    this.token = this.token || snap.token;
+    this.repoName = this.repoName || snap.repo_name;
+    this.selectedRepoName = this.selectedRepoName || snap.repo_name;
+    this.foundRepoName = this.foundRepoName || snap.repo_name;
+    this.option = this.option || snap.option;
+    this.dataverseToken = this.dataverseToken || snap.dataverse_token;
+
+    // IDs (precedence rules as before)
+    if (!this.datasetId || this.datasetId === '') {
+      this.datasetId = snap.dataset_id || navState.datasetId || this.datasetId;
+    }
+    if (!this.collectionId || this.collectionId === '') {
+      this.collectionId =
+        navState.collectionId ||
+        (snap as any).collectionId ||
+        this.collectionId;
+    }
+
+    // Pre-populate selects if not already populated
+    if (this.plugin && this.plugins.length === 0) {
+      this.plugins = [{ label: this.plugin, value: this.plugin }];
+    }
+    if (this.pluginId && this.pluginIds.length === 0) {
+      this.pluginIds = [{ label: this.pluginId, value: this.pluginId }];
+    }
+    if (this.repoName && this.repoNames.length === 0) {
+      this.repoNames = [
+        { label: this.repoName, value: this.repoName },
+        this.loadingItem,
+      ];
+    }
+    if (this.option && this.branchItems.length === 0) {
+      this.branchItems = [
+        { label: this.option, value: this.option },
+        this.loadingItem,
+      ];
+    }
+    if (this.datasetId && this.doiItems.length === 0) {
+      this.doiItems = [
+        { label: this.datasetId, value: this.datasetId },
+        this.loadingItem,
+      ];
+    }
+    if (this.collectionItems.length === 0) {
+      if (navState.collectionItems && Array.isArray(navState.collectionItems)) {
+        this.collectionItems = [...navState.collectionItems, this.loadingItem];
+      } else if (this.collectionId) {
+        this.collectionItems = [
+          { label: this.collectionId, value: this.collectionId },
+          this.loadingItem,
+        ];
+      }
+    }
   }
 
   ngOnDestroy(): void {

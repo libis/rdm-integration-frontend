@@ -109,4 +109,76 @@ describe('ConnectComponent', () => {
     fixture.detectChanges();
     expect(comp.collectionId).toBe('root:SNAP');
   });
+
+  it('changing plugin does NOT clear restored datasetId or collectionId', () => {
+    setHistoryState({
+      connectSnapshot: {
+        plugin: 'github',
+        pluginId: 'github',
+        repo_name: 'owner/repo',
+        dataset_id: 'doi:10.777/KEEP',
+        collectionId: 'root:KEEP',
+      },
+    });
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    fixture.detectChanges();
+    const originalDataset = comp.datasetId;
+    const originalCollection = comp.collectionId;
+
+    // Override pluginService behavior at runtime for this test
+    const pluginService: any = TestBed.inject(PluginService);
+    pluginService.getPluginIds = (plugin?: string) => {
+      if (plugin === 'newPlugin') {
+        return [{ label: 'New', value: 'new' }];
+      }
+      return [{ label: 'GitHub', value: 'github' }];
+    };
+    pluginService.getPlugins = () => [
+      { label: 'GitHub', value: 'github' },
+      { label: 'New', value: 'new' },
+    ];
+
+    // Simulate user selecting a different plugin
+    comp.plugin = 'newPlugin';
+    comp.changePlugin();
+
+    expect(comp.datasetId).toBe(originalDataset);
+    expect(comp.collectionId).toBe(originalCollection);
+    // Ensure the ids are still present in their respective select item arrays
+    expect(
+      comp.doiItems.some((i: any) => i.value === originalDataset),
+    ).toBeTrue();
+    expect(
+      comp.collectionItems.some((i: any) => i.value === originalCollection),
+    ).toBeTrue();
+  });
+
+  it('restoreFromState is idempotent and does not overwrite user-modified IDs', () => {
+    setHistoryState({
+      connectSnapshot: {
+        plugin: 'github',
+        pluginId: 'github',
+        repo_name: 'owner/repo',
+        dataset_id: 'doi:10.888/ORIG',
+        collectionId: 'root:ORIG',
+      },
+    });
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    fixture.detectChanges();
+    expect(comp.datasetId).toBe('doi:10.888/ORIG');
+    expect(comp.collectionId).toBe('root:ORIG');
+
+    // User changes selections manually
+    comp.datasetId = 'doi:10.888/CHANGED';
+    comp.collectionId = 'root:CHANGED';
+
+    // Invoke restoration again (simulating a NavigationEnd after reuse)
+    comp.restoreFromState();
+
+    // IDs should remain the user-changed versions
+    expect(comp.datasetId).toBe('doi:10.888/CHANGED');
+    expect(comp.collectionId).toBe('root:CHANGED');
+  });
 });
