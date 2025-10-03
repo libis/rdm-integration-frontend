@@ -297,33 +297,28 @@ export class CompareComponent
   }
 
   canProceed(): boolean {
-    // If not a new dataset we must have at least one selected file action.
-    if (!this.isNewDataset()) return this.hasSelection();
-
-    // New dataset path: allow metadata-only creation when metadata is available.
+    const newDs = this.isNewDataset();
     const creds: any = this.credentialsService.credentials;
     const hasMetadata = creds.metadata_available === true;
-    if (hasMetadata) return true;
-
-    // If no metadata is available, require at least one selected file.
-    return this.hasSelection();
+    if (!newDs) {
+      return this.hasSelection();
+    }
+    // New dataset: allow if metadata present OR there is a file selection
+    return hasMetadata || this.hasSelection();
   }
 
   proceedTitle(): string {
+    const newDs = this.isNewDataset();
+    const creds: any = this.credentialsService.credentials;
+    const hasMetadata = creds.metadata_available === true;
     if (!this.canProceed()) {
-      if (this.isNewDataset()) {
-        const hasMetadata = (this.credentialsService.credentials as any).metadata_available === true;
-        if (!hasMetadata) {
-          return 'Select at least one file to proceed (no metadata available).';
-        }
+      if (newDs && !hasMetadata) {
+        return 'Select at least one file to proceed (no metadata available).';
       }
       return 'Action not available yet';
     }
-    if (this.isNewDataset()) {
-      const hasMetadata = (this.credentialsService.credentials as any).metadata_available === true;
-      if (hasMetadata && !this.hasSelection()) {
-        return 'Proceed with metadata-only submission';
-      }
+    if (newDs && hasMetadata && !this.hasSelection()) {
+      return 'Proceed with metadata-only submission';
     }
     return 'Go to next step';
   }

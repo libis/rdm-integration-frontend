@@ -702,7 +702,9 @@ export class ConnectComponent
               user: this.user,
               token: this.token,
               dataset_id: this.datasetId,
-              newly_created: this.datasetId === new_dataset,
+              // New dataset detection must work even when a collection prefix is included (e.g. "root:COLL:New Dataset")
+              // Earlier logic only compared full equality with "New Dataset" and failed in prefixed cases, breaking Compare proceed logic.
+              newly_created: this.isNewDatasetId(this.datasetId),
               dataverse_token: this.dataverseToken,
             };
             // Persist snapshot BEFORE navigating so a later back() can restore even if navigation state is empty
@@ -747,6 +749,13 @@ export class ConnectComponent
           );
         },
       });
+  }
+
+  private isNewDatasetId(id?: string): boolean {
+    if (!id) return false;
+    // Accept plain 'New Dataset', ':New Dataset' (legacy) or any '<prefix>:New Dataset'
+    const tail = id.split(':').pop()?.trim();
+    return tail === new_dataset;
   }
 
   /***********
