@@ -1,9 +1,10 @@
 // Compact middle icon/action columns: shrink-to-fit while keeping table flexible.
 :host ::ng-deep th.compact-col,
 :host ::ng-deep td.compact-col {
-	width: 2rem; /* allow browser to shrink to intrinsic content */
+	width: 2rem;
 	white-space: nowrap;
 	padding: 0.1rem 0.25rem;
+	text-align: center;
 }
 
 // Constrain inner button size
