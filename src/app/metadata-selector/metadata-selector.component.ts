@@ -124,15 +124,16 @@ export class MetadataSelectorComponent implements OnInit {
   }
 
   rowClass(field: Field): string {
+    // Return semantic CSS classes instead of inline styles so themes (dark/light) can adapt.
     switch (field.action) {
-      case Fieldaction.Ignore:
-        return '';
       case Fieldaction.Copy:
-        return 'background-color: #c3e6cb; color: black';
+        return 'copy-row';
       case Fieldaction.Custom:
-        return 'background-color: #FFFAA0; color: black';
+        return 'custom-row';
+      case Fieldaction.Ignore:
+      default:
+        return '';
     }
-    return '';
   }
 
   addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {

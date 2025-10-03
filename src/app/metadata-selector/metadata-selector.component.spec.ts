@@ -163,12 +163,12 @@ describe('MetadataSelectorComponent', () => {
     expect(component.rowClass({ ...base, action: Fieldaction.Ignore })).toBe(
       '',
     );
-    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toContain(
-      '#c3e6cb',
+    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toBe(
+      'copy-row',
     );
-    expect(
-      component.rowClass({ ...base, action: Fieldaction.Custom }),
-    ).toContain('#FFFAA0');
+    expect(component.rowClass({ ...base, action: Fieldaction.Custom })).toBe(
+      'custom-row',
+    );
   });
 
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {
