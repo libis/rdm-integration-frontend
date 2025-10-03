@@ -182,9 +182,13 @@ describe('SubmitComponent', () => {
     });
   });
 
-  it('back should call Location.back', () => {
+  it('back should navigate to compare with dataset id (from data state)', () => {
+    // Data state stub returns id doi:123
+    component.pid = 'ignored:pid';
     component.back();
-    expect(locationStub.back as any).toHaveBeenCalled();
+    expect(routerStub.navigate as any).toHaveBeenCalled();
+    const args = (routerStub.navigate as any).calls.mostRecent().args;
+    expect(args[0]).toEqual(['/compare', 'doi:123']);
   });
 
   it('sendMails should return plugin service value', () => {

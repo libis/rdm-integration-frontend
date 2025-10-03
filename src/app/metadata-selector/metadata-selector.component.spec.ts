@@ -247,8 +247,10 @@ describe('MetadataSelectorComponent', () => {
     expect(fields.length).toBeGreaterThan(0);
   }));
 
-  it('back should call Location.back()', () => {
+  it('back should navigate to compare with dataset id state', () => {
     component.back();
-    expect(locationBackSpy).toHaveBeenCalled();
+    expect(routerNavigateSpy).toHaveBeenCalled();
+    const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
+    expect(args[0][0]).toBe('/compare');
   });
 });
