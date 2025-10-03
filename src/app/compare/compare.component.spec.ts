@@ -34,7 +34,9 @@ describe('CompareComponent', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = spyOn(router, 'navigate');
     // simulate credentials (normally injected service provides it)
-    (component as any).credentialsService = { credentials: { dataset_id: 'doi:10.777/TEST' } };
+    (component as any).credentialsService = {
+      credentials: { dataset_id: 'doi:10.777/TEST' },
+    };
     component['data'] = { id: 'doiFallback' } as any;
     component.back();
     expect(navigateSpy).toHaveBeenCalled();

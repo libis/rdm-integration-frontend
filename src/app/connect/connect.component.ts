@@ -173,7 +173,10 @@ export class ConnectComponent
       const navState: any = window.history.state || {};
       // Unified restoration (snapshot primary for dataset, nav state primary for collection)
       this.datasetId = snap.dataset_id || navState.datasetId || this.datasetId;
-      this.collectionId = navState.collectionId || (snap as any).collectionId || this.collectionId;
+      this.collectionId =
+        navState.collectionId ||
+        (snap as any).collectionId ||
+        this.collectionId;
       // Pre-populate select item arrays so UI shows restored values
       if (this.plugin) {
         this.plugins = [{ label: this.plugin, value: this.plugin }];

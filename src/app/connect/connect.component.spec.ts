@@ -22,7 +22,8 @@ describe('ConnectComponent', () => {
       setConfig: () => Promise.resolve(),
       getPlugins: () => [],
       getPluginIds: () => [],
-      getPlugin: () => ({ tokenGetter: {}, repoNameFieldHasSearch: false }) as any,
+      getPlugin: () =>
+        ({ tokenGetter: {}, repoNameFieldHasSearch: false }) as any,
       dataverseHeader: () => 'Dataverse',
       showDVTokenGetter: () => false,
       showDVToken: () => false,
@@ -56,11 +57,11 @@ describe('ConnectComponent', () => {
         dataset_id: 'doi:10.123/ABC',
       },
     });
-  const fixture = TestBed.createComponent(ConnectComponent);
-  const comp = fixture.componentInstance;
-  fixture.detectChanges();
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
     expect(comp.datasetId).toBe('doi:10.123/ABC');
-    expect(comp.doiItems.some(i => i.value === 'doi:10.123/ABC')).toBeTrue();
+    expect(comp.doiItems.some((i) => i.value === 'doi:10.123/ABC')).toBeTrue();
   });
 
   it('falls back to datasetId in navigation state when missing in snapshot', async () => {
@@ -71,11 +72,11 @@ describe('ConnectComponent', () => {
         repo_name: 'owner/repo',
         dataset_id: '',
       },
-      datasetId: 'doi:10.999/MISSING'
+      datasetId: 'doi:10.999/MISSING',
     });
-  const fixture = TestBed.createComponent(ConnectComponent);
-  const comp = fixture.componentInstance;
-  fixture.detectChanges();
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
     expect(comp.datasetId).toBe('doi:10.999/MISSING');
   });
 
