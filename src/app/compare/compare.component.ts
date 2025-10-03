@@ -492,6 +492,8 @@ export class CompareComponent
         connectSnapshot: creds,
         // collectionItems restored from history if Connect passed them forward initially
         collectionId: (this.credentialsService.credentials as any).collectionId,
+        // Explicit datasetId to ensure restoration even if snapshot parsing fails
+        datasetId: creds.dataset_id || this.data.id,
         // Note: individual collection items are maintained in navigation state originating from Connect
       },
     });

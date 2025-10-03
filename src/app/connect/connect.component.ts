@@ -171,6 +171,10 @@ export class ConnectComponent
       this.option = snap.option;
       this.dataverseToken = snap.dataverse_token || this.dataverseToken;
       this.datasetId = snap.dataset_id;
+      // Fallback: if snapshot lacked dataset_id but state carries datasetId explicitly
+      if ((!this.datasetId || this.datasetId === '') && window.history.state.datasetId) {
+        this.datasetId = window.history.state.datasetId;
+      }
       // Restore collectionId if provided directly in snapshot state (explicit request)
       if ((window.history.state.collectionId || (snap as any)).collectionId) {
         const cId =
