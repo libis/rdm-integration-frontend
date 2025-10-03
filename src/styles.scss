@@ -144,34 +144,17 @@ button {
     line-height: 1.4;
 }
 
-/* Ensure titles in sticky header rows are truly centered across full width */
-.sticky-menu {
-    position: sticky;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center; /* temporary center; overridden by child layout */
-}
-
-/* Use a positioning context for absolute centering of the page title */
+/* Center page title across full sticky header without altering existing column layout */
 .sticky-menu .page-title {
-    position: absolute;
+    position: absolute; /* detach from middle column width */
     left: 50%;
-    transform: translateX(-50%);
+    top: 50%;
+    transform: translate(-50%, -50%);
     margin: 0;
     text-align: center;
     white-space: nowrap;
+    pointer-events: none; /* avoid intercepting clicks on overlapping buttons at extreme narrow widths */
 }
 
-/* Keep left and right button groups aligned without affecting centering */
-.sticky-menu > .col-auto:first-child,
-.sticky-menu > .col-auto:last-child {
-    position: relative;
-    z-index: 2; /* above absolutely centered title if overlapping on narrow screens */
-}
-
-/* Provide some horizontal padding so absolute centering works in narrow viewports */
-.sticky-menu > .col.text-center { /* neutralize original column centering influence */
-    position: relative;
-    flex: 1 1 auto;
-}
+/* Allow buttons to stay clickable above (pointer-events on title disabled) */
+.sticky-menu .col-auto { position: relative; z-index: 1; }
