@@ -1,7 +1,7 @@
 // Compact middle icon/action columns: shrink-to-fit while keeping table flexible.
 :host ::ng-deep th.compact-col,
 :host ::ng-deep td.compact-col {
-	width: 1px; /* allow browser to shrink to intrinsic content */
+	width: 2rem; /* allow browser to shrink to intrinsic content */
 	white-space: nowrap;
 	padding: 0.1rem 0.25rem;
 }
@@ -15,7 +15,7 @@
 // Ensure body 2nd & 3rd columns behave like compact columns even without explicit class
 :host ::ng-deep .p-treetable-tbody > tr > td:nth-child(2),
 :host ::ng-deep .p-treetable-tbody > tr > td:nth-child(3) {
-	width: 1px;
+	width: 2rem;
 	white-space: nowrap;
 	padding: 0.1rem 0.25rem;
 	text-align: center;
