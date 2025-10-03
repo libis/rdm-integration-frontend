@@ -27,12 +27,16 @@
 	--md-custom-fg: var(--fg-amber-dark);
 }
 
-:root[data-theme='light'] app-metadata-selector,
-:root:not([data-theme='dark']) app-metadata-selector {
-	--md-copy-bg: var(--lm-tint-green);
+:host-context([data-theme='light']),
+:host-context(:root:not([data-theme='dark'])) {
+	--md-copy-bg: #e9f9ef;
 	--md-copy-fg: var(--action-green);
-	--md-custom-bg: var(--lm-tint-amber);
+	--md-custom-bg: #fff4e4;
 	--md-custom-fg: var(--action-amber);
+}
+:host ::ng-deep .p-treetable-tbody > tr:not(.copy-row):not(.custom-row) > td {
+	background: var(--p-content-background);
+	color: var(--p-text-color);
 }
 
 .treetable-cell {
@@ -89,6 +93,12 @@
 .copy-row td, .custom-row td {
 	border-top: 1px solid var(--p-content-border-color, rgba(255,255,255,0.08));
 	border-bottom: 1px solid var(--p-content-border-color, rgba(255,255,255,0.08));
+}
+
+/* Improve readability of default (non-highlight) rows in dark mode */
+:host ::ng-deep .p-treetable-tbody > tr:not(.copy-row):not(.custom-row) > td {
+	background: var(--p-content-background);
+	color: var(--p-text-color);
 }
 
 /* Hover emphasis */
