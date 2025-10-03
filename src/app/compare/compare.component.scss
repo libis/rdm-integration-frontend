@@ -30,68 +30,18 @@ th .pi:hover {
   color: var(--p-text-color);
 }
 
-/* Palette variables (scoped so they don't leak globally). */
+/* Palette variables (original simpler set) */
 :host {
-  /* Base chroma tokens */
-  --action-green: #1b5e36;
-  --action-blue: #0f4470;
-  --action-red: #6f1d28;
-  --action-neutral: #2d3a46;
-
-  /* Light mode soft tints */
-  /* Pastel light tints (higher L*, lower saturation) */
-  --lm-tint-green: #e9f9ef;
-  --lm-tint-blue: #e9f2fe;
-  --lm-tint-red: #fdecee;
-  --lm-tint-neutral: #f4f7f9;
-
-  /* Dark mode solid backgrounds */
-  --dm-bg-green: #284d33;
-  --dm-bg-blue: #18324d;
-  --dm-bg-red: #4d1e23;
-  --dm-bg-neutral: #2d3a46;
-
-  /* Foregrounds */
-  --fg-green-dark: #d9f2e1;
-  --fg-blue-dark: #d3ebff;
-  --fg-red-dark: #f8d7da;
-  --fg-neutral-dark: #dde6ed;
-  --fg-green-light: #114226;
-  --fg-blue-light: #0d3352;
-  --fg-red-light: #51131b;
-  --fg-neutral-light: #1d2730;
-
-  /* Defaults assume dark mode; overridden below for light */
-  --file-copy-bg: var(--dm-bg-green);
-  --file-copy-fg: var(--fg-green-dark);
-  --file-update-bg: var(--dm-bg-blue);
-  --file-update-fg: var(--fg-blue-dark);
-  --file-delete-bg: var(--dm-bg-red);
-  --file-delete-fg: var(--fg-red-dark);
-  --file-custom-bg: var(--dm-bg-neutral);
-  --file-custom-fg: var(--fg-neutral-dark);
+  --file-copy-bg: #284d33;
+  --file-copy-fg: #d9f2e1;
+  --file-update-bg: #18324d;
+  --file-update-fg: #d3ebff;
+  --file-delete-bg: #4d1e23;
+  --file-delete-fg: #f8d7da;
+  --file-custom-bg: #2d3a46;
+  --file-custom-fg: #dde6ed;
   --row-hover-outline: rgba(255,255,255,0.08);
   --row-border-color: rgba(255,255,255,0.07);
-  /* Provide explicit neutral background for IGNORE rows in dark mode for readability */
-  --ignore-row-bg: #1f2a33; /* darker neutral for contrast */
-  --ignore-row-fg: var(--p-text-color, #e4e8ea);
-}
-
-/* Light theme overrides (attribute or absence of explicit dark) */
-:host-context([data-theme='light']),
-:host-context(:root:not([data-theme='dark'])) {
-  --file-copy-bg: var(--lm-tint-green);
-  --file-copy-fg: var(--fg-green-light);
-  --file-update-bg: var(--lm-tint-blue);
-  --file-update-fg: var(--fg-blue-light);
-  --file-delete-bg: var(--lm-tint-red);
-  --file-delete-fg: var(--fg-red-light);
-  --file-custom-bg: var(--lm-tint-neutral);
-  --file-custom-fg: var(--fg-neutral-light);
-  --row-hover-outline: rgba(0,0,0,0.08);
-  --row-border-color: rgba(0,0,0,0.06);
-  --ignore-row-bg: #ffffff; /* crisp white for untouched rows */
-  --ignore-row-fg: #1e1e20;    /* strong contrast */
 }
 
 /* Ensure destination (right) column text is readable */
@@ -137,11 +87,7 @@ th .pi:hover {
   border-bottom: 1px solid var(--row-border-color);
 }
 
-/* Unselected (Ignore) rows: when no inline style (no file-* variable usage) apply neutral readable background */
-:host ::ng-deep .p-treetable-tbody > tr:not([style*='file-copy-bg']):not([style*='file-update-bg']):not([style*='file-delete-bg']):not([style*='file-custom-bg']) > td {
-  background: var(--ignore-row-bg) !important;
-  color: var(--ignore-row-fg) !important;
-}
+/* (Reverted) No special background override for ignored rows */
 
 /* Improve readability of file rows: ensure text inherits proper contrast inside colored backgrounds */
 :host ::ng-deep .p-treetable-tbody > tr > td span, 
