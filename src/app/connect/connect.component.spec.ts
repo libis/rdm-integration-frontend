@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
@@ -8,7 +8,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { ConnectComponent } from './connect.component';
-import { Router } from '@angular/router';
+// Router intentionally not imported (was unused)
 import { PluginService } from '../plugin.service';
 
 // Helper to mock history.state
@@ -109,7 +109,6 @@ describe('ConnectComponent', () => {
     fixture.detectChanges();
     expect(comp.collectionId).toBe('root:SNAP');
   });
-
   it('changing plugin does NOT clear restored datasetId or collectionId', () => {
     setHistoryState({
       connectSnapshot: {
@@ -154,31 +153,23 @@ describe('ConnectComponent', () => {
     ).toBeTrue();
   });
 
-  it('restoreFromState is idempotent and does not overwrite user-modified IDs', () => {
-    setHistoryState({
-      connectSnapshot: {
-        plugin: 'github',
-        pluginId: 'github',
-        repo_name: 'owner/repo',
-        dataset_id: 'doi:10.888/ORIG',
-        collectionId: 'root:ORIG',
-      },
-    });
+  it('ensureSelectContains adds value only once', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
-    expect(comp.datasetId).toBe('doi:10.888/ORIG');
-    expect(comp.collectionId).toBe('root:ORIG');
+    const arr: any[] = [];
+    comp['ensureSelectContains'](arr, 'val1', (items: any[]) => (arr.length = 0, arr.push(...items)));
+    comp['ensureSelectContains'](arr, 'val1', (items: any[]) => (arr.length = 0, arr.push(...items))); // second call should not duplicate
+    expect(arr.filter((i) => i.value === 'val1').length).toBe(1);
+  });
 
-    // User changes selections manually
-    comp.datasetId = 'doi:10.888/CHANGED';
-    comp.collectionId = 'root:CHANGED';
-
-    // Invoke restoration again (simulating a NavigationEnd after reuse)
-    comp.restoreFromState();
-
-    // IDs should remain the user-changed versions
-    expect(comp.datasetId).toBe('doi:10.888/CHANGED');
-    expect(comp.collectionId).toBe('root:CHANGED');
+  it('perform reset when reset query param present', () => {
+    // simulate history state that will get cleared
+    window.history.replaceState({ datasetId: 'shouldClear' }, '');
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    // directly invoke private handleQueryParams with reset flag to avoid router dependency
+    comp['handleQueryParams']({ reset: '1' });
+    expect(comp.datasetId).toBeUndefined();
   });
 });

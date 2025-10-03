@@ -15,6 +15,8 @@ import { ActivatedRoute } from '@angular/router';
 import { OauthService } from '../oauth.service';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '../shared/notification.service';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { ConnectValidationService } from '../shared/connect-validation.service';
 
 // Models
 import { Credentials } from '../models/credentials';
@@ -51,6 +53,8 @@ import { APP_CONSTANTS } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
+// Toggle detailed restoration tracing (set false for cleaner logs in production builds)
+const RESTORE_TRACE = true; // can be wired to environment flag later
 
 @Component({
   selector: 'app-connect',
@@ -84,6 +88,8 @@ export class ConnectComponent
   private readonly oauth = inject(OauthService);
   private readonly http = inject(HttpClient);
   private readonly notificationService = inject(NotificationService);
+  private readonly snapshotStorage = inject(SnapshotStorageService);
+  private readonly connectValidation = inject(ConnectValidationService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -146,6 +152,7 @@ export class ConnectComponent
   datasetSearchResultsSubscription?: Subscription;
 
   constructor() {
+    // Debounced search streams
     this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.repoNameSearch(searchText)),
@@ -159,26 +166,14 @@ export class ConnectComponent
       map((searchText) => this.datasetSearch(searchText)),
     );
 
-    // Handle scenario where Angular reuses the component instance (no ngOnInit re-run)
-    // when navigating back from Compare using router.navigate. We listen for navigation events
-    // and attempt a one-time lazy restoration if datasetId wasn't already restored.
+    // Idempotent restoration on each navigation end to /connect (component reuse scenario)
     this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe(() => {
-        if (
-          typeof window !== 'undefined' &&
-          (window.history?.state?.connectSnapshot ||
-            window.history?.state?.datasetId) &&
-          (this.datasetId === undefined || this.datasetId === '')
-        ) {
-          this.restoreFromState();
-        }
-      });
+      .subscribe(() => this.attemptFullRestore('[NavigationEnd]'));
   }
 
   async ngOnInit() {
-    // If we navigated back from Compare with a snapshot, restore it before doing anything else
-    this.restoreFromState();
+    this.attemptFullRestore('[ngOnInit]');
     await this.pluginService.setConfig();
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
@@ -222,250 +217,330 @@ export class ConnectComponent
             { label: `search failed: ${err.message}`, value: err.message },
           ]),
       });
-    this.datasetSearchResultsSubscription =
-      this.datasetSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => (this.doiItems = v))
-            .catch(
-              (err) =>
-                (this.doiItems = [
-                  {
-                    label: `search failed: ${err.message}`,
-                    value: err.message,
-                  },
-                ]),
-            ),
-        error: (err) =>
-          (this.doiItems = [
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]),
-      });
     this.route.queryParams.subscribe((params) => {
-      const stateString = params['state'];
-      if (
-        stateString === undefined ||
-        stateString === null ||
-        stateString === ''
-      ) {
-        const datasetPid = params['datasetPid'];
-        if (
-          (datasetPid !== undefined && datasetPid !== null) ||
-          datasetPid !== ''
-        ) {
-          this.doiItems = [
-            { label: datasetPid, value: datasetPid },
-            this.loadingItem,
-          ];
-          this.datasetId = datasetPid;
-        }
-        const apiToken = params['apiToken'];
-        if (apiToken) {
-          this.dataverseToken = apiToken;
-        }
-        const callback = params['callback'];
-        if (callback) {
-          const p = this.pluginService.getGlobusPlugin();
-          if (p) {
-            this.plugin = 'globus';
-            this.pluginId = 'globus';
-            if (!datasetPid) {
-              const callbackUrl = atob(callback);
-              const parts = callbackUrl.split('/');
-              if (parts.length > 6) {
-                const datasetDbId = parts[6];
-                const g = callbackUrl.split('?');
-                const globusParams = g[g.length - 1].split('&');
-                let downloadId: string | undefined = undefined;
-                globusParams.forEach((p) => {
-                  if (p.startsWith('downloadId=')) {
-                    downloadId = p.substring('downloadId='.length);
-                  }
-                });
-                const versionSubscription = this.datasetService
-                  .getDatasetVersion(datasetDbId, apiToken)
-                  .subscribe((x) => {
-                    this.datasetId = x.persistentId;
-                    this.subscriptions.delete(versionSubscription);
-                    versionSubscription.unsubscribe();
-                    if (downloadId) {
-                      this.router.navigate(['/download'], {
-                        queryParams: {
-                          downloadId: downloadId,
-                          datasetPid: x.persistentId,
-                          apiToken: apiToken,
-                        },
-                      });
-                    }
-                  });
-                this.subscriptions.add(versionSubscription);
-              }
-            }
-          }
-        }
-        return;
-      }
-      const loginState: LoginState = JSON.parse(params['state']);
-      if (loginState.download) {
-        this.router.navigate(['/download'], { queryParams: params });
-      }
-      this.sourceUrl = loginState.sourceUrl;
-      this.url = loginState.url;
-      this.repoName = loginState.repoName;
-      this.selectedRepoName = loginState.repoName;
-      this.foundRepoName = loginState.repoName;
-      this.user = loginState.user;
-
-      if (
-        loginState.plugin !== undefined &&
-        loginState.plugin.value !== undefined
-      ) {
-        this.plugins = [
-          { label: loginState.plugin.label, value: loginState.plugin.value! },
-        ];
-        this.plugin = loginState.plugin.value;
-      }
-
-      if (
-        loginState.pluginId !== undefined &&
-        loginState.pluginId.value !== undefined
-      ) {
-        this.pluginIds = [
-          {
-            label: loginState.pluginId.label,
-            value: loginState.pluginId.value!,
-          },
-        ];
-        this.pluginId = loginState.pluginId.value;
-        this.pluginIdSelectHidden = loginState.pluginId.hidden!;
-      } else {
-        this.pluginIdSelectHidden = true;
-      }
-
-      if (
-        loginState.option !== undefined &&
-        loginState.option.value !== undefined
-      ) {
-        this.branchItems = [
-          { label: loginState.option.label, value: loginState.option.value! },
-          this.loadingItem,
-        ];
-        this.option = loginState.option?.value;
-      }
-
-      if (
-        loginState.datasetId !== undefined &&
-        loginState.datasetId.value !== undefined
-      ) {
-        this.doiItems = [
-          {
-            label: loginState.datasetId.label,
-            value: loginState.datasetId.value!,
-          },
-          this.loadingItem,
-        ];
-        this.datasetId = loginState.datasetId?.value;
-      }
-
-      if (
-        loginState.collectionId !== undefined &&
-        loginState.collectionId.value !== undefined
-      ) {
-        this.collectionItems = [
-          {
-            label: loginState.collectionId.label,
-            value: loginState.collectionId.value!,
-          },
-          this.loadingItem,
-        ];
-        this.collectionId = loginState.collectionId?.value;
-      }
-
-      const code = params['code'];
-      if (
-        loginState.nonce &&
-        this.pluginId !== undefined &&
-        code !== undefined
-      ) {
-        const tokenSubscription = this.oauth
-          .getToken(this.pluginId, code, loginState.nonce)
-          .subscribe((x) => {
-            this.token = x.session_id;
-            if (!this.pluginService.isStoreDvToken()) {
-              localStorage.removeItem('dataverseToken');
-            }
-            this.subscriptions.delete(tokenSubscription);
-            tokenSubscription.unsubscribe();
-          });
-        this.subscriptions.add(tokenSubscription);
-      }
+      this.handleQueryParams(params);
     });
   }
 
-  private restoreFromState(): void {
-    if (
-      typeof window === 'undefined' ||
-      !window.history?.state?.connectSnapshot
-    ) {
+  private handleQueryParams(params: Record<string, string | undefined>): void {
+    // Support explicit reset via query param (?reset=1) or presence of 'reset' without value
+    if ('reset' in params) {
+      this.performReset();
       return;
     }
-    const snap = window.history.state.connectSnapshot as Credentials;
-    const navState: any = window.history.state || {};
-    // Basic field restoration
-    this.plugin = this.plugin || snap.plugin;
-    this.pluginId = this.pluginId || snap.pluginId;
-    this.user = this.user || snap.user;
-    this.token = this.token || snap.token;
-    this.repoName = this.repoName || snap.repo_name;
-    this.selectedRepoName = this.selectedRepoName || snap.repo_name;
-    this.foundRepoName = this.foundRepoName || snap.repo_name;
-    this.option = this.option || snap.option;
-    this.dataverseToken = this.dataverseToken || snap.dataverse_token;
-
-    // IDs (precedence rules as before)
-    if (!this.datasetId || this.datasetId === '') {
-      this.datasetId = snap.dataset_id || navState.datasetId || this.datasetId;
+    const stateString = params['state'];
+    if (!stateString) {
+      this.restoreFromDatasetPid(params);
+      return;
     }
-    if (!this.collectionId || this.collectionId === '') {
+    this.restoreFromOauthState(params);
+  }
+
+  private restoreFromDatasetPid(
+    params: Record<string, string | undefined>,
+  ): void {
+    const datasetPid = params['datasetPid'];
+    if (datasetPid) {
+      this.ensureSelectContains(
+        this.doiItems,
+        datasetPid,
+        (items) => (this.doiItems = items),
+      );
+      this.datasetId = this.datasetId || datasetPid;
+    }
+    const apiToken = params['apiToken'];
+    if (apiToken) {
+      this.dataverseToken = apiToken;
+    }
+    const callback = params['callback'];
+    if (callback) {
+      this.handleGlobusCallback(callback, apiToken, datasetPid);
+    }
+  }
+
+  private handleGlobusCallback(
+    callback: string,
+    apiToken?: string,
+    datasetPid?: string,
+  ): void {
+    const p = this.pluginService.getGlobusPlugin();
+    if (!p) return;
+    this.plugin = 'globus';
+    this.pluginId = 'globus';
+    if (datasetPid) return;
+    const callbackUrl = atob(callback);
+    const parts = callbackUrl.split('/');
+    if (parts.length <= 6) return;
+    const datasetDbId = parts[6];
+    const g = callbackUrl.split('?');
+    const globusParams = g[g.length - 1].split('&');
+    let downloadId: string | undefined = undefined;
+    globusParams.forEach((p) => {
+      if (p.startsWith('downloadId=')) {
+        downloadId = p.substring('downloadId='.length);
+      }
+    });
+    const versionSubscription = this.datasetService
+      .getDatasetVersion(datasetDbId, apiToken)
+      .subscribe((x) => {
+        this.datasetId = x.persistentId;
+        this.subscriptions.delete(versionSubscription);
+        versionSubscription.unsubscribe();
+        if (downloadId) {
+          this.router.navigate(['/download'], {
+            queryParams: {
+              downloadId: downloadId,
+              datasetPid: x.persistentId,
+              apiToken: apiToken,
+            },
+          });
+        }
+      });
+    this.subscriptions.add(versionSubscription);
+  }
+
+  private restoreFromOauthState(
+    params: Record<string, string | undefined>,
+  ): void {
+    const stateRaw = params['state'];
+    if (typeof stateRaw !== 'string') return;
+    let loginState: LoginState;
+    try {
+      loginState = JSON.parse(stateRaw) as LoginState;
+    } catch {
+      return; // malformed state
+    }
+    if (loginState.download) {
+      this.router.navigate(['/download'], { queryParams: params });
+    }
+    this.sourceUrl = loginState.sourceUrl;
+    this.url = loginState.url;
+    this.repoName = loginState.repoName;
+    this.selectedRepoName = loginState.repoName;
+    this.foundRepoName = loginState.repoName;
+    this.user = loginState.user;
+
+    if (loginState.plugin?.value) {
+      this.plugins = [
+        { label: loginState.plugin.label, value: loginState.plugin.value! },
+      ];
+      this.plugin = loginState.plugin.value;
+    }
+    if (loginState.pluginId?.value) {
+      this.pluginIds = [
+        { label: loginState.pluginId.label, value: loginState.pluginId.value! },
+      ];
+      this.pluginId = loginState.pluginId.value;
+      this.pluginIdSelectHidden = !!loginState.pluginId.hidden;
+    } else {
+      this.pluginIdSelectHidden = true;
+    }
+    if (loginState.option?.value) {
+      this.branchItems = [
+        { label: loginState.option.label, value: loginState.option.value! },
+        this.loadingItem,
+      ];
+      this.option = loginState.option.value;
+    }
+    if (loginState.datasetId?.value) {
+      this.ensureSelectContains(
+        this.doiItems,
+        loginState.datasetId.value,
+        (items) => (this.doiItems = items),
+      );
+      this.datasetId = loginState.datasetId.value;
+    }
+    if (loginState.collectionId?.value) {
+      this.ensureSelectContains(
+        this.collectionItems,
+        loginState.collectionId.value,
+        (items) => (this.collectionItems = items),
+      );
+      this.collectionId = loginState.collectionId.value;
+    }
+    const code = params['code'];
+    if (loginState.nonce && this.pluginId && code) {
+      const tokenSubscription = this.oauth
+        .getToken(this.pluginId, code, loginState.nonce)
+        .subscribe((x) => {
+          this.token = x.session_id;
+          if (!this.pluginService.isStoreDvToken()) {
+            localStorage.removeItem('dataverseToken');
+          }
+          this.subscriptions.delete(tokenSubscription);
+          tokenSubscription.unsubscribe();
+        });
+      this.subscriptions.add(tokenSubscription);
+    }
+  }
+
+  private ensureSelectContains(
+    target: SelectItem<string>[],
+    value: string,
+    setter: (items: SelectItem<string>[]) => void,
+  ) {
+    if (!value) return;
+    if (target.some((i) => i.value === value)) return;
+    setter([{ label: value, value }, this.loadingItem]);
+  }
+
+  private restoreFromSnapshot(historyState: unknown): void {
+    if (!historyState || typeof historyState !== 'object') return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anyState = historyState as any;
+    const snap = (anyState.connectSnapshot || {}) as Credentials & {
+      collectionId?: string;
+    };
+    const datasetFromNav = (historyState as { datasetId?: string }).datasetId;
+    const collectionFromNav = (historyState as { collectionId?: string })
+      .collectionId;
+    if (RESTORE_TRACE) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[RESTORE-TRACE] restoreFromSnapshot invoked', {
+          incomingHistoryState: historyState,
+          snapDataset: snap.dataset_id,
+          datasetFromNav,
+        });
+      } catch {
+        // intentional: tracing is non-critical
+      }
+    }
+    if (anyState.connectSnapshot) {
+      this.applySnapshot(snap, datasetFromNav, collectionFromNav);
+    } else if (datasetFromNav || collectionFromNav) {
+      // If only primitive ids passed
+      this.applySnapshot({}, datasetFromNav, collectionFromNav);
+    }
+    if (RESTORE_TRACE) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[RESTORE-TRACE] restoreFromSnapshot result', {
+          datasetId: this.datasetId,
+          collectionId: this.collectionId,
+          hasSnapshot: !!anyState.connectSnapshot,
+        });
+      } catch {
+        // intentional: ignore tracing error
+      }
+    }
+  }
+
+  private restoreFromStorage(): void {
+    const snap = this.snapshotStorage.loadConnect();
+    if (!snap) return;
+    if (RESTORE_TRACE) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[RESTORE-TRACE] restoreFromStorage invoked', snap);
+      } catch {
+        // intentional: ignore tracing error
+      }
+    }
+    this.applySnapshot(snap, undefined, undefined);
+    if (RESTORE_TRACE) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[RESTORE-TRACE] restoreFromStorage result', {
+          datasetId: this.datasetId,
+          collectionId: this.collectionId,
+        });
+      } catch {
+        // intentional: ignore tracing error
+      }
+    }
+  }
+
+  private applySnapshot(
+    snap: Partial<Credentials & { collectionId?: string }> | undefined,
+    datasetFromNav?: string,
+    collectionFromNav?: string,
+  ): void {
+    if (!snap) return;
+    const assignIfEmpty = <T>(
+      current: T | undefined,
+      incoming: T | undefined,
+    ) => current === undefined && incoming !== undefined;
+    if (assignIfEmpty(this.plugin, snap.plugin)) this.plugin = snap.plugin;
+    if (assignIfEmpty(this.pluginId, snap.pluginId))
+      this.pluginId = snap.pluginId;
+    if (assignIfEmpty(this.user, snap.user)) this.user = snap.user;
+    if (assignIfEmpty(this.token, snap.token)) this.token = snap.token;
+    if (assignIfEmpty(this.repoName, snap.repo_name))
+      this.repoName = snap.repo_name;
+    if (assignIfEmpty(this.selectedRepoName, snap.repo_name))
+      this.selectedRepoName = snap.repo_name;
+    if (assignIfEmpty(this.foundRepoName, snap.repo_name))
+      this.foundRepoName = snap.repo_name;
+    if (assignIfEmpty(this.option, snap.option)) this.option = snap.option;
+    if (assignIfEmpty(this.dataverseToken, snap.dataverse_token))
+      this.dataverseToken = snap.dataverse_token;
+
+    // Dataset precedence logic:
+    // 1. Existing this.datasetId (already present) wins.
+    // 2. Navigation-provided datasetFromNav (explicit user path) next.
+    // 3. Snapshot dataset_id / id fallback.
+    if (!this.datasetId) {
+      const snapId = (snap as Record<string, unknown>)['id'];
+      this.datasetId =
+        datasetFromNav ||
+        snap.dataset_id ||
+        (typeof snapId === 'string' ? snapId : undefined) ||
+        this.datasetId;
+    }
+    // Collection similar precedence; do not overwrite existing selection.
+    if (!this.collectionId) {
+      const snapCollection = (snap as Record<string, unknown>)['collectionId'];
       this.collectionId =
-        navState.collectionId ||
-        (snap as any).collectionId ||
+        collectionFromNav ||
+        (typeof snapCollection === 'string' ? snapCollection : undefined) ||
         this.collectionId;
     }
 
-    // Pre-populate selects if not already populated
-    if (this.plugin && this.plugins.length === 0) {
-      this.plugins = [{ label: this.plugin, value: this.plugin }];
+    const ensureList = (
+      list: SelectItem<string>[],
+      value: string | undefined,
+      setter: (items: SelectItem<string>[]) => void,
+    ) => {
+      if (!value) return;
+      if (list.length === 0)
+        setter([{ label: value, value }, this.loadingItem]);
+    };
+    ensureList(this.plugins, this.plugin, (i) => (this.plugins = i));
+    ensureList(this.pluginIds, this.pluginId, (i) => (this.pluginIds = i));
+    ensureList(this.repoNames, this.repoName, (i) => (this.repoNames = i));
+    ensureList(this.branchItems, this.option, (i) => (this.branchItems = i));
+    ensureList(this.doiItems, this.datasetId, (i) => (this.doiItems = i));
+    ensureList(
+      this.collectionItems,
+      this.collectionId,
+      (i) => (this.collectionItems = i),
+    );
+  }
+
+  private attemptFullRestore(context: string): void {
+    if (RESTORE_TRACE) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[RESTORE-TRACE] attemptFullRestore start', {
+          context,
+          historyState: window?.history?.state,
+        });
+      } catch {
+        // intentional: ignore tracing error
+      }
     }
-    if (this.pluginId && this.pluginIds.length === 0) {
-      this.pluginIds = [{ label: this.pluginId, value: this.pluginId }];
-    }
-    if (this.repoName && this.repoNames.length === 0) {
-      this.repoNames = [
-        { label: this.repoName, value: this.repoName },
-        this.loadingItem,
-      ];
-    }
-    if (this.option && this.branchItems.length === 0) {
-      this.branchItems = [
-        { label: this.option, value: this.option },
-        this.loadingItem,
-      ];
-    }
-    if (this.datasetId && this.doiItems.length === 0) {
-      this.doiItems = [
-        { label: this.datasetId, value: this.datasetId },
-        this.loadingItem,
-      ];
-    }
-    if (this.collectionItems.length === 0) {
-      if (navState.collectionItems && Array.isArray(navState.collectionItems)) {
-        this.collectionItems = [...navState.collectionItems, this.loadingItem];
-      } else if (this.collectionId) {
-        this.collectionItems = [
-          { label: this.collectionId, value: this.collectionId },
-          this.loadingItem,
-        ];
+    this.restoreFromSnapshot(window?.history?.state);
+    if (!this.datasetId) this.restoreFromStorage();
+    if (RESTORE_TRACE) {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[RESTORE-TRACE] attemptFullRestore end', {
+          datasetId: this.datasetId,
+          collectionId: this.collectionId,
+        });
+      } catch {
+        // intentional: ignore tracing error
       }
     }
   }
@@ -630,6 +705,19 @@ export class ConnectComponent
               newly_created: this.datasetId === new_dataset,
               dataverse_token: this.dataverseToken,
             };
+            // Persist snapshot BEFORE navigating so a later back() can restore even if navigation state is empty
+            this.snapshotStorage.saveConnect({
+              plugin: this.plugin,
+              pluginId: this.pluginId,
+              user: this.user,
+              token: this.token,
+              repo_name: this.getRepoName(),
+              url: this.url,
+              option: this.option,
+              dataverse_token: this.dataverseToken,
+              dataset_id: this.datasetId,
+              collectionId: this.collectionId,
+            });
             this.dataStateService.initializeState(creds);
 
             if (
@@ -661,55 +749,63 @@ export class ConnectComponent
       });
   }
 
-  private gatherValidationIssues(): string[] {
-    const issues: string[] = [];
-    const required: { value: string | undefined; name: string }[] = [
-      { value: this.pluginId, name: 'Repository type' },
-      { value: this.datasetId, name: 'Dataset DOI' },
+  /***********
+   * RESET   *
+   ***********/
+  resetForm() {
+    this.performReset();
+  }
+
+  private performReset() {
+    this.snapshotStorage.clearConnect();
+    // Clear all bindable fields
+    this.plugin = undefined;
+    this.pluginId = undefined;
+    this.user = undefined;
+    this.token = undefined;
+    this.repoName = undefined;
+    this.selectedRepoName = undefined;
+    this.foundRepoName = undefined;
+    this.option = undefined;
+    this.dataverseToken = undefined;
+    this.collectionId = undefined;
+    this.datasetId = undefined;
+    this.plugins = [];
+    this.pluginIds = [];
+    this.repoNames = [];
+    this.branchItems = [];
+    this.collectionItems = [];
+    this.doiItems = [];
+    this.rootOptions = [
+      { label: 'Expand and select', data: '', leaf: false, selectable: true },
     ];
-    if (this.getSourceUrlFieldName())
-      required.push({
-        value: this.sourceUrl,
-        name: this.getSourceUrlFieldName()!,
-      });
-    if (this.getTokenFieldName())
-      required.push({ value: this.token, name: this.getTokenFieldName()! });
-    if (this.getOptionFieldName())
-      required.push({ value: this.option, name: this.getOptionFieldName()! });
-    if (this.getUsernameFieldName())
-      required.push({ value: this.user, name: this.getUsernameFieldName()! });
-    if (this.getRepoNameFieldName())
-      required.push({
-        value: this.getRepoName(),
-        name: this.getRepoNameFieldName()!,
-      });
-    for (const r of required) {
-      if (r.value === undefined || r.value === '' || r.value === 'loading') {
-        issues.push(r.name);
-      }
-    }
-    const err = this.parseUrl();
-    if (err) issues.push(err);
-    return issues;
+    this.selectedOption = undefined;
+    this.expandedPanels = ['0', '1'];
+  }
+
+  private buildValidationContext() {
+    return {
+      pluginId: this.pluginId,
+      datasetId: this.datasetId,
+      sourceUrl: this.sourceUrl,
+      token: this.token,
+      option: this.option,
+      user: this.user,
+      repoName: this.getRepoName(),
+      getSourceUrlFieldName: () => this.getSourceUrlFieldName(),
+      getTokenFieldName: () => this.getTokenFieldName(),
+      getOptionFieldName: () => this.getOptionFieldName(),
+      getUsernameFieldName: () => this.getUsernameFieldName(),
+      getRepoNameFieldName: () => this.getRepoNameFieldName(),
+      parseUrl: () => this.parseUrl(),
+    };
   }
 
   parseAndCheckFields(): string | undefined {
-    const issues = this.gatherValidationIssues();
-    if (issues.length === 0) return undefined;
-    let res = 'One or more mandatory fields are missing:';
-    issues.forEach((i) => {
-      if (
-        i.startsWith('Malformed') ||
-        i.startsWith('Source URL') ||
-        i.includes('invalid') ||
-        i.includes('://')
-      ) {
-        res = `${res}\n\n${i}`;
-      } else {
-        res = `${res}\n- ${i}`;
-      }
-    });
-    return res;
+    const issues = this.connectValidation.gatherIssues(
+      this.buildValidationContext(),
+    );
+    return this.connectValidation.summarizeIssues(issues);
   }
 
   missingFieldsTitle(): string {
@@ -721,7 +817,7 @@ export class ConnectComponent
    * Used for reactive validation to determine button state
    */
   isFormValid(): boolean {
-    return this.gatherValidationIssues().length === 0;
+    return this.connectValidation.isValid(this.buildValidationContext());
   }
 
   /**
@@ -1360,7 +1456,7 @@ export class ConnectComponent
     return [createNewOption, ...items];
   }
 
-  onDatasetSelectionChange(event: any) {
+  onDatasetSelectionChange(event: { value: string }) {
     const selectedValue = event.value;
 
     if (selectedValue === 'CREATE_NEW_DATASET') {

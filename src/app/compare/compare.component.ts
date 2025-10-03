@@ -12,6 +12,8 @@ import { CredentialsService } from '../credentials.service';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { PluginService } from '../plugin.service';
 import { UtilsService } from '../utils.service';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { FolderStatusService } from '../shared/folder-status.service';
 
 // Models
 import { CompareResult, ResultStatus } from '../models/compare-result';
@@ -57,6 +59,8 @@ export class CompareComponent
   );
   private readonly pluginService = inject(PluginService);
   private readonly utils = inject(UtilsService);
+  private readonly snapshotStorage = inject(SnapshotStorageService);
+  private readonly folderStatusService = inject(FolderStatusService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -147,29 +151,25 @@ export class CompareComponent
   }
 
   private setUpdatedDataSubscription(): void {
-    const initialStateSubscription = this.dataStateService
-      .getObservableState()
-      .subscribe((data) => {
-        if (data !== null) {
-          this.subscriptions.delete(initialStateSubscription);
-          initialStateSubscription.unsubscribe();
-          this.setData(data);
-          if (data.data && data.id) {
-            this.maxFileSize = data.maxFileSize;
-            this.rejectedSize = data.rejectedSize;
-            this.rejectedName = data.rejectedName;
-            this.allowedFileNamePattern = data.allowedFileNamePattern;
-            this.allowedFolderPathPattern = data.allowedFolderPathPattern;
-            if (this.data.status !== ResultStatus.Updating) {
-              this.disabled = false;
-              this.loading = false;
-            } else {
-              this.getUpdatedData(0);
-            }
+    const sub = this.dataStateService.getObservableState().subscribe((data) => {
+      if (data !== null) {
+        this.setData(data);
+        if (data.data && data.id) {
+          this.maxFileSize = data.maxFileSize;
+          this.rejectedSize = data.rejectedSize;
+          this.rejectedName = data.rejectedName;
+          this.allowedFileNamePattern = data.allowedFileNamePattern;
+          this.allowedFolderPathPattern = data.allowedFolderPathPattern;
+          if (this.data.status !== ResultStatus.Updating) {
+            this.disabled = false;
+            this.loading = false;
+          } else {
+            this.getUpdatedData(0);
           }
         }
-      });
-    this.subscriptions.add(initialStateSubscription);
+      }
+    });
+    this.subscriptions.add(sub);
   }
 
   private getUpdatedData(cnt: number): void {
@@ -231,59 +231,27 @@ export class CompareComponent
   }
 
   noActionSelection(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) {
-        return;
-      }
-      datafile.action = Fileaction.Ignore;
-    });
+    this.applyToVisibleFiles(() => Fileaction.Ignore);
   }
 
   updateSelection(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) {
-        return;
-      }
-      switch (datafile.status) {
-        case Filestatus.New:
-          datafile.action = Fileaction.Copy;
-          break;
-        case Filestatus.Equal:
-          datafile.action = Fileaction.Ignore;
-          break;
-        case Filestatus.Updated:
-          datafile.action = Fileaction.Update;
-          break;
-        case Filestatus.Deleted:
-          datafile.action = Fileaction.Ignore;
-          break;
-      }
-    });
+    const mapping: Record<number, Fileaction> = {
+      [Filestatus.New]: Fileaction.Copy,
+      [Filestatus.Equal]: Fileaction.Ignore,
+      [Filestatus.Updated]: Fileaction.Update,
+      [Filestatus.Deleted]: Fileaction.Ignore,
+    };
+    this.applyStatusMapping(mapping);
   }
 
   mirrorSelection(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) {
-        return;
-      }
-      switch (datafile.status) {
-        case Filestatus.New:
-          datafile.action = Fileaction.Copy;
-          break;
-        case Filestatus.Equal:
-          datafile.action = Fileaction.Ignore;
-          break;
-        case Filestatus.Updated:
-          datafile.action = Fileaction.Update;
-          break;
-        case Filestatus.Deleted:
-          datafile.action = Fileaction.Delete;
-          break;
-      }
-    });
+    const mapping: Record<number, Fileaction> = {
+      [Filestatus.New]: Fileaction.Copy,
+      [Filestatus.Equal]: Fileaction.Ignore,
+      [Filestatus.Updated]: Fileaction.Update,
+      [Filestatus.Deleted]: Fileaction.Delete,
+    };
+    this.applyStatusMapping(mapping);
   }
 
   updateFilters(): void {
@@ -300,25 +268,20 @@ export class CompareComponent
   }
 
   private filterOn(filters: FilterItem[]): void {
-    const nodes: TreeNode<Datafile>[] = [];
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      datafile.hidden =
-        !datafile.attributes?.isFile ||
-        !filters.some((i) => datafile.status === i.fileStatus);
-      if (!datafile.hidden) {
-        nodes.push(rowNode);
-      }
+    const visible: TreeNode<Datafile>[] = [];
+    this.rowNodeMap.forEach((n) => {
+      const f = n.data!;
+      f.hidden =
+        !f.attributes?.isFile ||
+        !filters.some((i) => f.status === i.fileStatus);
+      if (!f.hidden) visible.push(n);
     });
-    this.rootNodeChildren = nodes;
+    this.rootNodeChildren = visible;
     this.isInFilterMode = true;
   }
 
   private filterOff(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      datafile.hidden = false;
-    });
+    this.rowNodeMap.forEach((n) => (n.data!.hidden = false));
     this.rootNodeChildren = this.rowNodeMap.get('')!.children!;
     this.isInFilterMode = false;
     this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
@@ -452,51 +415,38 @@ export class CompareComponent
     const rootNode = rowDataMap.get('');
     this.rowNodeMap = rowDataMap;
     if (rootNode?.children) {
-      this.updateFoldersStatus(rootNode);
+      // Delegate folder aggregation logic to service
+      this.folderStatusService.updateTreeRoot(rootNode);
       this.rootNodeChildren = rootNode.children;
     }
   }
 
-  private updateFoldersStatus(node: TreeNode<Datafile>): void {
-    if (node.data?.status !== undefined) {
-      return;
-    }
-    node.children?.forEach((v) => this.updateFoldersStatus(v));
-
-    let allDeleted = true;
-    let allNew = true;
-    let allEqual = true;
-    let anyUnknown = false;
-    node.children?.forEach((v) => {
-      allDeleted = allDeleted && v.data?.status === Filestatus.Deleted;
-      allNew = allNew && v.data?.status === Filestatus.New;
-      allEqual = allEqual && v.data?.status === Filestatus.Equal;
-      anyUnknown = anyUnknown || v.data?.status === Filestatus.Unknown;
+  // --- Helper utilities ---
+  private applyToVisibleFiles(resolve: (d: Datafile) => Fileaction): void {
+    this.rowNodeMap.forEach((rowNode) => {
+      const df = rowNode.data!;
+      if (df.hidden || !df.attributes?.isFile) return;
+      df.action = resolve(df);
     });
+  }
 
-    let status;
-    if (anyUnknown) status = Filestatus.Unknown;
-    else if (allEqual) status = Filestatus.Equal;
-    else if (allDeleted) status = Filestatus.Deleted;
-    else if (allNew) status = Filestatus.New;
-    else status = Filestatus.Updated;
-    node.data!.status = status;
+  private applyStatusMapping(mapping: Record<number, Fileaction>) {
+    this.applyToVisibleFiles((d) => mapping[d.status as number]);
   }
 
   back(): void {
-    // Navigate back with a snapshot of current credentials and related selection lists
-    const creds = { ...this.credentialsService.credentials } as any;
-    // Attempt to include collection context if present in credentials (future-proof)
-    this.router.navigate(['/connect'], {
-      state: {
-        connectSnapshot: creds,
-        // collectionItems restored from history if Connect passed them forward initially
-        collectionId: (this.credentialsService.credentials as any).collectionId,
-        // Explicit datasetId to ensure restoration even if snapshot parsing fails
-        datasetId: creds.dataset_id || this.data.id,
-        // Note: individual collection items are maintained in navigation state originating from Connect
-      },
+    // Persist any updated dataset/collection identifiers before navigating back.
+    const datasetId =
+      this.credentialsService.credentials.dataset_id || this.data?.id;
+    const credsExtra = this.credentialsService.credentials as unknown as {
+      collectionId?: string;
+    };
+    const collectionId = credsExtra.collectionId;
+    this.snapshotStorage.mergeConnect({
+      dataset_id: datasetId,
+      collectionId,
     });
+    this.router.navigate(['/connect']);
   }
 
   repo(): string {

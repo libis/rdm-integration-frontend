@@ -15,9 +15,16 @@ import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
 import { DatasetService } from '../dataset.service';
 import { NotificationService } from '../shared/notification.service';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { PollingService, PollingHandle } from '../shared/polling.service';
 
 // Models
-import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import {
+  Datafile,
+  Fileaction,
+  Filestatus,
+  Attributes,
+} from '../models/datafile';
 import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
 import { Metadata } from '../models/field';
@@ -62,11 +69,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
   private readonly notificationService = inject(NotificationService);
+  private readonly snapshotStorage = inject(SnapshotStorageService);
+  private readonly pollingService = inject(PollingService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
-  // Keep a handle only for polling, so we can cancel/replace safely
-  private dataStatusSub?: Subscription;
+  // Replaces previous recursive subscription approach for status polling
+  private pollingHandle?: PollingHandle;
 
   // Icon constants
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
@@ -74,7 +83,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly icon_update = 'pi pi-clone';
   readonly icon_delete = 'pi pi-trash';
 
-  data: Datafile[] = []; // this is a local state of the submit component; nice-to-have as it allows to see the progress of the submitted job
+  data: Datafile[] = []; // local state for progress display
   pid = '';
   datasetUrl = '';
 
@@ -90,13 +99,10 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   popup = false;
   hasAccessToCompute = false;
   private incomingMetadata?: Metadata;
-  // Indicates whether the transfer (submit) process has started (after user confirms popup)
-  transferStarted = false;
-  // Progress tracking (count-based only)
-  totalPlanned = 0; // created + updated + deleted (actions chosen)
-  completedCount = 0; // number of files whose final status reached equal/deleted-done state
+  transferStarted = false; // after successful submit ack
+  totalPlanned = 0; // created + updated + deleted
+  completedCount = 0; // processed files
 
-  // Globus specific flags/messages
   isGlobus(): boolean {
     return this.credentialsService.credentials.plugin === 'globus';
   }
@@ -114,18 +120,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   private recomputeProgress(): void {
     this.totalPlanned =
       this.created.length + this.updated.length + this.deleted.length;
-    // Completed definition:
-    //  - For create/update: status becomes Equal
-    //  - For delete: status becomes New (backend marks removed local file as New in dataset?) or no longer present in pending lists
-    let doneCreates = this.created.filter(
+    const doneCreates = this.created.filter(
       (d) => d.status === Filestatus.Equal,
     ).length;
-    let doneUpdates = this.updated.filter(
+    const doneUpdates = this.updated.filter(
       (d) => d.status === Filestatus.Equal,
     ).length;
-    // For deletions, backend marks status Equal once deletion applied OR may keep Delete until final comparison completes;
-    // fallback: treat not-equal as in-progress; if dataset refresh marks them Deleted->Equal eventually.
-    let doneDeletes = this.deleted.filter(
+    const doneDeletes = this.deleted.filter(
       (d) => d.status === Filestatus.New || d.status === Filestatus.Equal,
     ).length;
     this.completedCount = doneCreates + doneUpdates + doneDeletes;
@@ -138,16 +139,13 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   ngOnInit(): void {
     this.loadData();
-    // Capture metadata from navigation state if coming from metadata-selector
+    // Capture metadata from navigation state (metadata-selector -> submit)
     let state: { metadata?: Metadata } | undefined;
-    // Use Router.getCurrentNavigation when available (only during navigation). In tests/mocks this may be undefined.
-    const hasGetCurrentNavigation =
-      typeof (this.router as any).getCurrentNavigation === 'function';
-    const nav = hasGetCurrentNavigation
-      ? ((this.router as any).getCurrentNavigation() as {
-          extras?: { state?: unknown };
-        } | null)
-      : null;
+    const maybeGetNav: unknown = (
+      this.router as unknown as { getCurrentNavigation?: () => unknown }
+    ).getCurrentNavigation?.();
+    const nav =
+      (maybeGetNav as { extras?: { state?: unknown } } | null) || null;
     if (nav?.extras?.state) {
       state = nav.extras.state as { metadata?: Metadata };
     } else if (
@@ -155,7 +153,6 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       typeof window.history !== 'undefined' &&
       'state' in window.history
     ) {
-      // Fallback for cases where component is reloaded or Router mock lacks the API
       const histState = window.history.state as unknown;
       if (histState && typeof histState === 'object') {
         state = histState as { metadata?: Metadata };
@@ -171,49 +168,41 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
         '',
       )
       .subscribe({
-        next: (access) => {
-          this.hasAccessToCompute = access.access;
-        },
-        error: () => {
-          // ignore access check failures silently as before
-        },
+        next: (access) => (this.hasAccessToCompute = access.access),
+        error: () => {}, // silent
       });
     this.subscriptions.add(accessCheckSub);
   }
 
   ngOnDestroy(): void {
-    // Clean up all subscriptions
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
+    this.pollingHandle?.cancel();
   }
 
   getDataSubscription(): void {
-    // Ensure previous polling subscription is stopped before starting a new one
-    this.dataStatusSub?.unsubscribe();
-    this.dataStatusSub = this.dataUpdatesService
-      .updateData(this.data, this.pid)
-      .subscribe({
-        next: async (res: CompareResult) => {
-          this.dataStatusSub?.unsubscribe();
-          if (res.data !== undefined) {
-            this.setData(res.data);
-          }
-          if (!this.hasUnfinishedDataFiles()) {
-            this.done = true;
-          } else {
-            await this.utils.sleep(1000);
-            this.getDataSubscription();
-          }
-        },
-        error: (err) => {
-          this.dataStatusSub?.unsubscribe();
-          this.notificationService.showError(
-            `Getting status of data failed: ${err.error}`,
-          );
-          this.router.navigate(['/connect']);
-        },
-      });
-    this.subscriptions.add(this.dataStatusSub);
+    this.pollingHandle?.cancel();
+    this.pollingHandle = this.pollingService.poll<CompareResult>({
+      iterate: () => this.dataUpdatesService.updateData(this.data, this.pid),
+      onResult: (res: CompareResult) => {
+        if (res.data !== undefined) {
+          this.setData(res.data);
+        }
+        if (!this.hasUnfinishedDataFiles()) {
+          this.done = true;
+        }
+      },
+      shouldContinue: () => this.hasUnfinishedDataFiles(),
+      delayMs: 1000,
+      onError: (err: unknown) => {
+        const message = (err as { error?: string })?.error || 'unknown error';
+        this.notificationService.showError(
+          `Getting status of data failed: ${message}`,
+        );
+        this.router.navigate(['/connect']);
+        return false;
+      },
+    });
   }
 
   hasUnfinishedDataFiles(): boolean {
@@ -228,56 +217,42 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     const value = this.dataStateService.getCurrentValue();
     this.pid = value && value.id ? value.id : '';
     const data = value?.data;
-    if (data) {
-      this.setData(data);
-    }
+    if (data) this.setData(data);
   }
 
   async setData(data: Datafile[]) {
     this.data = data;
-    this.created = this.toCreate();
-    this.updated = this.toUpdate();
-    this.deleted = this.toDelete();
-    this.data = [...this.created, ...this.updated, ...this.deleted];
+    const created: Datafile[] = [];
+    const updated: Datafile[] = [];
+    const deleted: Datafile[] = [];
+    for (const f of data) {
+      switch (f.action) {
+        case Fileaction.Copy:
+          created.push(f);
+          break;
+        case Fileaction.Update:
+          updated.push(f);
+          break;
+        case Fileaction.Delete:
+          if (
+            !f.attributes?.remoteHashType ||
+            f.attributes?.remoteHashType === ''
+          ) {
+            f.attributes = {
+              ...(f.attributes || {}),
+              remoteHashType: 'unknown',
+              remoteHash: 'unknown',
+            } as Attributes;
+          }
+          deleted.push(f);
+          break;
+      }
+    }
+    this.created = created;
+    this.updated = updated;
+    this.deleted = deleted;
+    this.data = [...created, ...updated, ...deleted];
     this.recomputeProgress();
-  }
-
-  toCreate(): Datafile[] {
-    const result: Datafile[] = [];
-    this.data.forEach((datafile) => {
-      if (datafile.action === Fileaction.Copy) {
-        result.push(datafile);
-      }
-    });
-    return result;
-  }
-
-  toUpdate(): Datafile[] {
-    const result: Datafile[] = [];
-    this.data.forEach((datafile) => {
-      if (datafile.action === Fileaction.Update) {
-        result.push(datafile);
-      }
-    });
-    return result;
-  }
-
-  toDelete(): Datafile[] {
-    const result: Datafile[] = [];
-    this.data.forEach((datafile) => {
-      if (datafile.action === Fileaction.Delete) {
-        if (
-          datafile.attributes?.remoteHashType === undefined ||
-          datafile.attributes?.remoteHashType === ''
-        ) {
-          // file from unknown origin, by setting the hash type to not empty value we can detect in comparison that the file got deleted
-          datafile.attributes!.remoteHashType = 'unknown';
-          datafile.attributes!.remoteHash = 'unknown';
-        }
-        result.push(datafile);
-      }
-    });
-    return result;
   }
 
   submit() {
@@ -295,9 +270,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.data.forEach((datafile) => {
       const action =
         datafile.action === undefined ? Fileaction.Ignore : datafile.action;
-      if (action != Fileaction.Ignore) {
-        selected.push(datafile);
-      }
+      if (action != Fileaction.Ignore) selected.push(datafile);
     });
     if (selected.length === 0) {
       this.router.navigate(['/connect']);
@@ -309,7 +282,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       const ok = await this.newDataset(ids[0]);
       if (!ok) {
         this.disabled = false;
-        this.transferStarted = false; // dataset creation failed; revert title
+        this.transferStarted = false;
         return;
       }
     }
@@ -319,17 +292,15 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       .subscribe({
         next: (data: StoreResult) => {
           if (data.status !== 'OK') {
-            // this should not happen
             this.notificationService.showError(
               `Store failed, status: ${data.status}`,
             );
             this.router.navigate(['/connect']);
           } else {
-            this.transferStarted = true; // flip title only after successful submission acknowledgement
+            this.transferStarted = true;
             this.getDataSubscription();
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
-            // Recompute initial progress baseline
             this.recomputeProgress();
           }
         },
@@ -342,9 +313,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   back(): void {
-    // Explicitly navigate back to compare preserving existing DataStateService state
     const value = this.dataStateService.getCurrentValue();
     const datasetId = value?.id || this.pid;
+    if (datasetId) this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
     this.router.navigate(['/compare', datasetId], {
       state: { preserveCompare: true },
     });
@@ -367,7 +338,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.datasetService.newDataset(
         collectionId,
         this.credentialsService.credentials.dataverse_token,
-        this.incomingMetadata, // use metadata selected in metadata-selector when present
+        this.incomingMetadata,
       ),
     );
     if (data.persistentId !== undefined && data.persistentId !== '') {

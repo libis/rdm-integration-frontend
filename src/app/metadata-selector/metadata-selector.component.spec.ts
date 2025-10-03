@@ -27,7 +27,7 @@ describe('MetadataSelectorComponent', () => {
   let component: MetadataSelectorComponent;
   let fixture: ComponentFixture<MetadataSelectorComponent>;
   let routerNavigateSpy: jasmine.Spy;
-  let locationBackSpy: jasmine.Spy;
+  // Removed unused locationBackSpy variable to satisfy lint
 
   // Build a realistic metadata response with primitive, array, and compound fields
   const makeMetadata = (): Metadata => {
@@ -116,7 +116,7 @@ describe('MetadataSelectorComponent', () => {
     fixture = TestBed.createComponent(MetadataSelectorComponent);
     component = fixture.componentInstance;
     routerNavigateSpy = TestBed.inject(Router).navigate as jasmine.Spy;
-    locationBackSpy = TestBed.inject(Location).back as jasmine.Spy;
+    // Accessing Location back spy not needed for current expectations
     fixture.detectChanges();
   });
 

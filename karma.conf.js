@@ -2,39 +2,48 @@
 // https://karma-runner.github.io/1.0/config/configuration-file.html
 
 module.exports = function (config) {
+  const isCi =
+    process.env.CI === 'true' || process.env.KARMA_SINGLE_RUN === 'true';
+  const headless = isCi || process.env.CHROME_HEADLESS === 'true';
+  const browsers = headless ? ['ChromeHeadless'] : ['Chrome'];
+  // Include 'coverage' reporter so karma-coverage emits files (html/json-summary)
+  const reporters = headless
+    ? ['progress', 'coverage']
+    : ['progress', 'kjhtml', 'coverage'];
+
   config.set({
-    basePath: "",
-    frameworks: ["jasmine"],
+    basePath: '',
+    frameworks: ['jasmine'],
     plugins: [
-      require("karma-jasmine"),
-      require("karma-chrome-launcher"),
-      require("karma-jasmine-html-reporter"),
-      require("karma-coverage"),
+      require('karma-jasmine'),
+      require('karma-chrome-launcher'),
+      require('karma-jasmine-html-reporter'),
+      require('karma-coverage'),
     ],
     client: {
-      jasmine: {
-        // you can add configuration options for Jasmine here
-        // the possible options are listed at https://jasmine.github.io/api/edge/Configuration.html
-        // for example, you can disable the random execution with `random: false`
-        // or set a specific seed with `seed: 4321`
-      },
-      clearContext: false, // leave Jasmine Spec Runner output visible in browser
+      jasmine: {},
+      clearContext: !headless, // keep reporter UI only when not headless
     },
     jasmineHtmlReporter: {
-      suppressAll: true, // removes the duplicated traces
+      suppressAll: true,
     },
     coverageReporter: {
-      dir: require("path").join(__dirname, "./coverage/datasync"),
-      subdir: ".",
-      reporters: [{ type: "html" }, { type: "text-summary" }],
+      dir: require('path').join(__dirname, './coverage/datasync'),
+      subdir: '.',
+      // Add json-summary so Makefile coverage-check can read coverage-summary.json
+      reporters: [
+        { type: 'html' },
+        { type: 'text-summary' },
+        { type: 'json-summary' },
+      ],
     },
-    reporters: ["progress", "kjhtml"],
+    reporters,
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    autoWatch: true,
-    browsers: ["Chrome"],
-    singleRun: false,
-    restartOnFileChange: true,
+    autoWatch: !isCi,
+    browsers,
+    singleRun: isCi,
+    restartOnFileChange: !isCi,
   });
 };

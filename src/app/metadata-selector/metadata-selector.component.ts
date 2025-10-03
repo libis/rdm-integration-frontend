@@ -30,6 +30,7 @@ import { MetadatafieldComponent } from '../metadatafield/metadatafield.component
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 @Component({
   selector: 'app-metadata-selector',
@@ -48,6 +49,7 @@ export class MetadataSelectorComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
+  private readonly snapshotStorage = inject(SnapshotStorageService);
 
   // Icon constants
   readonly icon_copy = APP_CONSTANTS.ICONS.UPDATE;
@@ -100,6 +102,9 @@ export class MetadataSelectorComponent implements OnInit {
   back(): void {
     const value = this.dataStateService.getCurrentValue();
     const datasetId = value?.id;
+    if (datasetId) {
+      this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
+    }
     this.router.navigate(['/compare', datasetId], {
       state: { preserveCompare: true },
     });
@@ -166,59 +171,44 @@ export class MetadataSelectorComponent implements OnInit {
     parent: string,
     rowDataMap: Map<string, TreeNode<Field>>,
   ) {
-    if (
-      d.value &&
-      Array.isArray(d.value) &&
-      d.value.length > 0 &&
-      typeof d.value[0] === 'string'
-    ) {
-      let content = d.value[0];
-      for (let i = 1; i < d.value.length; i++) {
-        content = `${content}, ${d.value[i]}`;
+    // Helper to register a node
+    const register = (
+      fieldRef: MetadataField | FieldDictonary,
+      leafValue?: unknown,
+      assignOriginal = false,
+    ) => {
+      const nodeId = `${this.id++}`;
+      if (assignOriginal) {
+        // only assign the id on the original MetadataField (primitive / string[] / single value case)
+        (d as MetadataField).id = nodeId;
       }
-      const id = `${this.id++}`;
-      d.id = id;
       const data: Field = {
-        id: id,
-        parent: parent,
+        id: nodeId,
+        parent,
         name: d.typeName,
         action: Fieldaction.Copy,
-        leafValue: content,
-        field: d,
+        leafValue: typeof leafValue === 'string' ? leafValue : undefined,
+        field: fieldRef,
       };
-      rowDataMap.set(id, {
-        data: data,
-      });
-    } else if (d.value && typeof d.value !== 'string') {
-      (d.value as FieldDictonary[]).forEach((v) => {
-        const id = `${this.id++}`;
-        const data: Field = {
-          id: id,
-          parent: parent,
-          name: d.typeName,
-          action: Fieldaction.Copy,
-          field: v,
-        };
-        rowDataMap.set(id, {
-          data: data,
+      rowDataMap.set(nodeId, { data });
+      return nodeId;
+    };
+
+    if (d.value && Array.isArray(d.value) && d.value.length > 0) {
+      if (typeof d.value[0] === 'string') {
+        // Flat string array
+        register(d, (d.value as string[]).join(', '), true);
+      } else {
+        // Array of dictionaries -> each becomes a node and is recursed
+        (d.value as FieldDictonary[]).forEach((v) => {
+          const nid = register(v);
+          this.mapChildField(nid, v, rowDataMap);
         });
-        this.mapChildField(id, v, rowDataMap);
-      });
-    } else {
-      const id = `${this.id++}`;
-      d.id = id;
-      const data: Field = {
-        id: id,
-        parent: parent,
-        name: d.typeName,
-        action: Fieldaction.Copy,
-        leafValue: d.value,
-        field: d,
-      };
-      rowDataMap.set(id, {
-        data: data,
-      });
+      }
+      return;
     }
+    // Primitive or single value
+    register(d, d.value, true);
   }
 
   mapChildField(
