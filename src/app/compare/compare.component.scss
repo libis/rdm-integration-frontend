@@ -1,0 +1,29 @@
+// Compact middle icon/action columns should take minimal width.
+:host ::ng-deep .p-treetable table {
+	table-layout: fixed; // ensure width constraints respected
+}
+
+:host ::ng-deep th.compact-col,
+:host ::ng-deep td.compact-col {
+	width: 1%;
+	white-space: nowrap;
+	padding-left: 0.25rem;
+	padding-right: 0.25rem;
+}
+
+// Ensure buttons inside compact columns don't stretch column
+:host ::ng-deep th.compact-col button,
+:host ::ng-deep td.compact-col button {
+	min-width: unset;
+}
+
+// Data rows: add compact-col to second and third td via attribute selector (icon column has centered icon, action column has a button)
+:host ::ng-deep .p-treetable-tbody > tr > td:nth-child(2),
+:host ::ng-deep .p-treetable-tbody > tr > td:nth-child(3) {
+	width: 1%;
+	white-space: nowrap;
+	text-align: center;
+	padding-left: 0.25rem;
+	padding-right: 0.25rem;
+}
+
