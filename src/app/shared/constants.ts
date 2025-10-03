@@ -21,7 +21,8 @@ export const APP_CONSTANTS = {
     SUBMIT: 'pi pi-save',
     COMPARE: 'pi pi-flag',
     ACTION: 'pi pi-bolt',
-    WARNING: 'pi pi-stop',
+  // Use a clear warning triangle to avoid looking like an actionable checkbox/stop square
+  WARNING: 'pi pi-exclamation-triangle',
     FILTER: 'pi pi-filter',
     PLAY: 'pi pi-play',
     NEW_FILE: 'pi pi-plus-circle',
