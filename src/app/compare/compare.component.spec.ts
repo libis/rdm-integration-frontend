@@ -83,5 +83,26 @@ describe('CompareComponent', () => {
       addFileSelection();
       expect(component.canProceed()).toBeTrue();
     });
+
+    it('proceedTitle reflects metadata-only vs blocked states', () => {
+      // Blocked: new dataset, no metadata, no files
+      setCreds({ newly_created: true, metadata_available: false });
+      component['data'] = { id: '' } as any;
+      expect(component.proceedTitle()).toContain('Select at least one file');
+
+      // Metadata-only allowed: new dataset, metadata available, no files
+      setCreds({ newly_created: true, metadata_available: true });
+      component['data'] = { id: '' } as any;
+      // Ensure no selection yet
+      (component as any).rowNodeMap = new Map();
+      expect(component.canProceed()).toBeTrue();
+      expect(component.proceedTitle()).toContain('metadata-only');
+
+      // Existing dataset: need selection
+      setCreds({ newly_created: false });
+      component['data'] = { id: 'doi:10/EXISTING' } as any;
+      expect(component.canProceed()).toBeFalse();
+      expect(component.proceedTitle()).toBe('Action not available yet');
+    });
   });
 });
