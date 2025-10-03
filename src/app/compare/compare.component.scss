@@ -23,3 +23,21 @@ th .pi:hover {
   top: -0.1rem;
   margin-right: 0.6rem;
 }
+
+/* Centered action buttons with wrapping and spacing */
+.compare-action-buttons button {
+  margin: 0.25rem 0.4rem; /* space between buttons */
+}
+
+@media (max-width: 576px) { /* small screens: a bit more vertical space */
+  .compare-action-buttons button {
+    flex: 1 1 45%; /* allow two per row */
+    min-width: 7.5rem;
+  }
+}
+
+@media (min-width: 577px) {
+  .compare-action-buttons button {
+    flex: 0 0 auto;
+  }
+}
