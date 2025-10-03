@@ -44,4 +44,68 @@ describe('PollingService', () => {
       done();
     }, 25);
   });
+
+  it('continues after error when onError returns true', (done) => {
+    let iter = 0;
+    let errors = 0;
+    const values: number[] = [];
+    const handle = service.poll<number>({
+      iterate: () => {
+        iter++;
+        if (iter % 2 === 0) {
+          return throwError(() => new Error('flaky'));
+        }
+        return of(iter);
+      },
+      onResult: (v) => values.push(v),
+      shouldContinue: (_v, i) => i < 3, // allow a few successful iterations
+      delayMs: 1,
+      onError: () => {
+        errors++;
+        return true; // keep polling
+      },
+    });
+    setTimeout(() => {
+      expect(values.length).toBeGreaterThan(0);
+      expect(errors).toBeGreaterThan(0);
+      handle.cancel();
+      done();
+    }, 40);
+  });
+
+  it('cancel prevents further scheduling and preserves current iteration count', (done) => {
+    let iter = 0;
+    const handle = service.poll<number>({
+      iterate: () => of(++iter),
+      onResult: () => {},
+      shouldContinue: () => true,
+      delayMs: 5,
+    });
+    setTimeout(() => {
+      handle.cancel();
+      const stoppedAt = handle.iteration;
+      setTimeout(() => {
+        // iteration should not increase after cancel
+        expect(handle.iteration).toBe(stoppedAt);
+        done();
+      }, 20);
+    }, 15);
+  });
+
+  it('swallows errors thrown inside onResult handler', (done) => {
+    let i = 0;
+    const handle = service.poll<number>({
+      iterate: () => of(++i),
+      onResult: () => {
+        if (i === 1) throw new Error('handler boom');
+      },
+      shouldContinue: (_v, iteration) => iteration < 2,
+      delayMs: 1,
+    });
+    setTimeout(() => {
+      expect(handle.iteration).toBeGreaterThanOrEqual(2);
+      handle.cancel();
+      done();
+    }, 25);
+  });
 });

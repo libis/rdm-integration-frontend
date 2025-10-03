@@ -104,5 +104,20 @@ describe('CompareComponent', () => {
       expect(component.canProceed()).toBeFalse();
       expect(component.proceedTitle()).toBe('Action not available yet');
     });
+
+    it('isNewDataset() falls back to dataset id heuristic when flag missing', () => {
+      // No newly_created flag, id includes New Dataset (case-insensitive)
+      (component as any).credentialsService = { credentials: {} };
+      component['data'] = { id: 'root:COLL:New Dataset' } as any;
+      expect(component['isNewDataset']()).toBeTrue();
+
+      // Plain empty id treated as new
+      component['data'] = { id: '' } as any;
+      expect(component['isNewDataset']()).toBeTrue();
+
+      // Non-new id without flag
+      component['data'] = { id: 'doi:10.123/EXISTING' } as any;
+      expect(component['isNewDataset']()).toBeFalse();
+    });
   });
 });
