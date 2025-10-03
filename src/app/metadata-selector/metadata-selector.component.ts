@@ -129,12 +129,12 @@ export class MetadataSelectorComponent implements OnInit {
     // Return semantic CSS classes instead of inline styles so themes (dark/light) can adapt.
     switch (field.action) {
       case Fieldaction.Copy:
-        return 'copy-row';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.COPY;
       case Fieldaction.Custom:
-        return 'custom-row';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.CUSTOM;
       case Fieldaction.Ignore:
       default:
-        return '';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.IGNORE;
     }
   }
 

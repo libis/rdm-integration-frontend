@@ -191,7 +191,7 @@ export class DatafileComponent implements OnInit {
       case Fileaction.Update:
         return 'fw-bold';
       case Fileaction.Ignore:
-        return 'text-muted';
+        return '';
     }
     return '';
   }
