@@ -13,6 +13,8 @@ import { ConnectValidationService } from '../shared/connect-validation.service';
 import { SelectItem } from 'primeng/api';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { DataStateService } from '../data.state.service';
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 
 class DataStateServiceStub {
   lastCreds: any;
@@ -282,4 +284,84 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(ds.lastCreds).toBeDefined();
     expect(ds.lastCreds.newly_created).toBeTrue();
   });
+
+  it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', fakeAsync(() => {
+    // Pre-populate snapshot with fields that should be cleared
+    sessionStorage.setItem(
+      'rdm-connect-snapshot',
+      JSON.stringify({
+        plugin: 'github',
+        pluginId: 'github',
+        user: 'alice',
+        token: 'secret',
+        repo_name: 'owner/repo',
+        dataset_id: 'doi:10.OLD/SHOULD_NOT_RESTORE',
+      }),
+    );
+
+    // Provide query params simulating deep link
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [RouterTestingModule, ConnectComponent],
+      providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        provideNoopAnimations(),
+        { provide: PluginService, useClass: PluginServiceStub },
+        { provide: NotificationService, useClass: NotificationServiceStub },
+        { provide: ConnectValidationService, useClass: ConnectValidationServiceStub },
+        { provide: DataStateService, useClass: DataStateServiceStub },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParams: of({ datasetPid: 'doi:10.999/DEEP', apiToken: 'tok123' }) },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    fixture.detectChanges();
+    tick(); // flush async setConfig promise
+    const comp: any = fixture.componentInstance;
+
+    // Explicit deep-link values applied
+    expect(comp.datasetId).toBe('doi:10.999/DEEP');
+    expect(comp.dataverseToken).toBe('tok123');
+    // All previously persisted fields cleared
+    expect(comp.plugin).toBeUndefined();
+    expect(comp.pluginId).toBeUndefined();
+    expect(comp.user).toBeUndefined();
+    expect(comp.token).toBeUndefined();
+    expect(comp.repoName).toBeUndefined();
+    // Session storage cleared
+    expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
+  }));
+
+  it('explicit reset query param clears snapshot and all fields including datasetId', fakeAsync(() => {
+    sessionStorage.setItem(
+      'rdm-connect-snapshot',
+      JSON.stringify({ plugin: 'gitlab', pluginId: 'gitlab', dataset_id: 'doi:10.X/OLD' }),
+    );
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [RouterTestingModule, ConnectComponent],
+      providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        provideNoopAnimations(),
+        { provide: PluginService, useClass: PluginServiceStub },
+        { provide: NotificationService, useClass: NotificationServiceStub },
+        { provide: ConnectValidationService, useClass: ConnectValidationServiceStub },
+        { provide: DataStateService, useClass: DataStateServiceStub },
+        { provide: ActivatedRoute, useValue: { queryParams: of({ reset: '1' }) } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    fixture.detectChanges();
+    tick();
+    const comp: any = fixture.componentInstance;
+    expect(comp.datasetId).toBeUndefined();
+    expect(comp.plugin).toBeUndefined();
+    expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
+  }));
 });

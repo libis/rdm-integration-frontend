@@ -267,7 +267,8 @@ export class ConnectComponent
         datasetPid,
         (items) => (this.doiItems = items),
       );
-      this.datasetId = this.datasetId || datasetPid;
+      // Explicit deep link should override any previously restored dataset id
+      this.datasetId = datasetPid;
     }
     const apiToken = params['apiToken'];
     if (apiToken) {
