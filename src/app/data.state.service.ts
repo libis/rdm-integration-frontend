@@ -28,13 +28,9 @@ export class DataStateService {
   initializeState(creds: Credentials): void {
     this.resetState();
     this.credentialsService.credentials = creds;
-    const subscription = this.dataService.getData().subscribe({
-      next: (key) => {
-        subscription.unsubscribe();
-        this.getCompareData(key);
-      },
+    this.dataService.getData().subscribe({
+      next: (key) => this.getCompareData(key),
       error: (err) => {
-        subscription.unsubscribe();
         this.notificationService.showError(`Getting data failed: ${err.error}`);
         this.router.navigate(['/connect']);
       },
@@ -42,9 +38,8 @@ export class DataStateService {
   }
 
   private getCompareData(key: Key): void {
-    const subscription = this.dataService.getCachedData(key).subscribe({
+    this.dataService.getCachedData(key).subscribe({
       next: async (res: CachedResponse) => {
-        subscription.unsubscribe();
         if (res.ready === true) {
           if (res.res) {
             res.res.data = res.res.data?.sort((o1, o2) =>
@@ -66,7 +61,6 @@ export class DataStateService {
         }
       },
       error: (err) => {
-        subscription.unsubscribe();
         this.notificationService.showError(`Comparing failed: ${err.error}`);
         this.router.navigate(['/connect']);
       },
