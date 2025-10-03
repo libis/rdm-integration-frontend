@@ -43,7 +43,7 @@ export const APP_CONSTANTS = {
   FILE_ACTION_STYLES: {
     // NOTE: Provide both light and dark mode friendly colors using CSS variables with fallbacks.
     // These inline styles deliberately keep only color hints; additional contrast handled in SCSS.
-    IGNORE: '',
+    IGNORE: 'color: foreground;',
     COPY: 'background-color: #c3e6cb; color: black',
     UPDATE: 'background-color: #b8daff; color: black',
     DELETE: 'background-color: #f5c6cb; color: black',
