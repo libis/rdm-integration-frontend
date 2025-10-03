@@ -1,5 +1,13 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError, Observable } from 'rxjs';
@@ -15,13 +23,19 @@ import { ActivatedRoute } from '@angular/router';
 class MockNotificationService {
   errors: string[] = [];
   successes: string[] = [];
-  showError(msg: string) { this.errors.push(msg); }
-  showSuccess(msg: string) { this.successes.push(msg); }
+  showError(msg: string) {
+    this.errors.push(msg);
+  }
+  showSuccess(msg: string) {
+    this.successes.push(msg);
+  }
 }
 
 class MockRepoLookupService {
   options: SelectItem<string>[] = [];
-  search() { return of([]); }
+  search() {
+    return of([]);
+  }
   getOptions() {
     return new Observable<SelectItem<string>[]>((obs) => {
       queueMicrotask(() => {
@@ -49,11 +63,25 @@ class MockSubmitService {
 }
 
 class MockPluginService {
-  setConfig() { return Promise.resolve(); }
-  isStoreDvToken() { return false; }
-  showDVToken() { return false; }
-  datasetFieldEditable() { return true; }
-  getGlobusPlugin() { return { repoNameFieldName: 'Repo Name', sourceUrlFieldValue: 'https://example.com', repoNameFieldHasInit: true } as any; }
+  setConfig() {
+    return Promise.resolve();
+  }
+  isStoreDvToken() {
+    return false;
+  }
+  showDVToken() {
+    return false;
+  }
+  datasetFieldEditable() {
+    return true;
+  }
+  getGlobusPlugin() {
+    return {
+      repoNameFieldName: 'Repo Name',
+      sourceUrlFieldValue: 'https://example.com',
+      repoNameFieldHasInit: true,
+    } as any;
+  }
 }
 
 describe('DownloadComponent', () => {
@@ -82,7 +110,9 @@ describe('DownloadComponent', () => {
         { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
     })
-      .overrideComponent(DownloadComponent, { set: { template: '<div></div>' } })
+      .overrideComponent(DownloadComponent, {
+        set: { template: '<div></div>' },
+      })
       .compileComponents();
 
     fixture = TestBed.createComponent(DownloadComponent);
@@ -97,7 +127,13 @@ describe('DownloadComponent', () => {
   });
 
   it('rowClass reflects action styling', () => {
-    const file: Datafile = { id: '1', name: 'a', path: '', hidden: false, action: Fileaction.Download };
+    const file: Datafile = {
+      id: '1',
+      name: 'a',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    };
     expect(component.rowClass(file)).toContain('background-color');
     file.action = Fileaction.Custom;
     expect(component.rowClass(file)).toContain('FFFAA0');
@@ -106,7 +142,9 @@ describe('DownloadComponent', () => {
   });
 
   it('downloadDisabled true when no selected download actions', () => {
-    component.rowNodeMap.set('', { data: { id: '', name: '', path: '', hidden: false } });
+    component.rowNodeMap.set('', {
+      data: { id: '', name: '', path: '', hidden: false },
+    });
     expect(component.downloadDisabled()).toBeTrue();
   });
 
@@ -120,17 +158,29 @@ describe('DownloadComponent', () => {
   });
 
   it('toggleAction propagates through root when present', () => {
-    const root: TreeNode<Datafile> = { data: { id: '', name: '', path: '', hidden: false, action: Fileaction.Ignore }, children: [] };
+    const root: TreeNode<Datafile> = {
+      data: {
+        id: '',
+        name: '',
+        path: '',
+        hidden: false,
+        action: Fileaction.Ignore,
+      },
+      children: [],
+    };
     component.rowNodeMap.set('', root);
     component.toggleAction(); // should not throw
     expect(root.data?.action).toBeDefined();
   });
 
   it('getRepoLookupRequest enforces repo name presence when not search', () => {
-    component.globusPlugin = { repoNameFieldName: 'Repo Name', sourceUrlFieldValue: 'https://x' } as any;
+    component.globusPlugin = {
+      repoNameFieldName: 'Repo Name',
+      sourceUrlFieldValue: 'https://x',
+    } as any;
     const req = component.getRepoLookupRequest(false);
     expect(req).toBeUndefined();
-    expect(notification.errors.some(e => e.includes('Repo Name'))).toBeTrue();
+    expect(notification.errors.some((e) => e.includes('Repo Name'))).toBeTrue();
   });
 
   it('getRepoLookupRequest short-circuits when branchItems already loaded', () => {
@@ -148,8 +198,15 @@ describe('DownloadComponent', () => {
 
   it('getOptions populates node children for nested request', fakeAsync(() => {
     component.selectedRepoName = 'repoA';
-    repoLookup.options = [ { label: 'opt1', value: 'o1' }, { label: 'opt2', value: 'o2' } ];
-    const parent: TreeNode<string> = { label: 'p', data: 'p', selectable: true };
+    repoLookup.options = [
+      { label: 'opt1', value: 'o1' },
+      { label: 'opt2', value: 'o2' },
+    ];
+    const parent: TreeNode<string> = {
+      label: 'p',
+      data: 'p',
+      selectable: true,
+    };
     component.getOptions(parent);
     tick();
     expect(parent.children?.length).toBe(2);
@@ -159,17 +216,29 @@ describe('DownloadComponent', () => {
   it('getOptions handles error path', fakeAsync(() => {
     component.selectedRepoName = 'repoA';
     // force error
-    spyOn(repoLookup, 'getOptions').and.returnValue(new Observable((obs)=>{ queueMicrotask(()=> obs.error({ error: 'BOOM' })); }));
+    spyOn(repoLookup, 'getOptions').and.returnValue(
+      new Observable((obs) => {
+        queueMicrotask(() => obs.error({ error: 'BOOM' }));
+      }),
+    );
     component.getOptions();
     tick();
-    expect(notification.errors.some(e => e.includes('Branch lookup failed'))).toBeTrue();
+    expect(
+      notification.errors.some((e) => e.includes('Branch lookup failed')),
+    ).toBeTrue();
     expect(component.branchItems.length).toBe(0);
     expect(component.option).toBeUndefined();
   }));
 
   it('download success and error flows', fakeAsync(() => {
     // build rowNodeMap
-    const df: Datafile = { id: '1', name: 'f', path: '', hidden: false, action: Fileaction.Download } as any;
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
     component.rowNodeMap.set('1:file', { data: df });
     component.option = 'branchX';
     component.selectedRepoName = 'repoX';
@@ -182,11 +251,19 @@ describe('DownloadComponent', () => {
     component.downloadRequested = false; // reset to allow second attempt
     component.download();
     tick();
-    expect(notification.errors.some(e => e.includes('Download request failed'))).toBeTrue();
+    expect(
+      notification.errors.some((e) => e.includes('Download request failed')),
+    ).toBeTrue();
   }));
 
   it('downloadDisabled responds to selection & option presence', () => {
-    const df: Datafile = { id: '1', name: 'f', path: '', hidden: false, action: Fileaction.Ignore } as any;
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Ignore,
+    } as any;
     component.rowNodeMap.set('1:file', { data: df });
     component.option = 'b';
     expect(component.downloadDisabled()).toBeTrue();

@@ -1,5 +1,13 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, Subject, delay } from 'rxjs';
@@ -10,16 +18,33 @@ import { CompareResult, Key } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 class MockDataService {
-  getExecutableFiles() { return of<CompareResult>({ data: [] }); }
-  compute() { return of<Key>({ key: 'k1' }).pipe(delay(0)); }
+  getExecutableFiles() {
+    return of<CompareResult>({ data: [] });
+  }
+  compute() {
+    return of<Key>({ key: 'k1' }).pipe(delay(0));
+  }
   private responses: Subject<any> = new Subject();
-  getCachedComputeData() { return this.responses.asObservable(); }
-  emit(res: any) { this.responses.next(res); }
+  getCachedComputeData() {
+    return this.responses.asObservable();
+  }
+  emit(res: any) {
+    this.responses.next(res);
+  }
 }
 class MockUtilsService {
-  sleep(ms: number) { return Promise.resolve(); }
-  mapDatafiles(data: Datafile[]) { const map = new Map<string, any>(); map.set('', { data: { id: '', action: Fileaction.Ignore }, children: [] }); data.forEach(d => map.set(d.id+':file',{ data: d })); return map as any; }
-  addChild(v: any, map: Map<string, any>) { /* no-op for test */ }
+  sleep(ms: number) {
+    return Promise.resolve();
+  }
+  mapDatafiles(data: Datafile[]) {
+    const map = new Map<string, any>();
+    map.set('', { data: { id: '', action: Fileaction.Ignore }, children: [] });
+    data.forEach((d) => map.set(d.id + ':file', { data: d }));
+    return map as any;
+  }
+  addChild(v: any, map: Map<string, any>) {
+    /* no-op for test */
+  }
 }
 
 describe('ComputeComponent', () => {
@@ -60,13 +85,25 @@ describe('ComputeComponent', () => {
   it('setData builds tree or stops when empty', () => {
     component.setData({ data: [] });
     expect(component.loading).toBeFalse();
-    const file: Datafile = { id: 'f1', path: 'x', name: 'f1', hidden: false, status: Filestatus.New, action: Fileaction.Copy };
+    const file: Datafile = {
+      id: 'f1',
+      path: 'x',
+      name: 'f1',
+      hidden: false,
+      status: Filestatus.New,
+      action: Fileaction.Copy,
+    };
     component.setData({ data: [file] });
     expect(component.rowNodeMap.size).toBeGreaterThan(0);
   });
 
   it('continueSubmit polls until ready', fakeAsync(() => {
-    component.submitCompute({ persistentId: 'd1', queue: 'q', executable: 'run.sh', sendEmailOnSuccess: false });
+    component.submitCompute({
+      persistentId: 'd1',
+      queue: 'q',
+      executable: 'run.sh',
+      sendEmailOnSuccess: false,
+    });
     component.sendEmailOnSuccess = true;
     component.continueSubmit();
     // flush compute() delayed emission to obtain key and trigger first getComputeData subscription

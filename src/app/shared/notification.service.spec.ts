@@ -14,9 +14,15 @@ describe('NotificationService', () => {
     consoleLogs = [];
     consoleWarnings = [];
     spyOn(window, 'alert').and.callFake((m: string) => alerts.push(m));
-    spyOn(console, 'error').and.callFake((...m: unknown[]) => consoleErrors.push(m.join(' ')));
-    spyOn(console, 'log').and.callFake((...m: unknown[]) => consoleLogs.push(m.join(' ')));
-    spyOn(console, 'warn').and.callFake((...m: unknown[]) => consoleWarnings.push(m.join(' ')));
+    spyOn(console, 'error').and.callFake((...m: unknown[]) =>
+      consoleErrors.push(m.join(' ')),
+    );
+    spyOn(console, 'log').and.callFake((...m: unknown[]) =>
+      consoleLogs.push(m.join(' ')),
+    );
+    spyOn(console, 'warn').and.callFake((...m: unknown[]) =>
+      consoleWarnings.push(m.join(' ')),
+    );
     TestBed.configureTestingModule({});
     service = TestBed.inject(NotificationService);
   });
@@ -25,9 +31,9 @@ describe('NotificationService', () => {
     service.showSuccess('ok');
     service.showInfo('info');
     service.showWarning('warn');
-    expect(consoleLogs.some(l => l.includes('ok'))).toBeTrue();
-    expect(consoleLogs.some(l => l.includes('info'))).toBeTrue();
-    expect(consoleWarnings.some(l => l.includes('warn'))).toBeTrue();
+    expect(consoleLogs.some((l) => l.includes('ok'))).toBeTrue();
+    expect(consoleLogs.some((l) => l.includes('info'))).toBeTrue();
+    expect(consoleWarnings.some((l) => l.includes('warn'))).toBeTrue();
   });
 
   it('handles plain error object with error field', () => {

@@ -3,22 +3,22 @@
 
 module.exports = function (config) {
   const isCi =
-    process.env.CI === 'true' || process.env.KARMA_SINGLE_RUN === 'true';
-  const headless = isCi || process.env.CHROME_HEADLESS === 'true';
-  const browsers = headless ? ['ChromeHeadless'] : ['Chrome'];
+    process.env.CI === "true" || process.env.KARMA_SINGLE_RUN === "true";
+  const headless = isCi || process.env.CHROME_HEADLESS === "true";
+  const browsers = headless ? ["ChromeHeadless"] : ["Chrome"];
   // Include 'coverage' reporter so karma-coverage emits files (html/json-summary)
   const reporters = headless
-    ? ['progress', 'coverage']
-    : ['progress', 'kjhtml', 'coverage'];
+    ? ["progress", "coverage"]
+    : ["progress", "kjhtml", "coverage"];
 
   config.set({
-    basePath: '',
-    frameworks: ['jasmine'],
+    basePath: "",
+    frameworks: ["jasmine"],
     plugins: [
-      require('karma-jasmine'),
-      require('karma-chrome-launcher'),
-      require('karma-jasmine-html-reporter'),
-      require('karma-coverage'),
+      require("karma-jasmine"),
+      require("karma-chrome-launcher"),
+      require("karma-jasmine-html-reporter"),
+      require("karma-coverage"),
     ],
     client: {
       jasmine: {},
@@ -28,13 +28,13 @@ module.exports = function (config) {
       suppressAll: true,
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/datasync'),
-      subdir: '.',
+      dir: require("path").join(__dirname, "./coverage/datasync"),
+      subdir: ".",
       // Add json-summary so Makefile coverage-check can read coverage-summary.json
       reporters: [
-        { type: 'html' },
-        { type: 'text-summary' },
-        { type: 'json-summary' },
+        { type: "html" },
+        { type: "text-summary" },
+        { type: "json-summary" },
       ],
     },
     reporters,

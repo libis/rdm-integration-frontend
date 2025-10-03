@@ -18,8 +18,20 @@ describe('UtilsService', () => {
 
   it('mapDatafiles builds hierarchical folder nodes and addChild attaches children', () => {
     const files: Datafile[] = [
-      { id: 'a.txt', path: 'dir1', name: 'a.txt', action: Fileaction.Ignore, hidden: false },
-      { id: 'b.txt', path: 'dir1/dir2', name: 'b.txt', action: Fileaction.Ignore, hidden: false },
+      {
+        id: 'a.txt',
+        path: 'dir1',
+        name: 'a.txt',
+        action: Fileaction.Ignore,
+        hidden: false,
+      },
+      {
+        id: 'b.txt',
+        path: 'dir1/dir2',
+        name: 'b.txt',
+        action: Fileaction.Ignore,
+        hidden: false,
+      },
     ];
     const map = service.mapDatafiles(files);
     // ensure folder nodes created

@@ -19,7 +19,11 @@ describe('DatafileComponent', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: (DatafileComponent as any).ɵprov?.token?.FolderActionUpdateService, useValue: folderActionStub }
+        {
+          provide: (DatafileComponent as any).ɵprov?.token
+            ?.FolderActionUpdateService,
+          useValue: folderActionStub,
+        },
       ],
     })
       // Shallow render to avoid PrimeNG TreeTable internal provider requirements during unit tests
@@ -41,7 +45,8 @@ describe('DatafileComponent', () => {
     // Bypass signal input setters (simpler for unit test) by monkey patching
     (component as any).datafile = () => df;
     (component as any).rowNodeMap = () => map;
-    (component as any).rowNode = () => map.get(df.id + (df.attributes?.isFile ? ':file' : ''));
+    (component as any).rowNode = () =>
+      map.get(df.id + (df.attributes?.isFile ? ':file' : ''));
     (component as any).isInFilter = () => false;
     (component as any).loading = () => false;
   }
@@ -64,7 +69,9 @@ describe('DatafileComponent', () => {
         attributes: { isFile: true },
       };
       const node: TreeNode<Datafile> = { data: df };
-      const map = new Map<string, TreeNode<Datafile>>([[df.id + ':file', node]]);
+      const map = new Map<string, TreeNode<Datafile>>([
+        [df.id + ':file', node],
+      ]);
       setInputs(df, map);
       component.ngOnInit();
       expect(component.comparison(false)).toBeTruthy();
@@ -92,13 +99,14 @@ describe('DatafileComponent', () => {
         attributes: { isFile: true },
       };
       const node: TreeNode<Datafile> = { data: df };
-      const map = new Map<string, TreeNode<Datafile>>([[df.id + ':file', node]]);
+      const map = new Map<string, TreeNode<Datafile>>([
+        [df.id + ':file', node],
+      ]);
       setInputs(df, map);
       component.ngOnInit();
       expect(component.action()).toBeTruthy();
     });
   });
-
 
   it('setNodeAction cascades to children and file-in-folder rules apply', () => {
     // folder parent
@@ -169,9 +177,9 @@ describe('DatafileComponent', () => {
     df.action = Fileaction.Copy;
     expect(component.targetFile()).toContain('f');
     // sourceFile respects isInFilter formatting (no path) vs filter (with path)
-  (component as any).isInFilter = () => false;
+    (component as any).isInFilter = () => false;
     expect(component.sourceFile()).toBe('f');
-  (component as any).isInFilter = () => true;
+    (component as any).isInFilter = () => true;
     expect(component.sourceFile()).toBe('p/f');
   });
 

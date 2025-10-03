@@ -158,8 +158,16 @@ describe('ConnectComponent', () => {
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
     const arr: any[] = [];
-    comp['ensureSelectContains'](arr, 'val1', (items: any[]) => (arr.length = 0, arr.push(...items)));
-    comp['ensureSelectContains'](arr, 'val1', (items: any[]) => (arr.length = 0, arr.push(...items))); // second call should not duplicate
+    comp['ensureSelectContains'](
+      arr,
+      'val1',
+      (items: any[]) => ((arr.length = 0), arr.push(...items)),
+    );
+    comp['ensureSelectContains'](
+      arr,
+      'val1',
+      (items: any[]) => ((arr.length = 0), arr.push(...items)),
+    ); // second call should not duplicate
     expect(arr.filter((i) => i.value === 'val1').length).toBe(1);
   });
 
