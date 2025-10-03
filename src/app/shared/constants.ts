@@ -40,12 +40,14 @@ export const APP_CONSTANTS = {
 
   // File action styles
   FILE_ACTION_STYLES: {
+    // NOTE: Provide both light and dark mode friendly colors using CSS variables with fallbacks.
+    // These inline styles deliberately keep only color hints; additional contrast handled in SCSS.
     IGNORE: '',
-    COPY: 'background-color: #c3e6cb; color: black',
-    UPDATE: 'background-color: #b8daff; color: black',
-    DELETE: 'background-color: #f5c6cb; color: black',
-    // Non-uniform selection: grey/light blue tint
-    CUSTOM: 'background-color: #e7f1ff; color: #495057',
+    COPY: 'background-color: var(--file-copy-bg, #284d33); color: var(--file-copy-fg, #d9f2e1)',
+    UPDATE: 'background-color: var(--file-update-bg, #18324d); color: var(--file-update-fg, #d3ebff)',
+    DELETE: 'background-color: var(--file-delete-bg, #4d1e23); color: var(--file-delete-fg, #f8d7da)',
+    // Non-uniform selection: neutral accent
+    CUSTOM: 'background-color: var(--file-custom-bg, #2d3a46); color: var(--file-custom-fg, #dde6ed)',
   },
 } as const;
 
