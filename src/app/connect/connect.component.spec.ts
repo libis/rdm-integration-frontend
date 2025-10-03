@@ -78,4 +78,34 @@ describe('ConnectComponent', () => {
   fixture.detectChanges();
     expect(comp.datasetId).toBe('doi:10.999/MISSING');
   });
+
+  it('restores collectionId from navigation state', () => {
+    setHistoryState({
+      connectSnapshot: {
+        plugin: 'github',
+        pluginId: 'github',
+        repo_name: 'owner/repo',
+      },
+      collectionId: 'root:COLL',
+    });
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+    expect(comp.collectionId).toBe('root:COLL');
+  });
+
+  it('restores collectionId from snapshot if not in navigation state', () => {
+    setHistoryState({
+      connectSnapshot: {
+        plugin: 'github',
+        pluginId: 'github',
+        repo_name: 'owner/repo',
+        collectionId: 'root:SNAP',
+      },
+    });
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+    expect(comp.collectionId).toBe('root:SNAP');
+  });
 });

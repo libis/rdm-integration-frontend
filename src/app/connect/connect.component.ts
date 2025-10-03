@@ -170,19 +170,10 @@ export class ConnectComponent
       this.foundRepoName = snap.repo_name;
       this.option = snap.option;
       this.dataverseToken = snap.dataverse_token || this.dataverseToken;
-      this.datasetId = snap.dataset_id;
-      // Fallback: if snapshot lacked dataset_id but state carries datasetId explicitly
-      if ((!this.datasetId || this.datasetId === '') && window.history.state.datasetId) {
-        this.datasetId = window.history.state.datasetId;
-      }
-      // Restore collectionId if provided directly in snapshot state (explicit request)
-      if ((window.history.state.collectionId || (snap as any)).collectionId) {
-        const cId =
-          window.history.state.collectionId || (snap as any).collectionId;
-        if (typeof cId === 'string') {
-          this.collectionId = cId;
-        }
-      }
+      const navState: any = window.history.state || {};
+      // Unified restoration (snapshot primary for dataset, nav state primary for collection)
+      this.datasetId = snap.dataset_id || navState.datasetId || this.datasetId;
+      this.collectionId = navState.collectionId || (snap as any).collectionId || this.collectionId;
       // Pre-populate select item arrays so UI shows restored values
       if (this.plugin) {
         this.plugins = [{ label: this.plugin, value: this.plugin }];
