@@ -26,7 +26,7 @@ th .pi:hover {
 
 /* Centered action buttons with wrapping and spacing */
 .compare-action-buttons button {
-  margin: 0.25rem 0.4rem; /* space between buttons */
+  margin: 0.15rem 0.4rem; /* tighter vertical space, keep horizontal */
 }
 
 @media (max-width: 576px) { /* small screens: a bit more vertical space */
