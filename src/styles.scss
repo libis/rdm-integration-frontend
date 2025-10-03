@@ -143,3 +143,35 @@ button {
     color: var(--p-text-color);
     line-height: 1.4;
 }
+
+/* Ensure titles in sticky header rows are truly centered across full width */
+.sticky-menu {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* temporary center; overridden by child layout */
+}
+
+/* Use a positioning context for absolute centering of the page title */
+.sticky-menu .page-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Keep left and right button groups aligned without affecting centering */
+.sticky-menu > .col-auto:first-child,
+.sticky-menu > .col-auto:last-child {
+    position: relative;
+    z-index: 2; /* above absolutely centered title if overlapping on narrow screens */
+}
+
+/* Provide some horizontal padding so absolute centering works in narrow viewports */
+.sticky-menu > .col.text-center { /* neutralize original column centering influence */
+    position: relative;
+    flex: 1 1 auto;
+}
