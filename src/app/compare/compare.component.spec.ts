@@ -105,6 +105,13 @@ describe('CompareComponent', () => {
       expect(component.proceedTitle()).toBe('Action not available yet');
     });
 
+    it('new dataset with undefined metadata_available allowed metadata-only', () => {
+      setCreds({ newly_created: true });
+      component['data'] = { id: '' } as any;
+      expect(component.canProceed()).toBeTrue();
+      expect(component.proceedTitle()).toContain('metadata-only');
+    });
+
     it('isNewDataset() falls back to dataset id heuristic when flag missing', () => {
       // No newly_created flag, id includes New Dataset (case-insensitive)
       (component as any).credentialsService = { credentials: {} };

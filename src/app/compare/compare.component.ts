@@ -299,7 +299,8 @@ export class CompareComponent
   canProceed(): boolean {
     const newDs = this.isNewDataset();
     const creds: any = this.credentialsService.credentials;
-    const hasMetadata = creds.metadata_available === true;
+    // If metadata_available is undefined we assume metadata creation is possible
+    const hasMetadata = creds.metadata_available !== false;
     if (!newDs) {
       return this.hasSelection();
     }
@@ -310,16 +311,14 @@ export class CompareComponent
   proceedTitle(): string {
     const newDs = this.isNewDataset();
     const creds: any = this.credentialsService.credentials;
-    const hasMetadata = creds.metadata_available === true;
-    if (!this.canProceed()) {
-      if (newDs && !hasMetadata) {
-        return 'Select at least one file to proceed (no metadata available).';
-      }
-      return 'Action not available yet';
+    const hasMetadata = creds.metadata_available !== false;
+    const can = this.canProceed();
+    if (newDs && !this.hasSelection()) {
+      // Metadata-only state messages
+      if (hasMetadata) return 'Proceed with metadata-only submission';
+      if (!can) return 'Select at least one file to proceed (no metadata available).';
     }
-    if (newDs && hasMetadata && !this.hasSelection()) {
-      return 'Proceed with metadata-only submission';
-    }
+    if (!can) return 'Action not available yet';
     return 'Go to next step';
   }
 
