@@ -53,8 +53,8 @@
 	min-width:11rem;
 	text-align:right;
 	color: var(--p-text-color-secondary, var(--p-text-color));
-	opacity: .85;
-	text-shadow: 0 0 2px rgba(0,0,0,.6);
+	opacity: .9; /* Slightly higher for better legibility */
+	/* Removed text-shadow to prevent blurry appearance on some displays */
 }
 
 .themed-progress {
