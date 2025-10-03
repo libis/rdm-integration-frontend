@@ -46,4 +46,42 @@ describe('CompareComponent', () => {
     );
     expect(navigateSpy).toHaveBeenCalledWith(['/connect']);
   });
+
+  describe('canProceed() logic', () => {
+    function setCreds(creds: any) {
+      (component as any).credentialsService = { credentials: creds };
+    }
+    function addFileSelection() {
+      // simulate one selected file node with non-Ignore action
+      (component as any).rowNodeMap.set('file1', {
+        data: { attributes: { isFile: true }, action: 1 },
+      } as any);
+    }
+
+    beforeEach(() => {
+      (component as any).rowNodeMap = new Map();
+    });
+
+    it('non-new dataset requires selection', () => {
+      setCreds({ newly_created: false });
+      component['data'] = { id: 'doi:10/EXISTING' } as any;
+      expect(component.canProceed()).toBeFalse();
+      addFileSelection();
+      expect(component.canProceed()).toBeTrue();
+    });
+
+    it('new dataset with metadata_available true can proceed without selection', () => {
+      setCreds({ newly_created: true, metadata_available: true });
+      component['data'] = { id: '' } as any; // new dataset scenario
+      expect(component.canProceed()).toBeTrue();
+    });
+
+    it('new dataset without metadata_available requires selection', () => {
+      setCreds({ newly_created: true, metadata_available: false });
+      component['data'] = { id: '' } as any;
+      expect(component.canProceed()).toBeFalse();
+      addFileSelection();
+      expect(component.canProceed()).toBeTrue();
+    });
+  });
 });

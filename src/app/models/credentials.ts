@@ -11,4 +11,6 @@ export interface Credentials {
   dataset_id?: string;
   newly_created?: boolean;
   dataverse_token?: string;
+  // Indicates that metadata will be created even if no files selected for a new dataset
+  metadata_available?: boolean;
 }

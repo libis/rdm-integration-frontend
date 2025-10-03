@@ -297,17 +297,35 @@ export class CompareComponent
   }
 
   canProceed(): boolean {
-    // If not new dataset → require at least one selected file.
-    if (!this.isNewDataset()) {
-      return this.hasSelection();
+    // If not a new dataset we must have at least one selected file action.
+    if (!this.isNewDataset()) return this.hasSelection();
+
+    // New dataset path: allow metadata-only creation when metadata is available.
+    const creds: any = this.credentialsService.credentials;
+    const hasMetadata = creds.metadata_available === true;
+    if (hasMetadata) return true;
+
+    // If no metadata is available, require at least one selected file.
+    return this.hasSelection();
+  }
+
+  proceedTitle(): string {
+    if (!this.canProceed()) {
+      if (this.isNewDataset()) {
+        const hasMetadata = (this.credentialsService.credentials as any).metadata_available === true;
+        if (!hasMetadata) {
+          return 'Select at least one file to proceed (no metadata available).';
+        }
+      }
+      return 'Action not available yet';
     }
-    // New dataset: user may proceed even with zero file selection (metadata-only) as long as
-    // there is metadata context (always true for a new dataset scenario). We still fall back
-    // to file selection rule if backend indicates there is effectively no dataset creation
-    // (e.g., empty id but also no ability to add metadata). If id is empty we allow; if id
-    // exists and equals a placeholder 'New Dataset' we allow. Otherwise default to selection rule.
-    // Simplify: allow when new OR when has selection.
-    return true;
+    if (this.isNewDataset()) {
+      const hasMetadata = (this.credentialsService.credentials as any).metadata_available === true;
+      if (hasMetadata && !this.hasSelection()) {
+        return 'Proceed with metadata-only submission';
+      }
+    }
+    return 'Go to next step';
   }
 
   // UI helpers
