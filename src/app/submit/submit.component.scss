@@ -23,6 +23,21 @@
 /* Remove stray white stripes between major sections */
 :host ::ng-deep .submit-table {
 	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+/* Eliminate residual white bars (Bootstrap/PrimeNG zebra striping) */
+:host ::ng-deep .submit-table tbody > tr,
+:host ::ng-deep .submit-table tbody > tr > td,
+:host ::ng-deep .submit-table tbody > tr > th {
+	background: var(--p-content-background) !important;
+	border-color: var(--p-content-border-color) !important;
+}
+
+/* Ensure nested inner tables do not reintroduce striping */
+:host ::ng-deep .submit-table .inner-table-cell table tbody > tr,
+:host ::ng-deep .submit-table .inner-table-cell table tbody > tr > td {
+	background: var(--p-content-background) !important;
 }
 
 .progress-wrapper {
