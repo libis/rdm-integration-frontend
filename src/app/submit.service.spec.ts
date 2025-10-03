@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { SubmitService } from './submit.service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from '@angular/common/http/testing';
 import { CredentialsService } from './credentials.service';
 import { Datafile } from './models/datafile';
 
 class MockCredentialsService {
-  credentials:any = {
+  credentials: any = {
     plugin: 'p1',
     pluginId: 'p1id',
     repo_name: 'repoX',
@@ -14,7 +17,7 @@ class MockCredentialsService {
     user: 'u1',
     token: 'tok',
     dataset_id: 'doi:10/ABC',
-    dataverse_token: 'dvTok'
+    dataverse_token: 'dvTok',
   };
 }
 
@@ -24,23 +27,27 @@ describe('SubmitService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports:[HttpClientTestingModule],
-      providers:[{ provide: CredentialsService, useClass: MockCredentialsService }]
+      imports: [HttpClientTestingModule],
+      providers: [
+        { provide: CredentialsService, useClass: MockCredentialsService },
+      ],
     });
     service = TestBed.inject(SubmitService);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(()=>{
+  afterEach(() => {
     httpMock.verify();
   });
 
   it('submit builds correct payload', () => {
-    const selected: Datafile[] = [{ id:'1', name:'f1', path:'/', hidden:false } as any];
+    const selected: Datafile[] = [
+      { id: '1', name: 'f1', path: '/', hidden: false } as any,
+    ];
     service.submit(selected, true).subscribe();
     const req = httpMock.expectOne('api/common/store');
     expect(req.request.method).toBe('POST');
-    const body:any = req.request.body;
+    const body: any = req.request.body;
     expect(body.plugin).toBe('p1');
     expect(body.streamParams.pluginId).toBe('p1id');
     expect(body.streamParams.repoName).toBe('repoX');
@@ -51,15 +58,27 @@ describe('SubmitService', () => {
     expect(body.dataverseKey).toBe('dvTok');
     expect(body.selectedNodes.length).toBe(1);
     expect(body.sendEmailOnSuccess).toBeTrue();
-    req.flush({ status:'ok'});
+    req.flush({ status: 'ok' });
   });
 
   it('download builds correct payload', () => {
-    const selected: Datafile[] = [{ id:'2', name:'f2', path:'/', hidden:false } as any];
-    service.download(selected, 'endpointX', 'optionB', 'gTok', 'pidX', 'dv2', 'dl123').subscribe();
+    const selected: Datafile[] = [
+      { id: '2', name: 'f2', path: '/', hidden: false } as any,
+    ];
+    service
+      .download(
+        selected,
+        'endpointX',
+        'optionB',
+        'gTok',
+        'pidX',
+        'dv2',
+        'dl123',
+      )
+      .subscribe();
     const req = httpMock.expectOne('api/common/download');
     expect(req.request.method).toBe('POST');
-    const body:any = req.request.body;
+    const body: any = req.request.body;
     expect(body.plugin).toBe('globus');
     expect(body.streamParams.pluginId).toBe('globus');
     expect(body.streamParams.repoName).toBe('endpointX');

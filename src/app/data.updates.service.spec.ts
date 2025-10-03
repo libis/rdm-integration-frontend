@@ -1,9 +1,14 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
+import {
+  provideHttpClientTesting,
+  HttpTestingController,
+} from '@angular/common/http/testing';
 import { DataUpdatesService } from './data.updates.service';
 import { CredentialsService } from './credentials.service';
-
 
 describe('DataUpdatesService', () => {
   let service: DataUpdatesService;
@@ -12,7 +17,10 @@ describe('DataUpdatesService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers:[provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+      providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+      ],
     });
     service = TestBed.inject(DataUpdatesService);
     http = TestBed.inject(HttpTestingController);
@@ -21,14 +29,24 @@ describe('DataUpdatesService', () => {
   });
 
   it('updateData sorts result data by id', (done) => {
-    service.updateData([
-      { id:'b', name:'b', path:'', hidden:false },
-      { id:'a', name:'a', path:'', hidden:false }
-    ] as any, 'doi:123').subscribe(r => {
-      expect(r.data?.map(f=>f.id)).toEqual(['a','b']);
-      done();
-    });
+    service
+      .updateData(
+        [
+          { id: 'b', name: 'b', path: '', hidden: false },
+          { id: 'a', name: 'a', path: '', hidden: false },
+        ] as any,
+        'doi:123',
+      )
+      .subscribe((r) => {
+        expect(r.data?.map((f) => f.id)).toEqual(['a', 'b']);
+        done();
+      });
     const req = http.expectOne('api/common/compare');
-    req.flush({ data:[{ id:'b', name:'b', path:'', hidden:false },{ id:'a', name:'a', path:'', hidden:false }] });
+    req.flush({
+      data: [
+        { id: 'b', name: 'b', path: '', hidden: false },
+        { id: 'a', name: 'a', path: '', hidden: false },
+      ],
+    });
   });
 });

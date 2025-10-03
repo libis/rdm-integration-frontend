@@ -1,5 +1,8 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -10,9 +13,15 @@ import { ConnectValidationService } from '../shared/connect-validation.service';
 import { SelectItem } from 'primeng/api';
 
 class PluginServiceStub {
-  setConfig() { return Promise.resolve(); }
-  getPlugins() { return []; }
-  getPluginIds() { return []; }
+  setConfig() {
+    return Promise.resolve();
+  }
+  getPlugins() {
+    return [];
+  }
+  getPluginIds() {
+    return [];
+  }
   getPlugin() {
     return {
       tokenGetter: {},
@@ -32,30 +41,60 @@ class PluginServiceStub {
       showTokenGetter: false,
     } as any;
   }
-  dataverseHeader() { return 'Dataverse'; }
-  showDVTokenGetter() { return false; }
-  showDVToken() { return false; }
-  collectionOptionsHidden() { return false; }
-  collectionFieldEditable() { return true; }
-  datasetFieldEditable() { return true; }
-  createNewDatasetEnabled() { return true; }
-  getRedirectUri() { return ''; }
-  getExternalURL() { return ''; }
-  isStoreDvToken() { return false; }
-  getGlobusPlugin() { return undefined; }
+  dataverseHeader() {
+    return 'Dataverse';
+  }
+  showDVTokenGetter() {
+    return false;
+  }
+  showDVToken() {
+    return false;
+  }
+  collectionOptionsHidden() {
+    return false;
+  }
+  collectionFieldEditable() {
+    return true;
+  }
+  datasetFieldEditable() {
+    return true;
+  }
+  createNewDatasetEnabled() {
+    return true;
+  }
+  getRedirectUri() {
+    return '';
+  }
+  getExternalURL() {
+    return '';
+  }
+  isStoreDvToken() {
+    return false;
+  }
+  getGlobusPlugin() {
+    return undefined;
+  }
 }
 
 class NotificationServiceStub {
   errors: string[] = [];
-  showError(msg: string) { this.errors.push(msg); }
+  showError(msg: string) {
+    this.errors.push(msg);
+  }
 }
 
 class ConnectValidationServiceStub {
   valid = true;
   issues: string[] = [];
-  isValid(_ctx: any) { return this.valid; }
-  gatherIssues(_ctx: any) { return this.issues; }
-  summarizeIssues(issues: string[]) { return issues.length ? issues.join('; ') : undefined; }
+  isValid(_ctx: any) {
+    return this.valid;
+  }
+  gatherIssues(_ctx: any) {
+    return this.issues;
+  }
+  summarizeIssues(issues: string[]) {
+    return issues.length ? issues.join('; ') : undefined;
+  }
 }
 
 describe('ConnectComponent additional behavior/validation', () => {
@@ -71,15 +110,23 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
-        { provide: ConnectValidationService, useClass: ConnectValidationServiceStub },
+        {
+          provide: ConnectValidationService,
+          useClass: ConnectValidationServiceStub,
+        },
       ],
     }).compileComponents();
-    notification = TestBed.inject(NotificationService) as unknown as NotificationServiceStub;
-    validation = TestBed.inject(ConnectValidationService) as unknown as ConnectValidationServiceStub;
+    notification = TestBed.inject(
+      NotificationService,
+    ) as unknown as NotificationServiceStub;
+    validation = TestBed.inject(
+      ConnectValidationService,
+    ) as unknown as ConnectValidationServiceStub;
   });
 
   it('newNonce produces string of expected length', () => {
-    const comp = TestBed.createComponent(ConnectComponent).componentInstance as any;
+    const comp = TestBed.createComponent(ConnectComponent)
+      .componentInstance as any;
     const nonce = comp.newNonce(32);
     expect(nonce.length).toBe(32);
     const nonce2 = comp.newNonce(32);
@@ -125,21 +172,21 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(req).toBeUndefined();
     expect(notification.errors.pop()).toContain('Username is missing');
 
-  // 4. Provide username - next missing requirement is token (as per current implementation order)
+    // 4. Provide username - next missing requirement is token (as per current implementation order)
     comp.user = 'alice';
     // Force parseUrl to populate internal url and repoName
     comp.parseUrl();
     // Simulate user cleared repo name afterwards
     comp.repoName = undefined;
-  req = comp.getRepoLookupRequest(false); // expect token missing before repo name validation surfaces
+    req = comp.getRepoLookupRequest(false); // expect token missing before repo name validation surfaces
     expect(req).toBeUndefined();
     expect(notification.errors.pop()).toContain('Token is missing');
-  // 5. Provide token now; parseUrl repopulates repo name so request succeeds
+    // 5. Provide token now; parseUrl repopulates repo name so request succeeds
     comp.token = 'tok';
-  req = comp.getRepoLookupRequest(false);
-  expect(req).toBeDefined();
+    req = comp.getRepoLookupRequest(false);
+    expect(req).toBeDefined();
 
-  // 6. Simulate existing branchItems causing early return for subsequent search request
+    // 6. Simulate existing branchItems causing early return for subsequent search request
     comp.branchItems = [{ label: 'main', value: 'main' }];
     req = comp.getRepoLookupRequest(true);
     expect(req).toBeUndefined();
@@ -163,7 +210,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     fixture.detectChanges();
     comp.newDataset();
     expect(comp.datasetId).toBe('root:COLL:New Dataset');
-    const matches = comp.doiItems.filter((i: any) => i.value === 'root:COLL:New Dataset');
+    const matches = comp.doiItems.filter(
+      (i: any) => i.value === 'root:COLL:New Dataset',
+    );
     expect(matches.length).toBe(1);
   });
 
@@ -171,7 +220,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     comp.collectionId = 'root:COLL';
-    comp.doiItems = [ { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' } ];
+    comp.doiItems = [
+      { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+    ];
     fixture.detectChanges();
     comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
     expect(comp.datasetId).toContain('root:COLL:New Dataset');
