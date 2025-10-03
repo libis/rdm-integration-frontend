@@ -44,10 +44,10 @@ export const APP_CONSTANTS = {
     // NOTE: Provide both light and dark mode friendly colors using CSS variables with fallbacks.
     // These inline styles deliberately keep only color hints; additional contrast handled in SCSS.
     IGNORE: 'color: foreground;',
-    COPY: 'background-color: #c3e6cb; color: black',
-    UPDATE: 'background-color: #b8daff; color: black',
-    DELETE: 'background-color: #f5c6cb; color: black',
-    CUSTOM: 'background-color: #FFFAA0; color: black',
+    COPY: 'background-color: #c3e6cb; color: foretground;',
+    UPDATE: 'background-color: #b8daff; color: foreground;',
+    DELETE: 'background-color: #f5c6cb; color: foreground;',
+    CUSTOM: 'background-color: #FFFAA0; color: foreground;',
   },
 } as const;
 
