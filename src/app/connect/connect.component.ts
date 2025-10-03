@@ -886,6 +886,9 @@ export class ConnectComponent
       this.url = this.getSourceUrlValue();
       return;
     }
+    if (!this.sourceUrl) {
+      return 'Malformed source url';
+    }
     let toSplit = this.sourceUrl!;
     if (toSplit.endsWith('/')) {
       toSplit = toSplit.substring(0, toSplit.length - 1);

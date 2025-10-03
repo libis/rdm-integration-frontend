@@ -11,6 +11,15 @@ import { PluginService } from '../plugin.service';
 import { NotificationService } from '../shared/notification.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
 import { SelectItem } from 'primeng/api';
+import { HttpTestingController } from '@angular/common/http/testing';
+import { DataStateService } from '../data.state.service';
+
+class DataStateServiceStub {
+  lastCreds: any;
+  initializeState(creds: any) {
+    this.lastCreds = creds;
+  }
+}
 
 class PluginServiceStub {
   setConfig() {
@@ -114,6 +123,7 @@ describe('ConnectComponent additional behavior/validation', () => {
           provide: ConnectValidationService,
           useClass: ConnectValidationServiceStub,
         },
+        { provide: DataStateService, useClass: DataStateServiceStub },
       ],
     }).compileComponents();
     notification = TestBed.inject(
@@ -151,6 +161,14 @@ describe('ConnectComponent additional behavior/validation', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
+
+    // Ensure a clean slate regardless of any restored snapshot side-effects
+    comp.pluginId = undefined;
+    comp.sourceUrl = undefined;
+    comp.user = undefined;
+    comp.token = undefined;
+    comp.repoName = undefined;
+    comp.branchItems = [];
 
     // 1. Missing pluginId
     let req = comp.getRepoLookupRequest(true);
@@ -244,5 +262,24 @@ describe('ConnectComponent additional behavior/validation', () => {
     const comp: any = fixture.componentInstance;
     comp['applySnapshot']({ dataset_id: 'snapVal' }, 'navVal', undefined);
     expect(comp.datasetId).toBe('navVal');
+  });
+
+  it('connect sets newly_created=true for prefixed new dataset id', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    // Minimal fields for connect; validation stub returns valid regardless
+    comp.pluginId = 'github';
+    comp.plugin = 'github';
+    comp.datasetId = 'root:COLL:New Dataset';
+    const httpMock = TestBed.inject(HttpTestingController);
+    const ds = TestBed.inject(DataStateService) as unknown as DataStateServiceStub;
+
+    comp.connect();
+    const req = httpMock.expectOne('api/common/useremail');
+    expect(req.request.method).toBe('POST');
+    req.flush('user@example.com');
+
+    expect(ds.lastCreds).toBeDefined();
+    expect(ds.lastCreds.newly_created).toBeTrue();
   });
 });
