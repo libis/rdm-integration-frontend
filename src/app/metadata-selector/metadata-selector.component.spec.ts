@@ -171,6 +171,20 @@ describe('MetadataSelectorComponent', () => {
     );
   });
 
+  it('should apply CSS classes to rows for highlighting', fakeAsync(() => {
+    flushMicrotasks();
+    fixture.detectChanges();
+    // query all table row elements within the component template
+    const rows: HTMLElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('tr.copy-row, tr.custom-row'),
+    );
+    // We expect at least one highlighted row (root children default to Copy)
+    expect(rows.length).toBeGreaterThan(0);
+    // Ensure they actually carry either copy-row or custom-row class
+    const hasCopy = rows.some((r) => r.classList.contains('copy-row'));
+    expect(hasCopy).toBeTrue();
+  }));
+
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {
     // prepare a fake root and spy on static methods
     const root: any = { data: { name: 'root' } };

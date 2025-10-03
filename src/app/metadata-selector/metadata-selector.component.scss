@@ -8,6 +8,31 @@
 /* Ensure TreeTable area uses theme background in both light and dark modes */
 :host {
 	display: block;
+	/* Reuse compare palette variable names if page shown together for consistency */
+	--action-green: #1b5e36;
+	--action-amber: #925b10;
+	--lm-tint-green: #e6f6ed;
+	--lm-tint-amber: #fff3e0;
+	--dm-bg-green: #284d33;
+	--dm-bg-amber: #5c3a10;
+	--fg-green-dark: #d9f2e1;
+	--fg-amber-dark: #ffe3c2;
+	--fg-green-light: #114226;
+	--fg-amber-light: #5a3605;
+
+	/* defaults assume dark */
+	--md-copy-bg: var(--dm-bg-green);
+	--md-copy-fg: var(--fg-green-dark);
+	--md-custom-bg: var(--dm-bg-amber);
+	--md-custom-fg: var(--fg-amber-dark);
+}
+
+:root[data-theme='light'] app-metadata-selector,
+:root:not([data-theme='dark']) app-metadata-selector {
+	--md-copy-bg: var(--lm-tint-green);
+	--md-copy-fg: var(--action-green);
+	--md-custom-bg: var(--lm-tint-amber);
+	--md-custom-fg: var(--action-amber);
 }
 
 .treetable-cell {
@@ -49,14 +74,14 @@
 /* Row highlight colors use semantic variables; mapping for existing inline styles remains */
 /* Copy (green) and Custom (amber) action highlights. We blend with background so contrast works in dark/light. */
 .copy-row {
-	background-color: color-mix(in srgb, var(--p-success-500, #16a34a) 28%, var(--p-content-background) 72%);
-	color: var(--p-text-color);
+	background-color: var(--md-copy-bg);
+	color: var(--md-copy-fg);
 	font-weight: 500;
 }
 
 .custom-row {
-	background-color: color-mix(in srgb, var(--p-warning-500, #f59e0b) 38%, var(--p-content-background) 62%);
-	color: var(--p-text-color);
+	background-color: var(--md-custom-bg);
+	color: var(--md-custom-fg);
 	font-weight: 500;
 }
 

@@ -99,9 +99,17 @@ class NotificationServiceStub {
   showError(_m: string) {}
 }
 
+@Component({
+  selector: 'stub-metadata-selector',
+  template: '<p>metadata selector stub</p>',
+  standalone: true,
+})
+class MetadataSelectorStubComponent {}
+
 const routes: Routes = [
   { path: 'connect', component: ConnectComponent },
   { path: 'compare', component: CompareComponent },
+  { path: 'metadata-selector', component: MetadataSelectorStubComponent },
   { path: '', redirectTo: 'connect', pathMatch: 'full' },
 ];
 
@@ -147,7 +155,7 @@ describe('Integration: Compare back -> Connect restoration', () => {
     const compareComp = compareDebugEl!.componentInstance as CompareComponent;
     // Execute back navigation
     // Intentionally not asserting prior history.state; capturing removed to satisfy lint
-    compareComp.back();
+  compareComp.back();
     // Wait for navigation to connect
     await hostFixture.whenStable();
     hostFixture.detectChanges();

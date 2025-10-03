@@ -1,6 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, inject } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
@@ -41,6 +42,7 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
     PrimeTemplate,
     TreeTableModule,
     MetadatafieldComponent,
+    NgClass,
   ],
 })
 export class MetadataSelectorComponent implements OnInit {
