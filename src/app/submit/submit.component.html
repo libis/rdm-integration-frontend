@@ -8,7 +8,7 @@
   </div>
   <div class="col-auto">
     <button pButton type="button" [hidden]="!done || !hasAccessToCompute" class="p-button-sm p-button-raised p-button-secondary" (click)="goToCompute()" title="Go to compute">Compute&nbsp;<i class="pi pi-angle-double-right"></i></button>
-    <button pButton type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised p-button-secondary" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
+  <button pButton type="button" [attr.hidden]="done ? null : ''" class="p-button-sm p-button-raised" [ngClass]="done ? 'p-button-primary' : 'p-button-secondary'" (click)="goToDataset()" title="Go to RDR to see the resulting dataset">Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i></button>
     <button pButton type="button" [attr.hidden]="done ? '' : null" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Initiate selected changes" [attr.disabled]="disabled ? '' : null">Start transfer&nbsp;<i class="pi pi-angle-double-right"></i></button>
   </div>
 </div>

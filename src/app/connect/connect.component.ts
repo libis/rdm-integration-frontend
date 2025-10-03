@@ -814,6 +814,27 @@ export class ConnectComponent
     this.expandedPanels = ['0', '1'];
   }
 
+  /**
+   * Whether the Reset button should be shown. Hidden when all key user-editable inputs are empty.
+   * (We exclude arrays like branchItems/collectionItems which are populated programmatically.)
+   */
+  get showReset(): boolean {
+    return !!(
+      this.plugin ||
+      this.pluginId ||
+      this.user ||
+      this.token ||
+      this.repoName ||
+      this.selectedRepoName ||
+      this.foundRepoName ||
+      this.option ||
+      this.dataverseToken ||
+      this.collectionId ||
+      this.datasetId ||
+      this.sourceUrl
+    );
+  }
+
   private buildValidationContext() {
     return {
       pluginId: this.pluginId,

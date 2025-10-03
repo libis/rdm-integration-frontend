@@ -36,6 +36,10 @@ describe('CompareComponent', () => {
     const snapshotService = TestBed.inject(SnapshotStorageService);
     const navigateSpy = spyOn(router, 'navigate');
     const mergeSpy = spyOn(snapshotService, 'mergeConnect');
+    // Ensure no breadcrumb state from prior tests
+    if (window && window.history && window.history.replaceState) {
+      window.history.replaceState({}, '', '/');
+    }
     (component as any).credentialsService = {
       credentials: { dataset_id: 'doi:10.777/TEST' },
     };
