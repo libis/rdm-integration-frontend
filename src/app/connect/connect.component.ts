@@ -1244,8 +1244,24 @@ export class ConnectComponent
       value: 'CREATE_NEW_DATASET',
     };
 
+    // Preserve an existing (restored) datasetId selection when coming back from Compare
+    const existing = comp.datasetId;
     comp.doiItems = [createNewOption, ...items];
-    comp.datasetId = undefined;
+
+    if (existing && existing !== 'CREATE_NEW_DATASET') {
+      // Ensure the existing selection is present in the list; if not, prepend it (after createNew option)
+      if (!comp.doiItems.some((i) => i.value === existing)) {
+        comp.doiItems = [
+          createNewOption,
+          { label: existing, value: existing },
+          ...items,
+        ];
+      }
+      // Leave comp.datasetId untouched so the selection stays visible
+    } else {
+      // Only reset if there was no prior selection
+      comp.datasetId = undefined;
+    }
   }
 
   datasetFieldEditable(): boolean {
