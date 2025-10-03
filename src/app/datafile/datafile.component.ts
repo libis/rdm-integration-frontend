@@ -66,16 +66,16 @@ export class DatafileComponent implements OnInit {
       case Filestatus.New:
         return color ? 'green' : this.icon_new;
       case Filestatus.Equal:
-        return color ? 'black' : this.icon_equal;
+        return color ? 'foreground' : this.icon_equal;
       case Filestatus.Updated:
         return color ? 'blue' : this.icon_not_equal;
       case Filestatus.Deleted:
         return color ? 'red' : this.icon_deleted;
     }
     if (this.loading()) {
-      return color ? 'black' : this.icon_spinner;
+      return color ? 'foreground' : this.icon_spinner;
     }
-    return color ? 'black' : this.icon_refresh;
+    return color ? 'foreground' : this.icon_refresh;
   }
 
   comparisonTitle(): string {

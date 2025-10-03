@@ -227,9 +227,9 @@ export class DownloadComponent
       case Fileaction.Ignore:
         return '';
       case Fileaction.Download:
-        return 'background-color: #c3e6cb; color: black';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.COPY;
       case Fileaction.Custom:
-        return 'background-color: #FFFAA0; color: black';
+        return APP_CONSTANTS.FILE_ACTION_STYLES.CUSTOM;
     }
     return '';
   }

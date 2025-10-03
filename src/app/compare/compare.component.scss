@@ -1,29 +1,44 @@
-// Compact middle icon/action columns should take minimal width.
-:host ::ng-deep .p-treetable table {
-	table-layout: fixed; // ensure width constraints respected
-}
-
+// Compact middle icon/action columns: shrink-to-fit while keeping table flexible.
 :host ::ng-deep th.compact-col,
 :host ::ng-deep td.compact-col {
-	width: 1%;
+	width: 1px; /* allow browser to shrink to intrinsic content */
 	white-space: nowrap;
-	padding-left: 0.25rem;
-	padding-right: 0.25rem;
+	padding: 0.1rem 0.25rem;
 }
 
-// Ensure buttons inside compact columns don't stretch column
-:host ::ng-deep th.compact-col button,
+// Constrain inner button size
 :host ::ng-deep td.compact-col button {
-	min-width: unset;
+	padding: 0 0.25rem; /* icon-only feel */
+	line-height: 1.05;
 }
 
-// Data rows: add compact-col to second and third td via attribute selector (icon column has centered icon, action column has a button)
+// Ensure body 2nd & 3rd columns behave like compact columns even without explicit class
 :host ::ng-deep .p-treetable-tbody > tr > td:nth-child(2),
 :host ::ng-deep .p-treetable-tbody > tr > td:nth-child(3) {
-	width: 1%;
+	width: 1px;
 	white-space: nowrap;
+	padding: 0.1rem 0.25rem;
 	text-align: center;
-	padding-left: 0.25rem;
-	padding-right: 0.25rem;
+}
+
+// Adjust general spacing around action buttons row and tree table
+:host ::ng-deep .actions-row {
+	margin-top: 0.1rem !important;
+	margin-bottom: 0.15rem !important;
+}
+
+.compare-action-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem; /* consistent spacing between Mirror / Copy / Clear */
+}
+
+.compare-action-buttons button {
+	margin: 0; /* rely on gap */
+}
+
+// Reduce gap above tree table
+:host ::ng-deep .p-treetable {
+	margin-top: 0.1rem;
 }
 

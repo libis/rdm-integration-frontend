@@ -35,7 +35,7 @@ export const APP_CONSTANTS = {
   COLORS: {
     SUCCESS: 'green',
     INFO: 'blue',
-    NEUTRAL: 'black',
+    NEUTRAL: 'foreground',
     DANGER: 'red',
   },
 
