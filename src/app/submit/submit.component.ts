@@ -1,6 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { Subscription, firstValueFrom } from 'rxjs';
@@ -48,6 +49,7 @@ import { SubscriptionManager } from '../shared/types';
   templateUrl: './submit.component.html',
   styleUrls: ['./submit.component.scss'],
   imports: [
+    CommonModule,
     ButtonDirective,
     Dialog,
     Checkbox,

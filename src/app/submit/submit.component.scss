@@ -20,6 +20,66 @@
 	border-color: var(--p-content-border-color);
 }
 
+/* Remove stray white stripes between major sections */
+:host ::ng-deep .submit-table {
+	border-collapse: collapse;
+}
+
+.progress-wrapper {
+	max-width: 60rem;
+}
+
+.progress-label {
+	min-width:10rem;
+	font-weight:600;
+}
+
+.progress-counter {
+	min-width:11rem;
+	text-align:right;
+	color: var(--p-text-color-secondary, var(--p-text-color));
+	opacity: .85;
+	text-shadow: 0 0 2px rgba(0,0,0,.6);
+}
+
+.themed-progress {
+	height: .75rem;
+	border-radius:4px;
+	overflow:hidden;
+	background: var(--p-content-border-color);
+}
+
+.themed-progress-bar {
+	height:100%;
+	background: var(--p-primary-color,#007ad9);
+	transition: width .4s ease;
+}
+
+.themed-progress-bar.complete {
+	animation: pulse-finish 1.6s ease-in-out 1;
+	box-shadow: 0 0 4px var(--p-primary-color,#007ad9), 0 0 8px rgba(0,0,0,.4) inset;
+}
+
+@keyframes pulse-finish {
+	0% { filter: brightness(1); }
+	40% { filter: brightness(1.35); }
+	80% { filter: brightness(1); }
+	100% { filter: brightness(1); }
+}
+
+.subtle-text { color: var(--p-text-color-secondary, var(--p-text-color)); opacity:.8; }
+
+.safety-warning {
+	margin: 2rem 0 2.5rem 0;
+	text-align:center;
+	font-weight:500;
+	color: var(--p-text-color);
+	padding: 0.9rem 1rem;
+	border-radius: 6px;
+	background: rgba(var(--p-danger-rgb,255,77,79),0.08);
+	i { color: var(--p-danger-color, #ff4d4f); }
+}
+
 /* Section headers follow themed header background */
 :host ::ng-deep .file-list-header > th {
 	background: var(--p-accordion-header-background);
