@@ -321,7 +321,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     // Determine navigation origin: if we received incomingMetadata it means we passed through metadata-selector.
     if (this.incomingMetadata) {
       // Return to metadata selector (one logical step back)
-      this.router.navigate(['/metadata-selector'], { state: { fromSubmit: true } });
+      this.router.navigate(['/metadata-selector'], {
+        state: { fromSubmit: true },
+      });
     } else {
       this.router.navigate(['/compare', datasetId], {
         state: { preserveCompare: true },

@@ -291,7 +291,9 @@ export class CompareComponent
     this.dataStateService.updateState(this.data);
     if (this.isNewDataset()) {
       // Pass a breadcrumb flag so submit/back can return here
-      this.router.navigate(['/metadata-selector'], { state: { fromCompare: true } });
+      this.router.navigate(['/metadata-selector'], {
+        state: { fromCompare: true },
+      });
     } else {
       this.router.navigate(['/submit']);
     }
@@ -317,7 +319,8 @@ export class CompareComponent
     if (newDs && !this.hasSelection()) {
       // Metadata-only state messages
       if (hasMetadata) return 'Proceed with metadata-only submission';
-      if (!can) return 'Select at least one file to proceed (no metadata available).';
+      if (!can)
+        return 'Select at least one file to proceed (no metadata available).';
     }
     if (!can) return 'Action not available yet';
     return 'Go to next step';
@@ -475,9 +478,13 @@ export class CompareComponent
     });
     // If we came from metadata-selector (new dataset path) we should not jump all the way back to connect.
     // Detect via history.state breadcrumb set by metadata -> compare transition.
-    const cameFromMetadata = (window?.history?.state as { fromMetadata?: boolean })?.fromMetadata;
+    const cameFromMetadata = (
+      window?.history?.state as { fromMetadata?: boolean }
+    )?.fromMetadata;
     if (cameFromMetadata) {
-      this.router.navigate(['/metadata-selector'], { state: { fromCompare: true } });
+      this.router.navigate(['/metadata-selector'], {
+        state: { fromCompare: true },
+      });
     } else {
       this.router.navigate(['/connect']);
     }

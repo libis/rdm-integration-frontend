@@ -90,7 +90,7 @@
     {{ repo() }}
     <span [hidden]="!folderName()" [title]="repoName()">({{ folderName() }})</span>
   </th>
-  <th class="icon_col compact-col" style="text-align: center;">
+  <th class="icon_col" style="text-align: center; width: 4rem;">
           <span title="Comparison status">
             <p-popover #op appendTo="body">
               <p-table [value]="filterItems" [(selection)]="selectedFilterItems" dataKey="label">
@@ -116,7 +116,7 @@
             <button pButton type="button" class="p-button-sm p-button-raised" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
           </span>
         </th>
-  <th class="icon_col compact-col" style="text-align: center;">
+  <th class="icon_col" style="text-align: center; width: 4rem;">
           <span title="Action">
             <i [class]="icon_action"></i>
           </span>

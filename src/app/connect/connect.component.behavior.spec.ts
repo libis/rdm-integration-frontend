@@ -274,7 +274,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     comp.plugin = 'github';
     comp.datasetId = 'root:COLL:New Dataset';
     const httpMock = TestBed.inject(HttpTestingController);
-    const ds = TestBed.inject(DataStateService) as unknown as DataStateServiceStub;
+    const ds = TestBed.inject(
+      DataStateService,
+    ) as unknown as DataStateServiceStub;
 
     comp.connect();
     const req = httpMock.expectOne('api/common/useremail');
@@ -309,11 +311,19 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
-        { provide: ConnectValidationService, useClass: ConnectValidationServiceStub },
+        {
+          provide: ConnectValidationService,
+          useClass: ConnectValidationServiceStub,
+        },
         { provide: DataStateService, useClass: DataStateServiceStub },
         {
           provide: ActivatedRoute,
-          useValue: { queryParams: of({ datasetPid: 'doi:10.999/DEEP', apiToken: 'tok123' }) },
+          useValue: {
+            queryParams: of({
+              datasetPid: 'doi:10.999/DEEP',
+              apiToken: 'tok123',
+            }),
+          },
         },
       ],
     }).compileComponents();
@@ -339,7 +349,11 @@ describe('ConnectComponent additional behavior/validation', () => {
   it('explicit reset query param clears snapshot and all fields including datasetId', fakeAsync(() => {
     sessionStorage.setItem(
       'rdm-connect-snapshot',
-      JSON.stringify({ plugin: 'gitlab', pluginId: 'gitlab', dataset_id: 'doi:10.X/OLD' }),
+      JSON.stringify({
+        plugin: 'gitlab',
+        pluginId: 'gitlab',
+        dataset_id: 'doi:10.X/OLD',
+      }),
     );
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -350,9 +364,15 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
-        { provide: ConnectValidationService, useClass: ConnectValidationServiceStub },
+        {
+          provide: ConnectValidationService,
+          useClass: ConnectValidationServiceStub,
+        },
         { provide: DataStateService, useClass: DataStateServiceStub },
-        { provide: ActivatedRoute, useValue: { queryParams: of({ reset: '1' }) } },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParams: of({ reset: '1' }) },
+        },
       ],
     }).compileComponents();
 

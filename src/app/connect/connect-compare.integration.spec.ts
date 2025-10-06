@@ -155,7 +155,7 @@ describe('Integration: Compare back -> Connect restoration', () => {
     const compareComp = compareDebugEl!.componentInstance as CompareComponent;
     // Execute back navigation
     // Intentionally not asserting prior history.state; capturing removed to satisfy lint
-  compareComp.back();
+    compareComp.back();
     // Wait for navigation to connect
     await hostFixture.whenStable();
     hostFixture.detectChanges();

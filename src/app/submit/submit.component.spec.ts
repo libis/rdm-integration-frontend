@@ -193,7 +193,9 @@ describe('SubmitComponent', () => {
 
   it('back should navigate to metadata-selector when incomingMetadata present', () => {
     // Simulate having come from metadata-selector by assigning private field
-    (component as any).incomingMetadata = { datasetVersion: { metadataBlocks: { citation: { fields: [] } } } } as any;
+    (component as any).incomingMetadata = {
+      datasetVersion: { metadataBlocks: { citation: { fields: [] } } },
+    } as any;
     component.back();
     expect(routerStub.navigate as any).toHaveBeenCalled();
     const args = (routerStub.navigate as any).calls.mostRecent().args;
