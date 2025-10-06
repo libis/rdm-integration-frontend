@@ -1,58 +1,60 @@
-<!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License --> 
-<!DOCTYPE html>
+<!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Datasync</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <title>Datasync</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
+  <body>
+    <nav class="dataverse-header-block">
+      <div w3-include-html="assets/html/header.html"></div>
+    </nav>
 
-<body>
-  <nav class="dataverse-header-block">
-    <div w3-include-html="assets/html/header.html"></div>
-  </nav>
+    <app-root class="content"></app-root>
 
-  <app-root class="content"></app-root>
-
-  <footer>
+    <footer>
       <div w3-include-html="assets/html/footer.html"></div>
-  </footer>
-</body>
+    </footer>
+  </body>
 
-<script>
-  function includeHTML() {
-    var z, i, elmnt, file, xhttp;
-    /* Loop through a collection of all HTML elements: */
-    z = document.getElementsByTagName("*");
-    for (i = 0; i < z.length; i++) {
-      elmnt = z[i];
-      /*search for elements with a certain atrribute:*/
-      file = elmnt.getAttribute("w3-include-html");
-      if (file) {
-        /* Make an HTTP request using the attribute value as the file name: */
-        xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function () {
-          if (this.readyState == 4) {
-            if (this.status == 200) { elmnt.innerHTML = this.responseText; }
-            if (this.status == 404) { elmnt.innerHTML = "Page not found."; }
-            /* Remove the attribute, and call this function once more: */
-            elmnt.removeAttribute("w3-include-html");
-            includeHTML();
-          }
+  <script>
+    function includeHTML() {
+      var z, i, elmnt, file, xhttp;
+      /* Loop through a collection of all HTML elements: */
+      z = document.getElementsByTagName("*");
+      for (i = 0; i < z.length; i++) {
+        elmnt = z[i];
+        /*search for elements with a certain atrribute:*/
+        file = elmnt.getAttribute("w3-include-html");
+        if (file) {
+          /* Make an HTTP request using the attribute value as the file name: */
+          xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function () {
+            if (this.readyState == 4) {
+              if (this.status == 200) {
+                elmnt.innerHTML = this.responseText;
+              }
+              if (this.status == 404) {
+                elmnt.innerHTML = "Page not found.";
+              }
+              /* Remove the attribute, and call this function once more: */
+              elmnt.removeAttribute("w3-include-html");
+              includeHTML();
+            }
+          };
+          xhttp.open("GET", file, true);
+          xhttp.send();
+          /* Exit the function: */
+          return;
         }
-        xhttp.open("GET", file, true);
-        xhttp.send();
-        /* Exit the function: */
-        return;
       }
     }
-  }
-</script>
-<script>
-  includeHTML();
-</script>
-
+  </script>
+  <script>
+    includeHTML();
+  </script>
 </html>

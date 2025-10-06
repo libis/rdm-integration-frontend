@@ -1,12 +1,34 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<td style="text-align: left;"><p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler>{{ datafile().name }}</td>
-<td style="text-align: right;">
-    <div [hidden]="!datafile().attributes?.isFile">
-        <p-progressSpinner [hidden]="!spinning" styleClass="w-1rem h-1rem" ariaLabel="loading"></p-progressSpinner>
-        <p-select appendTo="body" [options]="queues"
-                [filter]="true" filterBy="label" [resetFilterOnHide]="true"
-                [(ngModel)]="queue" placeholder="Select queue" (onChange)="onSelectQueue()"></p-select>
-    <button style="height: 3rem;" pButton label='Run on' type="button" [disabled]="!computeEnabled" (click)="compute()"><i [class]="icon_play"></i></button>
-    </div>
-    
+<td style="text-align: left">
+  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
+  >{{ datafile().name }}
+</td>
+<td style="text-align: right">
+  <div [hidden]="!datafile().attributes?.isFile">
+    <p-progressSpinner
+      [hidden]="!spinning"
+      styleClass="w-1rem h-1rem"
+      ariaLabel="loading"
+    ></p-progressSpinner>
+    <p-select
+      appendTo="body"
+      [options]="queues"
+      [filter]="true"
+      filterBy="label"
+      [resetFilterOnHide]="true"
+      [(ngModel)]="queue"
+      placeholder="Select queue"
+      (onChange)="onSelectQueue()"
+    ></p-select>
+    <button
+      style="height: 3rem"
+      pButton
+      label="Run on"
+      type="button"
+      [disabled]="!computeEnabled"
+      (click)="compute()"
+    >
+      <i [class]="icon_play"></i>
+    </button>
+  </div>
 </td>

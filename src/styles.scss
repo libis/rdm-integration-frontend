@@ -1,160 +1,165 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-@import 'primeicons/primeicons.css';
-@import 'primeflex/primeflex.css';
+@import "primeicons/primeicons.css";
+@import "primeflex/primeflex.css";
 
 body {
-    -webkit-text-size-adjust: 100%;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    box-sizing: border-box;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 0.875rem;
-    line-height: 1.42857143;
-    color: var(--p-text-muted-color);
-    background-color: var(--p-content-background);
-    min-height: 100vh;
-    position: relative;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  box-sizing: border-box;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.42857143;
+  color: var(--p-text-muted-color);
+  background-color: var(--p-content-background);
+  min-height: 100vh;
+  position: relative;
 }
 
 img {
-    vertical-align: middle;
+  vertical-align: middle;
 }
 
 .content {
-    padding-right: 0.1rem;
-    padding-left: 0.1rem;
-    margin-right: auto;
-    margin-left: auto;
+  padding-right: 0.1rem;
+  padding-left: 0.1rem;
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .dataverse-header-block {
-    height: 3.125rem;
-    display: block;
-    border-width: 0 0 0.06rem;
-    background-color: var(--highlight-bg);
-    border-color: #e7e7e7;
-    background-image: linear-gradient(to bottom, #fff 0, #f8f8f8 100%);
-    background-repeat: repeat-x;
-    box-shadow: inset 0 0.06rem 0 rgba(255, 255, 255, .15), 0 0.06rem 0.3rem rgba(0, 0, 0, .075);
-    border-radius: 0;
-    z-index: 9999;
+  height: 3.125rem;
+  display: block;
+  border-width: 0 0 0.06rem;
+  background-color: var(--highlight-bg);
+  border-color: #e7e7e7;
+  background-image: linear-gradient(to bottom, #fff 0, #f8f8f8 100%);
+  background-repeat: repeat-x;
+  box-shadow:
+    inset 0 0.06rem 0 rgba(255, 255, 255, 0.15),
+    0 0.06rem 0.3rem rgba(0, 0, 0, 0.075);
+  border-radius: 0;
+  z-index: 9999;
 }
 
 .dataverse-navbar-logo-ref {
-    background-color: transparent;
-    text-decoration: none;
+  background-color: transparent;
+  text-decoration: none;
 }
 
 .dataverse-navbar-logo {
-    border: 0;
-    vertical-align: middle;
-    float: left;
-    font-size: 1.125rem;
-    line-height: 1.25rem;
-    text-shadow: 0 0.06rem 0 rgba(255, 255, 255, .25);
-    color: #C55B28;
-    padding: 0;
+  border: 0;
+  vertical-align: middle;
+  float: left;
+  font-size: 1.125rem;
+  line-height: 1.25rem;
+  text-shadow: 0 0.06rem 0 rgba(255, 255, 255, 0.25);
+  color: #c55b28;
+  padding: 0;
 }
 
 .dataverse-navbar-collapse {
-    width: auto;
-    list-style: none;
-    float: right;
-    background-color: transparent;
+  width: auto;
+  list-style: none;
+  float: right;
+  background-color: transparent;
 }
 
 .dataverse-navbar-right-li {
-    position: relative;
-    display: block;
-    float: left;
+  position: relative;
+  display: block;
+  float: left;
 }
 
 .dataverse-navbar-right-ref {
-    text-decoration: none;
-    position: relative;
-    display: block;
-    padding: 0.6rem 1rem;
-    line-height: 1.2rem;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    text-shadow: 0 0.06rem 0 rgba(255, 255, 255, .25);
-    color: #777;
+  text-decoration: none;
+  position: relative;
+  display: block;
+  padding: 0.6rem 1rem;
+  line-height: 1.2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  text-shadow: 0 0.06rem 0 rgba(255, 255, 255, 0.25);
+  color: #777;
 }
 
 footer {
-    position: absolute;
-    display: block;
-    color: #767676;
-    bottom: 0;
-    width: 100%;
-    background-color: #1d8db0;
-    height: 4.375rem;
+  position: absolute;
+  display: block;
+  color: #767676;
+  bottom: 0;
+  width: 100%;
+  background-color: #1d8db0;
+  height: 4.375rem;
 }
 
-footer>div {
-    position: relative;
-    bottom: 0.35rem;
-    color: #ffffff;
+footer > div {
+  position: relative;
+  bottom: 0.35rem;
+  color: #ffffff;
 }
 
-.p-button>.p-button-label {
-    display: none;
+.p-button > .p-button-label {
+  display: none;
 }
 
 .sticky-menu {
-    font-size: 0.875rem;
-    font-weight: 100;
-    position: sticky;
-    top: 0rem;
-    padding: 0.4rem;
-    background-color: var(--p-accordion-header-background);
-    border: 0.06rem solid var(--p-content-border-color);
-    z-index: 1;
-    margin-left: 0rem;
-    margin-right: 0rem;
+  font-size: 0.875rem;
+  font-weight: 100;
+  position: sticky;
+  top: 0rem;
+  padding: 0.4rem;
+  background-color: var(--p-accordion-header-background);
+  border: 0.06rem solid var(--p-content-border-color);
+  z-index: 1;
+  margin-left: 0rem;
+  margin-right: 0rem;
 }
 
 .file-list-header {
-    font-weight: 700;
-    color: #343a40;
-    background: var(--highlight-bg);
-    padding: 1rem 1rem;
-    border: 0.06rem solid var(--bs-border-color);
-    border-width: 0 0 0.06rem 0;
-    transition: box-shadow 0.2s;
+  font-weight: 700;
+  color: #343a40;
+  background: var(--highlight-bg);
+  padding: 1rem 1rem;
+  border: 0.06rem solid var(--bs-border-color);
+  border-width: 0 0 0.06rem 0;
+  transition: box-shadow 0.2s;
 }
 
 button {
-    border-radius: 0.4rem;
+  border-radius: 0.4rem;
 }
 
 .p-select-list {
-    padding-left: 0;
+  padding-left: 0;
 }
 
 .p-select-overlay {
-    min-width: 100%;
+  min-width: 100%;
 }
 
 /* Unified page title styling */
 .page-title {
-    font-size: 1.25rem; /* larger than base (roughly h5/h4 blend) */
-    font-weight: 600;
-    color: var(--p-text-color);
-    line-height: 1.4;
+  font-size: 1.25rem; /* larger than base (roughly h5/h4 blend) */
+  font-weight: 600;
+  color: var(--p-text-color);
+  line-height: 1.4;
 }
 
 /* Center page title across full sticky header without altering existing column layout */
 .sticky-menu .page-title {
-    position: absolute; /* detach from middle column width */
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    margin: 0;
-    text-align: center;
-    white-space: nowrap;
-    pointer-events: none; /* avoid intercepting clicks on overlapping buttons at extreme narrow widths */
+  position: absolute; /* detach from middle column width */
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none; /* avoid intercepting clicks on overlapping buttons at extreme narrow widths */
 }
 
 /* Allow buttons to stay clickable above (pointer-events on title disabled) */
-.sticky-menu .col-auto { position: relative; z-index: 1; }
+.sticky-menu .col-auto {
+  position: relative;
+  z-index: 1;
+}

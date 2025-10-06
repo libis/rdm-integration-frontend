@@ -11,7 +11,7 @@ eslint: ## eslint the go code
 upgrade_dependencies: ## upgrade all go dependencies
 	npx npm-check-updates -u && npm install
 
-fmt: ## format code
+fmt: ## format code (ts, html, css, scss, json)
 	npm run pretty
 
 test: ## run all unit/integration tests headless (single run)

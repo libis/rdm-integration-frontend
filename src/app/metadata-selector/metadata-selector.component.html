@@ -1,45 +1,73 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
 <div class="row justify-content-between align-items-center sticky-menu">
-	<div class="col-auto">
-		<button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
-	</div>
-    <div class="col text-center">
-      <h2 class="page-title m-0">Select metadata actions</h2>
-    </div>
-	<div class="col-auto">
-		<button pButton type="button" class="p-button-sm p-button-raised p-button-primary" (click)="submit()" title="Confirm metadata selection">Confirm metadata selection&nbsp;<i class="pi pi-angle-double-right"></i></button>
-	</div>
+  <div class="col-auto">
+    <button
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-secondary"
+      (click)="back()"
+    >
+      <i class="pi pi-angle-double-left"></i>&nbsp;Return
+    </button>
+  </div>
+  <div class="col text-center">
+    <h2 class="page-title m-0">Select metadata actions</h2>
+  </div>
+  <div class="col-auto">
+    <button
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-primary"
+      (click)="submit()"
+      title="Confirm metadata selection"
+    >
+      Confirm metadata selection&nbsp;<i class="pi pi-angle-double-right"></i>
+    </button>
+  </div>
 </div>
 
-<br/>
+<br />
 
 <table class="table">
-	<tbody>
-		<tr class="file-list-header">
-				<!-- Ensure tableColumnCount is defined in the component TypeScript and matches the number of columns -->
-				<th [attr.colspan]="treeTableColumnCount"><i [class]="icon_copy"></i> Metadata that will be copied</th>
-			</tr>
-			<tr>
-				<td class="treetable-cell" [attr.colspan]="treeTableColumnCount">
-					<p-treeTable [value]="rootNodeChildren">
-						<ng-template pTemplate="header">
-								<tr>
-									<th style="text-align: left;">Metadata field</th>
-									<th>Value</th>
-									<th>Metadata source</th>
-									<th class="icon_col" style="text-align: right;">
-										<button pButton label='' type="button"
-											class="p-button-sm p-button-outlined p-button-secondary" (click)="toggleAction()"><i
-											[class]="action()"></i></button>
-									</th>
-								</tr>
-						</ng-template>
-						<ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-							<tr app-metadatafield [field]="rowData" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode"
-								[ngClass]="rowClass(rowData)">
-						</ng-template>
-					</p-treeTable>
-				</td>
-			</tr>
-	</tbody>
+  <tbody>
+    <tr class="file-list-header">
+      <!-- Ensure tableColumnCount is defined in the component TypeScript and matches the number of columns -->
+      <th [attr.colspan]="treeTableColumnCount">
+        <i [class]="icon_copy"></i> Metadata that will be copied
+      </th>
+    </tr>
+    <tr>
+      <td class="treetable-cell" [attr.colspan]="treeTableColumnCount">
+        <p-treeTable [value]="rootNodeChildren">
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="text-align: left">Metadata field</th>
+              <th>Value</th>
+              <th>Metadata source</th>
+              <th class="icon_col" style="text-align: right">
+                <button
+                  pButton
+                  label=""
+                  type="button"
+                  class="p-button-sm p-button-outlined p-button-secondary"
+                  (click)="toggleAction()"
+                >
+                  <i [class]="action()"></i>
+                </button>
+              </th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+            <tr
+              app-metadatafield
+              [field]="rowData"
+              [rowNodeMap]="rowNodeMap"
+              [rowNode]="rowNode"
+              [ngClass]="rowClass(rowData)"
+            ></tr
+          ></ng-template>
+        </p-treeTable>
+      </td>
+    </tr>
+  </tbody>
 </table>

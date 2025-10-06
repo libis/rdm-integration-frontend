@@ -1,50 +1,103 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto">
-    <button pButton type="button" class="p-button-sm p-button-raised p-button-secondary" (click)="back()"><i class="pi pi-angle-double-left"></i>&nbsp;Return</button>
+    <button
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-secondary"
+      (click)="back()"
+    >
+      <i class="pi pi-angle-double-left"></i>&nbsp;Return
+    </button>
   </div>
   <div class="col text-center">
     <h2 class="page-title m-0">Select file actions</h2>
   </div>
   <div class="col-auto">
-    <button pButton type="button" class="p-button-sm p-button-raised" [ngClass]="canProceed() ? 'p-button-primary' : 'p-button-secondary'" (click)="submit()" [title]="proceedTitle()" [attr.disabled]="(!canProceed() || disabled) ? '' : null">Confirm file actions&nbsp;<i class="pi pi-angle-double-right"></i></button>
+    <button
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised"
+      [ngClass]="canProceed() ? 'p-button-primary' : 'p-button-secondary'"
+      (click)="submit()"
+      [title]="proceedTitle()"
+      [attr.disabled]="!canProceed() || disabled ? '' : null"
+    >
+      Confirm file actions&nbsp;<i class="pi pi-angle-double-right"></i>
+    </button>
   </div>
 </div>
 
 <div class="row actions-row gy-1 my-1 justify-content-center text-center">
   <div class="col-12 col-md-auto">
     <div class="compare-action-buttons d-flex flex-wrap justify-content-center">
-      <button pButton type="button" class="p-button-sm p-button-raised" (click)="mirrorSelection()" title="Copy all new and changed files; remove missing" [attr.disabled]="disabled ? '' : null">
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised"
+        (click)="mirrorSelection()"
+        title="Copy all new and changed files; remove missing"
+        [attr.disabled]="disabled ? '' : null"
+      >
         <i [class]="icon_mirror"></i>&nbsp;Mirror
       </button>
-      <button pButton type="button" class="p-button-sm p-button-raised" (click)="updateSelection()" title="Copy new and changed files" [attr.disabled]="disabled ? '' : null">
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised"
+        (click)="updateSelection()"
+        title="Copy new and changed files"
+        [attr.disabled]="disabled ? '' : null"
+      >
         <i [class]="icon_update"></i>&nbsp;Copy
       </button>
-      <button pButton type="button" class="p-button-sm p-button-raised" (click)="noActionSelection()" title="Clear selection (no actions)" [attr.disabled]="disabled ? '' : null">
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised"
+        (click)="noActionSelection()"
+        title="Clear selection (no actions)"
+        [attr.disabled]="disabled ? '' : null"
+      >
         <i [class]="icon_noaction"></i>&nbsp;Clear
       </button>
-      <button pButton type="button" class="p-button-sm p-button-raised" (click)="refresh()" title="Refresh files status" [hidden]="refreshHidden">
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised"
+        (click)="refresh()"
+        title="Refresh files status"
+        [hidden]="refreshHidden"
+      >
         <i class="pi pi-refresh"></i>&nbsp;Refresh
       </button>
     </div>
   </div>
 </div>
 
-
-@if ((rejectedSize && rejectedSize.length) || (rejectedName && rejectedName.length)) {
+@if (
+  (rejectedSize && rejectedSize.length) || (rejectedName && rejectedName.length)
+) {
   <div class="mb-3">
     @if (rejectedSize && rejectedSize.length) {
       <div>
         <table class="table">
           <tbody>
             <tr class="file-list-header">
-              <th><i [class]="icon_warning" style="color:red"></i> Files exceeding maximum allowed size ({{ maxFileSize }} bytes):</th>
+              <th>
+                <i [class]="icon_warning" style="color: red"></i> Files
+                exceeding maximum allowed size ({{ maxFileSize }} bytes):
+              </th>
             </tr>
             <tr>
               <table class="table">
                 <tbody>
                   @for (fileName of rejectedSize; track fileName) {
-                    <tr><td><span>{{ fileName }}</span></td></tr>
+                    <tr>
+                      <td>
+                        <span>{{ fileName }}</span>
+                      </td>
+                    </tr>
                   }
                 </tbody>
               </table>
@@ -58,21 +111,31 @@
         <table class="table">
           <tbody>
             <tr class="file-list-header">
-              <th><i [class]="icon_warning" style="color:red"></i> Files with unsupported characters (allowed patterns shown below):</th>
+              <th>
+                <i [class]="icon_warning" style="color: red"></i> Files with
+                unsupported characters (allowed patterns shown below):
+              </th>
             </tr>
             <tr>
               <table class="table">
                 <tbody>
                   @for (fileName of rejectedName; track fileName) {
-                    <tr><td><span>{{ fileName }}</span></td></tr>
+                    <tr>
+                      <td>
+                        <span>{{ fileName }}</span>
+                      </td>
+                    </tr>
                   }
                 </tbody>
               </table>
             </tr>
             <tr>
               <td class="small text-muted px-3 pb-2">
-                Allowed file name pattern: <code>{{ allowedFileNamePattern }}</code><br/>
-                Allowed folder path pattern: <code>{{ allowedFolderPathPattern }}</code>
+                Allowed file name pattern:
+                <code>{{ allowedFileNamePattern }}</code
+                ><br />
+                Allowed folder path pattern:
+                <code>{{ allowedFolderPathPattern }}</code>
               </td>
             </tr>
           </tbody>
@@ -86,18 +149,26 @@
   <p-treeTable [value]="rootNodeChildren" [loading]="loading">
     <ng-template pTemplate="header">
       <tr>
-  <th>
-    {{ repo() }}
-    <span [hidden]="!folderName()" [title]="repoName()">({{ folderName() }})</span>
-  </th>
-  <th class="icon_col" style="text-align: center; width: 4rem;">
+        <th>
+          {{ repo() }}
+          <span [hidden]="!folderName()" [title]="repoName()"
+            >({{ folderName() }})</span
+          >
+        </th>
+        <th class="icon_col" style="text-align: center; width: 4rem">
           <span title="Comparison status">
             <p-popover #op appendTo="body">
-              <p-table [value]="filterItems" [(selection)]="selectedFilterItems" dataKey="label">
+              <p-table
+                [value]="filterItems"
+                [(selection)]="selectedFilterItems"
+                dataKey="label"
+              >
                 <ng-template pTemplate="header">
                   <tr>
                     <th title="Show all files">
-                      <p-tableHeaderCheckbox (click)="updateFilters()"></p-tableHeaderCheckbox>
+                      <p-tableHeaderCheckbox
+                        (click)="updateFilters()"
+                      ></p-tableHeaderCheckbox>
                     </th>
                     <th>Comparison status</th>
                   </tr>
@@ -105,23 +176,44 @@
                 <ng-template pTemplate="body" let-product>
                   <tr [title]="product.title">
                     <td>
-                      <p-tableCheckbox [value]="product" (click)="updateFilters()"></p-tableCheckbox>
+                      <p-tableCheckbox
+                        [value]="product"
+                        (click)="updateFilters()"
+                      ></p-tableCheckbox>
                     </td>
-                    <td><i [style]="product.iconStyle" [class]="product.icon"></i>&nbsp;{{ product.label }}</td>
+                    <td>
+                      <i [style]="product.iconStyle" [class]="product.icon"></i
+                      >&nbsp;{{ product.label }}
+                    </td>
                   </tr>
                 </ng-template>
               </p-table>
-              <button pButton type="button" class="p-button-link" (click)="showAll()" title="Show all">Show all...</button>
+              <button
+                pButton
+                type="button"
+                class="p-button-link"
+                (click)="showAll()"
+                title="Show all"
+              >
+                Show all...
+              </button>
             </p-popover>
-            <button pButton type="button" class="p-button-sm p-button-raised" icon="pi pi-filter" (click)="op.toggle($event)" [attr.disabled]="disabled ? '' : null"></button>
+            <button
+              pButton
+              type="button"
+              class="p-button-sm p-button-raised"
+              icon="pi pi-filter"
+              (click)="op.toggle($event)"
+              [attr.disabled]="disabled ? '' : null"
+            ></button>
           </span>
         </th>
-  <th class="icon_col" style="text-align: center; width: 4rem;">
+        <th class="icon_col" style="text-align: center; width: 4rem">
           <span title="Action">
             <i [class]="icon_action"></i>
           </span>
         </th>
-        <th style="text-align:right;">
+        <th style="text-align: right">
           {{ isNewDataset() ? dataverseHeaderNoColon() : dataverseHeader() }}
           (
           @if (!isNewDataset()) {
@@ -134,7 +226,16 @@
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-      <tr app-datafile [hidden]="rowData.hidden" [datafile]="rowData" [loading]="loading" [rowNodeMap]="rowNodeMap" [rowNode]="rowNode" [isInFilter]="isInFilterMode" [style]="rowClass(rowData)">
-      </ng-template>
-    </p-treeTable>
-  </div>
+      <tr
+        app-datafile
+        [hidden]="rowData.hidden"
+        [datafile]="rowData"
+        [loading]="loading"
+        [rowNodeMap]="rowNodeMap"
+        [rowNode]="rowNode"
+        [isInFilter]="isInFilterMode"
+        [style]="rowClass(rowData)"
+      ></tr
+    ></ng-template>
+  </p-treeTable>
+</div>
