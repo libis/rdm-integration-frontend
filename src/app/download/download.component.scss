@@ -2,6 +2,18 @@
   width: 100%;
 }
 
+// Fix dropdown panel width when appendTo="body"
+// The panel is appended to body, so we need to target it globally
+::ng-deep .p-select-overlay {
+  max-width: 30rem !important;
+
+  .p-select-option {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 // Fix text-muted readability in dark mode
 .text-muted {
   color: var(--p-text-muted-color) !important;
