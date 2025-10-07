@@ -3,7 +3,8 @@
 
 .table,
 .table tbody,
-.table tr,
+// Don't override tr background if it has a file-action class
+.table tr:not([class*='file-action-']),
 .table td,
 .table th {
   background-color: var(--p-content-background);
