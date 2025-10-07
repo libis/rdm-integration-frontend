@@ -74,7 +74,6 @@ export class MetadatafieldComponent implements OnInit {
 
   source(): string {
     const f = this.node?.data?.field;
-    if (!f) return '';
     // When the node is a leaf, field is a MetadataField and may carry `source`.
     // When it's a compound, it's a FieldDictionary and we don't show a source at this row level.
     // A safer check: if it has a 'value' and 'typeName', it's a MetadataField.

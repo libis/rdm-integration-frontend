@@ -17,6 +17,7 @@ import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { NavigationService } from '../shared/navigation.service';
 
 // Models
 import { Credentials } from '../models/credentials';
@@ -90,6 +91,7 @@ export class ConnectComponent
   private readonly notificationService = inject(NotificationService);
   private readonly snapshotStorage = inject(SnapshotStorageService);
   private readonly connectValidation = inject(ConnectValidationService);
+  private readonly navigation = inject(NavigationService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -661,7 +663,7 @@ export class ConnectComponent
           url = `${url}&scope=${encodeURIComponent(scopes)}`;
         }
       }
-      location.href = url;
+  this.navigation.assign(url);
     } else {
       window.open(url, '_blank');
     }

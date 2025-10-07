@@ -49,4 +49,35 @@ describe('DataUpdatesService', () => {
       ],
     });
   });
+
+  it('updateData handles missing response data without crashing', (done) => {
+    service.updateData([], 'doi:456').subscribe((r) => {
+      expect(r.data).toBeUndefined();
+      done();
+    });
+    const req = http.expectOne('api/common/compare');
+    req.flush({});
+  });
+
+  it('updateData sorts undefined ids deterministically', (done) => {
+    service
+      .updateData(
+        [
+          { id: undefined, name: 'b', path: '', hidden: false },
+          { id: 'a', name: 'a', path: '', hidden: false },
+        ] as any,
+        'doi:789',
+      )
+      .subscribe((r) => {
+        expect(r.data?.map((f) => f.id ?? '')).toEqual(['', 'a']);
+        done();
+      });
+    const req = http.expectOne('api/common/compare');
+    req.flush({
+      data: [
+        { id: undefined, name: 'b', path: '', hidden: false },
+        { id: 'a', name: 'a', path: '', hidden: false },
+      ],
+    });
+  });
 });

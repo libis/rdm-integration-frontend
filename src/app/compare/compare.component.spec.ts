@@ -3,9 +3,13 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { Router } from '@angular/router';
+import { Observable, Observer } from 'rxjs';
+import { TreeNode } from 'primeng/api';
+import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { CompareResult, ResultStatus } from '../models/compare-result';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { CompareComponent } from './compare.component';
 
@@ -145,5 +149,310 @@ describe('CompareComponent', () => {
       component['data'] = { id: 'doi:10.123/EXISTING' } as any;
       expect(component['isNewDataset']()).toBeFalse();
     });
+  });
+
+  describe('row operations and filtering', () => {
+    const makeNode = (
+      status: Filestatus,
+      action: Fileaction = Fileaction.Ignore,
+      hidden = false,
+    ): TreeNode<Datafile> => ({
+      data: {
+        id: Math.random().toString(),
+        name: 'f',
+        path: '',
+        hidden,
+        status,
+        action,
+        attributes: { isFile: true },
+      } as unknown as Datafile,
+      children: [],
+    });
+
+    beforeEach(() => {
+      (component as any).rowNodeMap = new Map<string, TreeNode<Datafile>>();
+    });
+
+    it('rowClass returns expected CSS classes', () => {
+      expect(component.rowClass({ action: Fileaction.Ignore } as Datafile)).toBe(
+        '',
+      );
+      expect(component.rowClass({ action: Fileaction.Copy } as Datafile)).toBe(
+        'file-action-copy',
+      );
+      expect(component.rowClass({ action: Fileaction.Update } as Datafile)).toBe(
+        'file-action-update',
+      );
+      expect(component.rowClass({ action: Fileaction.Delete } as Datafile)).toBe(
+        'file-action-delete',
+      );
+      expect(component.rowClass({ action: Fileaction.Custom } as Datafile)).toBe(
+        'file-action-custom',
+      );
+    });
+
+    it('noActionSelection resets only visible nodes', () => {
+      const visible = makeNode(Filestatus.New, Fileaction.Copy, false);
+      const hidden = makeNode(Filestatus.New, Fileaction.Delete, true);
+      const map = new Map<string, TreeNode<Datafile>>([
+        ['v', visible],
+        ['h', hidden],
+      ]);
+      (component as any).rowNodeMap = map;
+      component.noActionSelection();
+      expect(visible.data!.action).toBe(Fileaction.Ignore);
+      expect(hidden.data!.action).toBe(Fileaction.Delete);
+    });
+
+    it('updateSelection and mirrorSelection apply status-specific actions', () => {
+      const nodes = [
+        makeNode(Filestatus.New),
+        makeNode(Filestatus.Equal),
+        makeNode(Filestatus.Updated),
+        makeNode(Filestatus.Deleted),
+      ];
+      const keys = ['new', 'equal', 'upd', 'del'];
+      const map = new Map<string, TreeNode<Datafile>>([
+        ...nodes.map((node, idx) => [keys[idx], node] as [string, TreeNode<Datafile>]),
+      ]);
+      (component as any).rowNodeMap = map;
+      component.updateSelection();
+      expect(nodes[0].data!.action).toBe(Fileaction.Copy);
+      expect(nodes[1].data!.action).toBe(Fileaction.Ignore);
+      expect(nodes[2].data!.action).toBe(Fileaction.Update);
+      expect(nodes[3].data!.action).toBe(Fileaction.Ignore);
+
+      component.mirrorSelection();
+      expect(nodes[3].data!.action).toBe(Fileaction.Delete);
+    });
+
+    it('filterOn hides non-matching rows and filterOff restores them', () => {
+      const root: TreeNode<Datafile> = {
+        data: { attributes: { isFile: false } } as unknown as Datafile,
+        children: [],
+      };
+      const includeNode = makeNode(Filestatus.New, Fileaction.Copy);
+      const excludeNode = makeNode(Filestatus.Equal, Fileaction.Ignore);
+      root.children = [includeNode, excludeNode];
+      const map = new Map<string, TreeNode<Datafile>>([
+        ['', root],
+        ['inc', includeNode],
+        ['exc', excludeNode],
+      ]);
+      (component as any).rowNodeMap = map;
+      (component as any).rootNodeChildren = root.children;
+      component['filterOn']([{ fileStatus: Filestatus.New } as any]);
+      expect(includeNode.data!.hidden).toBeFalse();
+      expect(excludeNode.data!.hidden).toBeTrue();
+      expect(component.rootNodeChildren).toEqual([includeNode]);
+      expect(component.isInFilterMode).toBeTrue();
+
+      const folderUpdateStub = {
+        updateFoldersAction: jasmine.createSpy('updateFoldersAction'),
+      };
+      (component as any).folderActionUpdateService = folderUpdateStub;
+      component['filterOff']();
+      expect(includeNode.data!.hidden).toBeFalse();
+      expect(excludeNode.data!.hidden).toBeFalse();
+      expect(folderUpdateStub.updateFoldersAction).toHaveBeenCalledWith(map);
+      expect(component.isInFilterMode).toBeFalse();
+    });
+
+    it('updateFilters toggles between filtered and full views', fakeAsync(() => {
+      const root: TreeNode<Datafile> = {
+        data: { attributes: { isFile: false } } as unknown as Datafile,
+        children: [],
+      };
+      const includeNode = makeNode(Filestatus.New, Fileaction.Copy);
+      const excludeNode = makeNode(Filestatus.Equal, Fileaction.Ignore);
+      root.children = [includeNode, excludeNode];
+      const map = new Map<string, TreeNode<Datafile>>([
+        ['', root],
+        ['inc', includeNode],
+        ['exc', excludeNode],
+      ]);
+      (component as any).rowNodeMap = map;
+      (component as any).rootNodeChildren = root.children;
+      const folderUpdateStub = {
+        updateFoldersAction: jasmine.createSpy('updateFoldersAction'),
+      };
+      (component as any).folderActionUpdateService = folderUpdateStub;
+
+      component.selectedFilterItems = [component.filterItems[0]];
+      component.updateFilters();
+      tick();
+      expect(component.isInFilterMode).toBeTrue();
+      expect(component.rootNodeChildren).toEqual([includeNode]);
+
+      component.selectedFilterItems = [...component.filterItems];
+      component.updateFilters();
+      tick();
+      expect(component.isInFilterMode).toBeFalse();
+      expect(folderUpdateStub.updateFoldersAction).toHaveBeenCalledWith(map);
+    }));
+
+    it('showAll resets selected filters and exits filter mode', () => {
+      component.selectedFilterItems = [component.filterItems[0]];
+      component.isInFilterMode = true;
+      const folderUpdateStub = {
+        updateFoldersAction: jasmine.createSpy('updateFoldersAction'),
+      };
+      (component as any).folderActionUpdateService = folderUpdateStub;
+      (component as any).rowNodeMap = new Map([
+        ['', { data: {}, children: [] } as unknown as TreeNode<Datafile>],
+      ]);
+      component.showAll();
+      expect(component.selectedFilterItems.length).toBe(4);
+      expect(component.isInFilterMode).toBeFalse();
+      expect(folderUpdateStub.updateFoldersAction).toHaveBeenCalled();
+    });
+
+    it('hasSelection detects files with non-ignore actions', () => {
+      const map = new Map<string, TreeNode<Datafile>>([
+        ['file', makeNode(Filestatus.New, Fileaction.Copy)],
+      ]);
+      (component as any).rowNodeMap = map;
+      expect(component.hasSelection()).toBeTrue();
+      map.get('file')!.data!.action = Fileaction.Ignore;
+      expect(component.hasSelection()).toBeFalse();
+    });
+
+    it('setData maps rows and notifies folder status service', () => {
+      const df: Datafile = {
+        id: 'id',
+        name: 'File',
+        path: '',
+        hidden: false,
+        attributes: { isFile: true },
+      } as unknown as Datafile;
+      const root: TreeNode<Datafile> = {
+        data: { attributes: { isFile: false } } as unknown as Datafile,
+        children: [{ data: df } as TreeNode<Datafile>],
+      };
+      const mapped = new Map<string, TreeNode<Datafile>>([
+        ['', root],
+        ['id', root.children![0]],
+      ]);
+      const utilsStub = {
+        mapDatafiles: jasmine.createSpy('map').and.returnValue(mapped),
+        addChild: jasmine.createSpy('addChild'),
+      };
+      const folderStatusStub = {
+        updateTreeRoot: jasmine.createSpy('updateTreeRoot'),
+      };
+      (component as any).utils = utilsStub;
+      (component as any).folderStatusService = folderStatusStub;
+      component['setData']({ data: [df], id: 'root' } as CompareResult);
+      expect(utilsStub.mapDatafiles).toHaveBeenCalled();
+      expect(folderStatusStub.updateTreeRoot).toHaveBeenCalledWith(root);
+      expect(component.rootNodeChildren).toEqual(
+        root.children as TreeNode<Datafile>[],
+      );
+    });
+
+    it('folderName derives labels based on plugin context', () => {
+      (component as any).credentialsService = {
+        credentials: { pluginId: 'github', repo_name: 'owner/repo', option: '' },
+      };
+      expect(component.folderName()).toBeUndefined();
+      (component as any).credentialsService.credentials.repo_name =
+        'owner/repo/subfolder';
+      expect(component.folderName()).toBe('subfolder');
+
+      (component as any).credentialsService.credentials = {
+        pluginId: 'globus',
+        option: '/path/to/folder/',
+      };
+      expect(component.folderName()).toBe('folder');
+
+      (component as any).credentialsService.credentials = {
+        pluginId: 'onedrive',
+        option: 'driveId/path/to/folder',
+      };
+      expect(component.folderName()).toBe('folder');
+
+      (component as any).credentialsService.credentials = {
+        pluginId: 'sftp',
+        option: 'dir/sub',
+      };
+      expect(component.folderName()).toBe('sub');
+    });
+
+    it('displayDatasetId normalizes new dataset labels', () => {
+      component['data'] = { id: '' } as CompareResult;
+      expect(component.displayDatasetId()).toBe('New Dataset');
+      component['data'] = { id: ':New Dataset' } as CompareResult;
+      expect(component.displayDatasetId()).toBe('New Dataset');
+      component['data'] = { id: 'doi:10.1/ABC' } as CompareResult;
+      expect(component.displayDatasetId()).toBe('doi:10.1/ABC');
+    });
+
+    it('repo and dataverseHeaderNoColon use plugin service helpers', () => {
+      (component as any).credentialsService = {
+        credentials: { pluginId: 'github' },
+      };
+      (component as any).pluginService = {
+        getPlugin: () => ({ name: 'GitHub' }),
+        dataverseHeader: () => 'Dataverse:',
+      };
+      expect(component.repo()).toBe('GitHub');
+      expect(component.dataverseHeaderNoColon()).toBe('Dataverse');
+    });
+
+    it('newlyCreated and hasSelection cooperate with credentials', () => {
+      (component as any).credentialsService = {
+        credentials: { newly_created: true },
+      };
+      expect(component.newlyCreated()).toBeTrue();
+      (component as any).credentialsService.credentials.newly_created = false;
+      expect(component.newlyCreated()).toBeFalse();
+    });
+
+    it('getUpdatedData and refresh process data update responses', fakeAsync(() => {
+      const updates: CompareResult = {
+        data: [],
+        id: 'id',
+        status: ResultStatus.Finished,
+      };
+      const updating: CompareResult = {
+        data: [],
+        id: 'id',
+        status: ResultStatus.Updating,
+      };
+      const dataUpdatesStub = {
+        updateData: jasmine
+          .createSpy('updateData')
+          .and.returnValue(new Observable<CompareResult>((obs: Observer<CompareResult>) => {
+            setTimeout(() => {
+              obs.next(updates);
+              obs.complete();
+            }, 0);
+          })),
+      };
+      const utilsStub = {
+        mapDatafiles: () => new Map([['', { data: {}, children: [] } as any]]),
+        addChild: () => undefined,
+        sleep: () => Promise.resolve(),
+      };
+      (component as any).dataUpdatesService = dataUpdatesStub;
+      (component as any).utils = utilsStub;
+      component['data'] = updating;
+      component['getUpdatedData'](0);
+      tick();
+      expect(component.loading).toBeFalse();
+
+      dataUpdatesStub.updateData.and.returnValue(
+        new Observable<CompareResult>((obs: Observer<CompareResult>) => {
+          setTimeout(() => {
+            obs.next(updating);
+            obs.complete();
+          }, 0);
+        }),
+      );
+      component.refreshHidden = false;
+      component.refresh();
+      tick();
+      expect(component.refreshHidden).toBeTrue();
+    }));
   });
 });

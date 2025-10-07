@@ -24,14 +24,16 @@ class DataStateServiceStub {
 }
 
 class PluginServiceStub {
+  pluginIds: SelectItem[] = [];
+  pluginList: SelectItem[] = [];
   setConfig() {
     return Promise.resolve();
   }
   getPlugins() {
-    return [];
+    return this.pluginList;
   }
   getPluginIds() {
-    return [];
+    return this.pluginIds;
   }
   getPlugin() {
     return {
@@ -111,6 +113,7 @@ class ConnectValidationServiceStub {
 describe('ConnectComponent additional behavior/validation', () => {
   let notification: NotificationServiceStub;
   let validation: ConnectValidationServiceStub;
+  let pluginService: PluginServiceStub;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -134,6 +137,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     validation = TestBed.inject(
       ConnectValidationService,
     ) as unknown as ConnectValidationServiceStub;
+    pluginService = TestBed.inject(
+      PluginService,
+    ) as unknown as PluginServiceStub;
   });
 
   it('newNonce produces string of expected length', () => {
@@ -384,4 +390,51 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.plugin).toBeUndefined();
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
   }));
+
+  it('validateUrlParsing requires complete repo path', () => {
+    const comp = TestBed.createComponent(ConnectComponent)
+      .componentInstance as any;
+    comp.sourceUrl = undefined;
+    expect(comp['validateUrlParsing']()).toBe('Source URL is required');
+    comp.sourceUrl = 'https://host/only';
+    expect(comp['validateUrlParsing']()).toBe('Malformed source url');
+    comp.sourceUrl = 'https://host/owner/repo';
+    expect(comp['validateUrlParsing']()).toBeUndefined();
+  });
+
+  it('changePlugin handles single and multiple plugin ids', () => {
+    pluginService.pluginIds = [{ label: 'GitHub', value: 'github' }];
+    pluginService.pluginList = [{ label: 'GitHub', value: 'github' }];
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    comp.plugin = 'github';
+    comp.token = 'tok';
+    comp.sourceUrl = 'https://host/owner/repo';
+    comp.changePlugin();
+    expect(comp.pluginId).toBe('github');
+    expect(comp.token).toBeUndefined();
+    expect(comp.pluginIdSelectHidden).toBeTrue();
+
+    pluginService.pluginIds = [
+      { label: 'GitHub', value: 'github' },
+      { label: 'GitLab', value: 'gitlab' },
+    ];
+    comp.pluginId = undefined;
+    comp.changePlugin();
+    expect(comp.pluginId).toBeUndefined();
+    expect(comp.pluginIdSelectHidden).toBeFalse();
+  });
+
+  it('resetForm clears all bindable fields and hides reset indicator', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    comp.plugin = 'github';
+    comp.datasetId = 'doi:123';
+    expect(comp.showReset).toBeTrue();
+    comp.resetForm();
+    expect(comp.showReset).toBeFalse();
+    expect(comp.datasetId).toBeUndefined();
+    expect(comp.plugins.length).toBe(0);
+    expect(comp.pluginIdSelectHidden).toBeTrue();
+  });
 });

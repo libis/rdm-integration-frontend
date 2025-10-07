@@ -14,6 +14,7 @@ import { RepoLookupService } from '../repo.lookup.service';
 import { NotificationService } from '../shared/notification.service';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
+import { NavigationService } from '../shared/navigation.service';
 
 // Models
 import { CompareResult } from '../models/compare-result';
@@ -70,6 +71,7 @@ export class DownloadComponent
   private readonly repoLookupService = inject(RepoLookupService);
   private readonly oauth = inject(OauthService);
   private readonly notificationService = inject(NotificationService);
+  private readonly navigation = inject(NavigationService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -223,7 +225,7 @@ export class DownloadComponent
   }
 
   back(): void {
-    location.href = 'connect';
+    this.navigation.assign('connect');
   }
 
   showDVToken(): boolean {
@@ -611,7 +613,7 @@ export class DownloadComponent
       }&redirect_uri=${this.pluginService.getRedirectUri()}&response_type=code&state=${encodeURIComponent(
         JSON.stringify(loginState),
       )}`;
-      location.href = url;
+  this.navigation.assign(url);
     } else {
       window.open(url, '_blank');
     }

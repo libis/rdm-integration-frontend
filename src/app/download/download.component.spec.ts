@@ -2,7 +2,10 @@ import {
   provideHttpClient,
   withInterceptorsFromDi,
 } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import {
   ComponentFixture,
   TestBed,
@@ -12,13 +15,18 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem, TreeNode } from 'primeng/api';
-import { Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction } from '../models/datafile';
 import { PluginService } from '../plugin.service';
+import { DataService } from '../data.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NotificationService } from '../shared/notification.service';
 import { SubmitService } from '../submit.service';
+import { UtilsService } from '../utils.service';
 import { DownloadComponent } from './download.component';
+import { NavigationService } from '../shared/navigation.service';
 
 class MockNotificationService {
   errors: string[] = [];
@@ -38,10 +46,10 @@ class MockRepoLookupService {
   }
   getOptions() {
     return new Observable<SelectItem<string>[]>((obs) => {
-      queueMicrotask(() => {
+      setTimeout(() => {
         obs.next(this.options);
         obs.complete();
-      });
+      }, 0);
     });
   }
 }
@@ -50,27 +58,94 @@ class MockSubmitService {
   succeed = true;
   download() {
     return new Observable<string>((obs) => {
-      queueMicrotask(() => {
+      setTimeout(() => {
         if (this.succeed) {
           obs.next('sub-123');
           obs.complete();
         } else {
           obs.error({ error: 'failX' });
         }
-      });
+      }, 0);
     });
   }
 }
 
+class MockDvObjectLookupService {
+  items: SelectItem<string>[] = [];
+  error?: string;
+
+  getItems() {
+    return new Observable<SelectItem<string>[]>((obs) => {
+      setTimeout(() => {
+        if (this.error) {
+          obs.error({ error: this.error });
+        } else {
+          obs.next(this.items);
+          obs.complete();
+        }
+      }, 0);
+    });
+  }
+}
+
+class MockDataService {
+  response: any = { data: [] };
+  error?: string;
+
+  getDownloadableFiles() {
+    return new Observable<any>((obs) => {
+      setTimeout(() => {
+        if (this.error) {
+          obs.error({ error: this.error });
+        } else {
+          obs.next(this.response);
+          obs.complete();
+        }
+      }, 0);
+    });
+  }
+}
+
+class MockUtilsService {
+  mapDatafiles(datafiles: Datafile[]) {
+    const root: TreeNode<Datafile> = {
+      data: {
+        id: '',
+        name: '',
+        path: '',
+        hidden: false,
+        action: Fileaction.Ignore,
+      } as Datafile,
+      children: [],
+    };
+    const map = new Map<string, TreeNode<Datafile>>();
+    map.set('', root);
+    datafiles.forEach((df, idx) => {
+      const node: TreeNode<Datafile> = { data: df, children: [] };
+      root.children!.push(node);
+      map.set(df.id ?? String(idx), node);
+    });
+    return map;
+  }
+
+  addChild(): void {
+    // already linked in mapDatafiles
+  }
+}
+
 class MockPluginService {
+  storeDvToken = false;
+  showDvToken = false;
+  oauthClientId = 'client-id';
+
   setConfig() {
     return Promise.resolve();
   }
   isStoreDvToken() {
-    return false;
+    return this.storeDvToken;
   }
   showDVToken() {
-    return false;
+    return this.showDvToken;
   }
   datasetFieldEditable() {
     return true;
@@ -80,8 +155,23 @@ class MockPluginService {
       repoNameFieldName: 'Repo Name',
       sourceUrlFieldValue: 'https://example.com',
       repoNameFieldHasInit: true,
+      tokenGetter: {
+        URL: '/oauth',
+        oauth_client_id: this.oauthClientId,
+      },
+      optionFieldName: 'Folder',
+      repoNameFieldEditable: true,
+      repoNameFieldPlaceholder: 'endpoint',
+      optionFieldInteractive: true,
     } as any;
   }
+  getRedirectUri() {
+    return 'https://app.example/callback';
+  }
+}
+
+class MockNavigationService {
+  assign = jasmine.createSpy('assign');
 }
 
 describe('DownloadComponent', () => {
@@ -92,12 +182,24 @@ describe('DownloadComponent', () => {
   let repoLookup: MockRepoLookupService;
   let submit: MockSubmitService;
   let plugin: MockPluginService;
+  let dvLookup: MockDvObjectLookupService;
+  let dataService: MockDataService;
+  let utils: MockUtilsService;
+  let navigation: MockNavigationService;
+  let routeSubject: BehaviorSubject<Record<string, string>>;
+  let httpMock: HttpTestingController;
 
   beforeEach(async () => {
     notification = new MockNotificationService();
     repoLookup = new MockRepoLookupService();
     submit = new MockSubmitService();
     plugin = new MockPluginService();
+    dvLookup = new MockDvObjectLookupService();
+    dataService = new MockDataService();
+    utils = new MockUtilsService();
+    navigation = new MockNavigationService();
+    routeSubject = new BehaviorSubject<Record<string, string>>({});
+
     await TestBed.configureTestingModule({
       imports: [RouterTestingModule, DownloadComponent],
       providers: [
@@ -107,7 +209,14 @@ describe('DownloadComponent', () => {
         { provide: RepoLookupService, useValue: repoLookup },
         { provide: SubmitService, useValue: submit },
         { provide: PluginService, useValue: plugin },
-        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
+        { provide: DvObjectLookupService, useValue: dvLookup },
+        { provide: DataService, useValue: dataService },
+        { provide: UtilsService, useValue: utils },
+        { provide: NavigationService, useValue: navigation },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParams: routeSubject.asObservable() },
+        },
       ],
     })
       .overrideComponent(DownloadComponent, {
@@ -118,8 +227,15 @@ describe('DownloadComponent', () => {
     fixture = TestBed.createComponent(DownloadComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    localStorage.clear();
     // mimic plugin loaded state
     component.globusPlugin = plugin.getGlobusPlugin();
+    navigation.assign.calls.reset();
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should create', () => {
@@ -281,5 +397,261 @@ describe('DownloadComponent', () => {
     component.globusPlugin = { repoNameFieldHasInit: false } as any;
     component.startRepoSearch();
     expect(component.repoNames[0].label).toContain('start typing');
+  });
+
+  it('startRepoSearch returns early when found repo name already populated', () => {
+    component.foundRepoName = 'existing-endpoint';
+    component.startRepoSearch();
+    expect(component.repoNames.length).toBe(0);
+  });
+
+  it('back navigates by assigning location href', () => {
+    component.back();
+    expect(navigation.assign).toHaveBeenCalledWith('connect');
+  });
+
+  it('showDVToken reflects plugin toggle', () => {
+    plugin.showDvToken = true;
+    expect(component.showDVToken()).toBeTrue();
+    plugin.showDvToken = false;
+    expect(component.showDVToken()).toBeFalse();
+  });
+
+  it('getDoiOptions populates list and reports errors', fakeAsync(() => {
+    dvLookup.items = [
+      { label: 'Dataset A', value: 'doi:A' },
+      { label: 'Dataset B', value: 'doi:B' },
+    ];
+    component.getDoiOptions();
+    tick();
+    expect(component.doiItems.length).toBe(2);
+
+  component.doiItems = [];
+    dvLookup.error = 'boom';
+    component.getDoiOptions();
+    tick();
+    expect(
+      notification.errors.some((msg) => msg.includes('DOI lookup failed')),
+    ).toBeTrue();
+  }));
+
+  it('onUserChange clears state and persists token when provided', () => {
+    plugin.storeDvToken = true;
+    component.dataverseToken = 'tok123';
+    component.doiItems = [{ label: 'old', value: 'old' }];
+    component.datasetId = 'old';
+    component.onUserChange();
+    expect(component.doiItems.length).toBe(0);
+    expect(component.datasetId).toBeUndefined();
+    expect(localStorage.getItem('dataverseToken')).toBe('tok123');
+    plugin.storeDvToken = false;
+  });
+
+  it('getRepoToken skips navigation when token getter missing', () => {
+    const initialCalls = navigation.assign.calls.count();
+    component.dataverseToken = 'tok456';
+    component.globusPlugin = {
+      sourceUrlFieldValue: 'https://example.com',
+      tokenGetter: undefined,
+    } as any;
+    component.getRepoToken();
+    expect(navigation.assign.calls.count()).toBe(initialCalls);
+  });
+
+  it('getRepoToken opens new window when oauth client id missing', () => {
+    component.globusPlugin = {
+      sourceUrlFieldValue: 'https://example.com',
+      tokenGetter: { URL: '/oauth', oauth_client_id: '' },
+    } as any;
+    const openSpy = spyOn(window, 'open');
+    component.getRepoToken();
+    expect(openSpy).toHaveBeenCalled();
+  });
+
+  it('repoNameSearch returns error placeholder when branchItems already loaded', async () => {
+    component.branchItems = [{ label: 'existing', value: 'x' }];
+    const results = await component.repoNameSearch('branch');
+    expect(results[0].value).toBe('error');
+  });
+
+  it('optionSelected toggles option depending on node data', () => {
+    component.optionSelected({ data: '' } as TreeNode<string>);
+    expect(component.option).toBeUndefined();
+    expect(component.selectedOption).toBeUndefined();
+
+    const node: TreeNode<string> = { data: '/path', label: 'Path' };
+    component.optionSelected(node);
+    expect(component.option).toBe('/path');
+    expect(component.selectedOption).toBe(node);
+  });
+
+  it('onRepoChange clears branch options and selection', () => {
+    component.branchItems = [{ label: 'opt', value: 'opt' }];
+    component.option = 'opt';
+    component.onRepoChange();
+    expect(component.branchItems.length).toBe(0);
+    expect(component.option).toBeUndefined();
+  });
+
+  it('getDoiOptions skips reload when options already present', () => {
+    component.doiItems = [{ label: 'existing', value: 'doi:existing' }];
+    component.datasetId = 'doi:existing';
+    dvLookup.items = [{ label: 'other', value: 'doi:other' }];
+    component.getDoiOptions();
+    expect(component.doiItems[0].value).toBe('doi:existing');
+  });
+
+  it('onUserChange resets selections and persists token when configured', () => {
+    plugin.storeDvToken = true;
+    component.dataverseToken = 'dvTok';
+    component.doiItems = [{ label: 'a', value: 'a' }];
+    component.datasetId = 'a';
+    component.onUserChange();
+    expect(localStorage.getItem('dataverseToken')).toBe('dvTok');
+    expect(component.doiItems.length).toBe(0);
+    expect(component.datasetId).toBeUndefined();
+  });
+
+  it('getRepoToken builds redirect including dataset state when available', () => {
+    component.globusPlugin = plugin.getGlobusPlugin();
+    component.datasetId = 'doi:ABC';
+    component.dataverseToken = 'tok';
+    component.getRepoToken();
+    expect(localStorage.getItem('dataverseToken')).toBe('tok');
+  expect(navigation.assign).toHaveBeenCalled();
+  const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    const match = redirectUrl.match(/state=([^&]+)/);
+    expect(match).toBeTruthy();
+    const state = JSON.parse(decodeURIComponent(match![1]));
+    expect(state.datasetId.value).toBe('doi:ABC');
+  });
+
+  it('getRepoToken omits dataset when placeholder selected', () => {
+    component.globusPlugin = plugin.getGlobusPlugin();
+    component.datasetId = '?';
+    component.getRepoToken();
+  expect(navigation.assign).toHaveBeenCalled();
+  const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    const match = redirectUrl.match(/state=([^&]+)/);
+    expect(match).toBeTruthy();
+    const state = JSON.parse(decodeURIComponent(match![1]));
+    expect(state.datasetId).toBeUndefined();
+  });
+
+  it('optionSelected clears selection when node empty', () => {
+    component.optionSelected({ data: 'folder', selectable: true } as TreeNode<string>);
+    expect(component.option).toBe('folder');
+    component.optionSelected({ data: '', selectable: true } as TreeNode<string>);
+    expect(component.option).toBeUndefined();
+    expect(component.selectedOption).toBeUndefined();
+  });
+
+  it('downloadDisabled requires option and at least one download action', () => {
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
+    component.rowNodeMap.set('1', { data: df });
+    component.downloadRequested = false;
+    component.option = undefined;
+    expect(component.downloadDisabled()).toBeTrue();
+    component.option = 'folder';
+    expect(component.downloadDisabled()).toBeFalse();
+  });
+
+  it('onDatasetChange populates tree on success', fakeAsync(() => {
+    const payload: CompareResult = {
+      data: [
+        { id: 'b', name: 'B', path: '', hidden: false, action: Fileaction.Download } as Datafile,
+        { id: 'a', name: 'A', path: '', hidden: false, action: Fileaction.Ignore } as Datafile,
+      ],
+      id: 'root',
+    };
+    dataService.response = payload;
+    component.datasetId = 'doi:test';
+    component.onDatasetChange();
+    tick();
+    expect(component.loading).toBeFalse();
+    expect(component.rootNodeChildren.length).toBe(2);
+    expect(component.rootNodeChildren[0].data?.id).toBe('a');
+  }));
+
+  it('onDatasetChange surfaces errors from service', fakeAsync(() => {
+    dataService.error = 'service-down';
+    component.datasetId = 'doi:test';
+    component.onDatasetChange();
+    tick();
+    expect(
+      notification.errors.some((msg) =>
+        msg.includes('Getting downloadable files failed'),
+      ),
+    ).toBeTrue();
+  }));
+
+  it('ngOnInit processes globus callback state and fetches token', fakeAsync(() => {
+    routeSubject.next({
+      code: 'oauth-code',
+      state: JSON.stringify({
+        nonce: 'nonce-123',
+        datasetId: { value: 'doi:123', label: 'Dataset 123' },
+      }),
+    });
+    localStorage.setItem('dataverseToken', 'persisted');
+    fixture = TestBed.createComponent(DownloadComponent);
+    component = fixture.componentInstance;
+    const datasetSpy = spyOn(component, 'onDatasetChange').and.stub();
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne('api/common/oauthtoken');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      pluginId: 'globus',
+      code: 'oauth-code',
+      nonce: 'nonce-123',
+    });
+    req.flush({ session_id: 'session-xyz' });
+    tick();
+
+    expect(datasetSpy).toHaveBeenCalled();
+    expect(component.token).toBe('session-xyz');
+    expect(localStorage.getItem('dataverseToken')).toBeNull();
+  }));
+
+  it('ngOnInit skips dataset load when state value is placeholder', fakeAsync(() => {
+    routeSubject.next({
+      code: 'oauth-code',
+      state: JSON.stringify({
+        nonce: 'nonce-789',
+        datasetId: { value: '?' },
+      }),
+    });
+    fixture = TestBed.createComponent(DownloadComponent);
+    component = fixture.componentInstance;
+    const datasetSpy = spyOn(component, 'onDatasetChange').and.stub();
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne('api/common/oauthtoken');
+    req.flush({ session_id: 'session-abc' });
+    tick();
+
+    expect(datasetSpy).not.toHaveBeenCalled();
+    expect(component.doiItems[0].value).toBe('?');
+  }));
+
+  it('ngOnInit without oauth code triggers repo token lookup', () => {
+    routeSubject.next({
+      datasetPid: 'doi:XYZ',
+      apiToken: 'dvTok',
+    });
+    fixture = TestBed.createComponent(DownloadComponent);
+    component = fixture.componentInstance;
+    const tokenSpy = spyOn(component, 'getRepoToken').and.callThrough();
+    fixture.detectChanges();
+
+    expect(component.datasetId).toBe('doi:XYZ');
+    expect(tokenSpy).toHaveBeenCalled();
   });
 });

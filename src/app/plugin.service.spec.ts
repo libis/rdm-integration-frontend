@@ -82,6 +82,82 @@ describe('PluginService', () => {
     expect(p.id).toBe('defaultPlugin');
   });
 
+  it('provides plugin metadata after config including token getter flags', async () => {
+    const cfg = mockConfig({
+      showDvTokenGetter: false,
+      showDvToken: false,
+      storeDvToken: true,
+      plugins: [
+        {
+          id: 'globus',
+          plugin: 'globus',
+          name: 'Globus Repo',
+          pluginName: 'Globus',
+          parseSourceUrlField: false,
+          repoNameFieldHasSearch: true,
+          repoNameFieldHasInit: true,
+          showTokenGetter: false,
+          tokenGetter: { URL: '/t', oauth_client_id: 'abc' },
+        },
+        {
+          id: 'git-full',
+          plugin: 'git',
+          name: 'Git Repo With Token Getter',
+          pluginName: 'Git',
+          parseSourceUrlField: false,
+          repoNameFieldHasSearch: false,
+          repoNameFieldHasInit: false,
+          showTokenGetter: false,
+          tokenGetter: { URL: '/token' },
+        },
+        {
+          id: 'git-empty',
+          plugin: 'git',
+          name: 'Git Repo Without Token Getter URL',
+          pluginName: 'Git',
+          parseSourceUrlField: false,
+          repoNameFieldHasSearch: false,
+          repoNameFieldHasInit: false,
+          showTokenGetter: false,
+          tokenGetter: { URL: '' },
+        },
+        {
+          id: 'svn-plugin',
+          plugin: 'svn',
+          name: 'SVN Repo',
+          pluginName: 'SVN',
+          parseSourceUrlField: false,
+          repoNameFieldHasSearch: false,
+          repoNameFieldHasInit: false,
+          showTokenGetter: false,
+        },
+      ],
+    });
+
+    const promise = service.setConfig();
+    httpMock.expectOne('api/frontend/config').flush(cfg);
+    await promise;
+
+    expect(service.showDVTokenGetter()).toBeFalse();
+    expect(service.showDVToken()).toBeFalse();
+    expect(service.isStoreDvToken()).toBeTrue();
+    expect(service.getRedirectUri()).toBe('http://redirect');
+
+    const pluginValues = service.getPlugins().map((item) => item.value);
+    expect(pluginValues).toEqual(['globus', 'git', 'svn']);
+
+    const gitIds = service.getPluginIds('git').map((id) => id.value);
+    expect(gitIds).toEqual(['git-full', 'git-empty']);
+    expect(service.getPluginIds('svn').map((id) => id.value)).toEqual([
+      'svn-plugin',
+    ]);
+    expect(service.getPluginIds('unknown')).toEqual([]);
+
+    expect(service.getPlugin('git-full').showTokenGetter).toBeTrue();
+    expect(service.getPlugin('git-empty').showTokenGetter).toBeFalse();
+    expect(service.getPlugin('svn-plugin').showTokenGetter).toBeFalse();
+  });
+
   it('isStoreDvToken returns false if undefined', () => {
     // storeDvToken missing from default config => false
     expect(service.isStoreDvToken()).toBeFalse();
@@ -111,5 +187,9 @@ describe('PluginService', () => {
     expect(q[0].value).toBe('q1');
     expect(service.dataverseHeader()).toBe('Header');
     expect(service.sendMails()).toBeTrue();
+  });
+
+  it('getQueues returns empty array when queues not configured', () => {
+    expect(service.getQueues('.zip')).toEqual([]);
   });
 });

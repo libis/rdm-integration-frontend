@@ -34,9 +34,9 @@ class MockNotification {
   }
 }
 class MockRouter {
-  navigated: any[] = [];
-  navigate(a: any) {
-    this.navigated.push(a);
+  navigated: { commands: any; extras?: any }[] = [];
+  navigate(commands: any, extras?: any) {
+    this.navigated.push({ commands, extras });
   }
 }
 
@@ -100,23 +100,43 @@ describe('DataStateService', () => {
     expect(notify.errors.some((e) => e.includes('boom'))).toBeTrue();
   }));
 
+  it('handles ready true with missing response by leaving state null', fakeAsync(() => {
+    init();
+    data.cached$.next({ ready: true, res: undefined });
+    tick();
+    expect(service.getCurrentValue()).toBeNull();
+  }));
+
   it('handles getData error and navigates', fakeAsync(() => {
     data.getData = () => throwError(() => ({ error: 'x' })) as any;
     init();
     tick();
     expect(notify.errors.length).toBe(1);
-    expect(router.navigated[0]).toEqual(['/connect']);
+    expect(router.navigated[0].commands).toEqual(['/connect']);
+    expect(router.navigated[0].extras?.queryParams).toEqual({});
+  }));
+
+  it('handles getData 401 and requests reset navigation', fakeAsync(() => {
+    data.getData = () => throwError(() => ({ error: 'denied', status: 401 })) as any;
+    init();
+    tick();
+    expect(router.navigated[0].commands).toEqual(['/connect']);
+    expect(router.navigated[0].extras?.queryParams).toEqual({ reset: 'true' });
   }));
 
   it('handles cached error and navigates', fakeAsync(() => {
     init();
-    data.getCachedData = () => throwError(() => ({ error: 'y' }));
+    data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
     (service as any).getCompareData({ key: 'k2' });
     tick();
     expect(
       notify.errors.some((e) => e.includes('Comparing failed')),
     ).toBeTrue();
-    expect(router.navigated.some((n) => n[0] === '/connect')).toBeTrue();
+    expect(
+      router.navigated.some(
+        (n) => n.commands[0] === '/connect' && n.extras?.queryParams?.reset === 'true',
+      ),
+    ).toBeTrue();
   }));
 
   it('updateState and resetState manipulate current value', () => {

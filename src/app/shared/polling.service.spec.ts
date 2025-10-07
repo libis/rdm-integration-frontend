@@ -108,4 +108,62 @@ describe('PollingService', () => {
       done();
     }, 25);
   });
+
+  it('stops polling when shouldContinue throws', (done) => {
+    let i = 0;
+    const handle = service.poll<number>({
+      iterate: () => of(++i),
+      onResult: () => {},
+      shouldContinue: () => {
+        throw new Error('broken predicate');
+      },
+      delayMs: 1,
+    });
+    setTimeout(() => {
+      expect(handle.iteration).toBe(1);
+      handle.cancel();
+      done();
+    }, 25);
+  });
+
+  it('treats thrown onError as stop signal', (done) => {
+    let iter = 0;
+    const handle = service.poll<number>({
+      iterate: () => {
+        iter++;
+        return throwError(() => new Error('fail-fast'));
+      },
+      onResult: () => {},
+      shouldContinue: () => true,
+      delayMs: 1,
+      onError: () => {
+        throw new Error('onError exploded');
+      },
+    });
+    setTimeout(() => {
+      expect(iter).toBeGreaterThan(0);
+      expect(handle.iteration).toBe(0);
+      handle.cancel();
+      done();
+    }, 25);
+  });
+
+  it('stops on error when no onError handler is provided', (done) => {
+    let attempts = 0;
+    const handle = service.poll<number>({
+      iterate: () => {
+        attempts++;
+        return throwError(() => new Error('boom'));
+      },
+      onResult: () => {},
+      shouldContinue: () => true,
+      delayMs: 1,
+    });
+    setTimeout(() => {
+      expect(attempts).toBe(1);
+      expect(handle.iteration).toBe(0);
+      handle.cancel();
+      done();
+    }, 25);
+  });
 });

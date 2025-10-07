@@ -158,6 +158,33 @@ describe('SubmitComponent', () => {
     expect(component.datasetUrl).toBe('http://example.com');
   });
 
+  it('continueSubmit aborts when new dataset creation fails', async () => {
+    datasetServiceStub.newDataset.and.returnValue(
+      of({ persistentId: '' }),
+    );
+    component.pid = 'root:COLL:New Dataset';
+    component.data = [
+      { action: Fileaction.Copy, status: Filestatus.Equal } as any,
+    ];
+    await component.continueSubmit();
+    expect(component.disabled).toBeFalse();
+    expect(component.transferStarted).toBeFalse();
+  });
+
+  it('continueSubmit reports errors from submit service', async () => {
+    submitServiceStub.submit.and.returnValue(
+      throwError(() => ({ error: 'boom' })),
+    );
+    component.data = [
+      { action: Fileaction.Copy, status: Filestatus.Equal } as any,
+    ];
+    await component.continueSubmit();
+    expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+      'Store failed: boom',
+    );
+    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
+  });
+
   it('newDataset should set pid and return true on success', async () => {
     const ok = await component.newDataset('collection-1');
     expect(ok).toBeTrue();
@@ -205,5 +232,32 @@ describe('SubmitComponent', () => {
 
   it('sendMails should return plugin service value', () => {
     expect(component.sendMails()).toBeTrue();
+  });
+
+  it('progress helpers reflect transfer state', async () => {
+    expect(component.progressRatio()).toBe(0);
+    expect(component.progressLabel()).toBe('');
+    const files: Datafile[] = [
+      { action: Fileaction.Copy, status: Filestatus.Equal } as any,
+      { action: Fileaction.Update, status: Filestatus.Equal } as any,
+    ];
+    await component.setData(files);
+    component.transferStarted = true;
+    component['recomputeProgress']();
+    expect(component.progressRatio()).toBe(1);
+    expect(component.progressLabel()).toContain('2/2');
+  });
+
+  it('hasUnfinishedDataFiles responds to status changes', async () => {
+    const files: Datafile[] = [
+      { action: Fileaction.Copy, status: Filestatus.New } as any,
+      { action: Fileaction.Update, status: Filestatus.Equal } as any,
+      { action: Fileaction.Delete, status: Filestatus.Deleted } as any,
+    ];
+    await component.setData(files);
+    expect(component.hasUnfinishedDataFiles()).toBeTrue();
+    component.created[0].status = Filestatus.Equal;
+    component.deleted[0].status = Filestatus.New;
+    expect(component.hasUnfinishedDataFiles()).toBeFalse();
   });
 });

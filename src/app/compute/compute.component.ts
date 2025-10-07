@@ -10,6 +10,7 @@ import { DataService } from '../data.service';
 import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
 import { NotificationService } from '../shared/notification.service';
+import { NavigationService } from '../shared/navigation.service';
 
 // Models
 import {
@@ -70,6 +71,7 @@ export class ComputeComponent
   private readonly utils = inject(UtilsService);
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
+  private readonly navigation = inject(NavigationService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -161,7 +163,7 @@ export class ComputeComponent
   }
 
   back(): void {
-    location.href = 'connect';
+    this.navigation.assign('connect');
   }
 
   showDVToken(): boolean {
