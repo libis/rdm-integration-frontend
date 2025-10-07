@@ -134,9 +134,9 @@ describe('DownloadComponent', () => {
       hidden: false,
       action: Fileaction.Download,
     };
-    expect(component.rowClass(file)).toContain('background-color');
+    expect(component.rowClass(file)).toBe('file-action-copy');
     file.action = Fileaction.Custom;
-    expect(component.rowClass(file)).toContain('FFFAA0');
+    expect(component.rowClass(file)).toBe('file-action-custom');
     file.action = Fileaction.Ignore;
     expect(component.rowClass(file)).toBe('');
   });

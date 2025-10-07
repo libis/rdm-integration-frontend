@@ -29,7 +29,7 @@ import { TreeTableModule } from 'primeng/treetable';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 
 // Constants and types
-import { APP_CONSTANTS, getFileActionStyle } from '../shared/constants';
+import { APP_CONSTANTS, getFileActionClass } from '../shared/constants';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 @Component({
@@ -126,12 +126,12 @@ export class MetadataSelectorComponent implements OnInit {
   rowClass(field: Field): string {
     switch (field.action) {
       case Fieldaction.Copy:
-        return getFileActionStyle('COPY');
+        return getFileActionClass('COPY');
       case Fieldaction.Custom:
-        return getFileActionStyle('CUSTOM');
+        return getFileActionClass('CUSTOM');
       case Fieldaction.Ignore:
       default:
-        return getFileActionStyle('IGNORE');
+        return getFileActionClass('IGNORE');
     }
   }
 

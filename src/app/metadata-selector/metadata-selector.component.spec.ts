@@ -163,13 +163,12 @@ describe('MetadataSelectorComponent', () => {
     expect(component.rowClass({ ...base, action: Fieldaction.Ignore })).toBe(
       '',
     );
-    // Row class depends on dark mode detection, so just check it returns a string
-    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toContain(
-      'background-color',
+    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toBe(
+      'file-action-copy',
     );
-    expect(
-      component.rowClass({ ...base, action: Fieldaction.Custom }),
-    ).toContain('background-color');
+    expect(component.rowClass({ ...base, action: Fieldaction.Custom })).toBe(
+      'file-action-custom',
+    );
   });
 
   it('should render rows with metadata fields', fakeAsync(() => {

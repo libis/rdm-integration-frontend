@@ -202,3 +202,44 @@ label {
   color: var(--p-text-color);
   font-weight: 500;
 }
+
+/* File action row styling - automatically adapts to light/dark theme */
+.file-action-copy {
+  background-color: #c3e6cb;
+  color: #1a1a1a;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: #1e4620;
+    color: #c3e6cb;
+  }
+}
+
+.file-action-update {
+  background-color: #b8daff;
+  color: #1a1a1a;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: #1a3d5c;
+    color: #b8daff;
+  }
+}
+
+.file-action-delete {
+  background-color: #f5c6cb;
+  color: #1a1a1a;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: #4a1f23;
+    color: #f5c6cb;
+  }
+}
+
+.file-action-custom {
+  background-color: #fffaa0;
+  color: #1a1a1a;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: #4a4520;
+    color: #fffaa0;
+  }
+}

@@ -37,7 +37,7 @@ import { DownladablefileComponent } from '../downloadablefile/downladablefile.co
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // Constants and types
-import { APP_CONSTANTS, getFileActionStyle } from '../shared/constants';
+import { APP_CONSTANTS, getFileActionClass } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
 
 @Component({
@@ -230,9 +230,9 @@ export class DownloadComponent
       case Fileaction.Ignore:
         return '';
       case Fileaction.Download:
-        return getFileActionStyle('COPY');
+        return getFileActionClass('COPY');
       case Fileaction.Custom:
-        return getFileActionStyle('CUSTOM');
+        return getFileActionClass('CUSTOM');
     }
     return '';
   }

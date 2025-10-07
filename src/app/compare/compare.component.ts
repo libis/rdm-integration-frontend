@@ -31,7 +31,7 @@ import { DatafileComponent } from '../datafile/datafile.component';
 
 // Constants and types
 import { Credentials } from '../models/credentials';
-import { APP_CONSTANTS, getFileActionStyle } from '../shared/constants';
+import { APP_CONSTANTS, getFileActionClass } from '../shared/constants';
 import { FilterItem, SubscriptionManager } from '../shared/types';
 
 @Component({
@@ -218,15 +218,15 @@ export class CompareComponent
   rowClass(datafile: Datafile): string {
     switch (datafile.action) {
       case Fileaction.Ignore:
-        return getFileActionStyle('IGNORE');
+        return getFileActionClass('IGNORE');
       case Fileaction.Copy:
-        return getFileActionStyle('COPY');
+        return getFileActionClass('COPY');
       case Fileaction.Update:
-        return getFileActionStyle('UPDATE');
+        return getFileActionClass('UPDATE');
       case Fileaction.Delete:
-        return getFileActionStyle('DELETE');
+        return getFileActionClass('DELETE');
       case Fileaction.Custom:
-        return getFileActionStyle('CUSTOM');
+        return getFileActionClass('CUSTOM');
     }
     return '';
   }
