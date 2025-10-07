@@ -1,10 +1,10 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnInit, input } from '@angular/core';
+import { Component, HostBinding, OnInit, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
-import { Field, Fieldaction } from '../models/field';
-import { TreeTableModule } from 'primeng/treetable';
 import { ButtonDirective } from 'primeng/button';
+import { TreeTableModule } from 'primeng/treetable';
+import { Field, Fieldaction } from '../models/field';
 
 @Component({
   selector: 'tr[app-metadatafield]',
@@ -13,6 +13,18 @@ import { ButtonDirective } from 'primeng/button';
   imports: [TreeTableModule, ButtonDirective],
 })
 export class MetadatafieldComponent implements OnInit {
+  @HostBinding('class') get hostClass(): string {
+    const action = this.field().action ?? Fieldaction.Ignore;
+    switch (action) {
+      case Fieldaction.Copy:
+        return 'file-action-copy';
+      case Fieldaction.Custom:
+        return 'file-action-custom';
+      default:
+        return ''; // No special class for Ignore
+    }
+  }
+
   readonly field = input<Field>({});
   readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(
     new Map<string, TreeNode<Field>>(),

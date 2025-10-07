@@ -1,12 +1,17 @@
 // Metadata selector component styles
-// Fix white background from Bootstrap table
+// Override Bootstrap's default white table backgrounds for dark mode
+// Use :not() to exclude rows with file-action classes (these have their own styling)
 
-.table,
 .table tbody,
-// Don't override tr background if it has a file-action class
-.table tr:not([class*='file-action-']),
+.table thead,
 .table td,
 .table th {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+
+// Explicitly set default for rows WITHOUT file-action classes
+.table tr:not([class*='file-action-']) {
   background-color: var(--p-content-background);
   color: var(--p-text-color);
 }
@@ -14,23 +19,4 @@
 .treetable-cell {
   background-color: var(--p-content-background);
   padding: 0;
-}
-
-// Pierce PrimeNG component encapsulation to style TreeTable
-:host ::ng-deep {
-  .treetable-cell {
-    p-treeTable,
-    .p-treetable,
-    .p-treetable-wrapper,
-    .p-treetable-table,
-    .p-treetable-thead,
-    .p-treetable-tbody,
-    // Don't override tr background if it has a file-action class
-    tr:not([class*='file-action-']),
-    td,
-    th {
-      background-color: var(--p-content-background);
-      color: var(--p-text-color);
-    }
-  }
 }
