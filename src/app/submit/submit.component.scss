@@ -1,45 +1,11 @@
-/*
-	Submit component theming fixes:
-	- Use PrimeNG theme CSS variables to respect light/dark modes.
-	- Ensure nested tables inherit background and text colors to avoid white blocks.
-*/
-
-:host {
-  display: block;
-}
+// Submit component styles
+// Minimal custom styling - relies on PrimeNG theming for light/dark mode support
 
 .inner-table-cell {
   padding: 0;
 }
 
-/* Main table inherits themed background/text colors */
-:host ::ng-deep table.table {
-  width: 100%;
-  background: var(--p-content-background);
-  color: var(--p-text-color);
-  border-color: var(--p-content-border-color);
-}
-
-/* Remove stray white stripes between major sections */
-:host ::ng-deep .submit-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-/* Eliminate residual white bars (Bootstrap/PrimeNG zebra striping) */
-:host ::ng-deep .submit-table tbody > tr,
-:host ::ng-deep .submit-table tbody > tr > td,
-:host ::ng-deep .submit-table tbody > tr > th {
-  background: var(--p-content-background) !important;
-  border-color: var(--p-content-border-color) !important;
-}
-
-/* Ensure nested inner tables do not reintroduce striping */
-:host ::ng-deep .submit-table .inner-table-cell table tbody > tr,
-:host ::ng-deep .submit-table .inner-table-cell table tbody > tr > td {
-  background: var(--p-content-background) !important;
-}
-
+// Progress bar layout
 .progress-wrapper {
   max-width: 60rem;
 }
@@ -52,11 +18,9 @@
 .progress-counter {
   min-width: 11rem;
   text-align: right;
-  color: var(--p-text-color-secondary, var(--p-text-color));
-  opacity: 0.9; /* Slightly higher for better legibility */
-  /* Removed text-shadow to prevent blurry appearance on some displays */
 }
 
+// Custom progress bar with theme support
 .themed-progress {
   height: 0.75rem;
   border-radius: 4px;
@@ -66,69 +30,36 @@
 
 .themed-progress-bar {
   height: 100%;
-  background: var(--p-primary-color, #007ad9);
+  background: var(--p-primary-color);
   transition: width 0.4s ease;
 }
 
+// Completion animation
 .themed-progress-bar.complete {
   animation: pulse-finish 1.6s ease-in-out 1;
-  box-shadow:
-    0 0 4px var(--p-primary-color, #007ad9),
-    0 0 8px rgba(0, 0, 0, 0.4) inset;
 }
 
 @keyframes pulse-finish {
-  0% {
+  0%,
+  80%,
+  100% {
     filter: brightness(1);
   }
   40% {
     filter: brightness(1.35);
   }
-  80% {
-    filter: brightness(1);
-  }
-  100% {
-    filter: brightness(1);
-  }
 }
 
-.subtle-text {
-  color: var(--p-text-color-secondary, var(--p-text-color));
-  opacity: 0.8;
-}
-
+// Safety warning styling
 .safety-warning {
   margin: 2rem 0 2.5rem 0;
   text-align: center;
   font-weight: 500;
-  color: var(--p-text-color);
   padding: 0.9rem 1rem;
   border-radius: 6px;
-  background: rgba(var(--p-danger-rgb, 255, 77, 79), 0.08);
+  background: rgba(255, 77, 79, 0.08);
+
   i {
-    color: var(--p-danger-color, #ff4d4f);
+    color: #ff4d4f;
   }
-}
-
-/* Section headers follow themed header background */
-:host ::ng-deep .file-list-header > th {
-  background: var(--p-accordion-header-background);
-  color: var(--p-text-color);
-  border-color: var(--p-content-border-color);
-}
-
-/* Nested tables should also inherit theme colors */
-:host ::ng-deep .inner-table-cell > table.table tbody > tr > td,
-:host ::ng-deep .inner-table-cell > table.table thead > tr > th {
-  background: var(--p-content-background);
-  color: var(--p-text-color);
-  border-color: var(--p-content-border-color);
-}
-
-/* Dialog content theming alignment */
-:host ::ng-deep .p-dialog .p-dialog-content,
-:host ::ng-deep .p-dialog .p-dialog-header {
-  background: var(--p-content-background);
-  color: var(--p-text-color);
-  border-color: var(--p-content-border-color);
 }
