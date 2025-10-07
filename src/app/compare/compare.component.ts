@@ -1,30 +1,30 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // Services
+import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
-import { CredentialsService } from '../credentials.service';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { PluginService } from '../plugin.service';
-import { UtilsService } from '../utils.service';
-import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { FolderStatusService } from '../shared/folder-status.service';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { UtilsService } from '../utils.service';
 
 // Models
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
 // PrimeNG
-import { TreeNode, PrimeTemplate } from 'primeng/api';
+import { PrimeTemplate, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
-import { TreeTableModule } from 'primeng/treetable';
 import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
+import { TreeTableModule } from 'primeng/treetable';
 
 // Components
 import { DatafileComponent } from '../datafile/datafile.component';
@@ -32,6 +32,7 @@ import { DatafileComponent } from '../datafile/datafile.component';
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import { FilterItem, SubscriptionManager } from '../shared/types';
+import { Credentials } from '../models/credentials';
 
 @Component({
   selector: 'app-compare',
@@ -231,27 +232,59 @@ export class CompareComponent
   }
 
   noActionSelection(): void {
-    this.applyToVisibleFiles(() => Fileaction.Ignore);
+    this.rowNodeMap.forEach((rowNode) => {
+      const datafile = rowNode.data!;
+      if (datafile.hidden) {
+        return;
+      }
+      datafile.action = Fileaction.Ignore;
+    });
   }
 
   updateSelection(): void {
-    const mapping: Record<number, Fileaction> = {
-      [Filestatus.New]: Fileaction.Copy,
-      [Filestatus.Equal]: Fileaction.Ignore,
-      [Filestatus.Updated]: Fileaction.Update,
-      [Filestatus.Deleted]: Fileaction.Ignore,
-    };
-    this.applyStatusMapping(mapping);
+    this.rowNodeMap.forEach((rowNode) => {
+      const datafile = rowNode.data!;
+      if (datafile.hidden) {
+        return;
+      }
+      switch (datafile.status) {
+        case Filestatus.New:
+          datafile.action = Fileaction.Copy;
+          break;
+        case Filestatus.Equal:
+          datafile.action = Fileaction.Ignore;
+          break;
+        case Filestatus.Updated:
+          datafile.action = Fileaction.Update;
+          break;
+        case Filestatus.Deleted:
+          datafile.action = Fileaction.Ignore;
+          break;
+      }
+    });
   }
 
   mirrorSelection(): void {
-    const mapping: Record<number, Fileaction> = {
-      [Filestatus.New]: Fileaction.Copy,
-      [Filestatus.Equal]: Fileaction.Ignore,
-      [Filestatus.Updated]: Fileaction.Update,
-      [Filestatus.Deleted]: Fileaction.Delete,
-    };
-    this.applyStatusMapping(mapping);
+    this.rowNodeMap.forEach((rowNode) => {
+      const datafile = rowNode.data!;
+      if (datafile.hidden) {
+        return;
+      }
+      switch (datafile.status) {
+        case Filestatus.New:
+          datafile.action = Fileaction.Copy;
+          break;
+        case Filestatus.Equal:
+          datafile.action = Fileaction.Ignore;
+          break;
+        case Filestatus.Updated:
+          datafile.action = Fileaction.Update;
+          break;
+        case Filestatus.Deleted:
+          datafile.action = Fileaction.Delete;
+          break;
+      }
+    });
   }
 
   updateFilters(): void {
@@ -301,7 +334,7 @@ export class CompareComponent
 
   canProceed(): boolean {
     const newDs = this.isNewDataset();
-    const creds: any = this.credentialsService.credentials;
+    const creds: Credentials = this.credentialsService.credentials;
     // If metadata_available is undefined we assume metadata creation is possible
     const hasMetadata = creds.metadata_available !== false;
     if (!newDs) {
@@ -313,7 +346,7 @@ export class CompareComponent
 
   proceedTitle(): string {
     const newDs = this.isNewDataset();
-    const creds: any = this.credentialsService.credentials;
+    const creds: Credentials = this.credentialsService.credentials;
     const hasMetadata = creds.metadata_available !== false;
     const can = this.canProceed();
     if (newDs && !this.hasSelection()) {
@@ -449,19 +482,6 @@ export class CompareComponent
       this.folderStatusService.updateTreeRoot(rootNode);
       this.rootNodeChildren = rootNode.children;
     }
-  }
-
-  // --- Helper utilities ---
-  private applyToVisibleFiles(resolve: (d: Datafile) => Fileaction): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const df = rowNode.data!;
-      if (df.hidden || !df.attributes?.isFile) return;
-      df.action = resolve(df);
-    });
-  }
-
-  private applyStatusMapping(mapping: Record<number, Fileaction>) {
-    this.applyToVisibleFiles((d) => mapping[d.status as number]);
   }
 
   back(): void {
