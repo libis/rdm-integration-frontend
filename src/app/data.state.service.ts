@@ -7,8 +7,8 @@ import { CredentialsService } from './credentials.service';
 import { DataService } from './data.service';
 import { CachedResponse, CompareResult, Key } from './models/compare-result';
 import { Credentials } from './models/credentials';
-import { UtilsService } from './utils.service';
 import { NotificationService } from './shared/notification.service';
+import { UtilsService } from './utils.service';
 
 @Injectable({
   providedIn: 'root',
