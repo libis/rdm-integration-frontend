@@ -1,22 +1,22 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, OnDestroy, inject, viewChild } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 // Services
+import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { RepoLookupService } from '../repo.lookup.service';
-import { PluginService } from '../plugin.service';
-import { ActivatedRoute } from '@angular/router';
 import { OauthService } from '../oauth.service';
-import { HttpClient } from '@angular/common/http';
+import { PluginService } from '../plugin.service';
+import { RepoLookupService } from '../repo.lookup.service';
+import { ConnectValidationService } from '../shared/connect-validation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
-import { ConnectValidationService } from '../shared/connect-validation.service';
 
 // Models
 import { Credentials } from '../models/credentials';
@@ -24,28 +24,28 @@ import { Item, LoginState } from '../models/oauth';
 import { RepoLookupRequest } from '../models/repo-lookup';
 
 // PrimeNG
-import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
-import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
-import { Select } from 'primeng/select';
-import { ButtonDirective } from 'primeng/button';
-import {
-  Accordion,
-  AccordionPanel,
-  AccordionHeader,
-  AccordionContent,
-} from 'primeng/accordion';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionHeader,
+    AccordionPanel,
+} from 'primeng/accordion';
+import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
+import { ButtonDirective } from 'primeng/button';
+import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { Tree } from 'primeng/tree';
 
 // RxJS
 import {
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-  filter,
+    Observable,
+    Subject,
+    debounceTime,
+    filter,
+    firstValueFrom,
+    map,
 } from 'rxjs';
 
 // Constants and types
@@ -287,8 +287,9 @@ export class ConnectComponent
   ): void {
     const p = this.pluginService.getGlobusPlugin();
     if (!p) return;
-    this.plugin = 'globus';
-    this.pluginId = 'globus';
+    // Don't preselect plugin - only preselect the dataset
+    // this.plugin = 'globus';
+    // this.pluginId = 'globus';
     if (datasetPid) return;
     const callbackUrl = atob(callback);
     const parts = callbackUrl.split('/');
