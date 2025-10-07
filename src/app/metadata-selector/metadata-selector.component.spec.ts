@@ -164,9 +164,9 @@ describe('MetadataSelectorComponent', () => {
       '',
     );
     // Row class depends on dark mode detection, so just check it returns a string
-    expect(
-      component.rowClass({ ...base, action: Fieldaction.Copy }),
-    ).toContain('background-color');
+    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toContain(
+      'background-color',
+    );
     expect(
       component.rowClass({ ...base, action: Fieldaction.Custom }),
     ).toContain('background-color');

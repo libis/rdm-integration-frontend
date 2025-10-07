@@ -1,34 +1,34 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 // Services
-import { PluginService } from '../plugin.service';
-import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { DataService } from '../data.service';
-import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
-import { RepoLookupService } from '../repo.lookup.service';
+import { DataService } from '../data.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { OauthService } from '../oauth.service';
-import { SubmitService } from '../submit.service';
+import { PluginService } from '../plugin.service';
+import { RepoLookupService } from '../repo.lookup.service';
 import { NotificationService } from '../shared/notification.service';
+import { SubmitService } from '../submit.service';
+import { UtilsService } from '../utils.service';
 
 // Models
 import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction } from '../models/datafile';
-import { RepoLookupRequest } from '../models/repo-lookup';
 import { LoginState } from '../models/oauth';
 import { RepoPlugin } from '../models/plugin';
+import { RepoLookupRequest } from '../models/repo-lookup';
 
 // PrimeNG
-import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
-import { ButtonDirective, Button } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
+import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
+import { Button, ButtonDirective } from 'primeng/button';
 import { FloatLabel } from 'primeng/floatlabel';
 import { Select } from 'primeng/select';
-import { TreeTableModule } from 'primeng/treetable';
 import { Tree } from 'primeng/tree';
+import { TreeTableModule } from 'primeng/treetable';
 
 // Components
 import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
@@ -37,9 +37,8 @@ import { DownladablefileComponent } from '../downloadablefile/downladablefile.co
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // Constants and types
-import { getFileActionStyle } from '../shared/constants';
+import { APP_CONSTANTS, getFileActionStyle } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
-import { APP_CONSTANTS } from '../shared/constants';
 
 @Component({
   selector: 'app-download',

@@ -2,35 +2,35 @@
 
 import { enableProdMode, importProvidersFrom } from '@angular/core';
 
-import { environment } from './environments/environment';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
 } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { providePrimeNG } from 'primeng/config';
-import { definePreset } from '@primeng/themes';
-import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { AccordionModule } from 'primeng/accordion';
 import { FormsModule } from '@angular/forms';
-import { TreeTableModule } from 'primeng/treetable';
-import { TableModule } from 'primeng/table';
+import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideRouter, withHashLocation } from '@angular/router';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { definePreset } from '@primeng/themes';
+import Lara from '@primeng/themes/lara';
+import { AutosizeModule } from 'ngx-autosize';
+import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
-import { PopoverModule } from 'primeng/popover';
-import { SelectModule } from 'primeng/select';
-import { FloatLabelModule } from 'primeng/floatlabel';
-import { SkeletonModule } from 'primeng/skeleton';
-import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
+import { providePrimeNG } from 'primeng/config';
+import { DialogModule } from 'primeng/dialog';
+import { FloatLabelModule } from 'primeng/floatlabel';
+import { PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { SelectModule } from 'primeng/select';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import { TreeModule } from 'primeng/tree';
 import { TreeSelectModule } from 'primeng/treeselect';
-import { AutosizeModule } from 'ngx-autosize';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TreeTableModule } from 'primeng/treetable';
 import { AppComponent } from './app/app.component';
-import Lara from '@primeng/themes/lara';
-import { provideRouter, withHashLocation } from '@angular/router';
 import { routes } from './app/app.routs';
+import { environment } from './environments/environment';
 
 if (environment.production) {
   enableProdMode();
