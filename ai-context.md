@@ -535,6 +535,7 @@ Notes for maintainers
 **Solution**: Use `::ng-deep` with `!important` in component SCSS files:
 
 **Component SCSS files** (e.g., `datafile.component.scss`, `submitted-file.component.scss`):
+
 - Styles defined here are ALWAYS included in production builds (never tree-shaken)
 - Use `::ng-deep tr[selector].class-name` to pierce view encapsulation
 - Add `!important` to ensure precedence over other styles
