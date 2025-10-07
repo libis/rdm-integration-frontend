@@ -27,10 +27,10 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionHeader,
-    AccordionPanel,
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionPanel,
 } from 'primeng/accordion';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
@@ -40,12 +40,12 @@ import { Tree } from 'primeng/tree';
 
 // RxJS
 import {
-    Observable,
-    Subject,
-    debounceTime,
-    filter,
-    firstValueFrom,
-    map,
+  Observable,
+  Subject,
+  debounceTime,
+  filter,
+  firstValueFrom,
+  map,
 } from 'rxjs';
 
 // Constants and types
@@ -306,7 +306,15 @@ export class ConnectComponent
     const versionSubscription = this.datasetService
       .getDatasetVersion(datasetDbId, apiToken)
       .subscribe((x) => {
-        this.datasetId = x.persistentId;
+        const persistentId = x.persistentId;
+        this.datasetId = persistentId;
+        // Add the dataset to doiItems so it displays correctly in the dropdown
+        if (persistentId && !this.doiItems.some((i) => i.value === persistentId)) {
+          this.doiItems = [
+            { label: persistentId, value: persistentId },
+            ...this.doiItems,
+          ];
+        }
         this.subscriptions.delete(versionSubscription);
         versionSubscription.unsubscribe();
         if (downloadId) {
