@@ -71,7 +71,15 @@
   border-radius: 0.375rem;
   background: rgba(255, 77, 79, 0.08);
 
+  @media (prefers-color-scheme: dark) {
+    background: rgba(255, 77, 79, 0.15);
+  }
+
   i {
     color: #ff4d4f;
+
+    @media (prefers-color-scheme: dark) {
+      color: #ff7875;
+    }
   }
 }

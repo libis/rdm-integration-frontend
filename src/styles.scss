@@ -49,6 +49,10 @@ img {
   line-height: 1.25rem;
   color: #c55b28;
   padding: 0;
+
+  @media (prefers-color-scheme: dark) {
+    color: #e88a5d;
+  }
 }
 
 .dataverse-navbar-collapse {
@@ -83,12 +87,21 @@ footer {
   width: 100%;
   background-color: #1d8db0;
   height: 4.375rem;
+
+  @media (prefers-color-scheme: dark) {
+    color: #a0a0a0;
+    background-color: #156b84;
+  }
 }
 
 footer > div {
   position: relative;
   bottom: 0.35rem;
   color: #ffffff;
+
+  @media (prefers-color-scheme: dark) {
+    color: #e0e0e0;
+  }
 }
 
 .p-button > .p-button-label {
