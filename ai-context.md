@@ -46,12 +46,10 @@ Note: Bootstrap has already been completed for this repository; start with verif
   - Compare this file’s @version/@last_context_update to upstream at @template_source.
   - For .github, compare local files to upstream names and checksums using the Content API `sha` fields.
   - Summarize:
-
     - Context: up-to-date | behind (show upstream version)
     - .github: in sync | drifted | unknown (show planned changes)
 
   - If drifted, offer “update_workflows”.
-
     - After running, update `last_verified_at` (UTC ISO-8601) in the State block.
 
 2. update_workflows
@@ -62,7 +60,6 @@ Note: Bootstrap has already been completed for this repository; start with verif
   - For modified files, show a 3-way diff proposal.
   - After confirmation, apply changes, update .github/ai-transition-sync.json and @last_github_sync.
   - Open PR: "chore(ai): sync governance workflows".
-
     - Use the open_pr command described below to standardize PR creation via GitHub CLI.
 
 3. log_provenance
@@ -70,7 +67,6 @@ Note: Bootstrap has already been completed for this repository; start with verif
 - Goal: Add AI-Assistance provenance to the PR body.
 - Insert if missing:
   - AI-Assistance Provenance
-
     - Prompt: <summary or link>
     - Model: <model+version>
     - Date: <UTC ISO-8601>
@@ -99,26 +95,24 @@ Note: Bootstrap has already been completed for this repository; start with verif
   - Commit: `git commit -m "<title>"` (add a second -m with a short summary if useful).
   - Push: `git push -u origin <branch>`.
   3. Prepare body:
-
-    - Always build the PR body from `.github/pull_request_template.md` and FILL IT IN-PLACE. Do not append a second provenance block.
-    - Steps:
-      - Copy the template to a temp file.
-      - Replace placeholders with real values (or N/A where allowed) directly in the existing sections:
-        - AI Provenance: Prompt, Model, Date (UTC ISO-8601 Z), Author, Role (provider|deployer)
-        - Compliance checklist: set required checkboxes, risk classification, personal data, ADM, agent mode, vendor GPAI (if deployer), attribution
-        - Change-type specifics: add only relevant lines; remove optional placeholders that don’t apply
-        - Tests & Risk: add rollback plan, smoke link if high-risk
-      - Ensure only one `- Date:` line exists and it contains a real timestamp; remove inline hints if needed.
-    - Pre-flight validation (local):
-      - Confirm these patterns exist in the body:
-        - Prompt:, Model:, Date: 20..-..-..T..:..:..Z, Author:
-        - Role: (provider|deployer)
-        - [x] No secrets/PII, [x] Agent logging enabled, [x] Kill-switch / feature flag present, [x] No prohibited practices
-        - Risk classification: (limited|high), Personal data: (yes|no), Automated decision-making: (yes|no), Agent mode used: (yes|no)
-        - If Role=deployer → Vendor GPAI compliance reviewed: (https://…|N/A)
-      - No `<…>` or `${…}` placeholders remain.
-    - Optionally append `body_append` at the end for extra notes (avoid duplicating provenance).
-
+  - Always build the PR body from `.github/pull_request_template.md` and FILL IT IN-PLACE. Do not append a second provenance block.
+  - Steps:
+    - Copy the template to a temp file.
+    - Replace placeholders with real values (or N/A where allowed) directly in the existing sections:
+      - AI Provenance: Prompt, Model, Date (UTC ISO-8601 Z), Author, Role (provider|deployer)
+      - Compliance checklist: set required checkboxes, risk classification, personal data, ADM, agent mode, vendor GPAI (if deployer), attribution
+      - Change-type specifics: add only relevant lines; remove optional placeholders that don’t apply
+      - Tests & Risk: add rollback plan, smoke link if high-risk
+    - Ensure only one `- Date:` line exists and it contains a real timestamp; remove inline hints if needed.
+  - Pre-flight validation (local):
+    - Confirm these patterns exist in the body:
+      - Prompt:, Model:, Date: 20..-..-..T..:..:..Z, Author:
+      - Role: (provider|deployer)
+      - [x] No secrets/PII, [x] Agent logging enabled, [x] Kill-switch / feature flag present, [x] No prohibited practices
+      - Risk classification: (limited|high), Personal data: (yes|no), Automated decision-making: (yes|no), Agent mode used: (yes|no)
+      - If Role=deployer → Vendor GPAI compliance reviewed: (https://…|N/A)
+    - No `<…>` or `${…}` placeholders remain.
+  - Optionally append `body_append` at the end for extra notes (avoid duplicating provenance).
   4. Create PR:
   - Detect base branch (prefer repo default); fallback to `main`.
   - Run: `gh pr create -B <base> -H <branch> --title "<title>" --body-file <temp_body_path> --draft`
@@ -127,9 +121,7 @@ Note: Bootstrap has already been completed for this repository; start with verif
   5. Output PR URL and short summary of changes.
 
      Notes:
-
   - Language detection heuristic: use `git ls-files` to check for common extensions (e.g., `*.py`, `*.js`, `*.ts`, `*.go`, `*.java`) and toggle inputs accordingly.
-
     - When you introduce new language toggles locally, propose them upstream (same repo) so future pilots get them by default.
 
   - Labels: ensure default labels exist or create them if you have permissions; otherwise proceed without labels.
@@ -149,17 +141,14 @@ Note: Bootstrap has already been completed for this repository; start with verif
 
 - Goal: Respect per-user opt-out for suggestions.
 - Mechanism:
-
   - Local file: .ai/context.local.json (create/update).
   - Example:
 
     ```json
-
     {
       "suggestions_enabled": false,
       "user": { "name": "<name>", "email": "<email>" }
     }
-
     ```
 
   - When false, do not surface proactive suggestions; act only on explicit commands.
@@ -254,7 +243,7 @@ Golden scaffold (fill exactly; replace all <…> with a concrete value or N/A):
 - Prompt: <paste exact prompt or link to prompt file/snippet>
 - Model: <e.g., GitHub Copilot gpt-5>
 - Date: <UTC ISO-8601, e.g., 2025-09-12T14:23:45Z>
-- Author: @<github-handle>  // Do NOT include names or emails
+- Author: @<github-handle> // Do NOT include names or emails
 - Role: provider|deployer (choose one)
 - Vendor GPAI compliance reviewed: <https://… or N/A> (required if Role=deployer)
 - [ ] No secrets/PII
@@ -317,7 +306,6 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
   - [x] Kill-switch / feature flag present
   - [x] No prohibited practices under EU AI Act
   - Backend/API changed:
-
     - ASVS: N/A
 
   - Attribution: N/A
@@ -338,17 +326,14 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
   - [x] Kill-switch / feature flag present
   - [x] No prohibited practices under EU AI Act
   - UI changed:
-
     - [x] Transparency notice updated
     - Accessibility statement: https://example.org/accessibility
 
   - Media assets changed:
-
     - [x] AI content labeled
     - C2PA: N/A
 
   - Backend/API changed:
-
     - ASVS: https://example.org/asvs/review
 
   - Oversight plan: https://example.org/oversight/plan
@@ -371,55 +356,45 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
 ## Agent coding guidelines (enforced by this context)
 
 - Prefer the smallest viable change
-
   - Keep diffs minimal; preserve existing style and public APIs.
   - Reuse existing utilities; avoid duplication and broad refactors.
   - Defer opportunistic cleanups to a separate PR.
 
 - Commit and PR discipline
-
   - Small, focused commits; one concern per commit.
   - Commit message: `type(scope): summary` with a brief rationale and risk notes.
   - Aim for compact PRs (< ~300 changed LOC when possible). Split larger ones.
 
 - Safety and verification first
-
   - Run quick quality gates on every substantive change: Build, Lint/Typecheck, Unit tests; report PASS/FAIL in the PR.
   - Add or update minimal tests for new behavior (happy path + 1 edge case).
   - Use feature flags for risky paths; ensure clear rollback.
 
 - Dependencies policy
-
   - Prefer stdlib and existing deps. Add new deps only with clear value.
   - Pin versions and update manifests/lockfiles. Check license compatibility (no AGPL/GPL/LGPL where blocked).
 
 - Config and workflows
-
   - Reuse org workflows; don’t add bespoke CI beyond the minimal consumer workflow.
   - Keep workflow permissions least-privilege.
 
 - Documentation and provenance
-
   - Update README or inline docs when behavior or interfaces change.
   - Use `log_provenance` to append AI-Assistance details to the PR body.
 
 - Security, privacy, and IP
-
   - Never include secrets/PII; scrub logs; avoid leaking tokens.
   - Respect copyright and licensing; cite sources where applicable.
 
 - Handling ambiguity
-
   - If under-specified, state 1–2 explicit assumptions and proceed; invite correction.
   - If blocked by constraints, propose a minimal alternative and stop for confirmation.
 
 - Non-functional checks
-
   - Keep accessibility in mind for user-facing outputs.
   - Note performance characteristics; avoid clear regressions; document complexity changes.
 
 - PR automation
-
   - Use `open_pr` to branch, commit, push, and create a draft PR via GitHub CLI with labels and reviewers.
 
 - Suggestions policy
@@ -448,7 +423,6 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
 ## State (maintained by agent)
 
 ```json
-
 {
   "template_source": "https://github.com/libis/ai-transition/blob/main/templates/pilot-starter/ai-context.md",
   "template_version": "0.6.0",
@@ -458,7 +432,6 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
   "upstream_ref": "main",
   "upstream_commit": null
 }
-
 ```
 
 Notes for maintainers
@@ -466,3 +439,97 @@ Notes for maintainers
 - Prefer pinning reusable workflows by tag or commit SHA instead of @main for regulated repos.
 - Keep this file concise and org-agnostic; link deep policy detail from the org repo.
 - If suggestions are noisy, default user-local suggestions to false via .ai/context.local.json.
+
+## Project-specific technical notes
+
+### Frontend Stack & Theme System
+
+- Angular 18+ with standalone components and signals
+- PrimeNG v20.0.1 with Lara preset theme system
+- Theme configuration: `src/main.ts` using `definePreset()` with light/dark palettes
+- CSS variables: Theme uses `--p-*` CSS custom properties for dynamic theming
+
+### PrimeNG Theme Configuration (Critical)
+
+**Color Palette Defaults** (src/main.ts):
+
+- Light mode uses **slate** color palette by default
+- Dark mode uses **zinc** color palette by default
+- Important: This is the PrimeNG showcase default, contrary to some documentation examples
+- Palette definition includes surface scale 0-950, but PrimeNG internally handles which surface values to use per mode
+
+**Surface Scale Understanding**:
+
+- Surface colors range from 0 (lightest) to 950 (darkest)
+- In palette definitions, surface.0 is always defined as '#ffffff'
+- PrimeNG's theme system internally maps these values differently in light vs dark mode
+- Don't assume surface-0 always renders as white in the UI - it's theme-contextual
+
+### CSS Theming Best Practices (Lessons Learned)
+
+**Key to solving CSS theming issues**:
+
+1. **Use PrimeNG's semantic CSS variables** instead of guessing with surface/content variables
+   - Form fields: Use `--p-form-field-background`, `--p-form-field-color`, `--p-form-field-border-color`, etc.
+   - These are the exact same variables PrimeNG components use internally
+   - Available form field variables:
+     - `--p-form-field-background` - background color (adapts to light/dark)
+     - `--p-form-field-color` - text color
+     - `--p-form-field-border-color` - border color
+     - `--p-form-field-hover-border-color` - hover state border
+     - `--p-form-field-focus-border-color` - focus state border
+     - `--p-form-field-focus-ring-shadow` - focus ring/shadow
+     - `--p-form-field-disabled-background` - disabled state background
+     - `--p-form-field-disabled-color` - disabled state text
+     - `--p-form-field-placeholder-color` - placeholder text
+     - `--p-form-field-border-radius`, `--p-form-field-padding-x/y` - sizing
+     - `--p-form-field-transition-duration` - animation timing
+
+2. **Don't try to use surface variables directly** (`--p-surface-0`, `--p-surface-50`, etc.)
+   - These are low-level palette values that PrimeNG maps differently per mode
+   - Using them directly breaks light mode while trying to fix dark mode
+
+3. **For non-PrimeNG components** (like Bootstrap `.form-control`):
+   - Apply PrimeNG's form field variables to match the look of PrimeNG components
+   - Example from `src/styles.scss`:
+     ```scss
+     .form-control,
+     input[type="text"],
+     input[type="password"],
+     /* ... other input types */
+     textarea,
+     select {
+       background: var(--p-form-field-background);
+       color: var(--p-form-field-color);
+       border: 1px solid var(--p-form-field-border-color);
+       /* ... use other --p-form-field-* variables for states */
+     }
+     ```
+
+4. **Text contrast adjustments**:
+   - Use `--p-text-muted-color` instead of `--p-text-color` where softer contrast is desired
+   - Helps reduce harsh white text in dark mode
+   - Apply to navigation links, headers, and labels
+
+5. **Testing approach**:
+   - Always test changes in BOTH light and dark modes
+   - Don't break light mode to fix dark mode
+   - If unsure about variable names, inspect PrimeNG components in browser DevTools to see which CSS variables they use
+
+6. **Background variables hierarchy**:
+   - `--p-content-background` - main content area background
+   - `--p-background` - general/page background
+   - `--p-accordion-header-background` - component-specific backgrounds
+   - Use the most specific variable available for the context
+
+### KU Leuven Branding
+
+- Logo color: `#c55b28` (orange, preserved in all modes)
+- Footer background: `#1d8db0` (teal, preserved in all modes)
+- Custom assets in `conf/kul_customizations/assets/`
+
+### Testing
+
+- Jasmine/Karma with Chrome 141
+- Run: `npm test -- --watch=false`
+- All tests must pass before deployment
