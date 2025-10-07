@@ -1,11 +1,12 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject, input } from '@angular/core';
+import { Component, HostBinding, OnInit, inject, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
+import { ButtonDirective } from 'primeng/button';
+import { TreeTableModule } from 'primeng/treetable';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { TreeTableModule } from 'primeng/treetable';
-import { ButtonDirective } from 'primeng/button';
+import { getFileActionClass } from '../shared/constants';
 
 @Component({
   selector: 'tr[app-datafile]',
@@ -14,6 +15,21 @@ import { ButtonDirective } from 'primeng/button';
   imports: [TreeTableModule, ButtonDirective],
 })
 export class DatafileComponent implements OnInit {
+  @HostBinding('class') get hostClass(): string {
+    const action = this.datafile().action ?? Fileaction.Ignore;
+    switch (action) {
+      case Fileaction.Copy:
+        return getFileActionClass('COPY');
+      case Fileaction.Update:
+        return getFileActionClass('UPDATE');
+      case Fileaction.Delete:
+        return getFileActionClass('DELETE');
+      case Fileaction.Custom:
+        return getFileActionClass('CUSTOM');
+      default:
+        return getFileActionClass('IGNORE');
+    }
+  }
   private folderActionUpdateService = inject(FolderActionUpdateService);
 
   readonly datafile = input<Datafile>({});
