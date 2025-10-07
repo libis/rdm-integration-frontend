@@ -1,19 +1,19 @@
-import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  flushMicrotasks,
-} from '@angular/core/testing';
+import { Location } from '@angular/common';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { of } from 'rxjs';
+import {
+  ComponentFixture,
+  fakeAsync,
+  flushMicrotasks,
+  TestBed,
+} from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { MetadataSelectorComponent } from './metadata-selector.component';
+import { of } from 'rxjs';
 import { DatasetService } from '../dataset.service';
-import { Location } from '@angular/common';
+import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 import {
   Field,
   Fieldaction,
@@ -21,7 +21,7 @@ import {
   Metadata,
   MetadataField,
 } from '../models/field';
-import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
+import { MetadataSelectorComponent } from './metadata-selector.component';
 
 describe('MetadataSelectorComponent', () => {
   let component: MetadataSelectorComponent;
@@ -266,8 +266,6 @@ describe('MetadataSelectorComponent', () => {
     expect(routerNavigateSpy).toHaveBeenCalled();
     const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
     expect(args[0][0]).toBe('/compare');
-    // Expect breadcrumb flags for coming from metadata selector
-    expect(args[1]?.state?.fromMetadata).toBeTrue();
     expect(args[1]?.state?.preserveCompare).toBeTrue();
   });
 });

@@ -1,13 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CompareComponent } from './compare.component';
 import { Router } from '@angular/router';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { CompareComponent } from './compare.component';
 
 describe('CompareComponent', () => {
   let component: CompareComponent;
@@ -51,22 +51,7 @@ describe('CompareComponent', () => {
     expect(navigateSpy).toHaveBeenCalledWith(['/connect']);
   });
 
-  it('back() navigates to metadata-selector when history.state.fromMetadata is set', () => {
-    const router = TestBed.inject(Router);
-    const navigateSpy = spyOn(router, 'navigate');
-    (component as any).credentialsService = {
-      credentials: { dataset_id: 'doi:10.X/TEST' },
-    };
-    component['data'] = { id: 'doi:10.X/TEST' } as any;
-    // Simulate breadcrumb left by metadata-selector -> compare transition
-    window.history.pushState({ fromMetadata: true }, '', '/');
-    component.back();
-    expect(navigateSpy).toHaveBeenCalledWith(['/metadata-selector'], {
-      state: { fromCompare: true },
-    });
-  });
-
-  it('submit() navigates to metadata-selector with state when new dataset path', () => {
+  it('submit() navigates to metadata-selector when new dataset path', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = spyOn(router, 'navigate');
     // Stub required services/fields for submit()
@@ -78,10 +63,7 @@ describe('CompareComponent', () => {
     };
     component['data'] = { id: '' } as any; // new dataset heuristic
     component.submit();
-    expect(navigateSpy).toHaveBeenCalled();
-    const args = (navigateSpy.calls.mostRecent().args || []) as any[];
-    expect(args[0]).toEqual(['/metadata-selector']);
-    expect(args[1]?.state?.fromCompare).toBeTrue();
+    expect(navigateSpy).toHaveBeenCalledWith(['/metadata-selector']);
   });
 
   describe('canProceed() logic', () => {

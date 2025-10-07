@@ -30,9 +30,9 @@ import { TreeTableModule } from 'primeng/treetable';
 import { DatafileComponent } from '../datafile/datafile.component';
 
 // Constants and types
+import { Credentials } from '../models/credentials';
 import { APP_CONSTANTS } from '../shared/constants';
 import { FilterItem, SubscriptionManager } from '../shared/types';
-import { Credentials } from '../models/credentials';
 
 @Component({
   selector: 'app-compare',
@@ -323,10 +323,7 @@ export class CompareComponent
   submit(): void {
     this.dataStateService.updateState(this.data);
     if (this.isNewDataset()) {
-      // Pass a breadcrumb flag so submit/back can return here
-      this.router.navigate(['/metadata-selector'], {
-        state: { fromCompare: true },
-      });
+      this.router.navigate(['/metadata-selector']);
     } else {
       this.router.navigate(['/submit']);
     }
@@ -496,18 +493,7 @@ export class CompareComponent
       dataset_id: datasetId,
       collectionId,
     });
-    // If we came from metadata-selector (new dataset path) we should not jump all the way back to connect.
-    // Detect via history.state breadcrumb set by metadata -> compare transition.
-    const cameFromMetadata = (
-      window?.history?.state as { fromMetadata?: boolean }
-    )?.fromMetadata;
-    if (cameFromMetadata) {
-      this.router.navigate(['/metadata-selector'], {
-        state: { fromCompare: true },
-      });
-    } else {
-      this.router.navigate(['/connect']);
-    }
+    this.router.navigate(['/connect']);
   }
 
   repo(): string {

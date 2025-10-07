@@ -1,18 +1,16 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject } from '@angular/core';
-import { NgClass } from '@angular/common';
+import { Location, NgClass } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
 // Services
-import { DataStateService } from '../data.state.service';
 import { CredentialsService } from '../credentials.service';
+import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 
 // Models
-import { MetadataRequest } from '../models/metadata-request';
 import {
   Field,
   Fieldaction,
@@ -20,9 +18,10 @@ import {
   Metadata,
   MetadataField,
 } from '../models/field';
+import { MetadataRequest } from '../models/metadata-request';
 
 // PrimeNG
-import { TreeNode, PrimeTemplate } from 'primeng/api';
+import { PrimeTemplate, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
 
@@ -108,7 +107,7 @@ export class MetadataSelectorComponent implements OnInit {
       this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
     }
     this.router.navigate(['/compare', datasetId], {
-      state: { preserveCompare: true, fromMetadata: true },
+      state: { preserveCompare: true },
     });
   }
 
