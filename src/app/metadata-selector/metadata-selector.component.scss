@@ -24,7 +24,8 @@
     .p-treetable-table,
     .p-treetable-thead,
     .p-treetable-tbody,
-    tr,
+    // Don't override tr background if it has a file-action class
+    tr:not([class*='file-action-']),
     td,
     th {
       background-color: var(--p-content-background);
