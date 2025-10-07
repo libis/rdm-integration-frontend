@@ -14,7 +14,7 @@ describe('FolderActionUpdateService', () => {
   function node(action: Fileaction, status: Filestatus): TreeNode<Datafile> {
     return {
       data: {
-        id: `${status  }:${  action}`,
+        id: `${status}:${action}`,
         name: '',
         path: '',
         hidden: false,

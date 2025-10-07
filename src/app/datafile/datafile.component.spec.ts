@@ -60,8 +60,8 @@ describe('DatafileComponent', () => {
     ];
     statuses.forEach((st) => {
       const df: Datafile = {
-        id: `id${  st}`,
-        name: `f${  st}`,
+        id: `id${st}`,
+        name: `f${st}`,
         path: '',
         hidden: false,
         status: st,
@@ -70,7 +70,7 @@ describe('DatafileComponent', () => {
       };
       const node: TreeNode<Datafile> = { data: df };
       const map = new Map<string, TreeNode<Datafile>>([
-        [`${df.id  }:file`, node],
+        [`${df.id}:file`, node],
       ]);
       setInputs(df, map);
       component.ngOnInit();
@@ -90,7 +90,7 @@ describe('DatafileComponent', () => {
     ];
     actions.forEach((act) => {
       const df: Datafile = {
-        id: `i${  act}`,
+        id: `i${act}`,
         name: 'f',
         path: '',
         hidden: false,
@@ -100,7 +100,7 @@ describe('DatafileComponent', () => {
       };
       const node: TreeNode<Datafile> = { data: df };
       const map = new Map<string, TreeNode<Datafile>>([
-        [`${df.id  }:file`, node],
+        [`${df.id}:file`, node],
       ]);
       setInputs(df, map);
       component.ngOnInit();
@@ -170,7 +170,7 @@ describe('DatafileComponent', () => {
       attributes: { isFile: true },
     };
     const node: TreeNode<Datafile> = { data: df };
-    const map = new Map<string, TreeNode<Datafile>>([[`${df.id  }:file`, node]]);
+    const map = new Map<string, TreeNode<Datafile>>([[`${df.id}:file`, node]]);
     setInputs(df, map);
     component.ngOnInit();
     expect(component.targetFile()).toBe(''); // new + not Copy
@@ -194,7 +194,7 @@ describe('DatafileComponent', () => {
       attributes: { isFile: true },
     };
     const node: TreeNode<Datafile> = { data: df };
-    const map = new Map<string, TreeNode<Datafile>>([[`${df.id  }:file`, node]]);
+    const map = new Map<string, TreeNode<Datafile>>([[`${df.id}:file`, node]]);
     setInputs(df, map);
     component.ngOnInit();
     expect(component.targetFileClass()).toContain('line-through');

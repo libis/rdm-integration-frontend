@@ -1,13 +1,13 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-    ComponentFixture,
-    TestBed,
-    fakeAsync,
-    tick,
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
 } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Subject, delay, of } from 'rxjs';
@@ -39,7 +39,7 @@ class MockUtilsService {
   mapDatafiles(data: Datafile[]) {
     const map = new Map<string, any>();
     map.set('', { data: { id: '', action: Fileaction.Ignore }, children: [] });
-    data.forEach((d) => map.set(`${d.id  }:file`, { data: d }));
+    data.forEach((d) => map.set(`${d.id}:file`, { data: d }));
     return map as any;
   }
   addChild(_v: any, _map: Map<string, any>) {
