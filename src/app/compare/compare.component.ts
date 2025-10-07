@@ -288,11 +288,14 @@ export class CompareComponent
   }
 
   updateFilters(): void {
-    if (this.selectedFilterItems.length < 4) {
-      this.filterOn(this.selectedFilterItems);
-    } else {
-      this.filterOff();
-    }
+    // Use setTimeout to ensure the selection model has updated before we filter
+    setTimeout(() => {
+      if (this.selectedFilterItems.length < 4) {
+        this.filterOn(this.selectedFilterItems);
+      } else {
+        this.filterOff();
+      }
+    }, 0);
   }
 
   showAll(): void {
