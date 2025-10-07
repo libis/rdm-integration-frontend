@@ -1,7 +1,11 @@
 // Metadata selector component styles
 // Fix white background from Bootstrap table
 
-.table {
+.table,
+.table tbody,
+.table tr,
+.table td,
+.table th {
   background-color: var(--p-content-background);
   color: var(--p-text-color);
 }
@@ -9,4 +13,22 @@
 .treetable-cell {
   background-color: var(--p-content-background);
   padding: 0;
+}
+
+// Pierce PrimeNG component encapsulation to style TreeTable
+:host ::ng-deep {
+  .treetable-cell {
+    p-treeTable,
+    .p-treetable,
+    .p-treetable-wrapper,
+    .p-treetable-table,
+    .p-treetable-thead,
+    .p-treetable-tbody,
+    tr,
+    td,
+    th {
+      background-color: var(--p-content-background);
+      color: var(--p-text-color);
+    }
+  }
 }

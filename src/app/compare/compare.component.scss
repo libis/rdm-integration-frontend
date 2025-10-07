@@ -1,0 +1,9 @@
+// Override Bootstrap's default white table backgrounds for dark mode
+.table,
+.table tbody,
+.table tr,
+.table td,
+.table th {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}

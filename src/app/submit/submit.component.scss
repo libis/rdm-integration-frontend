@@ -3,7 +3,11 @@
 
 // Fix white background from Bootstrap table
 .submit-table,
-.submit-table .table {
+.submit-table .table,
+.submit-table tbody,
+.submit-table tr,
+.submit-table td,
+.submit-table th {
   background-color: var(--p-content-background);
   color: var(--p-text-color);
 }
