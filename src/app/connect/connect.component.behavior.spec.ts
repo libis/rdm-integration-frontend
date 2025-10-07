@@ -3,16 +3,21 @@ import {
     withInterceptorsFromDi,
 } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem } from 'primeng/api';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { DataStateService } from '../data.state.service';
+import { DatasetService } from '../dataset.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
+import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
+import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
 import { NotificationService } from '../shared/notification.service';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { ConnectComponent } from './connect.component';
 
 class DataStateServiceStub {
@@ -25,6 +30,24 @@ class DataStateServiceStub {
 class PluginServiceStub {
   pluginIds: SelectItem[] = [];
   pluginList: SelectItem[] = [];
+  pluginConfig: any = {
+    tokenGetter: {},
+    repoNameFieldHasSearch: false,
+    parseSourceUrlField: true,
+    repoNameFieldName: 'Repository',
+    repoNameFieldEditable: true,
+    sourceUrlFieldName: 'Source URL',
+    sourceUrlFieldPlaceholder: 'https://host/owner/repo',
+    sourceUrlFieldValue: undefined,
+    optionFieldInteractive: false,
+    usernameFieldName: 'Username',
+    tokenFieldName: 'Token',
+    tokenFieldPlaceholder: 'token',
+    datasetFieldEditable: true,
+    repoNameFieldPlaceholder: 'owner/repo',
+    showTokenGetter: false,
+    repoNameFieldHasInit: false,
+  };
   setConfig() {
     return Promise.resolve();
   }
@@ -35,23 +58,7 @@ class PluginServiceStub {
     return this.pluginIds;
   }
   getPlugin() {
-    return {
-      tokenGetter: {},
-      repoNameFieldHasSearch: false,
-      parseSourceUrlField: true,
-      repoNameFieldName: 'Repository',
-      repoNameFieldEditable: true,
-      sourceUrlFieldName: 'Source URL',
-      sourceUrlFieldPlaceholder: 'https://host/owner/repo',
-      sourceUrlFieldValue: undefined,
-      optionFieldInteractive: false,
-      usernameFieldName: 'Username',
-      tokenFieldName: 'Token',
-      tokenFieldPlaceholder: 'token',
-      datasetFieldEditable: true,
-      repoNameFieldPlaceholder: 'owner/repo',
-      showTokenGetter: false,
-    } as any;
+    return this.pluginConfig as any;
   }
   dataverseHeader() {
     return 'Dataverse';
@@ -88,6 +95,55 @@ class PluginServiceStub {
   }
 }
 
+class RepoLookupServiceStub {
+  searchSpy = jasmine.createSpy('search').and.returnValue(of([]));
+  optionsSpy = jasmine.createSpy('getOptions').and.returnValue(of([]));
+
+  search(req: unknown) {
+    return this.searchSpy(req);
+  }
+
+  getOptions(req: unknown) {
+    return this.optionsSpy(req);
+  }
+}
+
+class SnapshotStorageServiceStub {
+  cleared = false;
+  snapshot: unknown;
+
+  loadConnect() {
+    return this.snapshot;
+  }
+
+  saveConnect(data: unknown) {
+    this.snapshot = data;
+  }
+
+  clearConnect() {
+    this.cleared = true;
+    this.snapshot = undefined;
+  }
+}
+
+class DatasetServiceStub {
+  getDatasetVersion() {
+    return of({ persistentId: 'doi:10.123/XYZ' });
+  }
+}
+
+class DvObjectLookupServiceStub {
+  getItems() {
+    return of([]);
+  }
+}
+
+class OauthServiceStub {
+  getToken() {
+    return of({ session_id: 'session' });
+  }
+}
+
 class NotificationServiceStub {
   errors: string[] = [];
   showError(msg: string) {
@@ -113,6 +169,8 @@ describe('ConnectComponent additional behavior/validation', () => {
   let notification: NotificationServiceStub;
   let validation: ConnectValidationServiceStub;
   let pluginService: PluginServiceStub;
+  let repoLookup: RepoLookupServiceStub;
+  let snapshotStorage: SnapshotStorageServiceStub;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -128,6 +186,11 @@ describe('ConnectComponent additional behavior/validation', () => {
           useClass: ConnectValidationServiceStub,
         },
         { provide: DataStateService, useClass: DataStateServiceStub },
+        { provide: RepoLookupService, useClass: RepoLookupServiceStub },
+        { provide: SnapshotStorageService, useClass: SnapshotStorageServiceStub },
+        { provide: DatasetService, useClass: DatasetServiceStub },
+        { provide: DvObjectLookupService, useClass: DvObjectLookupServiceStub },
+        { provide: OauthService, useClass: OauthServiceStub },
       ],
     }).compileComponents();
     notification = TestBed.inject(
@@ -139,6 +202,12 @@ describe('ConnectComponent additional behavior/validation', () => {
     pluginService = TestBed.inject(
       PluginService,
     ) as unknown as PluginServiceStub;
+    repoLookup = TestBed.inject(
+      RepoLookupService,
+    ) as unknown as RepoLookupServiceStub;
+    snapshotStorage = TestBed.inject(
+      SnapshotStorageService,
+    ) as unknown as SnapshotStorageServiceStub;
   });
 
   it('newNonce produces string of expected length', () => {
@@ -435,5 +504,131 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.datasetId).toBeUndefined();
     expect(comp.plugins.length).toBe(0);
     expect(comp.pluginIdSelectHidden).toBeTrue();
+  });
+
+  it('repoNameSearch handles service errors by presenting failure message', fakeAsync(() => {
+    pluginService.pluginConfig.repoNameFieldHasSearch = true;
+    pluginService.pluginConfig.parseSourceUrlField = true;
+    pluginService.pluginIds = [{ label: 'GitHub', value: 'github' }];
+    pluginService.pluginList = [{ label: 'GitHub', value: 'github' }];
+    repoLookup.searchSpy.and.returnValue(throwError(() => new Error('boom')));
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    fixture.detectChanges();
+    flushMicrotasks();
+    tick();
+    flushMicrotasks();
+
+    comp.plugin = 'github';
+    comp.pluginId = 'github';
+    comp.sourceUrl = 'https://host/owner/repo';
+    comp.user = 'alice';
+    comp.token = 'tok';
+
+    comp.startRepoSearch();
+    comp.onRepoNameSearch('repo');
+    tick(comp.DEBOUNCE_TIME + 1);
+    flushMicrotasks();
+    tick();
+    flushMicrotasks();
+
+    expect(repoLookup.searchSpy).toHaveBeenCalled();
+    expect(comp.repoNames[0].label).toContain('search failed: boom');
+  }));
+
+  it('getOptions requests oauth scopes when branch lookup returns scopes marker', () => {
+    pluginService.pluginConfig.repoNameFieldHasSearch = true;
+    pluginService.pluginConfig.parseSourceUrlField = true;
+    pluginService.pluginConfig.optionFieldInteractive = true;
+    repoLookup.optionsSpy.and.returnValue(
+      throwError(() => ({ error: '*scopes*repo.read*scopes*' })),
+    );
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    fixture.detectChanges();
+
+    spyOn(comp, 'getRepoToken');
+
+    comp.plugin = 'github';
+    comp.pluginId = 'github';
+    comp.sourceUrl = 'https://host/owner/repo';
+    comp.user = 'alice';
+    comp.token = 'tok';
+    comp.repoName = 'owner/repo';
+
+    comp.getOptions();
+
+    expect(comp.getRepoToken).toHaveBeenCalledOnceWith('repo.read');
+  });
+
+  it('getOptions surfaces errors and resets state when scopes marker missing', () => {
+    repoLookup.optionsSpy.and.returnValue(
+      throwError(() => ({ error: 'network offline' })),
+    );
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    fixture.detectChanges();
+
+    comp.plugin = 'github';
+    comp.pluginId = 'github';
+    comp.sourceUrl = 'https://host/owner/repo';
+    comp.user = 'alice';
+    comp.token = 'tok';
+    comp.repoName = 'owner/repo';
+    comp.branchItems = [];
+    comp.option = undefined;
+    comp.optionsLoading = true;
+
+    comp.getOptions();
+
+    expect(notification.errors.pop()).toBe(
+      'Branch lookup failed: network offline',
+    );
+    expect(comp.branchItems).toEqual([]);
+    expect(comp.option).toBeUndefined();
+    expect(comp.optionsLoading).toBeFalse();
+  });
+
+  it('setDoiItems clears datasetId when existing selection is placeholder', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    comp.datasetId = 'CREATE_NEW_DATASET';
+    comp.doiItems = [];
+
+    comp.setDoiItems(comp, [{ label: 'doi:1', value: 'doi:1' }]);
+
+    expect(comp.datasetId).toBeUndefined();
+    expect(comp.doiItems[0].value).toBe('CREATE_NEW_DATASET');
+    expect(comp.doiItems.length).toBeGreaterThan(1);
+  });
+
+  it('restoreFromDatasetPid clears snapshot and seeds dataset list with provided pid', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+
+    comp.plugins = [{ label: 'GitHub', value: 'github' }];
+    comp.pluginIds = [{ label: 'GitHub', value: 'github' }];
+    comp.repoNames = [{ label: 'owner/repo', value: 'owner/repo' }];
+    comp.branchItems = [{ label: 'main', value: 'main' }];
+    comp.collectionItems = [{ label: 'root', value: 'root' }];
+    comp.doiItems = [];
+    comp.dataverseToken = 'old';
+
+    comp['restoreFromDatasetPid']({
+      datasetPid: 'doi:10.123/NEW',
+      apiToken: 'newtoken',
+    });
+
+    expect(snapshotStorage.cleared).toBeTrue();
+    expect(comp.plugins).toEqual([]);
+    expect(comp.branchItems).toEqual([]);
+    expect(comp.datasetId).toBe('doi:10.123/NEW');
+    expect(comp.dataverseToken).toBe('newtoken');
+    expect(comp.doiItems.some((i: any) => i.value === 'doi:10.123/NEW')).toBe(
+      true,
+    );
   });
 });

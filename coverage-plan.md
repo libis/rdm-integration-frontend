@@ -1,6 +1,6 @@
 # Coverage Improvement Plan
 
-_Last refreshed:_ 2025-10-07T22:25:00Z
+_Last refreshed:_ 2025-10-07T22:47:10Z
 
 ## Mission
 
@@ -21,9 +21,9 @@ _Last refreshed:_ 2025-10-07T22:25:00Z
 
 ## Active Focus
 
-- [ ] Enhance `ConnectComponent` specs to cover pilot plugin repo search error paths and OAuth failure handling.
-- [ ] Add branch coverage for dataset creation edge cases in `ConnectComponent` (`newDataset`, `setDoiItems`, `restoreFromDatasetPid`).
-- [ ] Strengthen `DownloadComponent` error-state expectations (HTTP failure branches).
+- [x] Enhance `ConnectComponent` specs to cover pilot plugin repo search error paths and OAuth failure handling.
+- [x] Add branch coverage for dataset creation edge cases in `ConnectComponent` (`newDataset`, `setDoiItems`, `restoreFromDatasetPid`).
+- [x] Strengthen `DownloadComponent` error-state expectations (HTTP failure branches).
 - [ ] Verify service-level tests (`repo.lookup.service`, `data.state.service`) capture retry/error flows.
 - [ ] Run full suite with coverage report (`npm run test:ci`) and update metrics here.
 
@@ -55,3 +55,5 @@ _Last refreshed:_ 2025-10-07T22:25:00Z
 ## Progress Log
 
 - _2025-10-07T22:25Z_ – Plan created; next step is to expand ConnectComponent specs (OAuth/search failure branches).
+- _2025-10-07T22:37Z_ – Added repo search error/OAuth scope tests and dataset restoration coverage in `connect.component.behavior.spec.ts`.
+- _2025-10-07T22:47Z_ – Hardened `DownloadComponent` specs to assert repo/dataset search error surfaces; targeted ChromeHeadless run green.

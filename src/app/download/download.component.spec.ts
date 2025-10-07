@@ -1,16 +1,16 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed, fakeAsync, flush, flushMicrotasks, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem, TreeNode } from 'primeng/api';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CompareResult } from '../models/compare-result';
@@ -36,7 +36,7 @@ class MockNotificationService {
 
 class MockRepoLookupService {
   options: SelectItem<string>[] = [];
-  search() {
+  search(_req?: unknown) {
     return of([]);
   }
   getOptions() {
@@ -696,5 +696,44 @@ describe('DownloadComponent', () => {
 
     expect(component.datasetId).toBe('doi:XYZ');
     expect(tokenSpy).toHaveBeenCalled();
+  }));
+
+  it('repoName search subscription surfaces errors from service', fakeAsync(() => {
+    const comp = initComponent();
+    tick();
+    flushMicrotasks();
+    comp.globusPlugin = {
+      repoNameFieldName: 'Endpoint',
+      repoNameFieldHasInit: true,
+      sourceUrlFieldValue: 'https://globus.example',
+    } as any;
+    spyOn(repoLookup, 'search').and.returnValue(
+      throwError(() => new Error('network down')),
+    );
+
+    comp.onRepoNameSearch('abc');
+    tick(comp.DEBOUNCE_TIME + 1);
+    flushMicrotasks();
+    flush();
+    flushMicrotasks();
+
+    expect(comp.repoNames[0].label).toContain('search failed');
+  }));
+
+  it('dataset search subscription handles rejected lookups', fakeAsync(() => {
+    const comp = initComponent();
+    tick();
+    flushMicrotasks();
+    spyOn(dvLookup, 'getItems').and.returnValue(
+      throwError(() => new Error('lookup-fail')),
+    );
+
+  comp.onDatasetSearch('proj');
+    tick(comp.DEBOUNCE_TIME + 1);
+    flushMicrotasks();
+    flush();
+    flushMicrotasks();
+
+    expect(comp.doiItems[0].label).toContain('search failed');
   }));
 });
