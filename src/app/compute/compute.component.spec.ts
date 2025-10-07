@@ -1,21 +1,21 @@
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
+} from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, Subject, delay } from 'rxjs';
-import { ComputeComponent } from './compute.component';
+import { Subject, delay, of } from 'rxjs';
 import { DataService } from '../data.service';
-import { UtilsService } from '../utils.service';
 import { CompareResult, Key } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { UtilsService } from '../utils.service';
+import { ComputeComponent } from './compute.component';
 
 class MockDataService {
   getExecutableFiles() {
@@ -33,16 +33,16 @@ class MockDataService {
   }
 }
 class MockUtilsService {
-  sleep(ms: number) {
+  sleep(_ms: number) {
     return Promise.resolve();
   }
   mapDatafiles(data: Datafile[]) {
     const map = new Map<string, any>();
     map.set('', { data: { id: '', action: Fileaction.Ignore }, children: [] });
-    data.forEach((d) => map.set(d.id + ':file', { data: d }));
+    data.forEach((d) => map.set(`${d.id  }:file`, { data: d }));
     return map as any;
   }
-  addChild(v: any, map: Map<string, any>) {
+  addChild(_v: any, _map: Map<string, any>) {
     /* no-op for test */
   }
 }

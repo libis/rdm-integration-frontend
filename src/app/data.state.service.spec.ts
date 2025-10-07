@@ -1,17 +1,16 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
-import { DataStateService } from './data.state.service';
 import { DataService } from './data.service';
-import { UtilsService } from './utils.service';
-import { NotificationService } from './shared/notification.service';
-import { CredentialsService } from './credentials.service';
+import { DataStateService } from './data.state.service';
 import { Credentials } from './models/credentials';
+import { NotificationService } from './shared/notification.service';
+import { UtilsService } from './utils.service';
 
 class MockDataService {
   key$ = of({ key: 'k1' });
@@ -24,7 +23,7 @@ class MockDataService {
   }
 }
 class MockUtilsService {
-  sleep(ms: number) {
+  sleep(_ms: number) {
     return Promise.resolve();
   }
 }
@@ -46,7 +45,6 @@ describe('DataStateService', () => {
   let data: MockDataService;
   let router: MockRouter;
   let notify: MockNotification;
-  let creds: CredentialsService;
 
   beforeEach(() => {
     data = new MockDataService();
@@ -63,7 +61,6 @@ describe('DataStateService', () => {
       ],
     });
     service = TestBed.inject(DataStateService);
-    creds = TestBed.inject(CredentialsService);
   });
 
   function init(credsIn?: Partial<Credentials>) {

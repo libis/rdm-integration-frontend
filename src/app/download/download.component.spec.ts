@@ -1,24 +1,24 @@
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing';
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError, Observable } from 'rxjs';
-import { DownloadComponent } from './download.component';
-import { Datafile, Fileaction } from '../models/datafile';
-import { TreeNode, SelectItem } from 'primeng/api';
-import { NotificationService } from '../shared/notification.service';
-import { RepoLookupService } from '../repo.lookup.service';
-import { SubmitService } from '../submit.service';
-import { PluginService } from '../plugin.service';
+import {
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
+} from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+import { SelectItem, TreeNode } from 'primeng/api';
+import { Observable, of } from 'rxjs';
+import { Datafile, Fileaction } from '../models/datafile';
+import { PluginService } from '../plugin.service';
+import { RepoLookupService } from '../repo.lookup.service';
+import { NotificationService } from '../shared/notification.service';
+import { SubmitService } from '../submit.service';
+import { DownloadComponent } from './download.component';
 
 class MockNotificationService {
   errors: string[] = [];
