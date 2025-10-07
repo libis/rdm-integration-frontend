@@ -154,7 +154,10 @@ export class DownloadComponent
             : '?';
           this.doiItems = [{ label: doi, value: doi }];
           this.datasetId = doi;
-          this.onDatasetChange();
+          // Only try to load files if we have a valid dataset ID
+          if (doi && doi !== '?' && doi !== 'undefined') {
+            this.onDatasetChange();
+          }
           const tokenSubscription = this.oauth
             .getToken('globus', code, loginState.nonce)
             .subscribe((x) => {
@@ -252,9 +255,11 @@ export class DownloadComponent
 
   // DV OBJECTS: COMMON
   getDoiOptions(): void {
+    // Don't reload if we already have valid options (not just '?' or loading)
     if (
       this.doiItems.length !== 0 &&
-      this.doiItems.find((x) => x === this.loadingItem) === undefined
+      this.doiItems.find((x) => x === this.loadingItem) === undefined &&
+      this.datasetId !== '?'
     ) {
       return;
     }
@@ -589,8 +594,11 @@ export class DownloadComponent
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       const nonce = this.newNonce(44);
+      // Only include datasetId if one is actually selected
       const loginState: LoginState = {
-        datasetId: { value: this.datasetId, label: this.datasetId },
+        datasetId: this.datasetId && this.datasetId !== '?'
+          ? { value: this.datasetId, label: this.datasetId }
+          : undefined,
         nonce: nonce,
         download: true,
       };
