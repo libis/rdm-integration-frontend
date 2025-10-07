@@ -215,3 +215,15 @@ label {
   color: var(--p-text-color);
   font-weight: 500;
 }
+
+/* Submit component table background - ensure it uses theme background in dark mode */
+::ng-deep .p-datatable .p-datatable-tbody > tr {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+
+::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+  border-color: var(--p-surface-border);
+}

@@ -528,6 +528,80 @@ Notes for maintainers
 - Footer background: `#1d8db0` (teal, preserved in all modes)
 - Custom assets in `conf/kul_customizations/assets/`
 
+### Dynamic CSS Classes with @HostBinding (CRITICAL FIX)
+
+**Problem**: CSS classes applied dynamically via `@HostBinding` in component TypeScript are subject to Angular's tree-shaking optimization during production builds. If styles are only in global `styles.scss`, Angular's static analysis cannot detect they are used and removes them.
+
+**Solution**: Use `::ng-deep` with `!important` in component SCSS files:
+
+**Component SCSS files** (e.g., `datafile.component.scss`, `submitted-file.component.scss`):
+- Styles defined here are ALWAYS included in production builds (never tree-shaken)
+- Use `::ng-deep tr[selector].class-name` to pierce view encapsulation
+- Add `!important` to ensure precedence over other styles
+- Example:
+  ```scss
+  ::ng-deep tr[app-datafile].file-action-copy {
+    background-color: #c3e6cb !important;
+    color: #1a1a1a !important;
+    @media (prefers-color-scheme: dark) {
+      background-color: #1e4620 !important;
+      color: #c3e6cb !important;
+    }
+  }
+  ```
+
+**Note**: Do NOT duplicate these styles in global `styles.scss` - it's unnecessary. Component SCSS with `::ng-deep` is sufficient and avoids code duplication.
+
+**Why This Works**:
+
+- `::ng-deep` prevents Angular from scoping the styles to a specific component
+- `!important` ensures the styles override any other conflicting rules
+- Component SCSS files are never tree-shaken (unlike global styles)
+- The selector `tr[app-datafile].class-name` is specific enough to avoid conflicts
+
+**File Action Row Colors** (implemented in this project):
+
+- Copy action: Green (`#c3e6cb` light, `#1e4620` dark)
+- Update action: Blue (`#b8daff` light, `#1a3d5c` dark)
+- Delete action: Red (`#f5c6cb` light, `#4a1f23` dark)
+- Custom action: Yellow (`#fffaa0` light, `#4a4520` dark)
+- Ignore action: No styling (empty string class)
+
+**Testing Dynamic Classes**:
+
+- Always create integration tests that render actual components with TreeTable
+- Test that CSS `background-color` is NOT `rgba(0, 0, 0, 0)` (transparent)
+- Test that different actions have different computed colors
+- See `src/app/datafile/datafile-styling.spec.ts` for reference
+
+**Common Mistakes to Avoid**:
+
+- ❌ Using only `:host` selector (gets scoped, doesn't work for host element)
+- ❌ Defining styles only in global `styles.scss` (gets tree-shaken)
+- ❌ Forgetting `!important` (can be overridden by other styles)
+- ❌ Not testing in production build (dev mode doesn't show the issue)
+
+### PrimeNG DataTable Dark Mode Fix
+
+**Problem**: PrimeNG DataTable rows and headers show white background in dark mode (specifically in Submit component).
+
+**Solution**: Use `::ng-deep` to override table background colors in global `styles.scss`:
+
+```scss
+::ng-deep .p-datatable .p-datatable-tbody > tr {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+
+::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+  border-color: var(--p-surface-border);
+}
+```
+
+This ensures table backgrounds adapt to light/dark theme using PrimeNG's semantic variables.
+
 ### Testing
 
 - Jasmine/Karma with Chrome 141
