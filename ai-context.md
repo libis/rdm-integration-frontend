@@ -603,8 +603,116 @@ Notes for maintainers
 
 This ensures table backgrounds adapt to light/dark theme using PrimeNG's semantic variables.
 
+### CSS Selector Specificity for File Action Rows (CRITICAL FIX)
+
+**Problem**: In Submit component (and metadata-selector), default table row styling (`.submit-table tr { background: default }`) was overriding file-action row colors in dark mode, causing white backgrounds to appear on colored rows.
+
+**Root Cause**: CSS specificity conflict where broad table selectors applied to ALL rows, including those with file-action classes.
+
+**Solution**: Use `:not()` pseudo-class to exclude file-action rows from default styling:
+
+**Before** (❌ Broken):
+
+```scss
+.submit-table tr {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+```
+
+**After** (✅ Fixed):
+
+```scss
+.submit-table tr:not([class*="file-action-"]) {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+```
+
+**Why This Works**:
+
+- `:not([class*='file-action-'])` excludes any `<tr>` element whose class attribute contains "file-action-"
+- File action rows (`.file-action-copy`, `.file-action-update`, etc.) are excluded from default styling
+- Only regular rows without action classes receive the default background
+- File action row colors defined in component SCSS remain unaffected
+
+**Applied In**:
+
+- `src/app/submit/submit.component.scss` - Submit component tables
+- `src/app/metadata-selector/metadata-selector.component.scss` - Metadata field tables
+
+**Testing**:
+
+- Tests in `src/app/submit/submit-styling.spec.ts` verify selector logic
+- Tests confirm file-action rows maintain distinct colors in both light and dark modes
+- Pattern matches proven solution from metadata-selector component
+
+### 401 Authentication Error Auto-Reset (CRITICAL FIX)
+
+**Problem**: When authentication tokens expire and API calls return 401 errors, users were stuck in an error loop. They had to manually navigate back to the connect page and manually reset the form.
+
+**Root Cause**: Error handlers in `data.state.service.ts` redirected to connect page without triggering the reset logic, leaving old credentials in sessionStorage.
+
+**Solution**: Detect 401 errors and navigate with `reset=true` query parameter to trigger automatic reset:
+
+**Implementation** (`src/app/data.state.service.ts`):
+
+```typescript
+// In error handlers for initializeState() and getCompareData()
+error: (err) => {
+  const is401 = err.status === 401 || (err.error && err.error.includes("401"));
+  this.notificationService.showError(`...failed: ${err.error}`);
+  this.router.navigate(["/connect"], { queryParams: is401 ? { reset: "true" } : {} });
+};
+```
+
+**How It Works**:
+
+1. Error handler checks both `err.status === 401` (HTTP status code) and `err.error.includes('401')` (error message)
+2. If 401 detected, navigation includes `{ reset: 'true' }` query param
+3. Connect component's existing `handleQueryParams()` detects `'reset' in params` and calls `performReset()`
+4. `performReset()` clears all connection state, session storage, and form fields
+5. User gets a clean connect page ready for fresh authentication
+
+**Key Design Decisions**:
+
+- No URL cleanup in `performReset()` - would trigger query param subscription again
+- Query parameter approach simpler than creating new service methods
+- Leverages existing infrastructure (`handleQueryParams`, `performReset`)
+- Handles both explicit 401 status codes and 401 in error messages
+- Non-401 errors still redirect to connect but without triggering reset
+
+**Testing**:
+
+- Tests in `src/app/data-state/data-state-401-reset.spec.ts` verify:
+  - 401 detection from status code
+  - 401 detection from error message containing "401"
+  - Non-401 errors navigate without reset
+  - Boolean logic handles undefined/falsy values correctly
+  - Integration with connect component's reset flow
+
+**Related Files**:
+
+- `src/app/data.state.service.ts` - Error handlers with 401 detection
+- `src/app/connect/connect.component.ts` - Existing reset infrastructure
+- `src/app/data-state/data-state-401-reset.spec.ts` - Test coverage
+
 ### Testing
 
 - Jasmine/Karma with Chrome 141
-- Run: `npm test -- --watch=false`
+- Run: `npm test -- --watch=false` or `npm run test:ci`
+- Coverage target: 70% across all metrics (statements, functions, lines, branches)
+- Current coverage: ~65% statements, ~66% functions, ~65% lines, ~53% branches
 - All tests must pass before deployment
+- Test count: 169 tests (as of latest fixes)
+
+**Test Organization**:
+
+- Unit tests colocated with components (`*.spec.ts`)
+- Integration tests for styling in dedicated files (`*-styling.spec.ts`)
+- Error handling tests for services (`*-401-reset.spec.ts`)
+- Mock HTTP calls with `HttpTestingController` for API testing
+
+```
+
+```
