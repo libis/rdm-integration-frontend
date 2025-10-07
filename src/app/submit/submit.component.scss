@@ -5,7 +5,7 @@
 .submit-table,
 .submit-table .table,
 .submit-table tbody,
-.submit-table tr:not([class*='file-action-']),
+.submit-table tr:not([class*="file-action-"]),
 .submit-table td,
 .submit-table th {
   background-color: var(--p-content-background);
@@ -19,7 +19,7 @@
   // Target nested tables within inner-table-cell
   .table,
   .table tbody,
-  .table tr:not([class*='file-action-']),
+  .table tr:not([class*="file-action-"]),
   .table td,
   .table th {
     background-color: var(--p-content-background);

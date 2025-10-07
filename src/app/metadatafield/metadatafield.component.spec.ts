@@ -84,12 +84,14 @@ describe('MetadatafieldComponent', () => {
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
-  expect(component.node).toEqual(parentNode);
+    expect(component.node).toEqual(parentNode);
     component.node = parentNode;
     expect(parentNode.children?.length).toBe(1);
-    const derived = (component as unknown as {
-      firstLeafSource(node?: TreeNode<Field>): string | undefined;
-    }).firstLeafSource(parentNode);
+    const derived = (
+      component as unknown as {
+        firstLeafSource(node?: TreeNode<Field>): string | undefined;
+      }
+    ).firstLeafSource(parentNode);
     expect(derived).toBe('codemeta.json');
     expect(component.source()).toBe('codemeta.json');
     expect(component.hostClass).toBe('');

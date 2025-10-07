@@ -31,9 +31,12 @@ export class DataStateService {
     this.dataService.getData().subscribe({
       next: (key) => this.getCompareData(key),
       error: (err) => {
-        const is401 = err.status === 401 || (err.error && err.error.includes('401'));
+        const is401 =
+          err.status === 401 || (err.error && err.error.includes('401'));
         this.notificationService.showError(`Getting data failed: ${err.error}`);
-        this.router.navigate(['/connect'], { queryParams: is401 ? { reset: 'true' } : {} });
+        this.router.navigate(['/connect'], {
+          queryParams: is401 ? { reset: 'true' } : {},
+        });
       },
     });
   }
@@ -62,9 +65,12 @@ export class DataStateService {
         }
       },
       error: (err) => {
-        const is401 = err.status === 401 || (err.error && err.error.includes('401'));
+        const is401 =
+          err.status === 401 || (err.error && err.error.includes('401'));
         this.notificationService.showError(`Comparing failed: ${err.error}`);
-        this.router.navigate(['/connect'], { queryParams: is401 ? { reset: 'true' } : {} });
+        this.router.navigate(['/connect'], {
+          queryParams: is401 ? { reset: 'true' } : {},
+        });
       },
     });
   }

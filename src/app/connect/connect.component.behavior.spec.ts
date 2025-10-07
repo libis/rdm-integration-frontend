@@ -1,9 +1,17 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed, fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import {
+  TestBed,
+  fakeAsync,
+  flushMicrotasks,
+  tick,
+} from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -187,7 +195,10 @@ describe('ConnectComponent additional behavior/validation', () => {
         },
         { provide: DataStateService, useClass: DataStateServiceStub },
         { provide: RepoLookupService, useClass: RepoLookupServiceStub },
-        { provide: SnapshotStorageService, useClass: SnapshotStorageServiceStub },
+        {
+          provide: SnapshotStorageService,
+          useClass: SnapshotStorageServiceStub,
+        },
         { provide: DatasetService, useClass: DatasetServiceStub },
         { provide: DvObjectLookupService, useClass: DvObjectLookupServiceStub },
         { provide: OauthService, useClass: OauthServiceStub },

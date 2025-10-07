@@ -1,6 +1,6 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -117,7 +117,8 @@ describe('DataStateService', () => {
   }));
 
   it('handles getData 401 and requests reset navigation', fakeAsync(() => {
-    data.getData = () => throwError(() => ({ error: 'denied', status: 401 })) as any;
+    data.getData = () =>
+      throwError(() => ({ error: 'denied', status: 401 })) as any;
     init();
     tick();
     expect(router.navigated[0].commands).toEqual(['/connect']);
@@ -134,7 +135,9 @@ describe('DataStateService', () => {
     ).toBeTrue();
     expect(
       router.navigated.some(
-        (n) => n.commands[0] === '/connect' && n.extras?.queryParams?.reset === 'true',
+        (n) =>
+          n.commands[0] === '/connect' &&
+          n.extras?.queryParams?.reset === 'true',
       ),
     ).toBeTrue();
   }));

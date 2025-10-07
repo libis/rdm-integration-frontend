@@ -57,7 +57,9 @@ describe('File Action Styling - HostBinding Logic', () => {
         default:
           className = getFileActionClass('IGNORE');
       }
-      expect(className).withContext(`Fileaction.${Fileaction[action]}`).toBe(expected);
+      expect(className)
+        .withContext(`Fileaction.${Fileaction[action]}`)
+        .toBe(expected);
     });
   });
 });
@@ -82,16 +84,17 @@ describe('File Action Styling - Real TreeTable Integration', () => {
       template: `
         <p-treeTable [value]="files" [scrollable]="true">
           <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-            <tr app-datafile
-                [datafile]="rowData"
-                [loading]="false"
-                [rowNodeMap]="rowNodeMap"
-                [rowNode]="rowNode"
-                [isInFilter]="false">
-            </tr>
+            <tr
+              app-datafile
+              [datafile]="rowData"
+              [loading]="false"
+              [rowNodeMap]="rowNodeMap"
+              [rowNode]="rowNode"
+              [isInFilter]="false"
+            ></tr>
           </ng-template>
         </p-treeTable>
-      `
+      `,
     })
     class TestTreeTableComponent {
       rowNodeMap = new Map();
@@ -103,8 +106,8 @@ describe('File Action Styling - Real TreeTable Integration', () => {
             name: 'copy-file.txt',
             path: '',
             action: Fileaction.Copy,
-            attributes: { isFile: true }
-          }
+            attributes: { isFile: true },
+          },
         },
         {
           data: {
@@ -112,8 +115,8 @@ describe('File Action Styling - Real TreeTable Integration', () => {
             name: 'update-file.txt',
             path: '',
             action: Fileaction.Update,
-            attributes: { isFile: true }
-          }
+            attributes: { isFile: true },
+          },
         },
         {
           data: {
@@ -121,8 +124,8 @@ describe('File Action Styling - Real TreeTable Integration', () => {
             name: 'delete-file.txt',
             path: '',
             action: Fileaction.Delete,
-            attributes: { isFile: true }
-          }
+            attributes: { isFile: true },
+          },
         },
         {
           data: {
@@ -130,8 +133,8 @@ describe('File Action Styling - Real TreeTable Integration', () => {
             name: 'custom-file.txt',
             path: '',
             action: Fileaction.Custom,
-            attributes: { isFile: true }
-          }
+            attributes: { isFile: true },
+          },
         },
         {
           data: {
@@ -139,14 +142,14 @@ describe('File Action Styling - Real TreeTable Integration', () => {
             name: 'ignore-file.txt',
             path: '',
             action: Fileaction.Ignore,
-            attributes: { isFile: true }
-          }
-        }
+            attributes: { isFile: true },
+          },
+        },
       ];
     }
 
     await TestBed.configureTestingModule({
-      imports: [TestTreeTableComponent]
+      imports: [TestTreeTableComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TestTreeTableComponent);
@@ -220,25 +223,39 @@ describe('File Action Styling - Real TreeTable Integration', () => {
 
     // THE CRITICAL TEST: These should NOT be transparent
     // If they are transparent, it means component SCSS is not being applied!
-    expect(copyBg).withContext(`Copy row background. Classes: ${copyRow.className}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(copyBg)
+      .withContext(`Copy row background. Classes: ${copyRow.className}`)
+      .not.toBe('rgba(0, 0, 0, 0)');
     expect(copyBg).not.toBe('transparent');
     expect(copyBg).not.toBe('');
 
-    expect(updateBg).withContext(`Update row background. Classes: ${updateRow.className}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(updateBg)
+      .withContext(`Update row background. Classes: ${updateRow.className}`)
+      .not.toBe('rgba(0, 0, 0, 0)');
     expect(updateBg).not.toBe('transparent');
     expect(updateBg).not.toBe('');
 
-    expect(deleteBg).withContext(`Delete row background. Classes: ${deleteRow.className}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(deleteBg)
+      .withContext(`Delete row background. Classes: ${deleteRow.className}`)
+      .not.toBe('rgba(0, 0, 0, 0)');
     expect(deleteBg).not.toBe('transparent');
     expect(deleteBg).not.toBe('');
 
-    expect(customBg).withContext(`Custom row background. Classes: ${customRow.className}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(customBg)
+      .withContext(`Custom row background. Classes: ${customRow.className}`)
+      .not.toBe('rgba(0, 0, 0, 0)');
     expect(customBg).not.toBe('transparent');
     expect(customBg).not.toBe('');
 
     // Verify they have DIFFERENT colors
-    expect(copyBg).withContext('Copy and Update should have different colors').not.toBe(updateBg);
-    expect(copyBg).withContext('Copy and Delete should have different colors').not.toBe(deleteBg);
-    expect(updateBg).withContext('Update and Delete should have different colors').not.toBe(deleteBg);
+    expect(copyBg)
+      .withContext('Copy and Update should have different colors')
+      .not.toBe(updateBg);
+    expect(copyBg)
+      .withContext('Copy and Delete should have different colors')
+      .not.toBe(deleteBg);
+    expect(updateBg)
+      .withContext('Update and Delete should have different colors')
+      .not.toBe(deleteBg);
   });
 });

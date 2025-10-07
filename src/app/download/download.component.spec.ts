@@ -6,7 +6,13 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { TestBed, fakeAsync, flush, flushMicrotasks, tick } from '@angular/core/testing';
+import {
+  TestBed,
+  fakeAsync,
+  flush,
+  flushMicrotasks,
+  tick,
+} from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem, TreeNode } from 'primeng/api';
@@ -447,7 +453,7 @@ describe('DownloadComponent', () => {
     tick();
     expect(component.doiItems.length).toBe(2);
 
-  component.doiItems = [];
+    component.doiItems = [];
     dvLookup.error = 'boom';
     component.getDoiOptions();
     tick();
@@ -589,7 +595,10 @@ describe('DownloadComponent', () => {
 
     comp.getRepoToken();
 
-    expect(openSpy).toHaveBeenCalledWith('https://oauth.example/authorize', '_blank');
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://oauth.example/authorize',
+      '_blank',
+    );
   });
 
   it('newNonce produces random alphanumeric string of given length', () => {
@@ -651,8 +660,8 @@ describe('DownloadComponent', () => {
     component.dataverseToken = 'tok';
     component.getRepoToken();
     expect(localStorage.getItem('dataverseToken')).toBe('tok');
-  expect(navigation.assign).toHaveBeenCalled();
-  const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    expect(navigation.assign).toHaveBeenCalled();
+    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
     const match = redirectUrl.match(/state=([^&]+)/);
     expect(match).toBeTruthy();
     const state = JSON.parse(decodeURIComponent(match![1]));
@@ -664,8 +673,8 @@ describe('DownloadComponent', () => {
     component.globusPlugin = plugin.getGlobusPlugin();
     component.datasetId = '?';
     component.getRepoToken();
-  expect(navigation.assign).toHaveBeenCalled();
-  const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    expect(navigation.assign).toHaveBeenCalled();
+    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
     const match = redirectUrl.match(/state=([^&]+)/);
     expect(match).toBeTruthy();
     const state = JSON.parse(decodeURIComponent(match![1]));
@@ -674,9 +683,15 @@ describe('DownloadComponent', () => {
 
   it('optionSelected clears selection when node empty', () => {
     initComponent();
-    component.optionSelected({ data: 'folder', selectable: true } as TreeNode<string>);
+    component.optionSelected({
+      data: 'folder',
+      selectable: true,
+    } as TreeNode<string>);
     expect(component.option).toBe('folder');
-    component.optionSelected({ data: '', selectable: true } as TreeNode<string>);
+    component.optionSelected({
+      data: '',
+      selectable: true,
+    } as TreeNode<string>);
     expect(component.option).toBeUndefined();
     expect(component.selectedOption).toBeUndefined();
   });
@@ -702,8 +717,20 @@ describe('DownloadComponent', () => {
     initComponent();
     const payload: CompareResult = {
       data: [
-        { id: 'b', name: 'B', path: '', hidden: false, action: Fileaction.Download } as Datafile,
-        { id: 'a', name: 'A', path: '', hidden: false, action: Fileaction.Ignore } as Datafile,
+        {
+          id: 'b',
+          name: 'B',
+          path: '',
+          hidden: false,
+          action: Fileaction.Download,
+        } as Datafile,
+        {
+          id: 'a',
+          name: 'A',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+        } as Datafile,
       ],
       id: 'root',
     };
@@ -731,7 +758,7 @@ describe('DownloadComponent', () => {
 
   it('ngOnInit processes globus callback state and fetches token', fakeAsync(() => {
     localStorage.setItem('dataverseToken', 'persisted');
-  let datasetSpy!: jasmine.Spy<() => void>;
+    let datasetSpy!: jasmine.Spy<() => void>;
     initComponent(
       {
         code: 'oauth-code',
@@ -756,7 +783,7 @@ describe('DownloadComponent', () => {
     req.flush({ session_id: 'session-xyz' });
     tick();
 
-  expect(datasetSpy).toHaveBeenCalled();
+    expect(datasetSpy).toHaveBeenCalled();
     expect(component.token).toBe('session-xyz');
     expect(localStorage.getItem('dataverseToken')).toBeNull();
   }));
@@ -831,7 +858,7 @@ describe('DownloadComponent', () => {
       throwError(() => new Error('lookup-fail')),
     );
 
-  comp.onDatasetSearch('proj');
+    comp.onDatasetSearch('proj');
     tick(comp.DEBOUNCE_TIME + 1);
     flushMicrotasks();
     flush();

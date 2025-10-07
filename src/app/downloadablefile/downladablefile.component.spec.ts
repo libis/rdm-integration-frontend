@@ -103,7 +103,7 @@ describe('DownladablefileComponent', () => {
     };
     root.children!.push(sibling);
 
-  const aggregated = component.updateFolderActions(root);
+    const aggregated = component.updateFolderActions(root);
     expect(aggregated).toBe(Fileaction.Custom);
     expect(root.data?.action).toBe(Fileaction.Custom);
   });

@@ -311,7 +311,10 @@ export class ConnectComponent
         const persistentId = x.persistentId;
         this.datasetId = persistentId;
         // Add the dataset to doiItems so it displays correctly in the dropdown
-        if (persistentId && !this.doiItems.some((i) => i.value === persistentId)) {
+        if (
+          persistentId &&
+          !this.doiItems.some((i) => i.value === persistentId)
+        ) {
           this.doiItems = [
             { label: persistentId, value: persistentId },
             ...this.doiItems,
@@ -663,7 +666,7 @@ export class ConnectComponent
           url = `${url}&scope=${encodeURIComponent(scopes)}`;
         }
       }
-  this.navigation.assign(url);
+      this.navigation.assign(url);
     } else {
       window.open(url, '_blank');
     }

@@ -26,7 +26,7 @@
     }
 
     // Default rows stay on theme background
-    tr:not([class*='file-action-']) {
+    tr:not([class*="file-action-"]) {
       background-color: var(--p-content-background);
 
       td,
@@ -36,7 +36,7 @@
     }
 
     // File-action rows keep their component-defined backgrounds
-    tr[class*='file-action-'] {
+    tr[class*="file-action-"] {
       background-color: transparent;
 
       td,

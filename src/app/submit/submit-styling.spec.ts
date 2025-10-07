@@ -5,13 +5,41 @@ describe('Submit Component - Dark Mode Styling Fix', () => {
     it('should verify :not([class*="file-action-"]) selector excludes rows with file-action classes', () => {
       // Test that the :not() pseudo-class selector correctly identifies which rows to style
       const testCases = [
-        { className: 'file-action-copy', shouldMatch: false, description: 'Copy action row' },
-        { className: 'file-action-update', shouldMatch: false, description: 'Update action row' },
-        { className: 'file-action-delete', shouldMatch: false, description: 'Delete action row' },
-        { className: 'file-action-custom', shouldMatch: false, description: 'Custom action row' },
-        { className: '', shouldMatch: true, description: 'Regular row (no action)' },
-        { className: 'some-other-class', shouldMatch: true, description: 'Row with other class' },
-        { className: 'p-treetable-row', shouldMatch: true, description: 'TreeTable row class' },
+        {
+          className: 'file-action-copy',
+          shouldMatch: false,
+          description: 'Copy action row',
+        },
+        {
+          className: 'file-action-update',
+          shouldMatch: false,
+          description: 'Update action row',
+        },
+        {
+          className: 'file-action-delete',
+          shouldMatch: false,
+          description: 'Delete action row',
+        },
+        {
+          className: 'file-action-custom',
+          shouldMatch: false,
+          description: 'Custom action row',
+        },
+        {
+          className: '',
+          shouldMatch: true,
+          description: 'Regular row (no action)',
+        },
+        {
+          className: 'some-other-class',
+          shouldMatch: true,
+          description: 'Row with other class',
+        },
+        {
+          className: 'p-treetable-row',
+          shouldMatch: true,
+          description: 'TreeTable row class',
+        },
       ];
 
       testCases.forEach(({ className, shouldMatch, description }) => {
@@ -31,9 +59,15 @@ describe('Submit Component - Dark Mode Styling Fix', () => {
       // This only applies to rows WITHOUT file-action- in their class
 
       const rowsWithClasses = [
-        { className: 'file-action-copy p-treetable-row', expectDefaultStyle: false },
+        {
+          className: 'file-action-copy p-treetable-row',
+          expectDefaultStyle: false,
+        },
         { className: 'file-action-update', expectDefaultStyle: false },
-        { className: 'file-action-delete p-highlight', expectDefaultStyle: false },
+        {
+          className: 'file-action-delete p-highlight',
+          expectDefaultStyle: false,
+        },
         { className: 'file-action-custom', expectDefaultStyle: false },
         { className: 'p-treetable-row', expectDefaultStyle: true },
         { className: '', expectDefaultStyle: true },
@@ -43,7 +77,9 @@ describe('Submit Component - Dark Mode Styling Fix', () => {
         const hasFileAction = className.includes('file-action-');
         const receivesDefaultStyle = !hasFileAction;
 
-        expect(receivesDefaultStyle).withContext(`Classes: "${className}"`).toBe(expectDefaultStyle);
+        expect(receivesDefaultStyle)
+          .withContext(`Classes: "${className}"`)
+          .toBe(expectDefaultStyle);
       });
     });
   });
@@ -59,29 +95,42 @@ describe('Submit Component - Dark Mode Styling Fix', () => {
         {
           selector: '.submit-table tr:not([class*="file-action-"])',
           appliesTo: ['regular-row', 'p-treetable-row'],
-          doesNotApplyTo: ['file-action-copy', 'file-action-update', 'file-action-delete', 'file-action-custom']
+          doesNotApplyTo: [
+            'file-action-copy',
+            'file-action-update',
+            'file-action-delete',
+            'file-action-custom',
+          ],
         },
         {
           selector: '.file-action-copy',
           appliesTo: ['file-action-copy'],
-          doesNotApplyTo: ['file-action-update', 'file-action-delete', 'regular-row']
-        }
+          doesNotApplyTo: [
+            'file-action-update',
+            'file-action-delete',
+            'regular-row',
+          ],
+        },
       ];
 
-      specificityRules.forEach(rule => {
-        rule.appliesTo.forEach(className => {
+      specificityRules.forEach((rule) => {
+        rule.appliesTo.forEach((className) => {
           if (rule.selector.includes(':not')) {
             // For :not() selector, check it matches
             const hasFileAction = className.includes('file-action-');
-            expect(hasFileAction).withContext(`${rule.selector} should apply to ${className}`).toBe(false);
+            expect(hasFileAction)
+              .withContext(`${rule.selector} should apply to ${className}`)
+              .toBe(false);
           }
         });
 
-        rule.doesNotApplyTo.forEach(className => {
+        rule.doesNotApplyTo.forEach((className) => {
           if (rule.selector.includes(':not')) {
             // For :not() selector, check it doesn't match
             const hasFileAction = className.includes('file-action-');
-            expect(hasFileAction).withContext(`${rule.selector} should NOT apply to ${className}`).toBe(true);
+            expect(hasFileAction)
+              .withContext(`${rule.selector} should NOT apply to ${className}`)
+              .toBe(true);
           }
         });
       });
@@ -104,8 +153,14 @@ describe('Submit Component - Dark Mode Styling Fix', () => {
       const beforeFix_appliesDefaultStyle = true; // Bug: default style overrode action color
       const afterFix_appliesDefaultStyle = !problemRow.includes('file-action-'); // Fix: excluded by :not()
 
-      expect(afterFix_appliesDefaultStyle).withContext('After fix, file-action rows excluded from default styling').toBe(false);
-      expect(beforeFix_appliesDefaultStyle).withContext('Before fix, all rows got default styling').toBe(true);
+      expect(afterFix_appliesDefaultStyle)
+        .withContext(
+          'After fix, file-action rows excluded from default styling',
+        )
+        .toBe(false);
+      expect(beforeFix_appliesDefaultStyle)
+        .withContext('Before fix, all rows got default styling')
+        .toBe(true);
     });
 
     it('should verify the selector pattern matches the one used in metadata-selector fix', () => {
@@ -114,7 +169,8 @@ describe('Submit Component - Dark Mode Styling Fix', () => {
 
       // This test documents that we're using a proven pattern
       const metadataSelectorPattern = /tr:not\(\[class\*='file-action-'\]\)/;
-      const submitComponentPattern = '.submit-table tr:not([class*=\'file-action-\'])';
+      const submitComponentPattern =
+        ".submit-table tr:not([class*='file-action-'])";
 
       expect(submitComponentPattern).toMatch(metadataSelectorPattern);
     });

@@ -11,9 +11,14 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     const { TestBed } = await import('@angular/core/testing');
     const { Component } = await import('@angular/core');
     const { TreeTableModule } = await import('primeng/treetable');
-    const { MetadatafieldComponent } = await import('../metadatafield/metadatafield.component');
+    const { MetadatafieldComponent } = await import(
+      '../metadatafield/metadatafield.component'
+    );
 
-    document.documentElement.style.setProperty('--p-content-background', '#111111');
+    document.documentElement.style.setProperty(
+      '--p-content-background',
+      '#111111',
+    );
     document.documentElement.style.setProperty('--p-text-color', '#f0f0f0');
 
     defaultTableBackgroundRgb = parseCssColor(
@@ -30,15 +35,16 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
         <div class="treetable-cell">
           <p-treeTable [value]="fields" [scrollable]="true" styleClass="table">
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-              <tr app-metadatafield
-                  [field]="rowData"
-                  [rowNodeMap]="rowNodeMap"
-                  [rowNode]="rowNode">
-              </tr>
+              <tr
+                app-metadatafield
+                [field]="rowData"
+                [rowNodeMap]="rowNodeMap"
+                [rowNode]="rowNode"
+              ></tr>
             </ng-template>
           </p-treeTable>
         </div>
-      `
+      `,
     })
     class TestMetadataTreeTableComponent {
       rowNodeMap = new Map();
@@ -49,30 +55,30 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
             id: 'field1',
             name: 'title',
             leafValue: 'Test Title',
-            action: Fieldaction.Copy
-          }
+            action: Fieldaction.Copy,
+          },
         },
         {
           data: {
             id: 'field2',
             name: 'description',
             leafValue: 'Test Description',
-            action: Fieldaction.Custom
-          }
+            action: Fieldaction.Custom,
+          },
         },
         {
           data: {
             id: 'field3',
             name: 'author',
             leafValue: 'Test Author',
-            action: Fieldaction.Ignore
-          }
-        }
+            action: Fieldaction.Ignore,
+          },
+        },
       ];
     }
 
     await TestBed.configureTestingModule({
-      imports: [TestMetadataTreeTableComponent]
+      imports: [TestMetadataTreeTableComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TestMetadataTreeTableComponent);
@@ -82,7 +88,9 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
 
   it('should render TreeTable with metadata field rows', () => {
     const rows = compiled.querySelectorAll('tr[app-metadatafield]');
-    expect(rows.length).withContext('Should have 3 metadata field rows').toBe(3);
+    expect(rows.length)
+      .withContext('Should have 3 metadata field rows')
+      .toBe(3);
   });
 
   it('should apply file-action-copy class to Copy row', () => {
@@ -107,7 +115,9 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     const rows = compiled.querySelectorAll('tr[app-metadatafield]');
     const ignoreRow = rows[2] as HTMLElement;
 
-    expect(ignoreRow.className).withContext('Ignore row should not have file-action classes').not.toContain('file-action');
+    expect(ignoreRow.className)
+      .withContext('Ignore row should not have file-action classes')
+      .not.toContain('file-action');
   });
 
   it('should have VISIBLE background colors applied via component SCSS - NOT OVERRIDDEN BY .table selector', () => {
@@ -136,42 +146,64 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     // THE CRITICAL TEST: Copy and Custom should have visible backgrounds
     // This tests that .table tr selector in metadata-selector.component.scss
     // does NOT override the file-action classes
-    expect(copyBg).withContext(`Copy row background. Classes: ${copyRow.className}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(copyBg)
+      .withContext(`Copy row background. Classes: ${copyRow.className}`)
+      .not.toBe('rgba(0, 0, 0, 0)');
     expect(copyBg).not.toBe('transparent');
     expect(copyBg).not.toBe('');
 
-    expect(customBg).withContext(`Custom row background. Classes: ${customRow.className}`).not.toBe('rgba(0, 0, 0, 0)');
+    expect(customBg)
+      .withContext(`Custom row background. Classes: ${customRow.className}`)
+      .not.toBe('rgba(0, 0, 0, 0)');
     expect(customBg).not.toBe('transparent');
     expect(customBg).not.toBe('');
 
     // Verify Copy and Custom have DIFFERENT colors from each other
-    expect(copyBg).withContext('Copy and Custom should have different colors').not.toBe(customBg);
+    expect(copyBg)
+      .withContext('Copy and Custom should have different colors')
+      .not.toBe(customBg);
 
     // Verify Copy and Custom have DIFFERENT colors from Ignore (default)
-    expect(copyBg).withContext('Copy should differ from Ignore default background').not.toBe(ignoreBg);
-    expect(customBg).withContext('Custom should differ from Ignore default background').not.toBe(ignoreBg);
+    expect(copyBg)
+      .withContext('Copy should differ from Ignore default background')
+      .not.toBe(ignoreBg);
+    expect(customBg)
+      .withContext('Custom should differ from Ignore default background')
+      .not.toBe(ignoreBg);
 
     // Ensure Copy/Custom do not fall back to theme default
     expect(copyBg)
-      .withContext('Copy row should not be forced back to theme background by table styling')
+      .withContext(
+        'Copy row should not be forced back to theme background by table styling',
+      )
       .not.toBe(defaultTableBackgroundRgb);
     expect(customBg)
-      .withContext('Custom row should not be forced back to theme background by table styling')
+      .withContext(
+        'Custom row should not be forced back to theme background by table styling',
+      )
       .not.toBe(defaultTableBackgroundRgb);
 
     // Default Ignore row should still match theme background
     expect([defaultTableBackgroundRgb, 'rgba(0, 0, 0, 0)'])
-      .withContext('Ignore row should keep default table theme background or remain transparent (table handles paint)')
+      .withContext(
+        'Ignore row should keep default table theme background or remain transparent (table handles paint)',
+      )
       .toContain(normalizeRgb(ignoreBg));
 
     expect(normalizeRgb(copyCellBg))
-      .withContext('Copy cell must not use default table theme background color')
+      .withContext(
+        'Copy cell must not use default table theme background color',
+      )
       .not.toBe(defaultTableBackgroundRgb);
     expect(normalizeRgb(customCellBg))
-      .withContext('Custom cell must not use default table theme background color')
+      .withContext(
+        'Custom cell must not use default table theme background color',
+      )
       .not.toBe(defaultTableBackgroundRgb);
     expect([defaultTableBackgroundRgb, 'rgba(0, 0, 0, 0)'])
-      .withContext('Ignore cell should resolve to default theme background or be transparent (rendered via table)')
+      .withContext(
+        'Ignore cell should resolve to default theme background or be transparent (rendered via table)',
+      )
       .toContain(normalizeRgb(ignoreCellBg));
   });
 });

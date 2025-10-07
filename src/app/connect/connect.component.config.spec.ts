@@ -1,16 +1,12 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-    HttpTestingController,
-    provideHttpClientTesting,
+  HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import {
-    TestBed,
-    fakeAsync,
-    flushMicrotasks,
-} from '@angular/core/testing';
+import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -131,7 +127,8 @@ const PILOT_CONFIG: Config = {
       tokenFieldName: 'Token',
       tokenFieldPlaceholder: 'Repository API token',
       sourceUrlFieldName: 'Source URL',
-      sourceUrlFieldPlaceholder: 'https://<gitlab_domain>/<group>/<project>.git',
+      sourceUrlFieldPlaceholder:
+        'https://<gitlab_domain>/<group>/<project>.git',
       parseSourceUrlField: true,
     }),
     pilotPlugin({
@@ -372,7 +369,16 @@ describe('ConnectComponent pilot plugin configuration', () => {
     component.getPlugins();
     const actual = new Set(component.plugins.map((p) => p.value));
     expect(actual).toEqual(
-      new Set(['irods', 'gitlab', 'github', 'redcap', 'osf', 'onedrive', 'sftp', 'globus']),
+      new Set([
+        'irods',
+        'gitlab',
+        'github',
+        'redcap',
+        'osf',
+        'onedrive',
+        'sftp',
+        'globus',
+      ]),
     );
     expect(component.dataverseHeader()).toBe(PILOT_CONFIG.dataverseHeader);
   }));
@@ -398,75 +404,64 @@ describe('ConnectComponent pilot plugin configuration', () => {
   }));
 
   PILOT_CONFIG.plugins.forEach((plugin) => {
-    it(
-      `mirrors pilot configuration for plugin ${plugin.id}`,
-      fakeAsync(() => {
-        const component = createComponent();
-        component.plugin = plugin.plugin;
-        component.changePlugin();
-        component.pluginId = plugin.id;
-        component.changePluginId();
+    it(`mirrors pilot configuration for plugin ${plugin.id}`, fakeAsync(() => {
+      const component = createComponent();
+      component.plugin = plugin.plugin;
+      component.changePlugin();
+      component.pluginId = plugin.id;
+      component.changePluginId();
 
-        const expectBoolean = (value: unknown) => Boolean(value);
+      const expectBoolean = (value: unknown) => Boolean(value);
 
-        expect(component.showRepoTokenGetter()).toBe(
-          Boolean(plugin.tokenGetter?.URL),
-        );
-        expect(component.hasOauthConfig()).toBe(
-          Boolean(plugin.tokenGetter?.oauth_client_id),
-        );
+      expect(component.showRepoTokenGetter()).toBe(
+        Boolean(plugin.tokenGetter?.URL),
+      );
+      expect(component.hasOauthConfig()).toBe(
+        Boolean(plugin.tokenGetter?.oauth_client_id),
+      );
 
-        expect(component.getTokenFieldName()).toBe(plugin.tokenFieldName);
-        expect(component.getTokenPlaceholder()).toBe(
-          plugin.tokenFieldPlaceholder,
-        );
+      expect(component.getTokenFieldName()).toBe(plugin.tokenFieldName);
+      expect(component.getTokenPlaceholder()).toBe(
+        plugin.tokenFieldPlaceholder,
+      );
 
-        expect(component.getUsernameFieldName()).toBe(
-          plugin.usernameFieldName,
-        );
-        expect(component.getUsernamePlaceholder()).toBe(
-          plugin.usernameFieldPlaceholder,
-        );
+      expect(component.getUsernameFieldName()).toBe(plugin.usernameFieldName);
+      expect(component.getUsernamePlaceholder()).toBe(
+        plugin.usernameFieldPlaceholder,
+      );
 
-        if (plugin.optionFieldName) {
-          expect(component.getOptionFieldName()).toBe(plugin.optionFieldName);
-          expect(component.getOptionPlaceholder()).toBe(
-            plugin.optionFieldPlaceholder ?? '',
-          );
-        } else {
-          expect(component.getOptionFieldName()).toBeUndefined();
-          expect(component.getOptionPlaceholder()).toBe('');
-        }
-        expect(component.isOptionFieldInteractive()).toBe(
-          Boolean(plugin.optionFieldInteractive),
+      if (plugin.optionFieldName) {
+        expect(component.getOptionFieldName()).toBe(plugin.optionFieldName);
+        expect(component.getOptionPlaceholder()).toBe(
+          plugin.optionFieldPlaceholder ?? '',
         );
+      } else {
+        expect(component.getOptionFieldName()).toBeUndefined();
+        expect(component.getOptionPlaceholder()).toBe('');
+      }
+      expect(component.isOptionFieldInteractive()).toBe(
+        Boolean(plugin.optionFieldInteractive),
+      );
 
-        expect(component.getSourceUrlFieldName()).toBe(
-          plugin.sourceUrlFieldName,
-        );
-        expect(component.getSourceUrlPlaceholder()).toBe(
-          plugin.sourceUrlFieldPlaceholder,
-        );
-        expect(component.getSourceUrlValue()).toBe(
-          plugin.sourceUrlFieldValue,
-        );
+      expect(component.getSourceUrlFieldName()).toBe(plugin.sourceUrlFieldName);
+      expect(component.getSourceUrlPlaceholder()).toBe(
+        plugin.sourceUrlFieldPlaceholder,
+      );
+      expect(component.getSourceUrlValue()).toBe(plugin.sourceUrlFieldValue);
 
-        expect(component.getRepoNameFieldName()).toBe(
-          plugin.repoNameFieldName,
-        );
-        expect(component.getRepoNamePlaceholder()).toBe(
-          plugin.repoNameFieldPlaceholder ?? '',
-        );
-        expect(component.repoNameFieldEditable()).toBe(
-          Boolean(plugin.repoNameFieldEditable),
-        );
-        expect(expectBoolean(component.repoNameSearchEnabled())).toBe(
-          Boolean(plugin.repoNameFieldHasSearch),
-        );
-        expect(expectBoolean(component.repoNameSearchInitEnabled())).toBe(
-          Boolean(plugin.repoNameFieldHasInit),
-        );
-      }),
-    );
+      expect(component.getRepoNameFieldName()).toBe(plugin.repoNameFieldName);
+      expect(component.getRepoNamePlaceholder()).toBe(
+        plugin.repoNameFieldPlaceholder ?? '',
+      );
+      expect(component.repoNameFieldEditable()).toBe(
+        Boolean(plugin.repoNameFieldEditable),
+      );
+      expect(expectBoolean(component.repoNameSearchEnabled())).toBe(
+        Boolean(plugin.repoNameFieldHasSearch),
+      );
+      expect(expectBoolean(component.repoNameSearchInitEnabled())).toBe(
+        Boolean(plugin.repoNameFieldHasInit),
+      );
+    }));
   });
 });

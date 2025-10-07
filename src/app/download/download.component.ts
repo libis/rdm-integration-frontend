@@ -598,9 +598,10 @@ export class DownloadComponent
       const nonce = this.newNonce(44);
       // Only include datasetId if one is actually selected
       const loginState: LoginState = {
-        datasetId: this.datasetId && this.datasetId !== '?'
-          ? { value: this.datasetId, label: this.datasetId }
-          : undefined,
+        datasetId:
+          this.datasetId && this.datasetId !== '?'
+            ? { value: this.datasetId, label: this.datasetId }
+            : undefined,
         nonce: nonce,
         download: true,
       };
@@ -613,7 +614,7 @@ export class DownloadComponent
       }&redirect_uri=${this.pluginService.getRedirectUri()}&response_type=code&state=${encodeURIComponent(
         JSON.stringify(loginState),
       )}`;
-  this.navigation.assign(url);
+      this.navigation.assign(url);
     } else {
       window.open(url, '_blank');
     }

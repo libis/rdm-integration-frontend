@@ -1,13 +1,13 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-    ComponentFixture,
-    TestBed,
-    fakeAsync,
-    tick,
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
 } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, Subject } from 'rxjs';
@@ -240,11 +240,13 @@ describe('ComputeComponent', () => {
     tick();
     expect(component.doiItems.length).toBe(2);
 
-  component.doiItems = [];
+    component.doiItems = [];
     dvLookup.error = 'fail';
     component.getDoiOptions();
     tick();
-    expect(notification.errors.some((e) => e.includes('DOI lookup failed'))).toBeTrue();
+    expect(
+      notification.errors.some((e) => e.includes('DOI lookup failed')),
+    ).toBeTrue();
   }));
 
   it('getDoiOptions avoids reload when options already available', () => {

@@ -1,15 +1,18 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-    HttpTestingController,
-    provideHttpClientTesting,
+  HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DatasetService } from './dataset.service';
-import { DatasetVersionResponse, NewDatasetResponse } from './models/new-dataset-response';
+import {
+  DatasetVersionResponse,
+  NewDatasetResponse,
+} from './models/new-dataset-response';
 
 describe('DatasetService', () => {
   let service: DatasetService;
@@ -39,12 +42,14 @@ describe('DatasetService', () => {
     const apiToken = 'test-token';
     const metadata: any = { datasetVersion: { metadataBlocks: {} } };
     const mockResponse: NewDatasetResponse = {
-      persistentId: 'doi:10.123/test'
+      persistentId: 'doi:10.123/test',
     };
 
-    service.newDataset(collectionId, apiToken, metadata).subscribe((response) => {
-      expect(response.persistentId).toBe('doi:10.123/test');
-    });
+    service
+      .newDataset(collectionId, apiToken, metadata)
+      .subscribe((response) => {
+        expect(response.persistentId).toBe('doi:10.123/test');
+      });
 
     const req = httpMock.expectOne('api/common/newdataset');
     expect(req.request.method).toBe('POST');
@@ -58,7 +63,7 @@ describe('DatasetService', () => {
     const datasetDbId = '123';
     const apiToken = 'test-token';
     const mockResponse: DatasetVersionResponse = {
-      persistentId: 'doi:10.123/test'
+      persistentId: 'doi:10.123/test',
     };
 
     service.getDatasetVersion(datasetDbId, apiToken).subscribe((response) => {
@@ -80,12 +85,12 @@ describe('DatasetService', () => {
       option: 'main',
       user: 'testuser',
       token: 'test-token',
-      compareResult: {}
+      compareResult: {},
     };
     const mockResponse: any = {
       datasetVersion: {
-        metadataBlocks: {}
-      }
+        metadataBlocks: {},
+      },
     };
 
     service.getMetadata(metadataReq).subscribe((response) => {

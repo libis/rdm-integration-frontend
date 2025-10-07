@@ -1,6 +1,6 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -159,9 +159,7 @@ describe('SubmitComponent', () => {
   });
 
   it('continueSubmit aborts when new dataset creation fails', async () => {
-    datasetServiceStub.newDataset.and.returnValue(
-      of({ persistentId: '' }),
-    );
+    datasetServiceStub.newDataset.and.returnValue(of({ persistentId: '' }));
     component.pid = 'root:COLL:New Dataset';
     component.data = [
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,

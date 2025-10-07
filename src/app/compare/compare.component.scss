@@ -10,7 +10,7 @@
 }
 
 // Explicitly set default for rows WITHOUT file-action classes
-.table tr:not([class*='file-action-']) {
+.table tr:not([class*="file-action-"]) {
   background-color: var(--p-content-background);
   color: var(--p-text-color);
 }

@@ -1,6 +1,6 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -275,7 +275,7 @@ describe('ConnectComponent advanced behaviors', () => {
     oauthService = new MockOauthService();
     notification = new MockNotificationService();
     snapshot = new MockSnapshotStorageService();
-  navigation = new MockNavigationService();
+    navigation = new MockNavigationService();
 
     await TestBed.configureTestingModule({
       imports: [RouterTestingModule, ConnectComponent],
@@ -290,8 +290,11 @@ describe('ConnectComponent advanced behaviors', () => {
         { provide: OauthService, useValue: oauthService },
         { provide: NotificationService, useValue: notification },
         { provide: SnapshotStorageService, useValue: snapshot },
-  { provide: NavigationService, useValue: navigation },
-        { provide: ConnectValidationService, useClass: MockConnectValidationService },
+        { provide: NavigationService, useValue: navigation },
+        {
+          provide: ConnectValidationService,
+          useClass: MockConnectValidationService,
+        },
         { provide: DataStateService, useClass: MockDataStateService },
         { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
@@ -311,7 +314,9 @@ describe('ConnectComponent advanced behaviors', () => {
     const { comp } = createComponent();
     comp.pluginId = undefined;
     comp.getRepoToken();
-    expect(notification.errors.some((e) => e.includes('Repository type is missing'))).toBeTrue();
+    expect(
+      notification.errors.some((e) => e.includes('Repository type is missing')),
+    ).toBeTrue();
   });
 
   it('getRepoToken stores DV token and builds redirect url including dataset', () => {
@@ -328,8 +333,8 @@ describe('ConnectComponent advanced behaviors', () => {
     comp.getRepoToken();
 
     expect(localStorage.getItem('dataverseToken')).toBe('tok');
-  expect(navigation.assign).toHaveBeenCalled();
-  const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    expect(navigation.assign).toHaveBeenCalled();
+    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
     expect(redirectUrl).toContain('client_id=');
     const match = redirectUrl.match(/state=([^&]+)/);
     expect(match).toBeTruthy();
@@ -372,7 +377,10 @@ describe('ConnectComponent advanced behaviors', () => {
     );
     comp['handleGlobusCallback'](callback, 'apiTok', undefined);
     tick();
-    expect(datasetService.lastArgs).toEqual({ datasetDbId: '12345', apiToken: 'apiTok' });
+    expect(datasetService.lastArgs).toEqual({
+      datasetDbId: '12345',
+      apiToken: 'apiTok',
+    });
     expect(comp.datasetId).toBe('doi:10.123/RESTORED');
     expect(navSpy).toHaveBeenCalledWith(['/download'], {
       queryParams: {
@@ -419,19 +427,29 @@ describe('ConnectComponent advanced behaviors', () => {
       { label: 'Dataset B', value: 'doi:BBB' },
     ];
     const { comp } = createComponent();
-    comp['getDvObjectOptions']('Dataset', comp.doiItems, (c: any, items: SelectItem<string>[]) => {
-      c.doiItems = items;
-    });
+    comp['getDvObjectOptions'](
+      'Dataset',
+      comp.doiItems,
+      (c: any, items: SelectItem<string>[]) => {
+        c.doiItems = items;
+      },
+    );
     tick();
     expect(comp.doiItems.length).toBe(2);
 
     comp.doiItems = [];
     dvLookup.error = 'boom';
-    comp['getDvObjectOptions']('Dataset', comp.doiItems, (c: any, items: SelectItem<string>[]) => {
-      c.doiItems = items;
-    });
+    comp['getDvObjectOptions'](
+      'Dataset',
+      comp.doiItems,
+      (c: any, items: SelectItem<string>[]) => {
+        c.doiItems = items;
+      },
+    );
     tick();
-    expect(notification.errors.some((e) => e.includes('DOI lookup failed'))).toBeTrue();
+    expect(
+      notification.errors.some((e) => e.includes('DOI lookup failed')),
+    ).toBeTrue();
   }));
 
   it('getOptions populates branch items and handles nested nodes', fakeAsync(() => {
@@ -445,11 +463,15 @@ describe('ConnectComponent advanced behaviors', () => {
     comp.repoName = 'owner/repo';
     comp.user = 'alice';
     comp.token = 'tok';
-  comp.url = 'https://host';
-  comp.sourceUrl = 'https://host/owner/repo';
+    comp.url = 'https://host';
+    comp.sourceUrl = 'https://host/owner/repo';
     comp.option = undefined;
     comp.branchItems = [];
-    const node: TreeNode<string> = { label: 'root', data: 'root', selectable: true };
+    const node: TreeNode<string> = {
+      label: 'root',
+      data: 'root',
+      selectable: true,
+    };
     comp.getOptions(node);
     tick();
     expect(node.children?.length).toBe(2);
@@ -458,13 +480,18 @@ describe('ConnectComponent advanced behaviors', () => {
     comp.branchItems = [];
     comp.getOptions();
     tick();
-    expect(notification.errors.some((e) => e.includes('Branch lookup failed'))).toBeTrue();
+    expect(
+      notification.errors.some((e) => e.includes('Branch lookup failed')),
+    ).toBeTrue();
     expect(comp.branchItems.length).toBe(0);
   }));
 
   it('optionSelected clears selection when value empty', () => {
     const { comp } = createComponent();
-    comp.optionSelected({ data: 'branch', selectable: true } as TreeNode<string>);
+    comp.optionSelected({
+      data: 'branch',
+      selectable: true,
+    } as TreeNode<string>);
     expect(comp.option).toBe('branch');
     expect(comp.selectedOption?.data).toBe('branch');
     comp.optionSelected({ data: '', selectable: true } as TreeNode<string>);
@@ -575,7 +602,9 @@ describe('ConnectComponent advanced behaviors', () => {
     comp.doiItems = [];
     comp.setDoiItems(comp, [{ label: 'Existing dataset', value: 'doi:AAA' }]);
     expect(comp.doiItems[0].value).toBe('CREATE_NEW_DATASET');
-    expect(comp.doiItems.some((i: any) => i.value === 'doi:missing')).toBeTrue();
+    expect(
+      comp.doiItems.some((i: any) => i.value === 'doi:missing'),
+    ).toBeTrue();
   });
 
   it('newDataset avoids duplicating option when already present', () => {
@@ -587,7 +616,9 @@ describe('ConnectComponent advanced behaviors', () => {
       { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
     ];
     comp.newDataset();
-    expect(comp.doiItems.filter((i: any) => i.value === newValue).length).toBe(1);
+    expect(comp.doiItems.filter((i: any) => i.value === newValue).length).toBe(
+      1,
+    );
   });
 
   it('isNewDatasetId detects colon-prefixed values', () => {

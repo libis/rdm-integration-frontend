@@ -185,7 +185,9 @@ select {
   border: 0.0625rem solid var(--p-form-field-border-color);
   border-radius: var(--p-form-field-border-radius);
   padding: var(--p-form-field-padding-y) var(--p-form-field-padding-x);
-  transition: border-color var(--p-form-field-transition-duration), box-shadow var(--p-form-field-transition-duration);
+  transition:
+    border-color var(--p-form-field-transition-duration),
+    box-shadow var(--p-form-field-transition-duration);
 
   &:hover {
     border-color: var(--p-form-field-hover-border-color);

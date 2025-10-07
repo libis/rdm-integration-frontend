@@ -157,7 +157,9 @@ describe('ExecutablefileComponent', () => {
     await Promise.resolve();
     expect(component.queue).toBeUndefined();
     expect(component.spinning).toBeFalse();
-    expect(notifications.errors.pop()).toContain('Checking access to queue failed');
+    expect(notifications.errors.pop()).toContain(
+      'Checking access to queue failed',
+    );
   });
 
   it('compute emits request payload', () => {

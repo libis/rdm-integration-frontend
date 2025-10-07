@@ -60,7 +60,7 @@ describe('AppComponent', () => {
           callbacks.next({ access: false, message: '' });
         }, 0);
         return { unsubscribe: mockUnsubscribe };
-      }
+      },
     } as any);
 
     app.ngOnInit();
@@ -88,7 +88,7 @@ describe('AppComponent', () => {
           callbacks.error(new Error('test error'));
         }, 0);
         return { unsubscribe: () => {} };
-      }
+      },
     } as any);
 
     app.ngOnInit();
@@ -116,7 +116,7 @@ describe('AppComponent', () => {
           callbacks.next({ access: true, message: '' });
         }, 0);
         return { unsubscribe: mockUnsubscribe };
-      }
+      },
     } as any);
 
     app.ngOnInit();

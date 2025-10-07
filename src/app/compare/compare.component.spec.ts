@@ -1,9 +1,14 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
 
 import { Router } from '@angular/router';
 import { TreeNode } from 'primeng/api';
@@ -174,21 +179,21 @@ describe('CompareComponent', () => {
     });
 
     it('rowClass returns expected CSS classes', () => {
-      expect(component.rowClass({ action: Fileaction.Ignore } as Datafile)).toBe(
-        '',
-      );
+      expect(
+        component.rowClass({ action: Fileaction.Ignore } as Datafile),
+      ).toBe('');
       expect(component.rowClass({ action: Fileaction.Copy } as Datafile)).toBe(
         'file-action-copy',
       );
-      expect(component.rowClass({ action: Fileaction.Update } as Datafile)).toBe(
-        'file-action-update',
-      );
-      expect(component.rowClass({ action: Fileaction.Delete } as Datafile)).toBe(
-        'file-action-delete',
-      );
-      expect(component.rowClass({ action: Fileaction.Custom } as Datafile)).toBe(
-        'file-action-custom',
-      );
+      expect(
+        component.rowClass({ action: Fileaction.Update } as Datafile),
+      ).toBe('file-action-update');
+      expect(
+        component.rowClass({ action: Fileaction.Delete } as Datafile),
+      ).toBe('file-action-delete');
+      expect(
+        component.rowClass({ action: Fileaction.Custom } as Datafile),
+      ).toBe('file-action-custom');
     });
 
     it('noActionSelection resets only visible nodes', () => {
@@ -213,7 +218,9 @@ describe('CompareComponent', () => {
       ];
       const keys = ['new', 'equal', 'upd', 'del'];
       const map = new Map<string, TreeNode<Datafile>>([
-        ...nodes.map((node, idx) => [keys[idx], node] as [string, TreeNode<Datafile>]),
+        ...nodes.map(
+          (node, idx) => [keys[idx], node] as [string, TreeNode<Datafile>],
+        ),
       ]);
       (component as any).rowNodeMap = map;
       component.updateSelection();
@@ -352,7 +359,11 @@ describe('CompareComponent', () => {
 
     it('folderName derives labels based on plugin context', () => {
       (component as any).credentialsService = {
-        credentials: { pluginId: 'github', repo_name: 'owner/repo', option: '' },
+        credentials: {
+          pluginId: 'github',
+          repo_name: 'owner/repo',
+          option: '',
+        },
       };
       expect(component.folderName()).toBeUndefined();
       (component as any).credentialsService.credentials.repo_name =
@@ -420,14 +431,14 @@ describe('CompareComponent', () => {
         status: ResultStatus.Updating,
       };
       const dataUpdatesStub = {
-        updateData: jasmine
-          .createSpy('updateData')
-          .and.returnValue(new Observable<CompareResult>((obs: Observer<CompareResult>) => {
+        updateData: jasmine.createSpy('updateData').and.returnValue(
+          new Observable<CompareResult>((obs: Observer<CompareResult>) => {
             setTimeout(() => {
               obs.next(updates);
               obs.complete();
             }, 0);
-          })),
+          }),
+        ),
       };
       const utilsStub = {
         mapDatafiles: () => new Map([['', { data: {}, children: [] } as any]]),
