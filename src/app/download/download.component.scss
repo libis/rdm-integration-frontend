@@ -1,3 +1,8 @@
 :host ::ng-deep .p-select {
   width: 100%;
 }
+
+// Fix text-muted readability in dark mode
+.text-muted {
+  color: var(--p-text-muted-color) !important;
+}
