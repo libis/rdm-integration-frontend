@@ -15,6 +15,16 @@
 .inner-table-cell {
   padding: 0;
   background-color: var(--p-content-background);
+
+  // Target nested tables within inner-table-cell
+  .table,
+  .table tbody,
+  .table tr,
+  .table td,
+  .table th {
+    background-color: var(--p-content-background);
+    color: var(--p-text-color);
+  }
 }
 
 // Progress bar layout
