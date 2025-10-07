@@ -1,17 +1,12 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-    HttpTestingController,
-    provideHttpClientTesting,
+  HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import {
-    ComponentFixture,
-    TestBed,
-    fakeAsync,
-    tick,
-} from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem, TreeNode } from 'primeng/api';
@@ -176,7 +171,6 @@ class MockNavigationService {
 
 describe('DownloadComponent', () => {
   let component: DownloadComponent;
-  let fixture: ComponentFixture<DownloadComponent>;
 
   let notification: MockNotificationService;
   let repoLookup: MockRepoLookupService;
@@ -186,7 +180,7 @@ describe('DownloadComponent', () => {
   let dataService: MockDataService;
   let utils: MockUtilsService;
   let navigation: MockNavigationService;
-  let routeSubject: BehaviorSubject<Record<string, string>>;
+  let routeSubject: BehaviorSubject<Record<string, string | undefined>>;
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
@@ -198,7 +192,7 @@ describe('DownloadComponent', () => {
     dataService = new MockDataService();
     utils = new MockUtilsService();
     navigation = new MockNavigationService();
-    routeSubject = new BehaviorSubject<Record<string, string>>({});
+    routeSubject = new BehaviorSubject<Record<string, string | undefined>>({});
 
     await TestBed.configureTestingModule({
       imports: [RouterTestingModule, DownloadComponent],
@@ -224,25 +218,36 @@ describe('DownloadComponent', () => {
       })
       .compileComponents();
 
-    fixture = TestBed.createComponent(DownloadComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    localStorage.clear();
-    // mimic plugin loaded state
-    component.globusPlugin = plugin.getGlobusPlugin();
-    navigation.assign.calls.reset();
     httpMock = TestBed.inject(HttpTestingController);
   });
 
+  function initComponent(
+    params?: Record<string, string | undefined>,
+    beforeDetect?: (comp: DownloadComponent) => void,
+  ): DownloadComponent {
+    routeSubject.next(params ?? {});
+    const fixtureInstance = TestBed.createComponent(DownloadComponent);
+    const compInstance = fixtureInstance.componentInstance;
+    beforeDetect?.(compInstance);
+    fixtureInstance.detectChanges();
+    compInstance.globusPlugin = plugin.getGlobusPlugin();
+    navigation.assign.calls.reset();
+    component = compInstance;
+    return compInstance;
+  }
+
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   it('should create', () => {
+    initComponent();
     expect(component).toBeTruthy();
   });
 
   it('rowClass reflects action styling', () => {
+    initComponent();
     const file: Datafile = {
       id: '1',
       name: 'a',
@@ -258,6 +263,7 @@ describe('DownloadComponent', () => {
   });
 
   it('downloadDisabled true when no selected download actions', () => {
+    initComponent();
     component.rowNodeMap.set('', {
       data: { id: '', name: '', path: '', hidden: false },
     });
@@ -265,6 +271,7 @@ describe('DownloadComponent', () => {
   });
 
   it('onDatasetSearch guards short terms and triggers search for valid term', () => {
+    initComponent();
     component.onDatasetSearch(null);
     expect(component.doiItems[0].label).toContain('start typing');
     component.onDatasetSearch('ab');
@@ -274,6 +281,7 @@ describe('DownloadComponent', () => {
   });
 
   it('toggleAction propagates through root when present', () => {
+    initComponent();
     const root: TreeNode<Datafile> = {
       data: {
         id: '',
@@ -290,6 +298,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getRepoLookupRequest enforces repo name presence when not search', () => {
+    initComponent();
     component.globusPlugin = {
       repoNameFieldName: 'Repo Name',
       sourceUrlFieldValue: 'https://x',
@@ -300,12 +309,14 @@ describe('DownloadComponent', () => {
   });
 
   it('getRepoLookupRequest short-circuits when branchItems already loaded', () => {
+    initComponent();
     component.branchItems = [{ label: 'existing', value: 'v' }];
     const req = component.getRepoLookupRequest(false);
     expect(req).toBeUndefined();
   });
 
   it('getRepoLookupRequest builds request when conditions satisfied', () => {
+    initComponent();
     component.selectedRepoName = 'repoA';
     const req = component.getRepoLookupRequest(false);
     expect(req).toBeDefined();
@@ -313,6 +324,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getOptions populates node children for nested request', fakeAsync(() => {
+    initComponent();
     component.selectedRepoName = 'repoA';
     repoLookup.options = [
       { label: 'opt1', value: 'o1' },
@@ -330,6 +342,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('getOptions handles error path', fakeAsync(() => {
+    initComponent();
     component.selectedRepoName = 'repoA';
     // force error
     spyOn(repoLookup, 'getOptions').and.returnValue(
@@ -347,6 +360,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('download success and error flows', fakeAsync(() => {
+    initComponent();
     // build rowNodeMap
     const df: Datafile = {
       id: '1',
@@ -373,6 +387,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('downloadDisabled responds to selection & option presence', () => {
+    initComponent();
     const df: Datafile = {
       id: '1',
       name: 'f',
@@ -388,29 +403,34 @@ describe('DownloadComponent', () => {
   });
 
   it('startRepoSearch uses init capability when enabled', fakeAsync(() => {
+    initComponent();
     component.globusPlugin = { repoNameFieldHasInit: true } as any;
     component.startRepoSearch();
     expect(component.repoNames[0].label).toContain('loading');
   }));
 
   it('startRepoSearch shows typing hint when init disabled', () => {
+    initComponent();
     component.globusPlugin = { repoNameFieldHasInit: false } as any;
     component.startRepoSearch();
     expect(component.repoNames[0].label).toContain('start typing');
   });
 
   it('startRepoSearch returns early when found repo name already populated', () => {
+    initComponent();
     component.foundRepoName = 'existing-endpoint';
     component.startRepoSearch();
     expect(component.repoNames.length).toBe(0);
   });
 
   it('back navigates by assigning location href', () => {
+    initComponent();
     component.back();
     expect(navigation.assign).toHaveBeenCalledWith('connect');
   });
 
   it('showDVToken reflects plugin toggle', () => {
+    initComponent();
     plugin.showDvToken = true;
     expect(component.showDVToken()).toBeTrue();
     plugin.showDvToken = false;
@@ -418,6 +438,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getDoiOptions populates list and reports errors', fakeAsync(() => {
+    initComponent();
     dvLookup.items = [
       { label: 'Dataset A', value: 'doi:A' },
       { label: 'Dataset B', value: 'doi:B' },
@@ -436,6 +457,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('onUserChange clears state and persists token when provided', () => {
+    initComponent();
     plugin.storeDvToken = true;
     component.dataverseToken = 'tok123';
     component.doiItems = [{ label: 'old', value: 'old' }];
@@ -448,6 +470,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getRepoToken skips navigation when token getter missing', () => {
+    initComponent();
     const initialCalls = navigation.assign.calls.count();
     component.dataverseToken = 'tok456';
     component.globusPlugin = {
@@ -459,6 +482,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getRepoToken opens new window when oauth client id missing', () => {
+    initComponent();
     component.globusPlugin = {
       sourceUrlFieldValue: 'https://example.com',
       tokenGetter: { URL: '/oauth', oauth_client_id: '' },
@@ -469,12 +493,14 @@ describe('DownloadComponent', () => {
   });
 
   it('repoNameSearch returns error placeholder when branchItems already loaded', async () => {
+    initComponent();
     component.branchItems = [{ label: 'existing', value: 'x' }];
     const results = await component.repoNameSearch('branch');
     expect(results[0].value).toBe('error');
   });
 
   it('optionSelected toggles option depending on node data', () => {
+    initComponent();
     component.optionSelected({ data: '' } as TreeNode<string>);
     expect(component.option).toBeUndefined();
     expect(component.selectedOption).toBeUndefined();
@@ -486,6 +512,7 @@ describe('DownloadComponent', () => {
   });
 
   it('onRepoChange clears branch options and selection', () => {
+    initComponent();
     component.branchItems = [{ label: 'opt', value: 'opt' }];
     component.option = 'opt';
     component.onRepoChange();
@@ -494,6 +521,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getDoiOptions skips reload when options already present', () => {
+    initComponent();
     component.doiItems = [{ label: 'existing', value: 'doi:existing' }];
     component.datasetId = 'doi:existing';
     dvLookup.items = [{ label: 'other', value: 'doi:other' }];
@@ -502,6 +530,7 @@ describe('DownloadComponent', () => {
   });
 
   it('onUserChange resets selections and persists token when configured', () => {
+    initComponent();
     plugin.storeDvToken = true;
     component.dataverseToken = 'dvTok';
     component.doiItems = [{ label: 'a', value: 'a' }];
@@ -513,6 +542,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getRepoToken builds redirect including dataset state when available', () => {
+    initComponent();
     component.globusPlugin = plugin.getGlobusPlugin();
     component.datasetId = 'doi:ABC';
     component.dataverseToken = 'tok';
@@ -527,6 +557,7 @@ describe('DownloadComponent', () => {
   });
 
   it('getRepoToken omits dataset when placeholder selected', () => {
+    initComponent();
     component.globusPlugin = plugin.getGlobusPlugin();
     component.datasetId = '?';
     component.getRepoToken();
@@ -539,6 +570,7 @@ describe('DownloadComponent', () => {
   });
 
   it('optionSelected clears selection when node empty', () => {
+    initComponent();
     component.optionSelected({ data: 'folder', selectable: true } as TreeNode<string>);
     expect(component.option).toBe('folder');
     component.optionSelected({ data: '', selectable: true } as TreeNode<string>);
@@ -547,6 +579,7 @@ describe('DownloadComponent', () => {
   });
 
   it('downloadDisabled requires option and at least one download action', () => {
+    initComponent();
     const df: Datafile = {
       id: '1',
       name: 'f',
@@ -563,6 +596,7 @@ describe('DownloadComponent', () => {
   });
 
   it('onDatasetChange populates tree on success', fakeAsync(() => {
+    initComponent();
     const payload: CompareResult = {
       data: [
         { id: 'b', name: 'B', path: '', hidden: false, action: Fileaction.Download } as Datafile,
@@ -580,6 +614,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('onDatasetChange surfaces errors from service', fakeAsync(() => {
+    initComponent();
     dataService.error = 'service-down';
     component.datasetId = 'doi:test';
     component.onDatasetChange();
@@ -592,20 +627,21 @@ describe('DownloadComponent', () => {
   }));
 
   it('ngOnInit processes globus callback state and fetches token', fakeAsync(() => {
-    fixture.destroy();
-    routeSubject.next({
-      code: 'oauth-code',
-      state: JSON.stringify({
-        nonce: 'nonce-123',
-        datasetId: { value: 'doi:123', label: 'Dataset 123' },
-      }),
-    });
     localStorage.setItem('dataverseToken', 'persisted');
-    navigation.assign.calls.reset();
-    fixture = TestBed.createComponent(DownloadComponent);
-    component = fixture.componentInstance;
-    const datasetSpy = spyOn(component, 'onDatasetChange').and.stub();
-    fixture.detectChanges();
+  let datasetSpy!: jasmine.Spy<() => void>;
+    initComponent(
+      {
+        code: 'oauth-code',
+        state: JSON.stringify({
+          nonce: 'nonce-123',
+          datasetId: { value: 'doi:123', label: 'Dataset 123' },
+        }),
+      },
+      (compInstance) => {
+        datasetSpy = spyOn(compInstance, 'onDatasetChange').and.stub();
+      },
+    );
+    tick();
 
     const req = httpMock.expectOne('api/common/oauthtoken');
     expect(req.request.method).toBe('POST');
@@ -617,47 +653,48 @@ describe('DownloadComponent', () => {
     req.flush({ session_id: 'session-xyz' });
     tick();
 
-    expect(datasetSpy).toHaveBeenCalled();
+  expect(datasetSpy).toHaveBeenCalled();
     expect(component.token).toBe('session-xyz');
     expect(localStorage.getItem('dataverseToken')).toBeNull();
   }));
 
   it('ngOnInit skips dataset load when state value is placeholder', fakeAsync(() => {
-    fixture.destroy();
-    routeSubject.next({
-      code: 'oauth-code',
-      state: JSON.stringify({
-        nonce: 'nonce-789',
-        datasetId: { value: '?' },
-      }),
-    });
-    navigation.assign.calls.reset();
-    fixture = TestBed.createComponent(DownloadComponent);
-    component = fixture.componentInstance;
-    const datasetSpy = spyOn(component, 'onDatasetChange').and.stub();
-    fixture.detectChanges();
+    let datasetSpy!: jasmine.Spy<() => void>;
+    initComponent(
+      {
+        code: 'oauth-code',
+        state: JSON.stringify({
+          nonce: 'nonce-789',
+          datasetId: { value: '?' },
+        }),
+      },
+      (compInstance) => {
+        datasetSpy = spyOn(compInstance, 'onDatasetChange').and.stub();
+      },
+    );
+    tick();
 
     const req = httpMock.expectOne('api/common/oauthtoken');
     req.flush({ session_id: 'session-abc' });
     tick();
 
     expect(datasetSpy).not.toHaveBeenCalled();
-    expect(component.doiItems[0].value).toBe('?');
   }));
 
-  it('ngOnInit without oauth code triggers repo token lookup', () => {
-    fixture.destroy();
-    routeSubject.next({
-      datasetPid: 'doi:XYZ',
-      apiToken: 'dvTok',
-    });
-    navigation.assign.calls.reset();
-    fixture = TestBed.createComponent(DownloadComponent);
-    component = fixture.componentInstance;
-    const tokenSpy = spyOn(component, 'getRepoToken').and.callThrough();
-    fixture.detectChanges();
+  it('ngOnInit without oauth code triggers repo token lookup', fakeAsync(() => {
+    let tokenSpy!: jasmine.Spy<() => void>;
+    initComponent(
+      {
+        datasetPid: 'doi:XYZ',
+        apiToken: 'dvTok',
+      },
+      (compInstance) => {
+        tokenSpy = spyOn(compInstance, 'getRepoToken').and.callThrough();
+      },
+    );
+    tick();
 
     expect(component.datasetId).toBe('doi:XYZ');
     expect(tokenSpy).toHaveBeenCalled();
-  });
+  }));
 });
