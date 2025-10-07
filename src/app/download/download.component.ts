@@ -1,5 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
+import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 
@@ -45,6 +46,7 @@ import { SubscriptionManager } from '../shared/types';
   templateUrl: './download.component.html',
   styleUrl: './download.component.scss',
   imports: [
+    CommonModule,
     ButtonDirective,
     FormsModule,
     FloatLabel,

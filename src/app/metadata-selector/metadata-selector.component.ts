@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Location } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -37,6 +37,7 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
   templateUrl: './metadata-selector.component.html',
   styleUrls: ['./metadata-selector.component.scss'],
   imports: [
+    CommonModule,
     ButtonDirective,
     PrimeTemplate,
     TreeTableModule,
