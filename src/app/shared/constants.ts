@@ -1,6 +1,16 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 /**
+ * Detect if dark mode is active
+ */
+function isDarkMode(): boolean {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  return false;
+}
+
+/**
  * Application-wide constants
  */
 export const APP_CONSTANTS = {
@@ -39,17 +49,38 @@ export const APP_CONSTANTS = {
     DANGER: 'red',
   },
 
-  // File action styles
-  // NOTE: These are inline styles for row highlighting.
-  // Background colors provide visual distinction for different file actions.
-  FILE_ACTION_STYLES: {
+  // File action styles - Light mode colors (dark mode handled via getFileActionStyle)
+  FILE_ACTION_STYLES_LIGHT: {
     IGNORE: '',
-    COPY: 'background-color: #c3e6cb; color: black;',
-    UPDATE: 'background-color: #b8daff; color: black;',
-    DELETE: 'background-color: #f5c6cb; color: black;',
-    CUSTOM: 'background-color: #FFFAA0; color: black;',
+    COPY: 'background-color: #c3e6cb; color: #1a1a1a;',
+    UPDATE: 'background-color: #b8daff; color: #1a1a1a;',
+    DELETE: 'background-color: #f5c6cb; color: #1a1a1a;',
+    CUSTOM: 'background-color: #FFFAA0; color: #1a1a1a;',
+  },
+  // File action styles - Dark mode colors
+  FILE_ACTION_STYLES_DARK: {
+    IGNORE: '',
+    COPY: 'background-color: #1e4620; color: #c3e6cb;',
+    UPDATE: 'background-color: #1a3d5c; color: #b8daff;',
+    DELETE: 'background-color: #4a1f23; color: #f5c6cb;',
+    CUSTOM: 'background-color: #4a4520; color: #FFFAA0;',
   },
 } as const;
+
+/**
+ * Get file action style based on current theme
+ * @param action - The file action type
+ * @returns Inline style string for the action
+ */
+export function getFileActionStyle(
+  action: 'IGNORE' | 'COPY' | 'UPDATE' | 'DELETE' | 'CUSTOM',
+): string {
+  const dark = isDarkMode();
+  const styles = dark
+    ? APP_CONSTANTS.FILE_ACTION_STYLES_DARK
+    : APP_CONSTANTS.FILE_ACTION_STYLES_LIGHT;
+  return styles[action];
+}
 
 /**
  * Local storage keys

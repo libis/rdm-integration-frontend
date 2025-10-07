@@ -37,8 +37,9 @@ import { DownladablefileComponent } from '../downloadablefile/downladablefile.co
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // Constants and types
-import { APP_CONSTANTS } from '../shared/constants';
+import { getFileActionStyle } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
+import { APP_CONSTANTS } from '../shared/constants';
 
 @Component({
   selector: 'app-download',
@@ -78,7 +79,7 @@ export class DownloadComponent
   // NG MODEL FIELDS
   dataverseToken?: string;
   datasetId?: string;
-  data: CompareResult = {};
+  data?: CompareResult;
   rootNodeChildren: TreeNode<Datafile>[] = [];
   rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
     string,
@@ -207,6 +208,9 @@ export class DownloadComponent
             { label: `search failed: ${err.message}`, value: err.message },
           ]),
       });
+
+    // Auto-load dataset options on init
+    this.getDoiOptions();
   }
 
   ngOnDestroy() {
@@ -227,9 +231,9 @@ export class DownloadComponent
       case Fileaction.Ignore:
         return '';
       case Fileaction.Download:
-        return APP_CONSTANTS.FILE_ACTION_STYLES.COPY;
+        return getFileActionStyle('COPY');
       case Fileaction.Custom:
-        return APP_CONSTANTS.FILE_ACTION_STYLES.CUSTOM;
+        return getFileActionStyle('CUSTOM');
     }
     return '';
   }

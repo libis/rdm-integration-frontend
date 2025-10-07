@@ -53,14 +53,15 @@
 </div>
 
 <br />
-<div style="height: 100% - 2rem; overflow: hidden">
-  <div style="float: left; width: 50%">
-    <p-treeTable [value]="rootNodeChildren" [loading]="loading">
-      <ng-template pTemplate="header">
-        <tr>
-          <th style="text-align: left">
-            <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
-          </th>
+@if (datasetId && data?.id) {
+  <div style="height: 100% - 2rem; overflow: hidden">
+    <div style="float: left; width: 50%">
+      <p-treeTable [value]="rootNodeChildren" [loading]="loading">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="text-align: left">
+              <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+            </th>
           <th class="icon_col" style="text-align: right">
             <button
               pButton
@@ -129,4 +130,12 @@
       >
     </div>
   </div>
-</div>
+  </div>
+} @else {
+  <div class="mb-4 mt-4 text-center">
+    <p class="text-muted">
+      <i class="pi pi-info-circle"></i>
+      Please select a dataset from the dropdown above to view downloadable files.
+    </p>
+  </div>
+}
