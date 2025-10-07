@@ -161,13 +161,13 @@ describe('MetadataSelectorComponent', () => {
       action: Fieldaction.Ignore,
     };
     expect(component.rowClass({ ...base, action: Fieldaction.Ignore })).toBe(
-      'color: foreground;',
+      '',
     );
     expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toBe(
-      'background-color: #c3e6cb; color: foretground;',
+      'background-color: #c3e6cb; color: black;',
     );
     expect(component.rowClass({ ...base, action: Fieldaction.Custom })).toBe(
-      'background-color: #FFFAA0; color: foreground;',
+      'background-color: #FFFAA0; color: black;',
     );
   });
 
