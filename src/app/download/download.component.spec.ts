@@ -25,7 +25,7 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
-import { SubmitService } from '../submit.service';
+import { GlobusTaskStatus, SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 import { DownloadComponent } from './download.component';
 
@@ -57,15 +57,39 @@ class MockRepoLookupService {
 
 class MockSubmitService {
   succeed = true;
+  responseTaskId = 'task-123';
+  responseMonitorUrl?: string;
+  statusResponses: GlobusTaskStatus[] = [];
+  statusError?: unknown;
+
   download() {
-    return new Observable<string>((obs) => {
+    return new Observable<{ taskId: string; monitorUrl?: string }>((obs) => {
       setTimeout(() => {
         if (this.succeed) {
-          obs.next('sub-123');
+          obs.next({
+            taskId: this.responseTaskId,
+            monitorUrl: this.responseMonitorUrl,
+          });
           obs.complete();
         } else {
           obs.error({ error: 'failX' });
         }
+      }, 0);
+    });
+  }
+
+  getDownloadStatus(taskId: string) {
+    return new Observable<GlobusTaskStatus>((obs) => {
+      setTimeout(() => {
+        if (this.statusError) {
+          obs.error(this.statusError);
+          return;
+        }
+        const nextStatus =
+          this.statusResponses.shift() ??
+          ({ task_id: taskId, status: 'ACTIVE' } as GlobusTaskStatus);
+        obs.next(nextStatus);
+        obs.complete();
       }, 0);
     });
   }
@@ -245,6 +269,9 @@ describe('DownloadComponent', () => {
   afterEach(() => {
     httpMock.verify();
     localStorage.clear();
+    submit.statusResponses = [];
+    submit.statusError = undefined;
+    submit.succeed = true;
   });
 
   it('should create', () => {
@@ -365,9 +392,8 @@ describe('DownloadComponent', () => {
     expect(component.option).toBeUndefined();
   }));
 
-  it('download success and error flows', fakeAsync(() => {
+  it('download success kicks off polling and stores monitoring info', fakeAsync(() => {
     initComponent();
-    // build rowNodeMap
     const df: Datafile = {
       id: '1',
       name: 'f',
@@ -378,19 +404,185 @@ describe('DownloadComponent', () => {
     component.rowNodeMap.set('1:file', { data: df });
     component.option = 'branchX';
     component.selectedRepoName = 'repoX';
-    submit.succeed = true;
+
+    submit.responseTaskId = 'task-789';
+    submit.responseMonitorUrl = 'https://app.globus.org/activity/task-789';
+    submit.statusResponses = [
+      {
+        task_id: 'task-789',
+        status: 'ACTIVE',
+        bytes_transferred: 50,
+        bytes_expected: 200,
+      },
+      {
+        task_id: 'task-789',
+        status: 'SUCCEEDED',
+        nice_status: 'All done',
+        bytes_transferred: 200,
+        bytes_expected: 200,
+        files: 4,
+        files_transferred: 4,
+      },
+    ];
+
     component.download();
     tick();
-    expect(notification.successes.length).toBe(1);
-    // error
+    // first poll
+    tick();
+    expect(notification.successes.pop()).toContain('Globus task ID: task-789');
+    expect(component.lastTransferTaskId).toBe('task-789');
+    expect(component.globusMonitorUrl).toBe(
+      'https://app.globus.org/activity/task-789',
+    );
+    expect(component.statusPollingActive).toBeTrue();
+    expect(component.downloadProgress).toBe(25);
+    expect(component.taskStatus?.status).toBe('ACTIVE');
+    expect(component.statusTone).toBe('info');
+    expect(component.statusMessage).toContain('ACTIVE');
+
+    // second poll reaches terminal state
+    tick(component.statusPollIntervalMs);
+    tick();
+    expect(component.statusPollingActive).toBeFalse();
+    expect(component.downloadProgress).toBe(100);
+    expect(component.statusMessage).toContain('All done');
+    expect(component.statusTone).toBe('success');
+  }));
+
+  it('download surfaces error and stops polling setup', fakeAsync(() => {
+    initComponent();
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
+    component.rowNodeMap.set('1:file', { data: df });
+    component.option = 'branchX';
+    component.selectedRepoName = 'repoX';
+
     submit.succeed = false;
-    component.downloadRequested = false; // reset to allow second attempt
     component.download();
     tick();
+
     expect(
       notification.errors.some((e) => e.includes('Download request failed')),
     ).toBeTrue();
+    expect(component.statusPollingActive).toBeFalse();
+    expect(component.lastTransferTaskId).toBeUndefined();
   }));
+
+  it('status polling error surfaces user-facing message', fakeAsync(() => {
+    initComponent();
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
+    component.rowNodeMap.set('1:file', { data: df });
+    component.option = 'branchX';
+    component.selectedRepoName = 'repoX';
+
+    submit.statusError = { status: 401 };
+    component.download();
+    tick();
+    tick();
+
+    expect(component.statusPollingError).toContain('Globus session expired');
+    expect(component.statusTone).toBe('error');
+    expect(component.statusIcon).toContain('exclamation');
+
+    submit.statusError = undefined;
+  }));
+
+  it('refreshGlobusStatus restarts polling when task id present', fakeAsync(() => {
+    initComponent();
+    component.lastTransferTaskId = 'task-99';
+    submit.statusResponses = [
+      {
+        task_id: 'task-99',
+        status: 'ACTIVE',
+        bytes_transferred: 10,
+        bytes_expected: 100,
+      } as GlobusTaskStatus,
+    ];
+
+    component.refreshGlobusStatus();
+    expect(component.statusPollingActive).toBeTrue();
+    tick();
+    expect(component.taskStatus?.task_id).toBe('task-99');
+    component['stopStatusPolling']();
+  }));
+
+  it('status helpers adapt to lifecycle states', () => {
+    initComponent();
+    expect(component.hasStatusDetails).toBeFalse();
+
+    component.downloadInProgress = true;
+    expect(component.hasStatusDetails).toBeTrue();
+    expect(component.statusMessage).toContain('Submitting download request');
+
+    component.downloadInProgress = false;
+    component.statusPollingActive = true;
+    expect(component.statusMessage).toContain('Checking Globus transfer');
+
+    component.statusPollingActive = false;
+    component.statusPollingError = 'oops';
+    expect(component.statusMessage).toBe('oops');
+
+    component.statusPollingError = undefined;
+    component.taskStatus = {
+      task_id: 't-1',
+      status: 'FAILED',
+    } as GlobusTaskStatus;
+    expect(component.statusTone).toBe('error');
+    expect(component.statusIcon).toContain('exclamation');
+    expect(component.statusMessage).toContain('FAILED');
+
+    component.taskStatus = {
+      task_id: 't-2',
+      status: 'SUCCEEDED',
+      nice_status: 'Transfer complete',
+    } as GlobusTaskStatus;
+    expect(component.statusMessage).toContain('Transfer complete');
+
+    component.taskStatus = undefined;
+    component.lastTransferTaskId = 't-3';
+    expect(component.statusMessage).toContain('Download request submitted');
+  });
+
+  it('downloadProgress reflects bytes when expected available', () => {
+    initComponent();
+    component.taskStatus = {
+      task_id: 't-1',
+      status: 'ACTIVE',
+      bytes_transferred: 150,
+      bytes_expected: 300,
+    } as GlobusTaskStatus;
+    expect(component.downloadProgress).toBe(50);
+
+    component.taskStatus = {
+      task_id: 't-2',
+      status: 'ACTIVE',
+      bytes_transferred: 150,
+    } as GlobusTaskStatus;
+    expect(component.downloadProgress).toBeUndefined();
+  });
+
+  it('openGlobusMonitor opens external window when url present', () => {
+    initComponent();
+    component.globusMonitorUrl = 'https://app.globus.org/activity/task-1';
+    const spyOpen = spyOn(window, 'open');
+    component.openGlobusMonitor();
+    expect(spyOpen).toHaveBeenCalledWith(
+      'https://app.globus.org/activity/task-1',
+      '_blank',
+      'noopener',
+    );
+  });
 
   it('downloadDisabled responds to selection & option presence', () => {
     initComponent();
@@ -405,6 +597,28 @@ describe('DownloadComponent', () => {
     component.option = 'b';
     expect(component.downloadDisabled()).toBeTrue();
     df.action = Fileaction.Download;
+    expect(component.downloadDisabled()).toBeFalse();
+  });
+
+  it('downloadDisabled prevents new requests while progress is active', () => {
+    initComponent();
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
+    component.rowNodeMap.set('1:file', { data: df });
+    component.option = 'folder';
+    component.downloadInProgress = true;
+    expect(component.downloadDisabled()).toBeTrue();
+
+    component.downloadInProgress = false;
+    component.statusPollingActive = true;
+    expect(component.downloadDisabled()).toBeTrue();
+
+    component.statusPollingActive = false;
     expect(component.downloadDisabled()).toBeFalse();
   });
 

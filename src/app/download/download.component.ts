@@ -2,7 +2,6 @@
 
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
 
 // Services
 import { ActivatedRoute } from '@angular/router';
@@ -13,7 +12,7 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
-import { SubmitService } from '../submit.service';
+import { GlobusTaskStatus, SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 
 // Models
@@ -36,7 +35,16 @@ import { TreeTableModule } from 'primeng/treetable';
 import { DownladablefileComponent } from '../downloadablefile/downladablefile.component';
 
 // RxJS
-import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+  Subscription,
+  timer,
+} from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 // Constants and types
 import { APP_CONSTANTS, getFileActionClass } from '../shared/constants';
@@ -73,9 +81,6 @@ export class DownloadComponent
   private readonly notificationService = inject(NotificationService);
   private readonly navigation = inject(NavigationService);
 
-  // Subscriptions for cleanup
-  private readonly subscriptions = new Set<Subscription>();
-
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
 
@@ -100,6 +105,107 @@ export class DownloadComponent
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   datasetSearchResultsSubscription?: Subscription;
   downloadRequested = false;
+  downloadInProgress = false;
+  lastTransferTaskId?: string;
+  globusMonitorUrl?: string;
+  taskStatus?: GlobusTaskStatus;
+  statusPollingActive = false;
+  statusPollingError?: string;
+  private statusPollSubscription?: Subscription;
+  readonly statusPollIntervalMs = 5000;
+  private readonly terminalStatuses = new Set([
+    'SUCCEEDED',
+    'FAILED',
+    'CANCELED',
+    'INACTIVE',
+  ]);
+
+  get hasStatusDetails(): boolean {
+    return (
+      this.downloadInProgress ||
+      !!this.lastTransferTaskId ||
+      this.statusPollingActive ||
+      !!this.taskStatus ||
+      !!this.statusPollingError
+    );
+  }
+
+  get statusMessage(): string {
+    if (this.statusPollingError) {
+      return this.statusPollingError;
+    }
+
+    if (this.downloadInProgress && !this.lastTransferTaskId) {
+      return 'Submitting download request…';
+    }
+
+    if (this.statusPollingActive && !this.taskStatus) {
+      return 'Checking Globus transfer status…';
+    }
+
+    if (this.taskStatus) {
+      const niceStatus = this.taskStatus.nice_status?.trim();
+      const normalizedStatus = (this.taskStatus.status ?? '')
+        .toUpperCase()
+        .trim();
+
+      if (this.isSuccessStatus(normalizedStatus)) {
+        return niceStatus || 'Transfer completed successfully.';
+      }
+
+      if (this.isErrorStatus(normalizedStatus)) {
+        return niceStatus || `Transfer ended with status ${normalizedStatus}.`;
+      }
+
+      if (niceStatus) {
+        return niceStatus;
+      }
+
+      if (normalizedStatus) {
+        return `Current status: ${normalizedStatus}`;
+      }
+    }
+
+    if (this.lastTransferTaskId) {
+      return 'Download request submitted to Globus.';
+    }
+
+    return 'Waiting for Globus updates…';
+  }
+
+  get statusIcon(): string {
+    if (
+      this.statusPollingError ||
+      this.isErrorStatus(this.taskStatus?.status)
+    ) {
+      return 'pi pi-exclamation-triangle';
+    }
+
+    if (this.isSuccessStatus(this.taskStatus?.status)) {
+      return 'pi pi-check-circle';
+    }
+
+    if (this.downloadInProgress || this.statusPollingActive) {
+      return 'pi pi-spinner pi-spin';
+    }
+
+    return 'pi pi-info-circle';
+  }
+
+  get statusTone(): 'success' | 'error' | 'info' {
+    if (
+      this.statusPollingError ||
+      this.isErrorStatus(this.taskStatus?.status)
+    ) {
+      return 'error';
+    }
+
+    if (this.isSuccessStatus(this.taskStatus?.status)) {
+      return 'success';
+    }
+
+    return 'info';
+  }
 
   // globus
   token?: string;
@@ -222,6 +328,7 @@ export class DownloadComponent
   ngOnDestroy() {
     this.datasetSearchResultsSubscription?.unsubscribe();
     this.repoSearchResultsSubscription?.unsubscribe();
+    this.stopStatusPolling();
   }
 
   back(): void {
@@ -379,6 +486,8 @@ export class DownloadComponent
   downloadDisabled(): boolean {
     return (
       this.downloadRequested ||
+      this.downloadInProgress ||
+      this.statusPollingActive ||
       !this.option ||
       !Array.from(this.rowNodeMap.values()).some(
         (x) => x.data?.action === Fileaction.Download,
@@ -393,8 +502,24 @@ export class DownloadComponent
         selected.push(datafile.data);
       }
     });
+
+    if (selected.length === 0) {
+      this.notificationService.showError(
+        'Select at least one file before requesting a download.',
+      );
+      return;
+    }
+
     this.downloadRequested = true;
-    const httpSubscription = this.submit
+    this.downloadInProgress = true;
+    this.statusPollingError = undefined;
+    this.lastTransferTaskId = undefined;
+    this.globusMonitorUrl = undefined;
+    this.taskStatus = undefined;
+    this.statusPollingActive = false;
+    this.stopStatusPolling();
+
+    this.submit
       .download(
         selected,
         this.getRepoName(),
@@ -405,21 +530,120 @@ export class DownloadComponent
         this.downloadId,
       )
       .subscribe({
-        next: (submissionId) => {
-          httpSubscription.unsubscribe();
+        next: (response) => {
+          this.downloadRequested = false;
+          this.downloadInProgress = false;
+
+          const taskId = response?.taskId ?? '';
+          if (!taskId) {
+            this.notificationService.showSuccess('Download request submitted.');
+            return;
+          }
+
+          this.lastTransferTaskId = taskId;
+          this.globusMonitorUrl =
+            response.monitorUrl ?? this.buildGlobusMonitorUrl(taskId);
           this.notificationService.showSuccess(
-            `Download is requested and can be monitored in the Globus UI with the following submission ID: ${submissionId}`,
+            `Download request started. Globus task ID: ${taskId}`,
           );
+          this.startStatusPolling(taskId);
         },
         error: (err) => {
-          console.error('something went wrong: ');
-          console.error(`${err.error}`);
+          this.downloadRequested = false;
+          this.downloadInProgress = false;
+          this.statusPollingActive = false;
+          this.stopStatusPolling();
+
+          console.error('something went wrong:');
+          console.error(err);
+          const message = err?.error ?? err?.message ?? 'unknown error';
           this.notificationService.showError(
-            `Download request failed: ${err.error}`,
+            `Download request failed: ${message}`,
           );
-          httpSubscription.unsubscribe();
         },
       });
+  }
+
+  refreshGlobusStatus(): void {
+    if (!this.lastTransferTaskId) {
+      return;
+    }
+    this.startStatusPolling(this.lastTransferTaskId);
+  }
+
+  openGlobusMonitor(): void {
+    if (this.globusMonitorUrl) {
+      window.open(this.globusMonitorUrl, '_blank', 'noopener');
+    }
+  }
+
+  get downloadProgress(): number | undefined {
+    if (!this.taskStatus) {
+      return undefined;
+    }
+    const expected = this.taskStatus.bytes_expected ?? 0;
+    const transferred = this.taskStatus.bytes_transferred ?? 0;
+    if (!expected) {
+      return undefined;
+    }
+    const percent = Math.round((transferred / expected) * 100);
+    return Math.min(100, Math.max(0, percent));
+  }
+
+  isSuccessStatus(status?: string): boolean {
+    return (status ?? '').toUpperCase() === 'SUCCEEDED';
+  }
+
+  isErrorStatus(status?: string): boolean {
+    const normalized = (status ?? '').toUpperCase();
+    return normalized === 'FAILED' || normalized === 'CANCELED';
+  }
+
+  private startStatusPolling(taskId: string): void {
+    if (!taskId) {
+      return;
+    }
+    this.stopStatusPolling();
+    this.statusPollingError = undefined;
+    this.statusPollingActive = true;
+    this.statusPollSubscription = timer(0, this.statusPollIntervalMs)
+      .pipe(switchMap(() => this.submit.getDownloadStatus(taskId)))
+      .subscribe({
+        next: (status: GlobusTaskStatus) => {
+          this.taskStatus = status;
+          if (this.isTerminalStatus(status.status)) {
+            this.statusPollingActive = false;
+            this.stopStatusPolling();
+          }
+        },
+        error: (err) => {
+          this.statusPollingActive = false;
+          this.stopStatusPolling();
+          this.statusPollingError =
+            err?.status === 401
+              ? 'Globus session expired. Please reconnect to refresh the transfer status.'
+              : 'Unable to retrieve the latest status from Globus.';
+        },
+      });
+  }
+
+  private stopStatusPolling(): void {
+    this.statusPollSubscription?.unsubscribe();
+    this.statusPollSubscription = undefined;
+  }
+
+  private isTerminalStatus(status?: string): boolean {
+    if (!status) {
+      return false;
+    }
+    return this.terminalStatuses.has(status.toUpperCase());
+  }
+
+  private buildGlobusMonitorUrl(taskId: string): string {
+    if (!taskId) {
+      return '';
+    }
+    return `https://app.globus.org/activity/${encodeURIComponent(taskId)}`;
   }
 
   // globus

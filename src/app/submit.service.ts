@@ -1,11 +1,30 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Injectable, inject } from '@angular/core';
-import { StoreResult } from './models/store-result';
 import { HttpClient } from '@angular/common/http';
-import { Datafile } from './models/datafile';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CredentialsService } from './credentials.service';
+import { Datafile } from './models/datafile';
+import { StoreResult } from './models/store-result';
+
+export interface DownloadResponse {
+  taskId: string;
+  monitorUrl?: string;
+}
+
+export interface GlobusTaskStatus {
+  task_id: string;
+  status: string;
+  nice_status?: string;
+  bytes_transferred?: number;
+  bytes_expected?: number;
+  files?: number;
+  files_transferred?: number;
+  files_skipped?: number;
+  files_failed?: number;
+  completion_time?: string;
+  request_time?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -51,7 +70,7 @@ export class SubmitService {
     pid: string | undefined,
     dvToken: string | undefined,
     downloadId: string | undefined,
-  ): Observable<string> {
+  ): Observable<DownloadResponse> {
     const req = {
       plugin: 'globus',
       streamParams: {
@@ -65,6 +84,12 @@ export class SubmitService {
       dataverseKey: dvToken,
       selectedNodes: selected,
     };
-    return this.http.post<string>(this.download_url, req);
+    return this.http.post<DownloadResponse>(this.download_url, req);
+  }
+
+  getDownloadStatus(taskId: string): Observable<GlobusTaskStatus> {
+    return this.http.get<GlobusTaskStatus>('api/common/download/status', {
+      params: { taskId },
+    });
   }
 }

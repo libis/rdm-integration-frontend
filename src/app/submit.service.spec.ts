@@ -1,11 +1,11 @@
-import { TestBed } from '@angular/core/testing';
-import { SubmitService } from './submit.service';
 import {
   HttpClientTestingModule,
   HttpTestingController,
 } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { CredentialsService } from './credentials.service';
 import { Datafile } from './models/datafile';
+import { GlobusTaskStatus, SubmitService } from './submit.service';
 
 class MockCredentialsService {
   credentials: any = {
@@ -65,6 +65,7 @@ describe('SubmitService', () => {
     const selected: Datafile[] = [
       { id: '2', name: 'f2', path: '/', hidden: false } as any,
     ];
+    let response: any;
     service
       .download(
         selected,
@@ -75,7 +76,7 @@ describe('SubmitService', () => {
         'dv2',
         'dl123',
       )
-      .subscribe();
+      .subscribe((res) => (response = res));
     const req = httpMock.expectOne('api/common/download');
     expect(req.request.method).toBe('POST');
     const body: any = req.request.body;
@@ -88,6 +89,23 @@ describe('SubmitService', () => {
     expect(body.persistentId).toBe('pidX');
     expect(body.dataverseKey).toBe('dv2');
     expect(body.selectedNodes.length).toBe(1);
-    req.flush('ok');
+    req.flush({
+      taskId: 'task-1',
+      monitorUrl: 'https://app.globus.org/activity/task-1',
+    });
+    expect(response.taskId).toBe('task-1');
+  });
+
+  it('getDownloadStatus fetches globus transfer status', () => {
+    let status: GlobusTaskStatus | undefined;
+    service.getDownloadStatus('task-42').subscribe((s) => (status = s));
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === 'api/common/download/status' &&
+        r.params.get('taskId') === 'task-42',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ task_id: 'task-42', status: 'ACTIVE', nice_status: 'Active' });
+    expect(status?.status).toBe('ACTIVE');
   });
 });
