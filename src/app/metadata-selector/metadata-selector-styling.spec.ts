@@ -5,12 +5,22 @@ import { Fieldaction } from '../models/field';
 describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
   let fixture: any;
   let compiled: HTMLElement;
+  let defaultTableBackgroundRgb: string;
 
   beforeEach(async () => {
     const { TestBed } = await import('@angular/core/testing');
     const { Component } = await import('@angular/core');
     const { TreeTableModule } = await import('primeng/treetable');
     const { MetadatafieldComponent } = await import('../metadatafield/metadatafield.component');
+
+    document.documentElement.style.setProperty('--p-content-background', '#111111');
+    document.documentElement.style.setProperty('--p-text-color', '#f0f0f0');
+
+    defaultTableBackgroundRgb = parseCssColor(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--p-content-background')
+        .trim() || '#111111',
+    );
 
     @Component({
       selector: 'app-test-metadata-treetable',
@@ -107,16 +117,21 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     const copyRow = rows[0] as HTMLElement;
     const copyStyle = window.getComputedStyle(copyRow);
     const copyBg = copyStyle.backgroundColor;
-
+    const copyCell = copyRow.querySelector('td') as HTMLElement;
+    const copyCellBg = window.getComputedStyle(copyCell).backgroundColor;
     // Test Custom row (should have yellow background)
     const customRow = rows[1] as HTMLElement;
     const customStyle = window.getComputedStyle(customRow);
     const customBg = customStyle.backgroundColor;
+    const customCell = customRow.querySelector('td') as HTMLElement;
+    const customCellBg = window.getComputedStyle(customCell).backgroundColor;
 
     // Test Ignore row (should have default background)
     const ignoreRow = rows[2] as HTMLElement;
     const ignoreStyle = window.getComputedStyle(ignoreRow);
     const ignoreBg = ignoreStyle.backgroundColor;
+    const ignoreCell = ignoreRow.querySelector('td') as HTMLElement;
+    const ignoreCellBg = window.getComputedStyle(ignoreCell).backgroundColor;
 
     // THE CRITICAL TEST: Copy and Custom should have visible backgrounds
     // This tests that .table tr selector in metadata-selector.component.scss
@@ -133,7 +148,68 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     expect(copyBg).withContext('Copy and Custom should have different colors').not.toBe(customBg);
 
     // Verify Copy and Custom have DIFFERENT colors from Ignore (default)
-    expect(copyBg).withContext('Copy should have different color than Ignore').not.toBe(ignoreBg);
-    expect(customBg).withContext('Custom should have different color than Ignore').not.toBe(ignoreBg);
+    expect(copyBg).withContext('Copy should differ from Ignore default background').not.toBe(ignoreBg);
+    expect(customBg).withContext('Custom should differ from Ignore default background').not.toBe(ignoreBg);
+
+    // Ensure Copy/Custom do not fall back to theme default
+    expect(copyBg)
+      .withContext('Copy row should not be forced back to theme background by table styling')
+      .not.toBe(defaultTableBackgroundRgb);
+    expect(customBg)
+      .withContext('Custom row should not be forced back to theme background by table styling')
+      .not.toBe(defaultTableBackgroundRgb);
+
+    // Default Ignore row should still match theme background
+    expect([defaultTableBackgroundRgb, 'rgba(0, 0, 0, 0)'])
+      .withContext('Ignore row should keep default table theme background or remain transparent (table handles paint)')
+      .toContain(normalizeRgb(ignoreBg));
+
+    expect(normalizeRgb(copyCellBg))
+      .withContext('Copy cell must not use default table theme background color')
+      .not.toBe(defaultTableBackgroundRgb);
+    expect(normalizeRgb(customCellBg))
+      .withContext('Custom cell must not use default table theme background color')
+      .not.toBe(defaultTableBackgroundRgb);
+    expect([defaultTableBackgroundRgb, 'rgba(0, 0, 0, 0)'])
+      .withContext('Ignore cell should resolve to default theme background or be transparent (rendered via table)')
+      .toContain(normalizeRgb(ignoreCellBg));
   });
 });
+
+function parseCssColor(color: string): string {
+  if (!color) {
+    return '';
+  }
+
+  if (color.startsWith('rgb')) {
+    return normalizeRgb(color);
+  }
+
+  const probe = document.createElement('div');
+  probe.style.display = 'none';
+  probe.style.backgroundColor = color;
+  document.body.appendChild(probe);
+  const computed = window.getComputedStyle(probe).backgroundColor;
+  document.body.removeChild(probe);
+  return normalizeRgb(computed);
+}
+
+function normalizeRgb(value: string): string {
+  if (!value) {
+    return value;
+  }
+  const match = value.match(/rgba?\(([^)]+)\)/);
+  if (!match) {
+    return value;
+  }
+  const parts = match[1]
+    .split(',')
+    .map((p) => p.trim())
+    .map((p, idx) => (idx === 3 ? p : parseInt(p, 10)))
+    .filter((p) => p !== '');
+
+  if (parts.length === 4) {
+    return `rgba(${parts.join(', ')})`;
+  }
+  return `rgb(${parts.join(', ')})`;
+}

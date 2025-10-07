@@ -2,18 +2,49 @@
 // Override Bootstrap's default white table backgrounds for dark mode
 // Use :not() to exclude rows with file-action classes (these have their own styling)
 
-.table tbody,
-.table thead,
-.table td,
-.table th {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
-}
+:host ::ng-deep {
+  .table {
+    background-color: var(--p-content-background);
+    color: var(--p-text-color);
 
-// Explicitly set default for rows WITHOUT file-action classes
-.table tr:not([class*='file-action-']) {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
+    thead,
+    tbody {
+      background-color: inherit;
+      color: inherit;
+    }
+
+    tr {
+      // PrimeNG injects inline background on rows; start by inheriting theme colors
+      background-color: inherit;
+      color: inherit;
+
+      td,
+      th {
+        background-color: inherit;
+        color: inherit;
+      }
+    }
+
+    // Default rows stay on theme background
+    tr:not([class*='file-action-']) {
+      background-color: var(--p-content-background);
+
+      td,
+      th {
+        background-color: inherit;
+      }
+    }
+
+    // File-action rows keep their component-defined backgrounds
+    tr[class*='file-action-'] {
+      background-color: transparent;
+
+      td,
+      th {
+        background-color: transparent;
+      }
+    }
+  }
 }
 
 .treetable-cell {
