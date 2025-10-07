@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TreeNode } from 'primeng/api';
-import { MetadatafieldComponent } from './metadatafield.component';
 import { Field, Fieldaction } from '../models/field';
+import { MetadatafieldComponent } from './metadatafield.component';
 
 describe('MetadatafieldComponent', () => {
   let component: MetadatafieldComponent;

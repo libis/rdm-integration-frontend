@@ -1,32 +1,32 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
 } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { BehaviorSubject, Observable, of } from 'rxjs';
+import { DataService } from '../data.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction } from '../models/datafile';
 import { PluginService } from '../plugin.service';
-import { DataService } from '../data.service';
-import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { RepoLookupService } from '../repo.lookup.service';
+import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 import { DownloadComponent } from './download.component';
-import { NavigationService } from '../shared/navigation.service';
 
 class MockNotificationService {
   errors: string[] = [];
@@ -592,6 +592,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('ngOnInit processes globus callback state and fetches token', fakeAsync(() => {
+    fixture.destroy();
     routeSubject.next({
       code: 'oauth-code',
       state: JSON.stringify({
@@ -600,6 +601,7 @@ describe('DownloadComponent', () => {
       }),
     });
     localStorage.setItem('dataverseToken', 'persisted');
+    navigation.assign.calls.reset();
     fixture = TestBed.createComponent(DownloadComponent);
     component = fixture.componentInstance;
     const datasetSpy = spyOn(component, 'onDatasetChange').and.stub();
@@ -621,6 +623,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('ngOnInit skips dataset load when state value is placeholder', fakeAsync(() => {
+    fixture.destroy();
     routeSubject.next({
       code: 'oauth-code',
       state: JSON.stringify({
@@ -628,6 +631,7 @@ describe('DownloadComponent', () => {
         datasetId: { value: '?' },
       }),
     });
+    navigation.assign.calls.reset();
     fixture = TestBed.createComponent(DownloadComponent);
     component = fixture.componentInstance;
     const datasetSpy = spyOn(component, 'onDatasetChange').and.stub();
@@ -642,10 +646,12 @@ describe('DownloadComponent', () => {
   }));
 
   it('ngOnInit without oauth code triggers repo token lookup', () => {
+    fixture.destroy();
     routeSubject.next({
       datasetPid: 'doi:XYZ',
       apiToken: 'dvTok',
     });
+    navigation.assign.calls.reset();
     fixture = TestBed.createComponent(DownloadComponent);
     component = fixture.componentInstance;
     const tokenSpy = spyOn(component, 'getRepoToken').and.callThrough();

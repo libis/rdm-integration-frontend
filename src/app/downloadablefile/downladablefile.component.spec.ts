@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TreeNode } from 'primeng/api';
-import { DownladablefileComponent } from './downladablefile.component';
 import { Datafile, Fileaction } from '../models/datafile';
+import { DownladablefileComponent } from './downladablefile.component';
 
 describe('DownladablefileComponent', () => {
   let component: DownladablefileComponent;

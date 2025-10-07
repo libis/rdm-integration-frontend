@@ -1,23 +1,23 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { of, throwError } from 'rxjs';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
 
-import { SubmitComponent } from './submit.component';
-import { DataStateService } from '../data.state.service';
+import { Location } from '@angular/common';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
-import { SubmitService } from '../submit.service';
-import { DatasetService } from '../dataset.service';
+import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
-import { NotificationService } from '../shared/notification.service';
+import { DatasetService } from '../dataset.service';
+import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { PluginService } from '../plugin.service';
-import { Location } from '@angular/common';
-import { Fileaction, Filestatus, Datafile } from '../models/datafile';
+import { NotificationService } from '../shared/notification.service';
+import { SubmitService } from '../submit.service';
+import { SubmitComponent } from './submit.component';
 
 describe('SubmitComponent', () => {
   let component: SubmitComponent;

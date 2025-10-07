@@ -1,14 +1,14 @@
-import { TestBed } from '@angular/core/testing';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  provideHttpClientTesting,
-  HttpTestingController,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { DataUpdatesService } from './data.updates.service';
+import { TestBed } from '@angular/core/testing';
 import { CredentialsService } from './credentials.service';
+import { DataUpdatesService } from './data.updates.service';
 
 describe('DataUpdatesService', () => {
   let service: DataUpdatesService;

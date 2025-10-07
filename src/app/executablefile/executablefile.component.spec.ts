@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ExecutablefileComponent } from './executablefile.component';
-import { PluginService } from '../plugin.service';
-import { DataService } from '../data.service';
-import { NotificationService } from '../shared/notification.service';
-import { Observable, Subject } from 'rxjs';
 import { TreeNode } from 'primeng/api';
+import { Observable, Subject } from 'rxjs';
+import { DataService } from '../data.service';
 import { Datafile, Fileaction } from '../models/datafile';
+import { PluginService } from '../plugin.service';
+import { NotificationService } from '../shared/notification.service';
+import { ExecutablefileComponent } from './executablefile.component';
 
 class PluginServiceStub {
   getQueues(ext: string) {

@@ -1,14 +1,14 @@
-import { TestBed } from '@angular/core/testing';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
-import { PluginService } from './plugin.service';
+import {
+    HttpTestingController,
+    provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { Config } from './models/plugin';
+import { PluginService } from './plugin.service';
 
 describe('PluginService', () => {
   let service: PluginService;

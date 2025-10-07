@@ -1,16 +1,16 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 // Services
-import { PluginService } from '../plugin.service';
-import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { DataService } from '../data.service';
-import { UtilsService } from '../utils.service';
 import { ActivatedRoute } from '@angular/router';
-import { NotificationService } from '../shared/notification.service';
+import { DataService } from '../data.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
+import { PluginService } from '../plugin.service';
 import { NavigationService } from '../shared/navigation.service';
+import { NotificationService } from '../shared/notification.service';
+import { UtilsService } from '../utils.service';
 
 // Models
 import {
@@ -22,13 +22,13 @@ import {
 import { Datafile } from '../models/datafile';
 
 // PrimeNG
-import { SelectItem, TreeNode, PrimeTemplate } from 'primeng/api';
-import { ButtonDirective, Button } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
+import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
+import { Button, ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Dialog } from 'primeng/dialog';
 import { FloatLabel } from 'primeng/floatlabel';
 import { Select } from 'primeng/select';
-import { Dialog } from 'primeng/dialog';
-import { Checkbox } from 'primeng/checkbox';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components

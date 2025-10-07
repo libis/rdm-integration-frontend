@@ -1,25 +1,25 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
 } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, Subject } from 'rxjs';
 import { DataService } from '../data.service';
+import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CompareResult, Key } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { PluginService } from '../plugin.service';
-import { DvObjectLookupService } from '../dvobject.lookup.service';
+import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
 import { ComputeComponent } from './compute.component';
-import { NavigationService } from '../shared/navigation.service';
 
 class MockDataService {
   executableResponse: CompareResult = { data: [] };

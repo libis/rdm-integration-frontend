@@ -1,12 +1,12 @@
-import { TestBed } from '@angular/core/testing';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { DvObjectLookupService } from './dvobject.lookup.service';
 
 describe('DvObjectLookupService', () => {

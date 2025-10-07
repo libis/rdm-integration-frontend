@@ -1,5 +1,5 @@
-import { PollingService } from './polling.service';
 import { of, throwError } from 'rxjs';
+import { PollingService } from './polling.service';
 
 describe('PollingService', () => {
   let service: PollingService;

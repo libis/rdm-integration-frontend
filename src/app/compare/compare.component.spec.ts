@@ -1,15 +1,15 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { Router } from '@angular/router';
-import { Observable, Observer } from 'rxjs';
 import { TreeNode } from 'primeng/api';
-import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { Observable, Observer } from 'rxjs';
 import { CompareResult, ResultStatus } from '../models/compare-result';
+import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { CompareComponent } from './compare.component';
 

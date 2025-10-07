@@ -11,10 +11,10 @@ import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
+import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
-import { NavigationService } from '../shared/navigation.service';
 
 // Models
 import { CompareResult } from '../models/compare-result';

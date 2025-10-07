@@ -1,20 +1,19 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ConnectComponent } from './connect.component';
-import { PluginService } from '../plugin.service';
-import { NotificationService } from '../shared/notification.service';
-import { ConnectValidationService } from '../shared/connect-validation.service';
-import { SelectItem } from 'primeng/api';
-import { HttpTestingController } from '@angular/common/http/testing';
-import { DataStateService } from '../data.state.service';
 import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+import { SelectItem } from 'primeng/api';
 import { of } from 'rxjs';
+import { DataStateService } from '../data.state.service';
+import { PluginService } from '../plugin.service';
+import { ConnectValidationService } from '../shared/connect-validation.service';
+import { NotificationService } from '../shared/notification.service';
+import { ConnectComponent } from './connect.component';
 
 class DataStateServiceStub {
   lastCreds: any;

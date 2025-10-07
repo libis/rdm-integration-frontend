@@ -15,9 +15,9 @@ import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
+import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
-import { NavigationService } from '../shared/navigation.service';
 
 // Models
 import { Credentials } from '../models/credentials';
