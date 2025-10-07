@@ -1,8 +1,16 @@
 // Submit component styles
 // Minimal custom styling - relies on PrimeNG theming for light/dark mode support
 
+// Fix white background from Bootstrap table
+.submit-table,
+.submit-table .table {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+
 .inner-table-cell {
   padding: 0;
+  background-color: var(--p-content-background);
 }
 
 // Progress bar layout

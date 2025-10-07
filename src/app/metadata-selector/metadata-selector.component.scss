@@ -1,0 +1,12 @@
+// Metadata selector component styles
+// Fix white background from Bootstrap table
+
+.table {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+
+.treetable-cell {
+  background-color: var(--p-content-background);
+  padding: 0;
+}
