@@ -30,7 +30,7 @@ img {
 .dataverse-header-block {
   height: 3.125rem;
   border-width: 0 0 0.06rem;
-  background-color: var(--p-surface-0);
+  background-color: var(--p-content-background);
   border-color: var(--p-surface-border);
   box-shadow: 0 0.06rem 0.3rem rgba(0, 0, 0, 0.075);
   z-index: 9999;
@@ -111,7 +111,7 @@ footer > div {
 .file-list-header {
   font-weight: 700;
   color: var(--p-text-color);
-  background: var(--p-surface-100);
+  background: var(--p-content-background);
   padding: 1rem 1rem;
   border: 0.06rem solid var(--p-surface-border);
   border-width: 0 0 0.06rem 0;
@@ -154,4 +154,51 @@ button {
 .sticky-menu .col-auto {
   position: relative;
   z-index: 1;
+}
+
+/* Theme-aware styling for Bootstrap form-control to match PrimeNG form fields */
+.form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+select {
+  background: var(--p-form-field-background);
+  color: var(--p-form-field-color);
+  border: 1px solid var(--p-form-field-border-color);
+  border-radius: var(--p-form-field-border-radius);
+  padding: var(--p-form-field-padding-y) var(--p-form-field-padding-x);
+  transition: border-color var(--p-form-field-transition-duration), box-shadow var(--p-form-field-transition-duration);
+
+  &:hover {
+    border-color: var(--p-form-field-hover-border-color);
+  }
+
+  &:focus {
+    outline: 0;
+    border-color: var(--p-form-field-focus-border-color);
+    box-shadow: var(--p-form-field-focus-ring-shadow);
+  }
+
+  &:disabled {
+    background: var(--p-form-field-disabled-background);
+    color: var(--p-form-field-disabled-color);
+    opacity: 1;
+    cursor: not-allowed;
+  }
+
+  &::placeholder {
+    color: var(--p-form-field-placeholder-color);
+  }
+}
+
+/* Ensure form labels use theme colors */
+.form-label,
+label {
+  color: var(--p-text-color);
+  font-weight: 500;
 }
