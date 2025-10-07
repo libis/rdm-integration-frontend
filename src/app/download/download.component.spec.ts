@@ -1,10 +1,10 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-    HttpTestingController,
-    provideHttpClientTesting,
+  HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed, fakeAsync, flush, flushMicrotasks, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
@@ -36,10 +36,10 @@ class MockNotificationService {
 
 class MockRepoLookupService {
   options: SelectItem<string>[] = [];
-  search(_req?: unknown) {
-    return of([]);
+  search(_req?: unknown): Observable<SelectItem<string>[]> {
+    return of<SelectItem<string>[]>([]);
   }
-  getOptions() {
+  getOptions(): Observable<SelectItem<string>[]> {
     return new Observable<SelectItem<string>[]>((obs) => {
       setTimeout(() => {
         obs.next(this.options);
@@ -497,6 +497,109 @@ describe('DownloadComponent', () => {
     component.branchItems = [{ label: 'existing', value: 'x' }];
     const results = await component.repoNameSearch('branch');
     expect(results[0].value).toBe('error');
+  });
+
+  it('repoNameSearch yields service results when request available', async () => {
+    const comp = initComponent();
+    comp.selectedRepoName = 'repoX';
+    spyOn(repoLookup, 'search').and.returnValue(
+      of<SelectItem<string>[]>([
+        { label: 'remote-1', value: 'remote-1' },
+        { label: 'remote-2', value: 'remote-2' },
+      ]),
+    );
+
+    const results = await comp.repoNameSearch('remote');
+
+    expect(repoLookup.search).toHaveBeenCalled();
+    expect(results.length).toBe(2);
+    expect(results[0].value).toBe('remote-1');
+  });
+
+  it('datasetSearch resolves lookup results', async () => {
+    const comp = initComponent();
+    dvLookup.items = [
+      { label: 'Dataset 1', value: 'doi:1' },
+      { label: 'Dataset 2', value: 'doi:2' },
+    ];
+
+    const results = await comp.datasetSearch('Dat');
+
+    expect(results.length).toBe(2);
+    expect(results[1].value).toBe('doi:2');
+  });
+
+  it('getOptions populates branchItems when called without node', fakeAsync(() => {
+    const comp = initComponent();
+    comp.selectedRepoName = 'repoA';
+    repoLookup.options = [
+      { label: 'folder-a', value: 'folder-a' },
+      { label: 'folder-b', value: 'folder-b' },
+    ];
+
+    comp.getOptions();
+    tick();
+
+    expect(comp.branchItems.length).toBe(2);
+    expect(comp.branchItems[0].label).toBe('folder-a');
+  }));
+
+  it('helper accessors mirror globus plugin configuration', () => {
+    const comp = initComponent();
+    comp.globusPlugin = {
+      repoNameFieldEditable: true,
+      repoNameFieldPlaceholder: 'type repo',
+      repoNameFieldHasInit: false,
+      optionFieldName: 'Storage Option',
+      repoNameFieldName: 'Endpoint',
+    } as any;
+
+    expect(comp.repoNameFieldEditable()).toBeTrue();
+    expect(comp.getRepoNamePlaceholder()).toBe('type repo');
+    expect(comp.repoNameSearchInitEnabled()).toBeFalse();
+    expect(comp.getOptionFieldName()).toBe('Storage Option');
+    expect(comp.getRepoNameFieldName()).toBe('Endpoint');
+  });
+
+  it('getRepoName prefers selected value but falls back to found name', () => {
+    const comp = initComponent();
+    comp.foundRepoName = 'found-repo';
+    expect(comp.getRepoName()).toBe('found-repo');
+    comp.selectedRepoName = 'chosen-repo';
+    expect(comp.getRepoName()).toBe('chosen-repo');
+  });
+
+  it('getRepoLookupRequest uses fallback repo name when selection missing', () => {
+    const comp = initComponent();
+    comp.foundRepoName = 'fallback-repo';
+    const req = comp.getRepoLookupRequest(true);
+    expect(req?.repoName).toBe('fallback-repo');
+  });
+
+  it('getRepoToken honours absolute token getter URL', () => {
+    const comp = initComponent();
+    const openSpy = spyOn(window, 'open');
+    comp.globusPlugin = {
+      sourceUrlFieldValue: 'https://api.example',
+      tokenGetter: {
+        URL: 'https://oauth.example/authorize',
+        oauth_client_id: '',
+      },
+    } as any;
+
+    comp.getRepoToken();
+
+    expect(openSpy).toHaveBeenCalledWith('https://oauth.example/authorize', '_blank');
+  });
+
+  it('newNonce produces random alphanumeric string of given length', () => {
+    const comp = initComponent();
+    const nonce = comp.newNonce(24);
+    const nonce2 = comp.newNonce(24);
+
+    expect(nonce.length).toBe(24);
+    expect(/^[A-Za-z0-9]+$/.test(nonce)).toBeTrue();
+    expect(nonce2).not.toBe(nonce);
   });
 
   it('optionSelected toggles option depending on node data', () => {
