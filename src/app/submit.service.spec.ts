@@ -96,12 +96,12 @@ describe('SubmitService', () => {
     expect(response.taskId).toBe('task-1');
   });
 
-  it('getDownloadStatus fetches globus transfer status', () => {
+  it('getGlobusTransferStatus fetches globus transfer status', () => {
     let status: GlobusTaskStatus | undefined;
-    service.getDownloadStatus('task-42').subscribe((s) => (status = s));
+    service.getGlobusTransferStatus('task-42').subscribe((s) => (status = s));
     const req = httpMock.expectOne(
       (r) =>
-        r.url === 'api/common/download/status' &&
+        r.url === 'api/common/globus/status' &&
         r.params.get('taskId') === 'task-42',
     );
     expect(req.request.method).toBe('GET');

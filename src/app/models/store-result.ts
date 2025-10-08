@@ -3,4 +3,6 @@
 export interface StoreResult {
   status?: string;
   datasetUrl?: string;
+  globusTransferTaskId?: string;
+  globusTransferMonitorUrl?: string;
 }

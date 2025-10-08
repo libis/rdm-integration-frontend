@@ -87,8 +87,8 @@ export class SubmitService {
     return this.http.post<DownloadResponse>(this.download_url, req);
   }
 
-  getDownloadStatus(taskId: string): Observable<GlobusTaskStatus> {
-    return this.http.get<GlobusTaskStatus>('api/common/download/status', {
+  getGlobusTransferStatus(taskId: string): Observable<GlobusTaskStatus> {
+    return this.http.get<GlobusTaskStatus>('api/common/globus/status', {
       params: { taskId },
     });
   }
