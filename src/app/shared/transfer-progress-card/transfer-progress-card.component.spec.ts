@@ -6,11 +6,11 @@ import {
   tick,
 } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { GlobusTaskStatus, SubmitService } from '../../submit.service';
+import { TransferTaskStatus, SubmitService } from '../../submit.service';
 import { TransferProgressCardComponent } from './transfer-progress-card.component';
 
 class MockSubmitService {
-  statuses: GlobusTaskStatus[] = [];
+  statuses: TransferTaskStatus[] = [];
   errors: unknown[] = [];
 
   getGlobusTransferStatus(taskId: string) {
@@ -20,7 +20,7 @@ class MockSubmitService {
     }
     const status =
       this.statuses.shift() ??
-      ({ task_id: taskId, status: 'ACTIVE' } as GlobusTaskStatus);
+      ({ task_id: taskId, status: 'ACTIVE' } as TransferTaskStatus);
     return of(status);
   }
 }
@@ -53,7 +53,7 @@ describe('TransferProgressCardComponent', () => {
 
     const pollingStates: boolean[] = [];
     component.pollingChange.subscribe((value) => pollingStates.push(value));
-    const completions: GlobusTaskStatus[] = [];
+    const completions: TransferTaskStatus[] = [];
     component.completed.subscribe((value) => completions.push(value));
 
     component.taskId = 'task-1';

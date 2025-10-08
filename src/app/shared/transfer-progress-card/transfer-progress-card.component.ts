@@ -13,9 +13,11 @@ import {
 } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
 
-import { Subscription, merge, timer } from 'rxjs';
+import { Observable, Subscription, merge, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { GlobusTaskStatus, SubmitService } from '../../submit.service';
+import { TransferTaskStatus, SubmitService } from '../../submit.service';
+import { CredentialsService } from 'src/app/credentials.service';
+import { DataUpdatesService } from 'src/app/data.updates.service';
 
 @Component({
   selector: 'app-transfer-progress-card',
@@ -26,6 +28,8 @@ import { GlobusTaskStatus, SubmitService } from '../../submit.service';
 })
 export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   private readonly submitService = inject(SubmitService);
+  private credentialsService = inject(CredentialsService);
+  private dataUpdatesService = inject(DataUpdatesService);
 
   private statusSubscription?: Subscription;
   private readonly pollIntervalMs = 5000;
@@ -49,11 +53,11 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   pollingChange = new EventEmitter<boolean>();
 
   @Output()
-  completed = new EventEmitter<GlobusTaskStatus>();
+  completed = new EventEmitter<TransferTaskStatus>();
 
   statusPollingActive = false;
   statusPollingError?: string;
-  status?: GlobusTaskStatus;
+  status?: TransferTaskStatus;
 
   ngOnChanges(changes: SimpleChanges): void {
     if ('taskId' in changes) {
@@ -197,14 +201,25 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     this.stopPolling();
     this.statusPollingError = undefined;
     this.setPollingState(true);
-    const immediate$ = this.submitService.getGlobusTransferStatus(taskId);
+    const immediate$ = this.getTransferStatus(taskId);
     const polling$ = timer(this.pollIntervalMs, this.pollIntervalMs).pipe(
-      switchMap(() => this.submitService.getGlobusTransferStatus(taskId)),
+      switchMap(() => this.getTransferStatus(taskId)),
     );
     this.statusSubscription = merge(immediate$, polling$).subscribe({
       next: (status) => this.handleStatus(status),
       error: (err) => this.handleError(err),
     });
+  }
+
+  private getTransferStatus(taskId: string): Observable<TransferTaskStatus> {
+    if (!this.isGlobus()) {
+      //return this.dataUpdatesService.updateData(this.data, taskId);
+    }
+    return this.submitService.getGlobusTransferStatus(taskId);
+  }
+
+  private isGlobus(): boolean {
+    return this.credentialsService.credentials.plugin === 'globus';
   }
 
   private stopPolling(): void {
@@ -219,7 +234,7 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     this.statusPollingError = undefined;
   }
 
-  private handleStatus(status: GlobusTaskStatus): void {
+  private handleStatus(status: TransferTaskStatus): void {
     this.status = status;
     if (this.isTerminalStatus(status.status)) {
       this.stopPolling();

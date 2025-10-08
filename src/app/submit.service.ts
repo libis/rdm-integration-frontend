@@ -12,7 +12,7 @@ export interface DownloadResponse {
   monitorUrl?: string;
 }
 
-export interface GlobusTaskStatus {
+export interface TransferTaskStatus {
   task_id: string;
   status: string;
   nice_status?: string;
@@ -87,8 +87,8 @@ export class SubmitService {
     return this.http.post<DownloadResponse>(this.download_url, req);
   }
 
-  getGlobusTransferStatus(taskId: string): Observable<GlobusTaskStatus> {
-    return this.http.get<GlobusTaskStatus>('api/common/globus/status', {
+  getGlobusTransferStatus(taskId: string): Observable<TransferTaskStatus> {
+    return this.http.get<TransferTaskStatus>('api/common/globus/status', {
       params: { taskId },
     });
   }

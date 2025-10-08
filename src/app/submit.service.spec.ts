@@ -5,7 +5,7 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { CredentialsService } from './credentials.service';
 import { Datafile } from './models/datafile';
-import { GlobusTaskStatus, SubmitService } from './submit.service';
+import { TransferTaskStatus, SubmitService } from './submit.service';
 
 class MockCredentialsService {
   credentials: any = {
@@ -97,7 +97,7 @@ describe('SubmitService', () => {
   });
 
   it('getGlobusTransferStatus fetches globus transfer status', () => {
-    let status: GlobusTaskStatus | undefined;
+    let status: TransferTaskStatus | undefined;
     service.getGlobusTransferStatus('task-42').subscribe((s) => (status = s));
     const req = httpMock.expectOne(
       (r) =>
