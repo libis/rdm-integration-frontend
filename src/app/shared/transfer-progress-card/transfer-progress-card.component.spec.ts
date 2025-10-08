@@ -6,7 +6,10 @@ import {
   tick,
 } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { TransferTaskStatus, SubmitService } from '../../submit.service';
+import { CredentialsService } from 'src/app/credentials.service';
+import { DataUpdatesService } from 'src/app/data.updates.service';
+import { CompareResult, ResultStatus } from '../../models/compare-result';
+import { SubmitService, TransferTaskStatus } from '../../submit.service';
 import { TransferProgressCardComponent } from './transfer-progress-card.component';
 
 class MockSubmitService {
@@ -25,24 +28,45 @@ class MockSubmitService {
   }
 }
 
+class MockCredentialsService {
+  credentials = { plugin: 'globus', dataset_id: 'pid-default' };
+}
+
+class MockDataUpdatesService {
+  updateData = jasmine.createSpy('updateData');
+}
+
 describe('TransferProgressCardComponent', () => {
   let fixture: ComponentFixture<TransferProgressCardComponent>;
   let component: TransferProgressCardComponent;
   let submit: MockSubmitService;
+  let credentials: MockCredentialsService;
+  let dataUpdates: MockDataUpdatesService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TransferProgressCardComponent],
-      providers: [{ provide: SubmitService, useClass: MockSubmitService }],
+      providers: [
+        { provide: SubmitService, useClass: MockSubmitService },
+        { provide: CredentialsService, useClass: MockCredentialsService },
+        { provide: DataUpdatesService, useClass: MockDataUpdatesService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TransferProgressCardComponent);
     component = fixture.componentInstance;
     submit = TestBed.inject(SubmitService) as unknown as MockSubmitService;
+    credentials = TestBed.inject(
+      CredentialsService,
+    ) as unknown as MockCredentialsService;
+    dataUpdates = TestBed.inject(
+      DataUpdatesService,
+    ) as unknown as MockDataUpdatesService;
   });
 
   afterEach(() => {
     component.ngOnDestroy();
+    dataUpdates.updateData.calls.reset();
   });
 
   it('polls status until terminal state and emits events', fakeAsync(() => {
@@ -87,6 +111,34 @@ describe('TransferProgressCardComponent', () => {
     expect(component.statusPollingActive).toBeFalse();
     expect(component.statusMessage).toContain('Globus session expired');
     expect(component.statusIcon).toContain('exclamation');
+  }));
+
+  it('maps compare result updates for non-globus transfers', fakeAsync(() => {
+    credentials.credentials.plugin = 'gitlab';
+    const initial: CompareResult = {
+      id: 'pid-123',
+      status: ResultStatus.Updating,
+      data: [],
+    };
+    const updated: CompareResult = {
+      id: 'pid-123',
+      status: ResultStatus.Finished,
+      data: [],
+    };
+    dataUpdates.updateData.and.returnValue(of(updated));
+
+    const callback = jasmine.createSpy('callback');
+    component.data = initial;
+    component.dataUpdate = callback;
+    component.taskId = 'pid-123';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'pid-123', true) });
+    fixture.detectChanges();
+
+    tick();
+    expect(dataUpdates.updateData).toHaveBeenCalledWith([], 'pid-123');
+    expect(component.status?.status).toBe('SUCCEEDED');
+    expect(component.statusPollingActive).toBeFalse();
+    expect(callback).toHaveBeenCalledWith(updated);
   }));
 
   it('renders submitting-only state messaging', () => {

@@ -13,11 +13,13 @@ import {
 } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
 
-import { Observable, Subscription, merge, timer } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { TransferTaskStatus, SubmitService } from '../../submit.service';
+import { Observable, Subscription, merge, of, timer } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { CredentialsService } from 'src/app/credentials.service';
 import { DataUpdatesService } from 'src/app/data.updates.service';
+import { CompareResult, ResultStatus } from '../../models/compare-result';
+import { Datafile, Filestatus } from '../../models/datafile';
+import { SubmitService, TransferTaskStatus } from '../../submit.service';
 
 @Component({
   selector: 'app-transfer-progress-card',
@@ -48,6 +50,12 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
 
   @Input()
   submitting = false;
+
+  @Input()
+  data?: CompareResult | null;
+
+  @Input()
+  dataUpdate?: (result: CompareResult) => void;
 
   @Output()
   pollingChange = new EventEmitter<boolean>();
@@ -213,7 +221,24 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
 
   private getTransferStatus(taskId: string): Observable<TransferTaskStatus> {
     if (!this.isGlobus()) {
-      //return this.dataUpdatesService.updateData(this.data, taskId);
+      const compareResult = this.data ?? null;
+      if (!compareResult) {
+        return of(this.buildStatusFromCompareResult(taskId, compareResult));
+      }
+
+      const datasetId =
+        compareResult.id ??
+        this.credentialsService.credentials.dataset_id ??
+        taskId;
+
+      return this.dataUpdatesService
+        .updateData(compareResult.data ?? [], datasetId)
+        .pipe(
+          tap((updated) => {
+            this.dataUpdate?.(updated);
+          }),
+          map((updated) => this.buildStatusFromCompareResult(taskId, updated)),
+        );
     }
     return this.submitService.getGlobusTransferStatus(taskId);
   }
@@ -255,6 +280,88 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
       (err as { message?: string })?.message ||
       'Unable to retrieve the latest status from Globus.';
     this.statusPollingError = errorMessage;
+  }
+
+  private buildStatusFromCompareResult(
+    taskId: string,
+    compareResult?: CompareResult | null,
+  ): TransferTaskStatus {
+    const mapped = this.mapCompareResultStatus(compareResult?.status);
+    const summary = this.summarizeCompareData(compareResult?.data);
+    return {
+      task_id: taskId,
+      status: mapped.status,
+      nice_status: mapped.message,
+      files: summary.total,
+      files_transferred: summary.completed,
+      files_skipped: summary.skipped,
+      files_failed: summary.failed,
+    };
+  }
+
+  private mapCompareResultStatus(status?: ResultStatus): {
+    status: string;
+    message: string;
+  } {
+    switch (status) {
+      case ResultStatus.Finished:
+        return {
+          status: 'SUCCEEDED',
+          message: 'Transfer completed successfully.',
+        };
+      case ResultStatus.Updating:
+        return {
+          status: 'ACTIVE',
+          message: 'Transfer in progress…',
+        };
+      case ResultStatus.New:
+        return {
+          status: 'PENDING',
+          message: 'Preparing transfer…',
+        };
+      default:
+        return {
+          status: 'ACTIVE',
+          message: 'Waiting for repository updates…',
+        };
+    }
+  }
+
+  private summarizeCompareData(
+    datafiles?: Datafile[] | null,
+  ): {
+    total: number;
+    completed: number;
+    skipped: number;
+    failed: number;
+  } {
+    const files = datafiles ?? [];
+    let completed = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const file of files) {
+      switch (file.status) {
+        case Filestatus.Equal:
+          completed++;
+          break;
+        case Filestatus.Deleted:
+          skipped++;
+          break;
+        case Filestatus.Unknown:
+          failed++;
+          break;
+        default:
+          break;
+      }
+    }
+
+    return {
+      total: files.length,
+      completed,
+      skipped,
+      failed,
+    };
   }
 
   private isTerminalStatus(status?: string): boolean {
