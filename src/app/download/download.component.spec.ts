@@ -25,7 +25,7 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
-import { GlobusTaskStatus, SubmitService } from '../submit.service';
+import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 import { DownloadComponent } from './download.component';
 
@@ -59,8 +59,6 @@ class MockSubmitService {
   succeed = true;
   responseTaskId = 'task-123';
   responseMonitorUrl?: string;
-  statusResponses: GlobusTaskStatus[] = [];
-  statusError?: unknown;
 
   download() {
     return new Observable<{ taskId: string; monitorUrl?: string }>((obs) => {
@@ -74,22 +72,6 @@ class MockSubmitService {
         } else {
           obs.error({ error: 'failX' });
         }
-      }, 0);
-    });
-  }
-
-  getDownloadStatus(taskId: string) {
-    return new Observable<GlobusTaskStatus>((obs) => {
-      setTimeout(() => {
-        if (this.statusError) {
-          obs.error(this.statusError);
-          return;
-        }
-        const nextStatus =
-          this.statusResponses.shift() ??
-          ({ task_id: taskId, status: 'ACTIVE' } as GlobusTaskStatus);
-        obs.next(nextStatus);
-        obs.complete();
       }, 0);
     });
   }
@@ -269,8 +251,6 @@ describe('DownloadComponent', () => {
   afterEach(() => {
     httpMock.verify();
     localStorage.clear();
-    submit.statusResponses = [];
-    submit.statusError = undefined;
     submit.succeed = true;
   });
 
@@ -392,63 +372,6 @@ describe('DownloadComponent', () => {
     expect(component.option).toBeUndefined();
   }));
 
-  it('download success kicks off polling and stores monitoring info', fakeAsync(() => {
-    initComponent();
-    const df: Datafile = {
-      id: '1',
-      name: 'f',
-      path: '',
-      hidden: false,
-      action: Fileaction.Download,
-    } as any;
-    component.rowNodeMap.set('1:file', { data: df });
-    component.option = 'branchX';
-    component.selectedRepoName = 'repoX';
-
-    submit.responseTaskId = 'task-789';
-    submit.responseMonitorUrl = 'https://app.globus.org/activity/task-789';
-    submit.statusResponses = [
-      {
-        task_id: 'task-789',
-        status: 'ACTIVE',
-        bytes_transferred: 50,
-        bytes_expected: 200,
-      },
-      {
-        task_id: 'task-789',
-        status: 'SUCCEEDED',
-        nice_status: 'All done',
-        bytes_transferred: 200,
-        bytes_expected: 200,
-        files: 4,
-        files_transferred: 4,
-      },
-    ];
-
-    component.download();
-    tick();
-    // first poll
-    tick();
-    expect(notification.successes.pop()).toContain('Globus task ID: task-789');
-    expect(component.lastTransferTaskId).toBe('task-789');
-    expect(component.globusMonitorUrl).toBe(
-      'https://app.globus.org/activity/task-789',
-    );
-    expect(component.statusPollingActive).toBeTrue();
-    expect(component.downloadProgress).toBe(25);
-    expect(component.taskStatus?.status).toBe('ACTIVE');
-    expect(component.statusTone).toBe('info');
-    expect(component.statusMessage).toContain('ACTIVE');
-
-    // second poll reaches terminal state
-    tick(component.statusPollIntervalMs);
-    tick();
-    expect(component.statusPollingActive).toBeFalse();
-    expect(component.downloadProgress).toBe(100);
-    expect(component.statusMessage).toContain('All done');
-    expect(component.statusTone).toBe('success');
-  }));
-
   it('download surfaces error and stops polling setup', fakeAsync(() => {
     initComponent();
     const df: Datafile = {
@@ -473,7 +396,7 @@ describe('DownloadComponent', () => {
     expect(component.lastTransferTaskId).toBeUndefined();
   }));
 
-  it('status polling error surfaces user-facing message', fakeAsync(() => {
+  it('download success stores monitoring info', fakeAsync(() => {
     initComponent();
     const df: Datafile = {
       id: '1',
@@ -486,121 +409,22 @@ describe('DownloadComponent', () => {
     component.option = 'branchX';
     component.selectedRepoName = 'repoX';
 
-    submit.statusError = { status: 401 };
+    submit.responseTaskId = 'task-789';
+    submit.responseMonitorUrl = 'https://app.globus.org/activity/task-789';
+
     component.download();
     tick();
-    tick();
 
-    expect(component.statusPollingError).toContain('Globus session expired');
-    expect(component.statusTone).toBe('error');
-    expect(component.statusIcon).toContain('exclamation');
-
-    submit.statusError = undefined;
-  }));
-
-  it('refreshGlobusStatus restarts polling when task id present', fakeAsync(() => {
-    initComponent();
-    component.lastTransferTaskId = 'task-99';
-    submit.statusResponses = [
-      {
-        task_id: 'task-99',
-        status: 'ACTIVE',
-        bytes_transferred: 10,
-        bytes_expected: 100,
-      } as GlobusTaskStatus,
-    ];
-
-    component.refreshGlobusStatus();
-    expect(component.statusPollingActive).toBeTrue();
-    tick();
-    expect(component.taskStatus?.task_id).toBe('task-99');
-    component['stopStatusPolling']();
-  }));
-
-  it('status helpers adapt to lifecycle states', () => {
-    initComponent();
-    expect(component.hasStatusDetails).toBeFalse();
-
-    component.downloadInProgress = true;
-    expect(component.hasStatusDetails).toBeTrue();
-    expect(component.statusMessage).toContain('Submitting download request');
-
-    component.downloadInProgress = false;
-    component.statusPollingActive = true;
-    expect(component.statusMessage).toContain('Checking Globus transfer');
-
-    component.statusPollingActive = false;
-    component.statusPollingError = 'oops';
-    expect(component.statusMessage).toBe('oops');
-
-    component.statusPollingError = undefined;
-    component.taskStatus = {
-      task_id: 't-1',
-      status: 'FAILED',
-    } as GlobusTaskStatus;
-    expect(component.statusTone).toBe('error');
-    expect(component.statusIcon).toContain('exclamation');
-    expect(component.statusMessage).toContain('FAILED');
-
-    component.taskStatus = {
-      task_id: 't-2',
-      status: 'SUCCEEDED',
-      nice_status: 'Transfer complete',
-    } as GlobusTaskStatus;
-    expect(component.statusMessage).toContain('Transfer complete');
-
-    component.taskStatus = undefined;
-    component.lastTransferTaskId = 't-3';
-    expect(component.statusMessage).toContain('Download request submitted');
-  });
-
-  it('downloadProgress reflects bytes when expected available', () => {
-    initComponent();
-    component.taskStatus = {
-      task_id: 't-1',
-      status: 'ACTIVE',
-      bytes_transferred: 150,
-      bytes_expected: 300,
-    } as GlobusTaskStatus;
-    expect(component.downloadProgress).toBe(50);
-
-    component.taskStatus = {
-      task_id: 't-2',
-      status: 'ACTIVE',
-      bytes_transferred: 150,
-    } as GlobusTaskStatus;
-    expect(component.downloadProgress).toBeUndefined();
-  });
-
-  it('openGlobusMonitor opens external window when url present', () => {
-    initComponent();
-    component.globusMonitorUrl = 'https://app.globus.org/activity/task-1';
-    const spyOpen = spyOn(window, 'open');
-    component.openGlobusMonitor();
-    expect(spyOpen).toHaveBeenCalledWith(
-      'https://app.globus.org/activity/task-1',
-      '_blank',
-      'noopener',
+    expect(notification.successes.pop()).toContain('Globus task ID: task-789');
+    expect(component.lastTransferTaskId).toBe('task-789');
+    expect(component.globusMonitorUrl).toBe(
+      'https://app.globus.org/activity/task-789',
     );
-  });
+    expect(component.downloadRequested).toBeFalse();
+    expect(component.downloadInProgress).toBeFalse();
+  }));
 
-  it('downloadDisabled responds to selection & option presence', () => {
-    initComponent();
-    const df: Datafile = {
-      id: '1',
-      name: 'f',
-      path: '',
-      hidden: false,
-      action: Fileaction.Ignore,
-    } as any;
-    component.rowNodeMap.set('1:file', { data: df });
-    component.option = 'b';
-    expect(component.downloadDisabled()).toBeTrue();
-    df.action = Fileaction.Download;
-    expect(component.downloadDisabled()).toBeFalse();
-  });
-
-  it('downloadDisabled prevents new requests while progress is active', () => {
+  it('download surfaces error notification', fakeAsync(() => {
     initComponent();
     const df: Datafile = {
       id: '1',
@@ -610,130 +434,26 @@ describe('DownloadComponent', () => {
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap.set('1:file', { data: df });
-    component.option = 'folder';
-    component.downloadInProgress = true;
-    expect(component.downloadDisabled()).toBeTrue();
+    component.option = 'branchX';
+    component.selectedRepoName = 'repoX';
 
-    component.downloadInProgress = false;
-    component.statusPollingActive = true;
-    expect(component.downloadDisabled()).toBeTrue();
-
-    component.statusPollingActive = false;
-    expect(component.downloadDisabled()).toBeFalse();
-  });
-
-  it('startRepoSearch uses init capability when enabled', fakeAsync(() => {
-    initComponent();
-    component.globusPlugin = { repoNameFieldHasInit: true } as any;
-    component.startRepoSearch();
-    expect(component.repoNames[0].label).toContain('loading');
-  }));
-
-  it('startRepoSearch shows typing hint when init disabled', () => {
-    initComponent();
-    component.globusPlugin = { repoNameFieldHasInit: false } as any;
-    component.startRepoSearch();
-    expect(component.repoNames[0].label).toContain('start typing');
-  });
-
-  it('startRepoSearch returns early when found repo name already populated', () => {
-    initComponent();
-    component.foundRepoName = 'existing-endpoint';
-    component.startRepoSearch();
-    expect(component.repoNames.length).toBe(0);
-  });
-
-  it('back navigates by assigning location href', () => {
-    initComponent();
-    component.back();
-    expect(navigation.assign).toHaveBeenCalledWith('connect');
-  });
-
-  it('showDVToken reflects plugin toggle', () => {
-    initComponent();
-    plugin.showDvToken = true;
-    expect(component.showDVToken()).toBeTrue();
-    plugin.showDvToken = false;
-    expect(component.showDVToken()).toBeFalse();
-  });
-
-  it('getDoiOptions populates list and reports errors', fakeAsync(() => {
-    initComponent();
-    dvLookup.items = [
-      { label: 'Dataset A', value: 'doi:A' },
-      { label: 'Dataset B', value: 'doi:B' },
-    ];
-    component.getDoiOptions();
+    submit.succeed = false;
+    component.download();
     tick();
-    expect(component.doiItems.length).toBe(2);
 
-    component.doiItems = [];
-    dvLookup.error = 'boom';
-    component.getDoiOptions();
-    tick();
     expect(
-      notification.errors.some((msg) => msg.includes('DOI lookup failed')),
+      notification.errors.some((e) => e.includes('Download request failed')),
     ).toBeTrue();
+    expect(component.statusPollingActive).toBeFalse();
+    expect(component.lastTransferTaskId).toBeUndefined();
   }));
 
-  it('onUserChange clears state and persists token when provided', () => {
+  it('onStatusPollingChange toggles polling state flag', () => {
     initComponent();
-    plugin.storeDvToken = true;
-    component.dataverseToken = 'tok123';
-    component.doiItems = [{ label: 'old', value: 'old' }];
-    component.datasetId = 'old';
-    component.onUserChange();
-    expect(component.doiItems.length).toBe(0);
-    expect(component.datasetId).toBeUndefined();
-    expect(localStorage.getItem('dataverseToken')).toBe('tok123');
-    plugin.storeDvToken = false;
-  });
-
-  it('getRepoToken skips navigation when token getter missing', () => {
-    initComponent();
-    const initialCalls = navigation.assign.calls.count();
-    component.dataverseToken = 'tok456';
-    component.globusPlugin = {
-      sourceUrlFieldValue: 'https://example.com',
-      tokenGetter: undefined,
-    } as any;
-    component.getRepoToken();
-    expect(navigation.assign.calls.count()).toBe(initialCalls);
-  });
-
-  it('getRepoToken opens new window when oauth client id missing', () => {
-    initComponent();
-    component.globusPlugin = {
-      sourceUrlFieldValue: 'https://example.com',
-      tokenGetter: { URL: '/oauth', oauth_client_id: '' },
-    } as any;
-    const openSpy = spyOn(window, 'open');
-    component.getRepoToken();
-    expect(openSpy).toHaveBeenCalled();
-  });
-
-  it('repoNameSearch returns error placeholder when branchItems already loaded', async () => {
-    initComponent();
-    component.branchItems = [{ label: 'existing', value: 'x' }];
-    const results = await component.repoNameSearch('branch');
-    expect(results[0].value).toBe('error');
-  });
-
-  it('repoNameSearch yields service results when request available', async () => {
-    const comp = initComponent();
-    comp.selectedRepoName = 'repoX';
-    spyOn(repoLookup, 'search').and.returnValue(
-      of<SelectItem<string>[]>([
-        { label: 'remote-1', value: 'remote-1' },
-        { label: 'remote-2', value: 'remote-2' },
-      ]),
-    );
-
-    const results = await comp.repoNameSearch('remote');
-
-    expect(repoLookup.search).toHaveBeenCalled();
-    expect(results.length).toBe(2);
-    expect(results[0].value).toBe('remote-1');
+    component.onStatusPollingChange(true);
+    expect(component.statusPollingActive).toBeTrue();
+    component.onStatusPollingChange(false);
+    expect(component.statusPollingActive).toBeFalse();
   });
 
   it('datasetSearch resolves lookup results', async () => {

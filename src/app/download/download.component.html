@@ -130,101 +130,12 @@
           >Download</p-button
         >
 
-        @if (hasStatusDetails) {
-          <div class="download-status">
-            <div class="status-row" [ngClass]="statusTone">
-              <i
-                class="status-icon"
-                [ngClass]="statusIcon"
-                aria-hidden="true"
-              ></i>
-              <div class="status-body">
-                <div class="status-message">{{ statusMessage }}</div>
-
-                @if (downloadProgress !== undefined) {
-                  <div class="status-progress">
-                    <div class="progress-bar">
-                      <div
-                        class="progress-fill"
-                        [style.width.%]="downloadProgress"
-                      ></div>
-                    </div>
-                    <span class="progress-value">{{ downloadProgress }}%</span>
-                  </div>
-                }
-
-                @if (taskStatus?.files !== undefined) {
-                  <div class="status-files">
-                    Files transferred
-                    <strong>{{ taskStatus?.files_transferred ?? 0 }}</strong>
-                    / {{ taskStatus?.files ?? 0 }}
-                    @if (taskStatus?.files_failed) {
-                      · Failed: {{ taskStatus?.files_failed }}
-                    }
-                  </div>
-                }
-
-                @if (
-                  taskStatus?.bytes_transferred !== undefined &&
-                  taskStatus?.bytes_expected
-                ) {
-                  <div class="status-bytes">
-                    Data transferred
-                    <strong>{{
-                      taskStatus?.bytes_transferred | number
-                    }}</strong>
-                    / {{ taskStatus?.bytes_expected | number }} bytes
-                  </div>
-                }
-
-                @if (taskStatus?.completion_time) {
-                  <div class="status-timestamp">
-                    Completed at: {{ taskStatus?.completion_time }}
-                  </div>
-                } @else if (taskStatus?.request_time) {
-                  <div class="status-timestamp">
-                    Started at: {{ taskStatus?.request_time }}
-                  </div>
-                }
-
-                @if (lastTransferTaskId) {
-                  <div class="status-task">
-                    Task ID: <code>{{ lastTransferTaskId }}</code>
-                  </div>
-                }
-              </div>
-            </div>
-
-            @if (globusMonitorUrl || lastTransferTaskId) {
-              <div class="status-actions">
-                @if (lastTransferTaskId) {
-                  <button
-                    pButton
-                    type="button"
-                    class="p-button-outlined p-button-secondary p-button-sm"
-                    [disabled]="statusPollingActive"
-                    (click)="refreshGlobusStatus()"
-                  >
-                    <i class="pi pi-refresh"></i>
-                    <span>Refresh status</span>
-                  </button>
-                }
-
-                @if (globusMonitorUrl) {
-                  <button
-                    pButton
-                    type="button"
-                    class="p-button-text p-button-secondary p-button-sm monitor-link"
-                    (click)="openGlobusMonitor()"
-                  >
-                    <i class="pi pi-external-link"></i>
-                    <span>Open in Globus</span>
-                  </button>
-                }
-              </div>
-            }
-          </div>
-        }
+        <app-transfer-progress-card
+          [taskId]="lastTransferTaskId"
+          [monitorUrl]="globusMonitorUrl"
+          [submitting]="downloadInProgress && !lastTransferTaskId"
+          (pollingChange)="onStatusPollingChange($event)"
+        ></app-transfer-progress-card>
       </div>
     </div>
   </div>

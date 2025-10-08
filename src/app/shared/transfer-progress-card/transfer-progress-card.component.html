@@ -1,0 +1,89 @@
+<!-- Author: Eryk Kulikowski @ KU Leuven (2025). Apache 2.0 License -->
+@if (hasStatus) {
+  <div class="transfer-status">
+    <div class="status-row" [ngClass]="statusTone">
+      <i class="status-icon" [ngClass]="statusIcon" aria-hidden="true"></i>
+      <div class="status-body">
+        <div class="status-message">{{ statusMessage }}</div>
+
+        @if (transferProgress !== undefined) {
+          <div class="status-progress">
+            <div class="progress-bar">
+              <div
+                class="progress-fill"
+                [style.width.%]="transferProgress"
+              ></div>
+            </div>
+            <span class="progress-value">{{ transferProgress }}%</span>
+          </div>
+        }
+
+        @if (filesSummary.total || filesSummary.failed) {
+          <div class="status-files">
+            Files processed
+            <strong>{{ filesSummary.processed }}</strong>
+            / {{ filesSummary.total }}
+            @if (filesSummary.failed) {
+              · Failed: {{ filesSummary.failed }}
+            }
+          </div>
+        }
+
+        @if (
+          status?.bytes_transferred !== undefined && status?.bytes_expected
+        ) {
+          <div class="status-bytes">
+            Data transferred
+            <strong>{{ status?.bytes_transferred | number }}</strong>
+            / {{ status?.bytes_expected | number }} bytes
+          </div>
+        }
+
+        @if (status?.completion_time) {
+          <div class="status-timestamp">
+            Completed at: {{ status?.completion_time }}
+          </div>
+        } @else if (status?.request_time) {
+          <div class="status-timestamp">
+            Started at: {{ status?.request_time }}
+          </div>
+        }
+
+        @if (taskId) {
+          <div class="status-task">
+            Task ID: <code>{{ taskId }}</code>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (taskId || formattedMonitorUrl) {
+      <div class="status-actions">
+        @if (taskId) {
+          <button
+            pButton
+            type="button"
+            class="p-button-outlined p-button-secondary p-button-sm"
+            [disabled]="statusPollingActive"
+            (click)="refresh()"
+          >
+            <i class="pi pi-refresh"></i>
+            <span>Refresh status</span>
+          </button>
+        }
+
+        @if (formattedMonitorUrl) {
+          <button
+            pButton
+            type="button"
+            class="p-button-text p-button-secondary p-button-sm monitor-link"
+            (click)="openGlobus()"
+          >
+            <i class="pi pi-external-link"></i>
+            <span>Open in Globus</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+}
