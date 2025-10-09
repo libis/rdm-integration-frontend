@@ -253,3 +253,47 @@ label {
   color: var(--p-text-color);
   border-color: var(--p-surface-border);
 }
+
+/* Light/dark adaptive helper for Bootstrap tables */
+.table-theme-adaptive {
+  --bs-table-color: var(--p-text-color);
+  --bs-table-bg: var(--p-content-background);
+  --bs-table-border-color: var(--p-surface-border, rgba(0, 0, 0, 0.1));
+  --bs-table-striped-bg: var(--p-content-background);
+  --bs-table-striped-color: var(--p-text-color);
+  --bs-table-hover-bg: var(--p-content-background);
+  --bs-table-hover-color: var(--p-text-color);
+  --bs-table-active-bg: var(--p-content-background);
+  --bs-table-active-color: var(--p-text-color);
+  --bs-table-accent-bg: var(--p-content-background);
+}
+
+@supports (color: color-mix(in srgb, #000 50%, #fff 50%)) {
+  .table-theme-adaptive {
+    --bs-table-striped-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 92%,
+      var(--p-text-color) 8%
+    );
+    --bs-table-hover-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 88%,
+      var(--p-text-color) 12%
+    );
+    --bs-table-active-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 85%,
+      var(--p-text-color) 15%
+    );
+    --bs-table-accent-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 90%,
+      var(--p-text-color) 10%
+    );
+    --bs-table-border-color: color-mix(
+      in srgb,
+      var(--p-surface-border, var(--p-content-background)) 75%,
+      var(--p-content-background) 25%
+    );
+  }
+}

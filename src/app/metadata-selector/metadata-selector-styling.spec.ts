@@ -33,7 +33,11 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
       imports: [TreeTableModule, MetadatafieldComponent],
       template: `
         <div class="treetable-cell">
-          <p-treeTable [value]="fields" [scrollable]="true" styleClass="table">
+          <p-treeTable
+            [value]="fields"
+            [scrollable]="true"
+            styleClass="table table-theme-adaptive"
+          >
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
               <tr
                 app-metadatafield
