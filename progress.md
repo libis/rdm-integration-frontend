@@ -71,6 +71,26 @@
   - Explains status mapping, data flow, and design decisions.
   - STYLING_FIX_SUMMARY.md documents separate file action row styling fix (unrelated).
 
+- **Transfer progress card visual enhancements** (bonus)
+  - Redesigned card layout for full-width display below sticky menu.
+  - Changed from flex to CSS Grid layout for better space utilization.
+  - **Layout improvements:**
+    - Status message and progress bar span full width
+    - File/byte statistics displayed side-by-side in pill-style badges
+    - Timestamp and task ID displayed below statistics
+    - Action buttons separated with border-top divider
+  - **Visual polish:**
+    - Increased padding (1.25rem) and added subtle box-shadow
+    - Larger icon size (1.5rem) for better visibility
+    - Thicker progress bar (0.625rem) with inset shadow for depth
+    - Statistics in rounded badges with background and border
+    - Task ID in monospace code block with styled background
+  - **Responsive design:**
+    - Desktop (>64rem): Two-column grid for statistics
+    - Tablet/mobile: Single-column layout with adjusted spacing
+    - Reduced padding and font sizes on small screens
+  - All 393 tests passing after visual enhancements.
+
 ## Completion Summary
 
 ### What Was Accomplished
