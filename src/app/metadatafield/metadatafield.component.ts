@@ -5,7 +5,11 @@ import { TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
 import { Field, Fieldaction } from '../models/field';
-import { FileActionStyle, getFileActionStyle } from '../shared/constants';
+import {
+  FileActionStyle,
+  buildInlineStyle,
+  getFileActionStyle,
+} from '../shared/constants';
 
 @Component({
   selector: 'tr[app-metadatafield]',
@@ -156,13 +160,6 @@ export class MetadatafieldComponent implements OnInit {
 
   getStyle(): string {
     const style = this.resolveHostStyle();
-    const declarations: string[] = [];
-    if (style.backgroundColor) {
-      declarations.push(`background-color: ${style.backgroundColor}`);
-    }
-    if (style.color) {
-      declarations.push(`color: ${style.color}`);
-    }
-    return declarations.length ? `${declarations.join('; ')};` : '';
+    return buildInlineStyle(style);
   }
 }

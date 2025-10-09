@@ -5,7 +5,11 @@ import { TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
 import { Datafile, Fileaction } from '../models/datafile';
-import { FileActionStyle, getFileActionStyle } from '../shared/constants';
+import {
+  FileActionStyle,
+  buildInlineStyle,
+  getFileActionStyle,
+} from '../shared/constants';
 
 @Component({
   selector: 'tr[app-downloadablefile]',
@@ -117,13 +121,6 @@ export class DownladablefileComponent implements OnInit {
 
   getStyle(): string {
     const style = this.resolveHostStyle();
-    const declarations: string[] = [];
-    if (style.backgroundColor) {
-      declarations.push(`background-color: ${style.backgroundColor}`);
-    }
-    if (style.color) {
-      declarations.push(`color: ${style.color}`);
-    }
-    return declarations.length ? `${declarations.join('; ')};` : '';
+    return buildInlineStyle(style);
   }
 }

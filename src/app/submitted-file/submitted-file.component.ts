@@ -2,7 +2,11 @@
 
 import { Component, OnInit, input } from '@angular/core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { FileActionStyle, getFileActionStyle } from '../shared/constants';
+import {
+  FileActionStyle,
+  buildInlineStyle,
+  getFileActionStyle,
+} from '../shared/constants';
 
 @Component({
   selector: 'tr[app-submitted-file]',
@@ -61,13 +65,6 @@ export class SubmittedFileComponent implements OnInit {
 
   getStyle(): string {
     const style = this.resolveHostStyle();
-    const declarations: string[] = [];
-    if (style.backgroundColor) {
-      declarations.push(`background-color: ${style.backgroundColor}`);
-    }
-    if (style.color) {
-      declarations.push(`color: ${style.color}`);
-    }
-    return declarations.length ? `${declarations.join('; ')};` : '';
+    return buildInlineStyle(style);
   }
 }
