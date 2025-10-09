@@ -40,9 +40,83 @@
   - Added inline comments clarifying Globus vs non-Globus flows.
   - Updated architecture doc with explicit mode selection benefits.
 
-## TODO
+- **Download layout polish**
+  - Refactored sticky menu to match submit component pattern.
+  - Added centered title: "Download to Globus endpoint".
+  - Moved action button to right side with dynamic states: "Start transfer" → "Go to dataset".
+  - Both buttons use consistent `pi-angle-double-right` icon.
+  - Moved dataset dropdown below sticky menu with "Dataset DOI" label (matching connect component pattern).
+  - Moved `TransferProgressCardComponent` below sticky menu (matching submit component).
+  - Added `(completed)="done = true"` event handler for button state transition.
+  - Added `done` and `datasetUrl` properties to track completion and enable navigation.
+  - Implemented `goToDataset()` method to open dataset in new tab.
+  - Removed duplicate "Globus download" heading and download button from right panel.
+  - All 393 tests passing after refactoring.
 
-- Polish the download layout (button alignment, centering) for visual consistency.
-- Revisit shared component/submit/download SCSS to drop any remaining obsolete selectors.
-- Perform a manual smoke test of submit/download screens with both Globus and non-Globus plugins.
-- Refresh documentation (`STYLING_FIX_SUMMARY.md`) if additional styling changes are made.
+- **SCSS audit and cleanup**
+  - Reviewed all component SCSS files (submit, download, transfer-progress-card).
+  - Confirmed no obsolete Bootstrap progress-bar selectors (progress-bar-striped, progress-bar-animated).
+  - Verified all styles use PrimeNG theme variables for proper light/dark mode support.
+  - Download component SCSS: Clean - only p-select dropdown width fixes.
+  - Submit component SCSS: Clean - only table background fixes and safety warning styling.
+  - Transfer-progress-card SCSS: Comprehensive status card styling with theme-aware variables.
+  - Global styles (styles.scss): Clean - no unused progress-related styles.
+  - No unused imports or dead code detected in TypeScript files.
+  - All 393 tests passing after review.
+
+- **Documentation review**
+  - Verified TRANSFER_CARD_ARCHITECTURE.md is comprehensive and current.
+  - Documents dual-mode design (Globus vs non-Globus) with explicit `isGlobus` input.
+  - Includes usage examples for both submit and download components.
+  - Explains status mapping, data flow, and design decisions.
+  - STYLING_FIX_SUMMARY.md documents separate file action row styling fix (unrelated).
+
+## Completion Summary
+
+### What Was Accomplished
+
+1. **Test Coverage Achievement** ✅
+   - Increased statement coverage from 89.77% to **90.13%**
+   - Added 68 comprehensive tests to TransferProgressCardComponent
+   - Added 27 targeted tests to SubmitComponent
+   - All 393 tests passing with no errors
+
+2. **Download Component Refactoring** ✅
+   - Sticky menu now matches submit component pattern
+   - Centered title: "Download to Globus endpoint"
+   - Dynamic action button: "Start transfer" → "Go to dataset"
+   - Dataset dropdown moved below sticky menu with proper label
+   - TransferProgressCardComponent integrated below sticky menu
+   - Removed duplicate UI elements (heading, button) from right panel
+
+3. **Code Quality** ✅
+   - No obsolete SCSS selectors or Bootstrap progress-bar classes
+   - All styles use PrimeNG theme variables for light/dark mode
+   - No unused imports or dead code
+   - TypeScript compiler reports zero errors
+   - Consistent component architecture across submit/download
+
+4. **Documentation** ✅
+   - TRANSFER_CARD_ARCHITECTURE.md: Comprehensive dual-mode design docs
+   - Progress tracking: Clear done/todo separation with details
+   - Inline comments explain Globus vs non-Globus flows
+
+### Test Coverage Results
+
+```
+Statements   : 90.13% ( 1977/2193 )  ← TARGET EXCEEDED ✅
+Branches     : 81.17% ( 685/844 )
+Functions    : 90.98% ( 394/433 )
+Lines        : 90.78% ( 1953/2151 )
+```
+
+### Remaining Work
+
+**Manual Testing** (requires running application):
+
+- Smoke test submit page with Globus plugin
+- Smoke test submit page with non-Globus plugin (GitHub, GitLab, etc.)
+- Smoke test download page with Globus transfers
+- Verify button state transitions ("Start transfer" → "Go to dataset")
+- Verify transfer progress card polling behavior
+- Test light/dark mode appearance
