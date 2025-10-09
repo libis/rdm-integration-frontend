@@ -37,6 +37,7 @@ import { SubmittedFileComponent } from '../submitted-file/submitted-file.compone
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
+import { TableModule } from 'primeng/table';
 
 @Component({
   selector: 'app-submit',
@@ -52,6 +53,7 @@ import { SubscriptionManager } from '../shared/types';
     Button,
     SubmittedFileComponent,
     TransferProgressCardComponent,
+    TableModule,
   ],
 })
 export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
