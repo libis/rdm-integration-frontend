@@ -66,11 +66,13 @@ describe('MetadatafieldComponent', () => {
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
-    expectBootstrapTableStyle(
-      component.getStyle(),
-      'var(--app-file-action-copy-bg)',
-      'var(--app-file-action-copy-color)',
-    );
+    expect(() =>
+      expectBootstrapTableStyle(
+        component.getStyle(),
+        'var(--app-file-action-copy-bg)',
+        'var(--app-file-action-copy-color)',
+      ),
+    ).not.toThrow();
     expect(component.name()).toBe('Title');
     expect(component.value()).toBe('My dataset');
     expect(component.source()).toBe('codemeta.json');

@@ -31,32 +31,40 @@ describe('SubmittedFileComponent', () => {
 
   it('applies inline style tokens based on file action', () => {
     setDatafile({ action: Fileaction.Copy });
-    expectBootstrapTableStyle(
-      component.getStyle(),
-      'var(--app-file-action-copy-bg)',
-      'var(--app-file-action-copy-color)',
-    );
+    expect(() =>
+      expectBootstrapTableStyle(
+        component.getStyle(),
+        'var(--app-file-action-copy-bg)',
+        'var(--app-file-action-copy-color)',
+      ),
+    ).not.toThrow();
 
     setDatafile({ action: Fileaction.Update });
-    expectBootstrapTableStyle(
-      component.getStyle(),
-      'var(--app-file-action-update-bg)',
-      'var(--app-file-action-update-color)',
-    );
+    expect(() =>
+      expectBootstrapTableStyle(
+        component.getStyle(),
+        'var(--app-file-action-update-bg)',
+        'var(--app-file-action-update-color)',
+      ),
+    ).not.toThrow();
 
     setDatafile({ action: Fileaction.Delete, status: Filestatus.New });
-    expectBootstrapTableStyle(
-      component.getStyle(),
-      'var(--app-file-action-delete-bg)',
-      'var(--app-file-action-delete-color)',
-    );
+    expect(() =>
+      expectBootstrapTableStyle(
+        component.getStyle(),
+        'var(--app-file-action-delete-bg)',
+        'var(--app-file-action-delete-color)',
+      ),
+    ).not.toThrow();
 
     setDatafile({ action: Fileaction.Custom });
-    expectBootstrapTableStyle(
-      component.getStyle(),
-      'var(--app-file-action-custom-bg)',
-      'var(--app-file-action-custom-color)',
-    );
+    expect(() =>
+      expectBootstrapTableStyle(
+        component.getStyle(),
+        'var(--app-file-action-custom-bg)',
+        'var(--app-file-action-custom-color)',
+      ),
+    ).not.toThrow();
 
     setDatafile({ action: Fileaction.Ignore });
     expect(component.getStyle()).toBe('');

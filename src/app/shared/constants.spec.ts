@@ -1,6 +1,6 @@
 import {
-  expectBootstrapTableStyle,
-  parseInlineStyle,
+    expectBootstrapTableStyle,
+    parseInlineStyle,
 } from '../../testing/inline-style-test-helpers';
 import { buildInlineStyle, getFileActionStyle } from './constants';
 
@@ -11,11 +11,13 @@ describe('buildInlineStyle', () => {
 
   it('injects Bootstrap table variables by default', () => {
     const style = buildInlineStyle(getFileActionStyle('COPY'));
-    expectBootstrapTableStyle(
-      style,
-      'var(--app-file-action-copy-bg)',
-      'var(--app-file-action-copy-color)',
-    );
+    expect(() =>
+      expectBootstrapTableStyle(
+        style,
+        'var(--app-file-action-copy-bg)',
+        'var(--app-file-action-copy-color)',
+      ),
+    ).not.toThrow();
   });
 
   it('can omit Bootstrap table variables when disabled', () => {
