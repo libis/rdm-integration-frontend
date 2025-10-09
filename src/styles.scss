@@ -258,7 +258,7 @@ label {
 .table-theme-adaptive {
   --bs-table-color: var(--p-text-color);
   --bs-table-bg: var(--p-content-background);
-  --bs-table-border-color: var(--p-surface-border, rgba(0, 0, 0, 0.1));
+  --bs-table-border-color: var(--p-surface-border, rgba(0, 0, 0, 0.08));
   --bs-table-striped-bg: var(--p-content-background);
   --bs-table-striped-color: var(--p-text-color);
   --bs-table-hover-bg: var(--p-content-background);
@@ -268,32 +268,42 @@ label {
   --bs-table-accent-bg: var(--p-content-background);
 }
 
+.table-theme-adaptive :is(thead, tbody, tfoot) > tr {
+  background-color: inherit;
+  color: inherit;
+}
+
+.table-theme-adaptive :is(thead, tbody, tfoot) > tr > * {
+  background-color: inherit;
+  color: inherit;
+}
+
 @supports (color: color-mix(in srgb, #000 50%, #fff 50%)) {
   .table-theme-adaptive {
     --bs-table-striped-bg: color-mix(
       in srgb,
-      var(--p-content-background) 92%,
-      var(--p-text-color) 8%
+      var(--p-content-background) 96%,
+      #ffffff 4%
     );
     --bs-table-hover-bg: color-mix(
       in srgb,
-      var(--p-content-background) 88%,
-      var(--p-text-color) 12%
+      var(--p-content-background) 92%,
+      #ffffff 8%
     );
     --bs-table-active-bg: color-mix(
       in srgb,
-      var(--p-content-background) 85%,
-      var(--p-text-color) 15%
+      var(--p-content-background) 88%,
+      #ffffff 12%
     );
     --bs-table-accent-bg: color-mix(
       in srgb,
-      var(--p-content-background) 90%,
-      var(--p-text-color) 10%
+      var(--p-content-background) 94%,
+      #ffffff 6%
     );
     --bs-table-border-color: color-mix(
       in srgb,
-      var(--p-surface-border, var(--p-content-background)) 75%,
-      var(--p-content-background) 25%
+      var(--p-surface-border, var(--p-content-background)) 70%,
+      var(--p-content-background) 30%
     );
   }
 }
