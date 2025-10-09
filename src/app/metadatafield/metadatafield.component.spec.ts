@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TreeNode } from 'primeng/api';
+import { expectBootstrapTableStyle } from '../../testing/inline-style-test-helpers';
 import { Field, Fieldaction } from '../models/field';
 import { MetadatafieldComponent } from './metadatafield.component';
 
@@ -65,8 +66,10 @@ describe('MetadatafieldComponent', () => {
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
-    expect(component.getStyle()).toBe(
-      'background-color: var(--app-file-action-copy-bg); color: var(--app-file-action-copy-color);',
+    expectBootstrapTableStyle(
+      component.getStyle(),
+      'var(--app-file-action-copy-bg)',
+      'var(--app-file-action-copy-color)',
     );
     expect(component.name()).toBe('Title');
     expect(component.value()).toBe('My dataset');

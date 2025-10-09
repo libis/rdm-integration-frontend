@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { expectBootstrapTableStyle } from '../../testing/inline-style-test-helpers';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { SubmittedFileComponent } from './submitted-file.component';
 
@@ -30,23 +31,31 @@ describe('SubmittedFileComponent', () => {
 
   it('applies inline style tokens based on file action', () => {
     setDatafile({ action: Fileaction.Copy });
-    expect(component.getStyle()).toBe(
-      'background-color: var(--app-file-action-copy-bg); color: var(--app-file-action-copy-color);',
+    expectBootstrapTableStyle(
+      component.getStyle(),
+      'var(--app-file-action-copy-bg)',
+      'var(--app-file-action-copy-color)',
     );
 
     setDatafile({ action: Fileaction.Update });
-    expect(component.getStyle()).toBe(
-      'background-color: var(--app-file-action-update-bg); color: var(--app-file-action-update-color);',
+    expectBootstrapTableStyle(
+      component.getStyle(),
+      'var(--app-file-action-update-bg)',
+      'var(--app-file-action-update-color)',
     );
 
     setDatafile({ action: Fileaction.Delete, status: Filestatus.New });
-    expect(component.getStyle()).toBe(
-      'background-color: var(--app-file-action-delete-bg); color: var(--app-file-action-delete-color);',
+    expectBootstrapTableStyle(
+      component.getStyle(),
+      'var(--app-file-action-delete-bg)',
+      'var(--app-file-action-delete-color)',
     );
 
     setDatafile({ action: Fileaction.Custom });
-    expect(component.getStyle()).toBe(
-      'background-color: var(--app-file-action-custom-bg); color: var(--app-file-action-custom-color);',
+    expectBootstrapTableStyle(
+      component.getStyle(),
+      'var(--app-file-action-custom-bg)',
+      'var(--app-file-action-custom-color)',
     );
 
     setDatafile({ action: Fileaction.Ignore });
