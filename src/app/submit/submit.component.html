@@ -110,14 +110,14 @@
   </ng-template>
 </p-dialog>
 
-<p-table>
+<table class="table submit-table">
   <tbody>
     <tr class="file-list-header">
       <th><i [class]="icon_copy"></i> Files that will be created</th>
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <p-table>
+        <table class="table">
           <tbody>
             @for (datafile of created; track datafile) {
               <tr
@@ -129,7 +129,7 @@
               ></tr>
             }
           </tbody>
-        </p-table>
+        </table>
       </td>
     </tr>
     <tr class="file-list-header">
@@ -137,7 +137,7 @@
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <p-table>
+        <table class="table">
           <tbody>
             @for (datafile of updated; track datafile) {
               <tr
@@ -149,7 +149,7 @@
               ></tr>
             }
           </tbody>
-        </p-table>
+        </table>
       </td>
     </tr>
     <tr class="file-list-header">
@@ -157,7 +157,7 @@
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <p-table>
+        <table class="table">
           <tbody>
             @for (datafile of deleted; track datafile) {
               <tr
@@ -169,8 +169,8 @@
               ></tr>
             }
           </tbody>
-        </p-table>
+        </table>
       </td>
     </tr>
   </tbody>
-</p-table>
+</table>

@@ -84,7 +84,7 @@
   <div class="mb-3">
     @if (rejectedSize && rejectedSize.length) {
       <div>
-        <p-table>
+        <table class="table">
           <tbody>
             <tr class="file-list-header">
               <th>
@@ -93,7 +93,7 @@
               </th>
             </tr>
             <tr>
-              <p-table>
+              <table class="table">
                 <tbody>
                   @for (fileName of rejectedSize; track fileName) {
                     <tr>
@@ -103,15 +103,15 @@
                     </tr>
                   }
                 </tbody>
-              </p-table>
+              </table>
             </tr>
           </tbody>
-        </p-table>
+        </table>
       </div>
     }
     @if (rejectedName && rejectedName.length) {
       <div>
-        <p-table>
+        <table class="table">
           <tbody>
             <tr class="file-list-header">
               <th>
@@ -120,7 +120,7 @@
               </th>
             </tr>
             <tr>
-              <p-table>
+              <table class="table">
                 <tbody>
                   @for (fileName of rejectedName; track fileName) {
                     <tr>
@@ -130,7 +130,7 @@
                     </tr>
                   }
                 </tbody>
-              </p-table>
+              </table>
             </tr>
             <tr>
               <td class="small text-muted px-3 pb-2">
@@ -142,7 +142,7 @@
               </td>
             </tr>
           </tbody>
-        </p-table>
+        </table>
       </div>
     }
   </div>

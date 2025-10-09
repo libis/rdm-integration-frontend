@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -31,7 +31,6 @@ import { MetadatafieldComponent } from '../metadatafield/metadatafield.component
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
-import { TableModule } from 'primeng/table';
 
 @Component({
   selector: 'app-metadata-selector',
@@ -43,11 +42,11 @@ import { TableModule } from 'primeng/table';
     PrimeTemplate,
     TreeTableModule,
     MetadatafieldComponent,
-    TableModule,
   ],
 })
 export class MetadataSelectorComponent implements OnInit {
   private readonly dataStateService = inject(DataStateService);
+  private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
