@@ -1280,29 +1280,30 @@ describe('TransferProgressCardComponent', () => {
     expect(compiled.textContent).toContain('2025-01-10T11:00:00Z');
   }));
 
-  it('renders bytes_transferred and bytes_expected in template', fakeAsync(() => {
+  it('renders files progress in template', fakeAsync(() => {
     submit.statuses = [
       {
-        task_id: 'task-bytes-display',
+        task_id: 'task-files-display',
         status: 'ACTIVE',
-        bytes_transferred: 1024000,
-        bytes_expected: 2048000,
+        files: 2,
+        files_transferred: 1,
+        files_skipped: 0,
+        files_failed: 0,
       },
     ];
 
     component.isGlobus = true;
-    component.taskId = 'task-bytes-display';
+    component.taskId = 'task-files-display';
     component.ngOnChanges({
-      taskId: new SimpleChange(null, 'task-bytes-display', true),
+      taskId: new SimpleChange(null, 'task-files-display', true),
     });
 
     tick();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
-    expect(compiled.textContent).toContain('Data transferred');
-    expect(compiled.textContent).toContain('1,024,000');
-    expect(compiled.textContent).toContain('2,048,000');
+    expect(compiled.textContent).toContain('Files processed');
+    expect(compiled.textContent).toContain('1/2');
   }));
 
   it('renders failed files count when present', fakeAsync(() => {

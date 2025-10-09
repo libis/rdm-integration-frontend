@@ -6,36 +6,23 @@
       <div class="status-body">
         <div class="status-message">{{ statusMessage }}</div>
 
-        @if (transferProgress !== undefined) {
-          <div class="status-progress">
-            <div class="progress-bar">
-              <div
-                class="progress-fill"
-                [style.width.%]="transferProgress"
-              ></div>
-            </div>
-            <span class="progress-value">{{ transferProgress }}%</span>
-          </div>
-        }
-
         @if (filesSummary.total || filesSummary.failed) {
           <div class="status-files">
             Files processed
-            <strong>{{ filesSummary.processed }}</strong>
-            / {{ filesSummary.total }}
-            @if (filesSummary.failed) {
-              · Failed: {{ filesSummary.failed }}
+            @if (filesSummary.total) {
+              <p-progressbar [value]="filesProgressPercent">
+                <ng-template #content>
+                  <span>
+                    {{ filesSummary.processed | number }}/{{
+                      filesSummary.total | number
+                    }}
+                  </span>
+                </ng-template>
+              </p-progressbar>
             }
-          </div>
-        }
-
-        @if (
-          status?.bytes_transferred !== undefined && status?.bytes_expected
-        ) {
-          <div class="status-bytes">
-            Data transferred
-            <strong>{{ status?.bytes_transferred | number }}</strong>
-            / {{ status?.bytes_expected | number }} bytes
+            @if (filesSummary.failed) {
+              <br />Failed: {{ filesSummary.failed }}
+            }
           </div>
         }
 

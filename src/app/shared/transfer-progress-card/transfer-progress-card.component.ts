@@ -13,9 +13,9 @@ import {
 } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
 
+import { ProgressBarModule } from 'primeng/progressbar';
 import { Observable, Subscription, merge, of, timer } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
-import { CredentialsService } from 'src/app/credentials.service';
 import { DataUpdatesService } from 'src/app/data.updates.service';
 import { CompareResult } from '../../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../../models/datafile';
@@ -38,13 +38,12 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
 @Component({
   selector: 'app-transfer-progress-card',
   standalone: true,
-  imports: [CommonModule, ButtonDirective],
+  imports: [CommonModule, ButtonDirective, ProgressBarModule],
   templateUrl: './transfer-progress-card.component.html',
   styleUrls: ['./transfer-progress-card.component.scss'],
 })
 export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   private readonly submitService = inject(SubmitService);
-  private credentialsService = inject(CredentialsService);
   private dataUpdatesService = inject(DataUpdatesService);
 
   private statusSubscription?: Subscription;
@@ -194,6 +193,17 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
       return undefined;
     }
     const percent = Math.round((transferred / expected) * 100);
+    return Math.min(100, Math.max(0, percent));
+  }
+
+  // Percentage [0..100] for files-based progress (processed vs total)
+  get filesProgressPercent(): number {
+    const total = this.filesSummary.total;
+    const processed = this.filesSummary.processed;
+    if (!total) {
+      return 0; // hidden by template when total is 0
+    }
+    const percent = Math.round((processed / total) * 100);
     return Math.min(100, Math.max(0, percent));
   }
 
