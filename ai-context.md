@@ -4,7 +4,7 @@
 @org_repo: https://github.com/libis/ai-transition
 @version: 0.6.0
 @workflows_source_api: https://api.github.com/repos/libis/ai-transition/contents/.github?ref=main
-@last_context_update: 2025-09-15T00:00:00Z
+@last_context_update: 2025-10-09T16:50:00Z
 @last_github_sync: 2025-09-15T00:00:00Z
 @upstream_ref: main
 @suggestions_enabled: true
@@ -541,6 +541,8 @@ Notes for maintainers
 - No HostBinding means Angular’s optimizer no longer drops seemingly unused classes.
 - Tests assert the actual computed styles, giving fast feedback when tokens change.
 
+`buildInlineStyle()` wraps the raw token map and mirrors the background/text colors into the Bootstrap `--bs-table-*` variable set. That propagation keeps `<td>` descendants, stripes, hover, and active states locked to the same palette as the `<tr>` itself.
+
 **File Action Row Colors** (via CSS variables):
 
 - Copy action: `var(--app-file-action-copy-bg)` / `var(--app-file-action-copy-color)`
@@ -559,8 +561,14 @@ Notes for maintainers
 
 - ❌ Re-adding HostBinding-based classes (makes the palette brittle again)
 - ❌ Returning raw hex codes instead of CSS variables (breaks theme syncing)
+- ❌ Bypassing `buildInlineStyle()` or disabling `includeTableVariables` when rendering Bootstrap tables (cells will revert to theme defaults)
 - ❌ Forgetting the trailing semicolon in `getStyle()` (style attribute concatenation bugs)
 - ❌ Skipping tests after tweaking `getFileActionStyle()` (risk of regressions)
+
+### Bootstrap Table Theme Helper
+
+- `.table-theme-adaptive` lives in `src/styles.scss` and maps PrimeNG theme variables onto Bootstrap’s table CSS custom properties. In browsers that support `color-mix`, it lightly brightens light-mode stripes and hover states while leaving dark mode untouched.
+- Components that render Bootstrap tables should apply `table table-theme-adaptive` so neutral rows inherit semantic backgrounds and borders, while action rows still override via their inline styles.
 
 ### PrimeNG DataTable Dark Mode Fix
 
@@ -669,7 +677,7 @@ error: (err) => {
 **Test Organization**:
 
 - Unit tests colocated with components (`*.spec.ts`)
-- Integration tests for styling in dedicated files (`*-styling.spec.ts`)
+- Integration tests for styling in dedicated files (`*-styling.spec.ts`), including `datafile`, `metadata-selector`, and `submit` coverage
 - Error handling tests for services (`*-401-reset.spec.ts`)
 - Mock HTTP calls with `HttpTestingController` for API testing
 
