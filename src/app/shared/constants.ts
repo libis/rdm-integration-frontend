@@ -38,27 +38,53 @@ export const APP_CONSTANTS = {
     NEUTRAL: 'foreground',
     DANGER: 'red',
   },
+} as const;
 
-  // File action CSS class names (styles defined in styles.scss using CSS variables)
-  FILE_ACTION_CLASSES: {
-    IGNORE: '',
-    COPY: 'file-action-copy',
-    UPDATE: 'file-action-update',
-    DELETE: 'file-action-delete',
-    CUSTOM: 'file-action-custom',
+export type FileActionStyleKey =
+  | 'IGNORE'
+  | 'COPY'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'CUSTOM'
+  | 'DOWNLOAD';
+
+export type FileActionStyle = Readonly<{
+  backgroundColor?: string;
+  color?: string;
+}>;
+
+const FILE_ACTION_STYLES: Record<FileActionStyleKey, FileActionStyle> = {
+  IGNORE: {},
+  COPY: {
+    backgroundColor: 'var(--app-file-action-copy-bg)',
+    color: 'var(--app-file-action-copy-color)',
+  },
+  UPDATE: {
+    backgroundColor: 'var(--app-file-action-update-bg)',
+    color: 'var(--app-file-action-update-color)',
+  },
+  DELETE: {
+    backgroundColor: 'var(--app-file-action-delete-bg)',
+    color: 'var(--app-file-action-delete-color)',
+  },
+  CUSTOM: {
+    backgroundColor: 'var(--app-file-action-custom-bg)',
+    color: 'var(--app-file-action-custom-color)',
+  },
+  DOWNLOAD: {
+    backgroundColor: 'var(--app-file-action-copy-bg)',
+    color: 'var(--app-file-action-copy-color)',
   },
 } as const;
 
 /**
- * Get file action CSS class based on action type
- * Returns a CSS class name that automatically adapts to light/dark theme via CSS variables
- * @param action - The file action type
- * @returns CSS class name for the action
+ * Get file action inline style tokens based on action type.
+ * Values reference CSS variables so that light/dark modes render correctly.
  */
-export function getFileActionClass(
-  action: 'IGNORE' | 'COPY' | 'UPDATE' | 'DELETE' | 'CUSTOM',
-): string {
-  return APP_CONSTANTS.FILE_ACTION_CLASSES[action];
+export function getFileActionStyle(
+  action: FileActionStyleKey,
+): FileActionStyle {
+  return FILE_ACTION_STYLES[action];
 }
 
 /**

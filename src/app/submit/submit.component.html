@@ -122,8 +122,10 @@
             @for (datafile of created; track datafile) {
               <tr
                 app-submitted-file
+                #submittedRow="appSubmittedFile"
                 [datafile]="datafile"
                 [isSubmitted]="submitted"
+                [style]="submittedRow.getStyle()"
               ></tr>
             }
           </tbody>
@@ -140,8 +142,10 @@
             @for (datafile of updated; track datafile) {
               <tr
                 app-submitted-file
+                #submittedRow="appSubmittedFile"
                 [datafile]="datafile"
                 [isSubmitted]="submitted"
+                [style]="submittedRow.getStyle()"
               ></tr>
             }
           </tbody>
@@ -158,8 +162,10 @@
             @for (datafile of deleted; track datafile) {
               <tr
                 app-submitted-file
+                #submittedRow="appSubmittedFile"
                 [datafile]="datafile"
                 [isSubmitted]="submitted"
+                [style]="submittedRow.getStyle()"
               ></tr>
             }
           </tbody>

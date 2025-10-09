@@ -60,10 +60,11 @@
           <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
             <tr
               app-metadatafield
+              #metadataRow="appMetadatafield"
               [field]="rowData"
               [rowNodeMap]="rowNodeMap"
               [rowNode]="rowNode"
-              [ngClass]="rowClass(rowData)"
+              [style]="metadataRow.getStyle()"
             ></tr
           ></ng-template>
         </p-treeTable>

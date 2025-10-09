@@ -1,11 +1,11 @@
 // Submit component styles
 // Minimal custom styling - relies on PrimeNG theming for light/dark mode support
 
-// Fix white background from Bootstrap table
+// Fix white background from Bootstrap table while letting inline row styles override when present
 .submit-table,
 .submit-table .table,
 .submit-table tbody,
-.submit-table tr:not([class*="file-action-"]),
+.submit-table tr,
 .submit-table td,
 .submit-table th {
   background-color: var(--p-content-background);
@@ -19,7 +19,7 @@
   // Target nested tables within inner-table-cell
   .table,
   .table tbody,
-  .table tr:not([class*="file-action-"]),
+  .table tr,
   .table td,
   .table th {
     background-color: var(--p-content-background);

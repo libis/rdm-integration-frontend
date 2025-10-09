@@ -1,13 +1,13 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
 } from '@angular/core/testing';
 
 import { Router } from '@angular/router';
@@ -176,24 +176,6 @@ describe('CompareComponent', () => {
 
     beforeEach(() => {
       (component as any).rowNodeMap = new Map<string, TreeNode<Datafile>>();
-    });
-
-    it('rowClass returns expected CSS classes', () => {
-      expect(
-        component.rowClass({ action: Fileaction.Ignore } as Datafile),
-      ).toBe('');
-      expect(component.rowClass({ action: Fileaction.Copy } as Datafile)).toBe(
-        'file-action-copy',
-      );
-      expect(
-        component.rowClass({ action: Fileaction.Update } as Datafile),
-      ).toBe('file-action-update');
-      expect(
-        component.rowClass({ action: Fileaction.Delete } as Datafile),
-      ).toBe('file-action-delete');
-      expect(
-        component.rowClass({ action: Fileaction.Custom } as Datafile),
-      ).toBe('file-action-custom');
     });
 
     it('noActionSelection resets only visible nodes', () => {

@@ -65,7 +65,9 @@ describe('MetadatafieldComponent', () => {
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
-    expect(component.hostClass).toContain('file-action-copy');
+    expect(component.getStyle()).toBe(
+      'background-color: var(--app-file-action-copy-bg); color: var(--app-file-action-copy-color);',
+    );
     expect(component.name()).toBe('Title');
     expect(component.value()).toBe('My dataset');
     expect(component.source()).toBe('codemeta.json');
@@ -94,7 +96,7 @@ describe('MetadatafieldComponent', () => {
     ).firstLeafSource(parentNode);
     expect(derived).toBe('codemeta.json');
     expect(component.source()).toBe('codemeta.json');
-    expect(component.hostClass).toBe('');
+    expect(component.getStyle()).toBe('');
   });
 
   it('toggleAction cascades updates and resolve folder state', () => {

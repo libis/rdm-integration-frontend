@@ -6,25 +6,11 @@ Action-based row colors (green for copy, yellow for custom) were not displaying 
 
 ## Root Causes
 
-### 1. Missing @HostBinding in MetadatafieldComponent
+### 1. Styling coupled to CSS classes and HostBinding
 
-**Problem**: The `metadatafield.component.ts` didn't have a `@HostBinding` to apply CSS classes based on the field's action.
+**Problem**: Row colors depended on dynamically assigned `file-action-*` classes via `@HostBinding`. The styles lived in SCSS with `::ng-deep` overrides, which was brittle and made the palette hard to reason about across themes.
 
-**Solution**: Added `@HostBinding('class')` getter that returns the appropriate `file-action-*` class:
-
-```typescript
-@HostBinding('class') get hostClass(): string {
-  const action = this.field().action ?? Fieldaction.Ignore;
-  switch (action) {
-    case Fieldaction.Copy:
-      return 'file-action-copy';
-    case Fieldaction.Custom:
-      return 'file-action-custom';
-    default:
-      return ''; // No special class for Ignore
-  }
-}
-```
+**Solution**: Removed the HostBinding layer entirely. Each row component (`DatafileComponent`, `MetadatafieldComponent`, `SubmittedFileComponent`, `DownladablefileComponent`) now exposes a `getStyle()` helper that maps the current action to inline CSS using `getFileActionStyle()` tokens. The row templates consume it via `<tr [style]="rowRef.getStyle()">`, guaranteeing the style survives theme switches and build-time tree-shaking.
 
 ### 2. CSS Selector Override in metadata-selector.component.scss
 
@@ -46,68 +32,91 @@ Action-based row colors (green for copy, yellow for custom) were not displaying 
 
 ## Files Modified
 
-### 1. `/src/app/metadatafield/metadatafield.component.ts`
+### 1. `/src/app/shared/constants.ts`
 
-- Added `HostBinding` import
-- Added `@HostBinding('class')` getter method
-- Maps Fieldaction enum to CSS class names
+- Centralized `FILE_ACTION_STYLES` record with theme-aware CSS variables.
+- Provides `getFileActionStyle()` used by all file-action components.
 
-### 2. `/src/app/metadata-selector/metadata-selector.component.scss`
+### 2. `/src/app/metadatafield/metadatafield.component.ts`
 
-- Simplified and cleaned up CSS
-- Changed `.table tr` to `.table tr:not([class*='file-action-'])`
-- Removed redundant `:host ::ng-deep` nesting
+- Removed `@HostBinding` usage.
+- Added `getStyle()` that emits inline declarations assembled from `getFileActionStyle()`.
 
-### 3. `/src/app/compare/compare.component.scss`
+### 3. `/src/app/datafile/datafile.component.ts`
 
-- Applied same pattern for consistency
-- Changed `.table tr` to `.table tr:not([class*='file-action-'])`
+- Mirrors the `getStyle()` pattern for compare table rows and exports the template reference.
 
-## Color Styling (Unchanged)
+### 4. `/src/app/submitted-file/submitted-file.component.ts`
 
-The actual colors are defined in `/src/app/metadatafield/metadatafield.component.scss`:
+- Applies the same inline style helper for submit review tables.
 
-```scss
-::ng-deep tr[app-metadatafield].file-action-copy {
-  background-color: #c3e6cb !important; /* Light mode: light green */
-  color: #1a1a1a !important;
+### 5. `/src/app/downloadablefile/downladablefile.component.ts`
 
-  @media (prefers-color-scheme: dark) {
-    background-color: #1e4620 !important; /* Dark mode: dark green */
-    color: #c3e6cb !important;
-  }
-}
+- Uses `getStyle()` for download TreeTable rows.
 
-::ng-deep tr[app-metadatafield].file-action-custom {
-  background-color: #fffaa0 !important; /* Light mode: light yellow */
-  color: #1a1a1a !important;
+### 6. Templates consuming the helpers
 
-  @media (prefers-color-scheme: dark) {
-    background-color: #4a4520 !important; /* Dark mode: dark yellow */
-    color: #fffaa0 !important;
-  }
-}
+- `compare.component.html`, `metadata-selector.component.html`, `submit.component.html`, and `download.component.html` bind `[style]` through a template reference variable (e.g., `#row="appDatafile"`).
+
+### 7. `/src/app/metadata-selector/metadata-selector.component.scss`
+
+- Sets semantic defaults on `.table` while relying on inline row styles to win when present.
+
+### 8. `/src/app/compare/compare.component.scss`
+
+- Mirrors the theme-aware defaults for the compare screen tables.
+
+## Color Styling Source of Truth
+
+Row colors are now driven by CSS variables defined in `getFileActionStyle()`:
+
+```typescript
+const FILE_ACTION_STYLES = {
+  COPY: {
+    backgroundColor: "var(--app-file-action-copy-bg)",
+    color: "var(--app-file-action-copy-color)",
+  },
+  UPDATE: {
+    backgroundColor: "var(--app-file-action-update-bg)",
+    color: "var(--app-file-action-update-color)",
+  },
+  DELETE: {
+    backgroundColor: "var(--app-file-action-delete-bg)",
+    color: "var(--app-file-action-delete-color)",
+  },
+  CUSTOM: {
+    backgroundColor: "var(--app-file-action-custom-bg)",
+    color: "var(--app-file-action-custom-color)",
+  },
+  DOWNLOAD: {
+    backgroundColor: "var(--app-file-action-copy-bg)",
+    color: "var(--app-file-action-copy-color)",
+  },
+  IGNORE: {},
+} as const;
 ```
+
+The variables live in `styles.scss`, so the palette automatically adapts to light and dark modes without additional SCSS overrides.
 
 ## Testing
 
-Created `/src/app/metadata-selector/metadata-selector-styling.spec.ts` to verify:
+Expanded `/src/app/datafile/datafile-styling.spec.ts` and `/src/app/metadata-selector/metadata-selector-styling.spec.ts` to validate:
 
-1. Correct CSS classes are applied to rows
-2. Background colors are visible (not transparent)
-3. Action rows have different colors from each other and from default rows
+1. Inline `[style]` bindings emit the expected CSS custom properties.
+2. Computed backgrounds are non-transparent in the rendered DOM.
+3. Action rows remain visually distinct from each other and from default rows.
 
 ## Pattern Consistency
 
-Both `datafile.component.ts` and `metadatafield.component.ts` now use the same pattern:
+All file-action components now share the same contract:
 
-- `@HostBinding('class')` getter
-- Returns appropriate `file-action-*` class based on enum
-- Parent component SCSS uses `:not([class*='file-action-'])` to exclude action rows
+- `getStyle()` builds inline declarations from the shared constants.
+- Templates bind `[style]` through a local template reference (e.g., `#row="appDatafile"`).
+- Parent SCSS sets fallbacks but avoids overriding inline declarations.
 
 ## Key Takeaways
 
-1. **Always use @HostBinding** for dynamic CSS classes on component selectors
-2. **Use :not() pseudo-class** to exclude specific elements from broad selectors
-3. **Use ::ng-deep with !important** for styling that needs to pierce component encapsulation
-4. **Test color visibility** with `window.getComputedStyle()` to ensure backgrounds aren't being overridden
+1. **Prefer inline `[style]` bindings** when you need guaranteed theme-safe action colors.
+2. **Keep broad selectors guarded** with `:not()` so they don't override action rows.
+3. **Centralize color tokens** in `shared/constants.ts` and surface them via helper functions.
+4. **Test computed styles** with `window.getComputedStyle()` to detect regressions across themes.

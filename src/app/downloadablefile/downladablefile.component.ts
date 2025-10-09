@@ -2,15 +2,17 @@
 
 import { Component, OnInit, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
-import { Datafile, Fileaction } from '../models/datafile';
-import { TreeTableModule } from 'primeng/treetable';
 import { ButtonDirective } from 'primeng/button';
+import { TreeTableModule } from 'primeng/treetable';
+import { Datafile, Fileaction } from '../models/datafile';
+import { FileActionStyle, getFileActionStyle } from '../shared/constants';
 
 @Component({
   selector: 'tr[app-downloadablefile]',
   templateUrl: './downladablefile.component.html',
   styleUrls: ['./downladablefile.component.scss'],
   imports: [TreeTableModule, ButtonDirective],
+  exportAs: 'appDownloadablefile',
 })
 export class DownladablefileComponent implements OnInit {
   readonly datafile = input<Datafile>({});
@@ -99,5 +101,29 @@ export class DownladablefileComponent implements OnInit {
   ): void {
     node.data!.action = action;
     node.children?.forEach((v) => this.setNodeAction(v, action));
+  }
+
+  private resolveHostStyle(): FileActionStyle {
+    const action = this.datafile().action ?? Fileaction.Ignore;
+    switch (action) {
+      case Fileaction.Download:
+        return getFileActionStyle('DOWNLOAD');
+      case Fileaction.Custom:
+        return getFileActionStyle('CUSTOM');
+      default:
+        return getFileActionStyle('IGNORE');
+    }
+  }
+
+  getStyle(): string {
+    const style = this.resolveHostStyle();
+    const declarations: string[] = [];
+    if (style.backgroundColor) {
+      declarations.push(`background-color: ${style.backgroundColor}`);
+    }
+    if (style.color) {
+      declarations.push(`color: ${style.color}`);
+    }
+    return declarations.length ? `${declarations.join('; ')};` : '';
   }
 }

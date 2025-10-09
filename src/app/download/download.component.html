@@ -108,10 +108,11 @@
         <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
           <tr
             app-downloadablefile
+            #downloadRow="appDownloadablefile"
             [datafile]="rowData"
             [rowNodeMap]="rowNodeMap"
             [rowNode]="rowNode"
-            [ngClass]="rowClass(rowData)"
+            [style]="downloadRow.getStyle()"
           ></tr
         ></ng-template>
       </p-treeTable>

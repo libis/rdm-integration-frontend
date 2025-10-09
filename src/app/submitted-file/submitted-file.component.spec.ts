@@ -28,21 +28,29 @@ describe('SubmittedFileComponent', () => {
     fixture.detectChanges();
   };
 
-  it('derives CSS class based on file action', () => {
+  it('applies inline style tokens based on file action', () => {
     setDatafile({ action: Fileaction.Copy });
-    expect(component.hostClass).toContain('file-action-copy');
+    expect(component.getStyle()).toBe(
+      'background-color: var(--app-file-action-copy-bg); color: var(--app-file-action-copy-color);',
+    );
 
     setDatafile({ action: Fileaction.Update });
-    expect(component.hostClass).toContain('file-action-update');
+    expect(component.getStyle()).toBe(
+      'background-color: var(--app-file-action-update-bg); color: var(--app-file-action-update-color);',
+    );
 
     setDatafile({ action: Fileaction.Delete, status: Filestatus.New });
-    expect(component.hostClass).toContain('file-action-delete');
+    expect(component.getStyle()).toBe(
+      'background-color: var(--app-file-action-delete-bg); color: var(--app-file-action-delete-color);',
+    );
 
     setDatafile({ action: Fileaction.Custom });
-    expect(component.hostClass).toContain('file-action-custom');
+    expect(component.getStyle()).toBe(
+      'background-color: var(--app-file-action-custom-bg); color: var(--app-file-action-custom-color);',
+    );
 
     setDatafile({ action: Fileaction.Ignore });
-    expect(component.hostClass).toBe('');
+    expect(component.getStyle()).toBe('');
   });
 
   it('formats file path including folder prefix when present', () => {

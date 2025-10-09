@@ -231,14 +231,15 @@
     <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
       <tr
         app-datafile
+        #datafileRow="appDatafile"
         [hidden]="rowData.hidden"
         [datafile]="rowData"
         [loading]="loading"
         [rowNodeMap]="rowNodeMap"
         [rowNode]="rowNode"
         [isInFilter]="isInFilterMode"
-        [ngClass]="rowClass(rowData)"
-      ></tr
-    ></ng-template>
+        [style]="datafileRow.getStyle()"
+      ></tr>
+    </ng-template>
   </p-treeTable>
 </div>

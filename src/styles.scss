@@ -3,6 +3,30 @@
 @import "primeicons/primeicons.css";
 @import "primeflex/primeflex.css";
 
+:root {
+  --app-file-action-copy-bg: #c3e6cb;
+  --app-file-action-copy-color: #1a1a1a;
+  --app-file-action-update-bg: #b8daff;
+  --app-file-action-update-color: #1a1a1a;
+  --app-file-action-delete-bg: #f5c6cb;
+  --app-file-action-delete-color: #1a1a1a;
+  --app-file-action-custom-bg: #fffaa0;
+  --app-file-action-custom-color: #1a1a1a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-file-action-copy-bg: #1e4620;
+    --app-file-action-copy-color: #c3e6cb;
+    --app-file-action-update-bg: #1a3d5c;
+    --app-file-action-update-color: #b8daff;
+    --app-file-action-delete-bg: #4a1f23;
+    --app-file-action-delete-color: #f5c6cb;
+    --app-file-action-custom-bg: #4a4520;
+    --app-file-action-custom-color: #fffaa0;
+  }
+}
+
 body {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);

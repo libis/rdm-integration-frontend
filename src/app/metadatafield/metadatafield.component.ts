@@ -1,30 +1,20 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, HostBinding, OnInit, input } from '@angular/core';
+import { Component, OnInit, input } from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
 import { Field, Fieldaction } from '../models/field';
+import { FileActionStyle, getFileActionStyle } from '../shared/constants';
 
 @Component({
   selector: 'tr[app-metadatafield]',
   templateUrl: './metadatafield.component.html',
   styleUrls: ['./metadatafield.component.scss'],
   imports: [TreeTableModule, ButtonDirective],
+  exportAs: 'appMetadatafield',
 })
 export class MetadatafieldComponent implements OnInit {
-  @HostBinding('class') get hostClass(): string {
-    const action = this.field().action ?? Fieldaction.Ignore;
-    switch (action) {
-      case Fieldaction.Copy:
-        return 'file-action-copy';
-      case Fieldaction.Custom:
-        return 'file-action-custom';
-      default:
-        return ''; // No special class for Ignore
-    }
-  }
-
   readonly field = input<Field>({});
   readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(
     new Map<string, TreeNode<Field>>(),
@@ -150,5 +140,29 @@ export class MetadatafieldComponent implements OnInit {
   ): void {
     node.data!.action = action;
     node.children?.forEach((v) => this.setNodeAction(v, action));
+  }
+
+  private resolveHostStyle(): FileActionStyle {
+    const action = this.field().action ?? Fieldaction.Ignore;
+    switch (action) {
+      case Fieldaction.Copy:
+        return getFileActionStyle('COPY');
+      case Fieldaction.Custom:
+        return getFileActionStyle('CUSTOM');
+      default:
+        return getFileActionStyle('IGNORE');
+    }
+  }
+
+  getStyle(): string {
+    const style = this.resolveHostStyle();
+    const declarations: string[] = [];
+    if (style.backgroundColor) {
+      declarations.push(`background-color: ${style.backgroundColor}`);
+    }
+    if (style.color) {
+      declarations.push(`color: ${style.color}`);
+    }
+    return declarations.length ? `${declarations.join('; ')};` : '';
   }
 }

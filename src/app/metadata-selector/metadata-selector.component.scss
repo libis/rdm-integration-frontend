@@ -1,6 +1,5 @@
 // Metadata selector component styles
-// Override Bootstrap's default white table backgrounds for dark mode
-// Use :not() to exclude rows with file-action classes (these have their own styling)
+// Ensure PrimeNG tables inherit theme-aware colors while allowing inline row styles to take precedence
 
 :host ::ng-deep {
   .table {
@@ -14,34 +13,13 @@
     }
 
     tr {
-      // PrimeNG injects inline background on rows; start by inheriting theme colors
-      background-color: inherit;
+      background-color: var(--p-content-background);
       color: inherit;
 
       td,
       th {
         background-color: inherit;
         color: inherit;
-      }
-    }
-
-    // Default rows stay on theme background
-    tr:not([class*="file-action-"]) {
-      background-color: var(--p-content-background);
-
-      td,
-      th {
-        background-color: inherit;
-      }
-    }
-
-    // File-action rows keep their component-defined backgrounds
-    tr[class*="file-action-"] {
-      background-color: transparent;
-
-      td,
-      th {
-        background-color: transparent;
       }
     }
   }

@@ -528,59 +528,39 @@ Notes for maintainers
 - Footer background: `#1d8db0` (teal, preserved in all modes)
 - Custom assets in `conf/kul_customizations/assets/`
 
-### Dynamic CSS Classes with @HostBinding (CRITICAL FIX)
+### Inline Row Styling via getStyle (CRITICAL FIX)
 
-**Problem**: CSS classes applied dynamically via `@HostBinding` in component TypeScript are subject to Angular's tree-shaking optimization during production builds. If styles are only in global `styles.scss`, Angular's static analysis cannot detect they are used and removes them.
+**Problem**: Dynamic file-action classes assigned with `@HostBinding` were fragile. The palette lived in scattered SCSS `::ng-deep` overrides that relied on `!important`, were hard to maintain across light/dark themes, and risked being tree-shaken.
 
-**Solution**: Use `::ng-deep` with `!important` in component SCSS files:
-
-**Component SCSS files** (e.g., `datafile.component.scss`, `submitted-file.component.scss`):
-
-- Styles defined here are ALWAYS included in production builds (never tree-shaken)
-- Use `::ng-deep tr[selector].class-name` to pierce view encapsulation
-- Add `!important` to ensure precedence over other styles
-- Example:
-  ```scss
-  ::ng-deep tr[app-datafile].file-action-copy {
-    background-color: #c3e6cb !important;
-    color: #1a1a1a !important;
-    @media (prefers-color-scheme: dark) {
-      background-color: #1e4620 !important;
-      color: #c3e6cb !important;
-    }
-  }
-  ```
-
-**Note**: Do NOT duplicate these styles in global `styles.scss` - it's unnecessary. Component SCSS with `::ng-deep` is sufficient and avoids code duplication.
+**Solution**: Replace dynamic classes with inline styles returned from component helpers. Each row component (`DatafileComponent`, `MetadatafieldComponent`, `SubmittedFileComponent`, `DownladablefileComponent`) exposes `getStyle()` that assembles CSS declarations from `getFileActionStyle()` tokens defined in `shared/constants.ts`. Templates export the row component instance and bind `[style]="rowRef.getStyle()"`, ensuring the colors stay intact in every rendering mode.
 
 **Why This Works**:
 
-- `::ng-deep` prevents Angular from scoping the styles to a specific component
-- `!important` ensures the styles override any other conflicting rules
-- Component SCSS files are never tree-shaken (unlike global styles)
-- The selector `tr[app-datafile].class-name` is specific enough to avoid conflicts
+- Inline `[style]` bindings have the highest specificity and bypass encapsulation issues.
+- `getFileActionStyle()` centralizes colors as semantic CSS variables (e.g., `--app-file-action-copy-bg`), so theme switches Just Work.
+- No HostBinding means Angular’s optimizer no longer drops seemingly unused classes.
+- Tests assert the actual computed styles, giving fast feedback when tokens change.
 
-**File Action Row Colors** (implemented in this project):
+**File Action Row Colors** (via CSS variables):
 
-- Copy action: Green (`#c3e6cb` light, `#1e4620` dark)
-- Update action: Blue (`#b8daff` light, `#1a3d5c` dark)
-- Delete action: Red (`#f5c6cb` light, `#4a1f23` dark)
-- Custom action: Yellow (`#fffaa0` light, `#4a4520` dark)
-- Ignore action: No styling (empty string class)
+- Copy action: `var(--app-file-action-copy-bg)` / `var(--app-file-action-copy-color)`
+- Update action: `var(--app-file-action-update-bg)` / `var(--app-file-action-update-color)`
+- Delete action: `var(--app-file-action-delete-bg)` / `var(--app-file-action-delete-color)`
+- Custom action: `var(--app-file-action-custom-bg)` / `var(--app-file-action-custom-color)`
+- Ignore action: empty inline style (falls back to table defaults)
 
-**Testing Dynamic Classes**:
+**Testing Inline Styles**:
 
-- Always create integration tests that render actual components with TreeTable
-- Test that CSS `background-color` is NOT `rgba(0, 0, 0, 0)` (transparent)
-- Test that different actions have different computed colors
-- See `src/app/datafile/datafile-styling.spec.ts` for reference
+- Integration specs render actual TreeTables and inspect `element.style.backgroundColor`.
+- Assertions ensure action rows are non-transparent and visually distinct.
+- See `src/app/datafile/datafile-styling.spec.ts` and `src/app/metadata-selector/metadata-selector-styling.spec.ts`.
 
 **Common Mistakes to Avoid**:
 
-- ❌ Using only `:host` selector (gets scoped, doesn't work for host element)
-- ❌ Defining styles only in global `styles.scss` (gets tree-shaken)
-- ❌ Forgetting `!important` (can be overridden by other styles)
-- ❌ Not testing in production build (dev mode doesn't show the issue)
+- ❌ Re-adding HostBinding-based classes (makes the palette brittle again)
+- ❌ Returning raw hex codes instead of CSS variables (breaks theme syncing)
+- ❌ Forgetting the trailing semicolon in `getStyle()` (style attribute concatenation bugs)
+- ❌ Skipping tests after tweaking `getFileActionStyle()` (risk of regressions)
 
 ### PrimeNG DataTable Dark Mode Fix
 
@@ -605,47 +585,27 @@ This ensures table backgrounds adapt to light/dark theme using PrimeNG's semanti
 
 ### CSS Selector Specificity for File Action Rows (CRITICAL FIX)
 
-**Problem**: In Submit component (and metadata-selector), default table row styling (`.submit-table tr { background: default }`) was overriding file-action row colors in dark mode, causing white backgrounds to appear on colored rows.
+**Problem**: Broad table selectors in Submit and Metadata Selector screens (`.table tr { ... }`) were stomping the action colors, especially in dark mode.
 
-**Root Cause**: CSS specificity conflict where broad table selectors applied to ALL rows, including those with file-action classes.
+**Root Cause**: The default selectors had higher or equal specificity and ran after the dynamic classes, resetting the background to the theme surface.
 
-**Solution**: Use `:not()` pseudo-class to exclude file-action rows from default styling:
+**Solution**: Shift the palette into inline styles (see “Inline Row Styling via getStyle”) and keep parent SCSS limited to theme defaults without `!important`. Inline declarations outrank component styles, so action rows retain their colors while non-action rows inherit the table background.
 
-**Before** (❌ Broken):
+**Implementation Notes**:
 
-```scss
-.submit-table tr {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
-}
-```
-
-**After** (✅ Fixed):
-
-```scss
-.submit-table tr:not([class*="file-action-"]) {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
-}
-```
-
-**Why This Works**:
-
-- `:not([class*='file-action-'])` excludes any `<tr>` element whose class attribute contains "file-action-"
-- File action rows (`.file-action-copy`, `.file-action-update`, etc.) are excluded from default styling
-- Only regular rows without action classes receive the default background
-- File action row colors defined in component SCSS remain unaffected
+- Component SCSS now sets semantic fallbacks (`var(--p-content-background)`, `var(--p-text-color)`) on table sections only.
+- No `!important` needed—the inline `[style]` handles action colors.
+- Tests verify that the computed background colors differ for each action and remain non-transparent.
 
 **Applied In**:
 
-- `src/app/submit/submit.component.scss` - Submit component tables
-- `src/app/metadata-selector/metadata-selector.component.scss` - Metadata field tables
+- `src/app/submit/submit.component.scss`
+- `src/app/metadata-selector/metadata-selector.component.scss`
+- `src/app/compare/compare.component.scss`
 
 **Testing**:
 
-- Tests in `src/app/submit/submit-styling.spec.ts` verify selector logic
-- Tests confirm file-action rows maintain distinct colors in both light and dark modes
-- Pattern matches proven solution from metadata-selector component
+- `src/app/datafile/datafile-styling.spec.ts` and `src/app/metadata-selector/metadata-selector-styling.spec.ts` check backgrounds against theme defaults.
 
 ### 401 Authentication Error Auto-Reset (CRITICAL FIX)
 

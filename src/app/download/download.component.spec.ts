@@ -1,17 +1,17 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import {
-  TestBed,
-  fakeAsync,
-  flush,
-  flushMicrotasks,
-  tick,
+    TestBed,
+    fakeAsync,
+    flush,
+    flushMicrotasks,
+    tick,
 } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -257,22 +257,6 @@ describe('DownloadComponent', () => {
   it('should create', () => {
     initComponent();
     expect(component).toBeTruthy();
-  });
-
-  it('rowClass reflects action styling', () => {
-    initComponent();
-    const file: Datafile = {
-      id: '1',
-      name: 'a',
-      path: '',
-      hidden: false,
-      action: Fileaction.Download,
-    };
-    expect(component.rowClass(file)).toBe('file-action-copy');
-    file.action = Fileaction.Custom;
-    expect(component.rowClass(file)).toBe('file-action-custom');
-    file.action = Fileaction.Ignore;
-    expect(component.rowClass(file)).toBe('');
   });
 
   it('downloadDisabled true when no selected download actions', () => {

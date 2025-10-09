@@ -1,4 +1,4 @@
-// Test to verify metadata field action row styling works with @HostBinding
+// Test to verify metadata field action row styling works with inline style bindings
 // This test focuses on rendering real TreeTable with MetadatafieldComponent rows
 import { Fieldaction } from '../models/field';
 
@@ -37,9 +37,11 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
               <tr
                 app-metadatafield
+                #fieldRow="appMetadatafield"
                 [field]="rowData"
                 [rowNodeMap]="rowNodeMap"
                 [rowNode]="rowNode"
+                [style]="fieldRow.getStyle()"
               ></tr>
             </ng-template>
           </p-treeTable>
@@ -93,31 +95,36 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
       .toBe(3);
   });
 
-  it('should apply file-action-copy class to Copy row', () => {
+  it('should apply inline style vars to Copy row', () => {
     const rows = compiled.querySelectorAll('tr[app-metadatafield]');
     const copyRow = rows[0] as HTMLElement;
 
-    expect(copyRow.classList.contains('file-action-copy'))
-      .withContext(`Row classes: ${copyRow.className}`)
-      .toBe(true);
+    expect(copyRow.style.backgroundColor).toBe(
+      'var(--app-file-action-copy-bg)',
+    );
+    expect(copyRow.style.color).toBe('var(--app-file-action-copy-color)');
   });
 
-  it('should apply file-action-custom class to Custom row', () => {
+  it('should apply inline style vars to Custom row', () => {
     const rows = compiled.querySelectorAll('tr[app-metadatafield]');
     const customRow = rows[1] as HTMLElement;
 
-    expect(customRow.classList.contains('file-action-custom'))
-      .withContext(`Row classes: ${customRow.className}`)
-      .toBe(true);
+    expect(customRow.style.backgroundColor).toBe(
+      'var(--app-file-action-custom-bg)',
+    );
+    expect(customRow.style.color).toBe('var(--app-file-action-custom-color)');
   });
 
-  it('should NOT apply any file-action class to Ignore row', () => {
+  it('should NOT apply inline styles to Ignore row', () => {
     const rows = compiled.querySelectorAll('tr[app-metadatafield]');
     const ignoreRow = rows[2] as HTMLElement;
 
-    expect(ignoreRow.className)
-      .withContext('Ignore row should not have file-action classes')
-      .not.toContain('file-action');
+    expect(ignoreRow.style.backgroundColor)
+      .withContext('Ignore row should have no inline background')
+      .toBe('');
+    expect(ignoreRow.style.color)
+      .withContext('Ignore row should have no inline text color override')
+      .toBe('');
   });
 
   it('should have VISIBLE background colors applied via component SCSS - NOT OVERRIDDEN BY .table selector', () => {
@@ -147,13 +154,17 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     // This tests that .table tr selector in metadata-selector.component.scss
     // does NOT override the file-action classes
     expect(copyBg)
-      .withContext(`Copy row background. Classes: ${copyRow.className}`)
+      .withContext(
+        `Copy row inline style. Style: ${copyRow.getAttribute('style')}`,
+      )
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(copyBg).not.toBe('transparent');
     expect(copyBg).not.toBe('');
 
     expect(customBg)
-      .withContext(`Custom row background. Classes: ${customRow.className}`)
+      .withContext(
+        `Custom row inline style. Style: ${customRow.getAttribute('style')}`,
+      )
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(customBg).not.toBe('transparent');
     expect(customBg).not.toBe('');

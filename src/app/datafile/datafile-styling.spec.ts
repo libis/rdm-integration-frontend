@@ -1,63 +1,87 @@
-// Test to verify file action row styling works with @HostBinding
-// This test focuses on the HostBinding logic without rendering the template
+// Test to verify file action row styling works with inline style bindings
+// This test focuses on the style mapping logic without rendering the template
 import { Fileaction } from '../models/datafile';
-import { getFileActionClass } from '../shared/constants';
+import { getFileActionStyle } from '../shared/constants';
 
 describe('File Action Styling - HostBinding Logic', () => {
-  it('should return file-action-copy class for Copy action', () => {
-    const result = getFileActionClass('COPY');
-    expect(result).toBe('file-action-copy');
+  it('should expose var-based styles for Copy action', () => {
+    const result = getFileActionStyle('COPY');
+    expect(result).toEqual({
+      backgroundColor: 'var(--app-file-action-copy-bg)',
+      color: 'var(--app-file-action-copy-color)',
+    });
   });
 
-  it('should return file-action-update class for Update action', () => {
-    const result = getFileActionClass('UPDATE');
-    expect(result).toBe('file-action-update');
+  it('should expose var-based styles for Update action', () => {
+    const result = getFileActionStyle('UPDATE');
+    expect(result).toEqual({
+      backgroundColor: 'var(--app-file-action-update-bg)',
+      color: 'var(--app-file-action-update-color)',
+    });
   });
 
-  it('should return file-action-delete class for Delete action', () => {
-    const result = getFileActionClass('DELETE');
-    expect(result).toBe('file-action-delete');
+  it('should expose var-based styles for Delete action', () => {
+    const result = getFileActionStyle('DELETE');
+    expect(result).toEqual({
+      backgroundColor: 'var(--app-file-action-delete-bg)',
+      color: 'var(--app-file-action-delete-color)',
+    });
   });
 
-  it('should return file-action-custom class for Custom action', () => {
-    const result = getFileActionClass('CUSTOM');
-    expect(result).toBe('file-action-custom');
+  it('should expose var-based styles for Custom action', () => {
+    const result = getFileActionStyle('CUSTOM');
+    expect(result).toEqual({
+      backgroundColor: 'var(--app-file-action-custom-bg)',
+      color: 'var(--app-file-action-custom-color)',
+    });
   });
 
-  it('should return empty string for Ignore action (no styling)', () => {
-    const result = getFileActionClass('IGNORE');
-    expect(result).toBe('');
+  it('should return empty object for Ignore action (no styling)', () => {
+    const result = getFileActionStyle('IGNORE');
+    expect(result).toEqual({});
   });
 
-  // Test the enum-to-class mapping (simulates what HostBinding getter does)
-  it('should map Fileaction enums to correct CSS classes', () => {
+  // Test the enum-to-style mapping (simulates what HostBinding getter does)
+  it('should map Fileaction enums to correct inline styles', () => {
     const testCases = [
-      { action: Fileaction.Copy, expected: 'file-action-copy' },
-      { action: Fileaction.Update, expected: 'file-action-update' },
-      { action: Fileaction.Delete, expected: 'file-action-delete' },
-      { action: Fileaction.Custom, expected: 'file-action-custom' },
-      { action: Fileaction.Ignore, expected: '' }, // No styling for ignored files
+      {
+        action: Fileaction.Copy,
+        expected: 'var(--app-file-action-copy-bg)',
+      },
+      {
+        action: Fileaction.Update,
+        expected: 'var(--app-file-action-update-bg)',
+      },
+      {
+        action: Fileaction.Delete,
+        expected: 'var(--app-file-action-delete-bg)',
+      },
+      {
+        action: Fileaction.Custom,
+        expected: 'var(--app-file-action-custom-bg)',
+      },
+      { action: Fileaction.Ignore, expected: undefined },
     ];
 
     testCases.forEach(({ action, expected }) => {
-      let className: string;
+      let style: ReturnType<typeof getFileActionStyle>;
       switch (action) {
         case Fileaction.Copy:
-          className = getFileActionClass('COPY');
+          style = getFileActionStyle('COPY');
           break;
         case Fileaction.Update:
-          className = getFileActionClass('UPDATE');
+          style = getFileActionStyle('UPDATE');
           break;
         case Fileaction.Delete:
-          className = getFileActionClass('DELETE');
+          style = getFileActionStyle('DELETE');
           break;
         case Fileaction.Custom:
-          className = getFileActionClass('CUSTOM');
+          style = getFileActionStyle('CUSTOM');
           break;
         default:
-          className = getFileActionClass('IGNORE');
+          style = getFileActionStyle('IGNORE');
       }
-      expect(className)
+      expect(style.backgroundColor)
         .withContext(`Fileaction.${Fileaction[action]}`)
         .toBe(expected);
     });
@@ -86,11 +110,13 @@ describe('File Action Styling - Real TreeTable Integration', () => {
           <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
             <tr
               app-datafile
+              #row="appDatafile"
               [datafile]="rowData"
               [loading]="false"
               [rowNodeMap]="rowNodeMap"
               [rowNode]="rowNode"
               [isInFilter]="false"
+              [style]="row.getStyle()"
             ></tr>
           </ng-template>
         </p-treeTable>
@@ -162,40 +188,52 @@ describe('File Action Styling - Real TreeTable Integration', () => {
     expect(rows.length).withContext('Should have 5 datafile rows').toBe(5);
   });
 
-  it('should apply file-action-copy class to Copy row', () => {
+  it('should apply inline style vars to Copy row', () => {
     const rows = compiled.querySelectorAll('tr[app-datafile]');
     const copyRow = rows[0] as HTMLElement;
 
-    expect(copyRow.classList.contains('file-action-copy'))
-      .withContext(`Row classes: ${copyRow.className}`)
-      .toBe(true);
+    expect(copyRow.style.backgroundColor).toBe(
+      'var(--app-file-action-copy-bg)',
+    );
+    expect(copyRow.style.color).toBe('var(--app-file-action-copy-color)');
   });
 
-  it('should apply file-action-update class to Update row', () => {
+  it('should apply inline style vars to Update row', () => {
     const rows = compiled.querySelectorAll('tr[app-datafile]');
     const updateRow = rows[1] as HTMLElement;
 
-    expect(updateRow.classList.contains('file-action-update'))
-      .withContext(`Row classes: ${updateRow.className}`)
-      .toBe(true);
+    expect(updateRow.style.backgroundColor).toBe(
+      'var(--app-file-action-update-bg)',
+    );
+    expect(updateRow.style.color).toBe('var(--app-file-action-update-color)');
   });
 
-  it('should apply file-action-delete class to Delete row', () => {
+  it('should apply inline style vars to Delete row', () => {
     const rows = compiled.querySelectorAll('tr[app-datafile]');
     const deleteRow = rows[2] as HTMLElement;
 
-    expect(deleteRow.classList.contains('file-action-delete'))
-      .withContext(`Row classes: ${deleteRow.className}`)
-      .toBe(true);
+    expect(deleteRow.style.backgroundColor).toBe(
+      'var(--app-file-action-delete-bg)',
+    );
+    expect(deleteRow.style.color).toBe('var(--app-file-action-delete-color)');
   });
 
-  it('should apply file-action-custom class to Custom row', () => {
+  it('should apply inline style vars to Custom row', () => {
     const rows = compiled.querySelectorAll('tr[app-datafile]');
     const customRow = rows[3] as HTMLElement;
 
-    expect(customRow.classList.contains('file-action-custom'))
-      .withContext(`Row classes: ${customRow.className}`)
-      .toBe(true);
+    expect(customRow.style.backgroundColor).toBe(
+      'var(--app-file-action-custom-bg)',
+    );
+    expect(customRow.style.color).toBe('var(--app-file-action-custom-color)');
+  });
+
+  it('should leave ignore row without inline style overrides', () => {
+    const rows = compiled.querySelectorAll('tr[app-datafile]');
+    const ignoreRow = rows[4] as HTMLElement;
+
+    expect(ignoreRow.style.backgroundColor).toBe('');
+    expect(ignoreRow.style.color).toBe('');
   });
 
   it('should have VISIBLE background colors applied via component SCSS', () => {
@@ -224,25 +262,31 @@ describe('File Action Styling - Real TreeTable Integration', () => {
     // THE CRITICAL TEST: These should NOT be transparent
     // If they are transparent, it means component SCSS is not being applied!
     expect(copyBg)
-      .withContext(`Copy row background. Classes: ${copyRow.className}`)
+  .withContext(`Copy row inline style. Style: ${copyRow.getAttribute('style')}`)
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(copyBg).not.toBe('transparent');
     expect(copyBg).not.toBe('');
 
     expect(updateBg)
-      .withContext(`Update row background. Classes: ${updateRow.className}`)
+      .withContext(
+        `Update row inline style. Style: ${updateRow.getAttribute('style')}`,
+      )
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(updateBg).not.toBe('transparent');
     expect(updateBg).not.toBe('');
 
     expect(deleteBg)
-      .withContext(`Delete row background. Classes: ${deleteRow.className}`)
+      .withContext(
+        `Delete row inline style. Style: ${deleteRow.getAttribute('style')}`,
+      )
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(deleteBg).not.toBe('transparent');
     expect(deleteBg).not.toBe('');
 
     expect(customBg)
-      .withContext(`Custom row background. Classes: ${customRow.className}`)
+      .withContext(
+        `Custom row inline style. Style: ${customRow.getAttribute('style')}`,
+      )
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(customBg).not.toBe('transparent');
     expect(customBg).not.toBe('');

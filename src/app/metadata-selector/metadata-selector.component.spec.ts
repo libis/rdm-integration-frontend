@@ -1,25 +1,24 @@
 import { Location } from '@angular/common';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-  ComponentFixture,
-  fakeAsync,
-  flushMicrotasks,
-  TestBed,
+    ComponentFixture,
+    fakeAsync,
+    flushMicrotasks,
+    TestBed,
 } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { DatasetService } from '../dataset.service';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 import {
-  Field,
-  Fieldaction,
-  FieldDictonary,
-  Metadata,
-  MetadataField,
+    Fieldaction,
+    FieldDictonary,
+    Metadata,
+    MetadataField,
 } from '../models/field';
 import { MetadataSelectorComponent } from './metadata-selector.component';
 
@@ -152,24 +151,6 @@ describe('MetadataSelectorComponent', () => {
     // Row map should have entries for all nodes
     expect(component.rowNodeMap.size).toBeGreaterThan(3);
   }));
-
-  it('rowClass should reflect Fieldaction values', () => {
-    const base: Field = {
-      id: 'x',
-      parent: '',
-      name: 'f',
-      action: Fieldaction.Ignore,
-    };
-    expect(component.rowClass({ ...base, action: Fieldaction.Ignore })).toBe(
-      '',
-    );
-    expect(component.rowClass({ ...base, action: Fieldaction.Copy })).toBe(
-      'file-action-copy',
-    );
-    expect(component.rowClass({ ...base, action: Fieldaction.Custom })).toBe(
-      'file-action-custom',
-    );
-  });
 
   it('should render rows with metadata fields', fakeAsync(() => {
     flushMicrotasks();

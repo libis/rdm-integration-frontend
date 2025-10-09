@@ -1,30 +1,16 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, HostBinding, OnInit, input } from '@angular/core';
+import { Component, OnInit, input } from '@angular/core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
-import { getFileActionClass } from '../shared/constants';
+import { FileActionStyle, getFileActionStyle } from '../shared/constants';
 
 @Component({
   selector: 'tr[app-submitted-file]',
   templateUrl: './submitted-file.component.html',
   styleUrls: ['./submitted-file.component.scss'],
+  exportAs: 'appSubmittedFile',
 })
 export class SubmittedFileComponent implements OnInit {
-  @HostBinding('class') get hostClass(): string {
-    const action = this.datafile().action ?? Fileaction.Ignore;
-    switch (action) {
-      case Fileaction.Copy:
-        return getFileActionClass('COPY');
-      case Fileaction.Update:
-        return getFileActionClass('UPDATE');
-      case Fileaction.Delete:
-        return getFileActionClass('DELETE');
-      case Fileaction.Custom:
-        return getFileActionClass('CUSTOM');
-      default:
-        return getFileActionClass('IGNORE');
-    }
-  }
   readonly datafile = input<Datafile>({});
   readonly isSubmitted = input(false);
 
@@ -55,5 +41,33 @@ export class SubmittedFileComponent implements OnInit {
       (isDelete && datafile.status === Filestatus.New) ||
       (!isDelete && datafile.status === Filestatus.Equal)
     );
+  }
+
+  private resolveHostStyle(): FileActionStyle {
+    const action = this.datafile().action ?? Fileaction.Ignore;
+    switch (action) {
+      case Fileaction.Copy:
+        return getFileActionStyle('COPY');
+      case Fileaction.Update:
+        return getFileActionStyle('UPDATE');
+      case Fileaction.Delete:
+        return getFileActionStyle('DELETE');
+      case Fileaction.Custom:
+        return getFileActionStyle('CUSTOM');
+      default:
+        return getFileActionStyle('IGNORE');
+    }
+  }
+
+  getStyle(): string {
+    const style = this.resolveHostStyle();
+    const declarations: string[] = [];
+    if (style.backgroundColor) {
+      declarations.push(`background-color: ${style.backgroundColor}`);
+    }
+    if (style.color) {
+      declarations.push(`color: ${style.color}`);
+    }
+    return declarations.length ? `${declarations.join('; ')};` : '';
   }
 }
