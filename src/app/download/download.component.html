@@ -1,8 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<div class="row justify-content-between sticky-menu">
-  <span class="col-auto">
+<div class="row justify-content-between align-items-center sticky-menu">
+  <div class="col-auto">
     <button
-      style="height: 3rem"
       pButton
       type="button"
       class="p-button-sm p-button-raised p-button-secondary"
@@ -10,11 +9,11 @@
     >
       <i class="pi pi-angle-double-left"></i>&nbsp;Home
     </button>
-  </span>
-  <span class="col-auto" [hidden]="!showDVToken()">
+  </div>
+  <div class="col-auto" [hidden]="!showDVToken()">
     <div class="input-group">
       <div class="input-group-prepend">
-        <span class="input-group-text" style="height: 3rem">Token:&nbsp;</span>
+        <span class="input-group-text">Token:&nbsp;</span>
       </div>
       <input
         type="password"
@@ -26,16 +25,15 @@
         (onChange)="onUserChange()"
       />
     </div>
-  </span>
-  <span class="col-auto" style="margin: auto">
-    <strong class="text-center">Download to Globus endpoint</strong>
-  </span>
-  <span class="col-auto d-flex" style="gap: 0.5rem">
+  </div>
+  <div class="col text-center">
+    <h2 class="page-title m-0">Download to Globus endpoint</h2>
+  </div>
+  <div class="col-auto d-flex" style="gap: 0.5rem">
     <button
-      [attr.hidden]="!done ? null : ''"
-      style="height: 3rem"
       pButton
       type="button"
+      [attr.hidden]="!done ? null : ''"
       class="p-button-sm p-button-raised p-button-primary"
       [disabled]="downloadDisabled()"
       (click)="download()"
@@ -43,17 +41,18 @@
       Start transfer&nbsp;<i class="pi pi-angle-double-right"></i>
     </button>
     <button
-      [attr.hidden]="done ? null : ''"
-      style="height: 3rem"
       pButton
       type="button"
+      [attr.hidden]="done ? null : ''"
       class="p-button-sm p-button-raised p-button-primary"
       (click)="goToDataset()"
     >
       Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i>
     </button>
-  </span>
+  </div>
 </div>
+
+<br />
 
 <div class="mb-3">
   <label for="datasetId" class="form-label">Dataset DOI</label>

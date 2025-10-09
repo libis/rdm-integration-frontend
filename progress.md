@@ -91,6 +91,31 @@
     - Reduced padding and font sizes on small screens
   - All 393 tests passing after visual enhancements.
 
+- **Bug fixes and dark mode improvements**
+  - **Fixed "Open in Globus" button visibility:** Now only shown for Globus transfers (isGlobus=true)
+    - Updated `formattedMonitorUrl` getter to return `undefined` for non-Globus transfers
+    - Prevents confusing Globus button on GitHub/GitLab/other plugin transfers
+  - **Enhanced dark mode appearance:**
+    - Card background: Subtle color-mix for better contrast
+    - Stronger box-shadow (0.5rem vs 0.25rem) for depth in dark mode
+    - Statistics badges: Lighter background with enhanced border contrast
+    - Task ID code blocks: Custom dark mode styling with better visibility
+    - Progress bar: Darker track with brighter fill and glow effect
+  - **Simplified CSS variables:** Removed redundant fallback values, relying on PrimeNG theme
+  - Fixed test: Updated "opens monitor URL in new window" test to set `isGlobus = true`
+  - All 393 tests passing after bug fixes.
+
+- **Download sticky menu consistency fixes**
+  - Fixed sticky menu layout to match submit component pattern:
+    - Added `align-items-center` class for proper vertical alignment
+    - Changed `<span>` elements to `<div>` for consistent structure
+    - Replaced inline `<strong>` title with `<h2 class="page-title m-0">` for consistent styling
+    - Removed inline `style="height: 3rem"` from buttons (using default button size)
+    - Removed inline `style="height: 3rem"` from token input group text
+    - Added `<br />` after sticky menu for proper spacing with content below
+  - Sticky menu now has consistent height and spacing across download and submit pages
+  - All 393 tests passing after sticky menu fixes.
+
 ## Completion Summary
 
 ### What Was Accomplished

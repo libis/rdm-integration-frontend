@@ -379,6 +379,7 @@ describe('TransferProgressCardComponent', () => {
 
   it('opens monitor URL in new window', () => {
     spyOn(window, 'open');
+    component.isGlobus = true; // Must be Globus to show monitor URL
     component.taskId = 'task-open';
     component.monitorUrl = 'https://monitor.test/url';
     fixture.detectChanges();

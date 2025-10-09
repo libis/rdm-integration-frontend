@@ -111,6 +111,7 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   }
 
   get hasStatus(): boolean {
+    // Always show status if we have any status information, even after completion
     return !!(
       this.submitting ||
       this.taskId ||
@@ -209,6 +210,10 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   }
 
   get formattedMonitorUrl(): string | undefined {
+    // Only show Globus monitor URL for Globus transfers
+    if (!this.isGlobus) {
+      return undefined;
+    }
     if (this.monitorUrl) {
       return this.monitorUrl;
     }
