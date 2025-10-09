@@ -27,30 +27,61 @@
       />
     </div>
   </span>
-  <span
-    class="col-auto"
-    style="width: 30rem; position: relative; top: 0.275rem"
-  >
-    <p-floatlabel class="w-full md:w-56" variant="on">
-      <p-select
-        appendTo="body"
-        autoWidth="false"
-        [style]="{ width: '100%' }"
-        [editable]="datasetFieldEditable()"
-        id="datasetId"
-        [options]="doiItems"
-        [filter]="true"
-        filterBy="label"
-        [resetFilterOnHide]="true"
-        (onFilter)="onDatasetSearch($event.filter)"
-        [(ngModel)]="datasetId"
-        (onClick)="getDoiOptions()"
-        (onChange)="onDatasetChange()"
-      ></p-select>
-      <label for="datasetId">Select Dataset</label>
-    </p-floatlabel>
+  <span class="col-auto" style="margin: auto">
+    <strong class="text-center">Download to Globus endpoint</strong>
+  </span>
+  <span class="col-auto d-flex" style="gap: 0.5rem">
+    <button
+      [attr.hidden]="!done ? null : ''"
+      style="height: 3rem"
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-primary"
+      [disabled]="downloadDisabled()"
+      (click)="download()"
+    >
+      Start transfer&nbsp;<i class="pi pi-angle-double-right"></i>
+    </button>
+    <button
+      [attr.hidden]="done ? null : ''"
+      style="height: 3rem"
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-primary"
+      (click)="goToDataset()"
+    >
+      Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i>
+    </button>
   </span>
 </div>
+
+<div class="mb-3">
+  <label for="datasetId" class="form-label">Dataset DOI</label>
+  <p-select
+    appendTo="body"
+    autoWidth="false"
+    [style]="{ width: '100%' }"
+    [editable]="datasetFieldEditable()"
+    id="datasetId"
+    [options]="doiItems"
+    [filter]="true"
+    filterBy="label"
+    [resetFilterOnHide]="true"
+    (onFilter)="onDatasetSearch($event.filter)"
+    [(ngModel)]="datasetId"
+    (onClick)="getDoiOptions()"
+    (onChange)="onDatasetChange()"
+  ></p-select>
+</div>
+
+<app-transfer-progress-card
+  [isGlobus]="true"
+  [taskId]="lastTransferTaskId"
+  [monitorUrl]="globusMonitorUrl"
+  [submitting]="downloadInProgress && !lastTransferTaskId"
+  (pollingChange)="onStatusPollingChange($event)"
+  (completed)="done = true"
+></app-transfer-progress-card>
 
 <br />
 @if (datasetId && data?.id) {
@@ -88,7 +119,6 @@
     </div>
     <div style="float: right; width: 50%">
       <div style="margin: 0.2rem; padding-left: 2rem">
-        <div class="mb-3"><span>Globus download</span></div>
         <div class="mb-3">
           <label for="repoNameSearch" class="form-label">{{
             getRepoNameFieldName()
@@ -122,21 +152,6 @@
             (onNodeSelect)="optionSelected($event.node)"
           ></p-tree>
         </div>
-        <p-button
-          (click)="download()"
-          styleClass="p-button-sm p-button-raised p-button-primary"
-          [loading]="downloadInProgress || statusPollingActive"
-          [disabled]="downloadDisabled()"
-          >Download</p-button
-        >
-
-        <app-transfer-progress-card
-          [isGlobus]="true"
-          [taskId]="lastTransferTaskId"
-          [monitorUrl]="globusMonitorUrl"
-          [submitting]="downloadInProgress && !lastTransferTaskId"
-          (pollingChange)="onStatusPollingChange($event)"
-        ></app-transfer-progress-card>
       </div>
     </div>
   </div>

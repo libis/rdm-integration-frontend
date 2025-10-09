@@ -25,8 +25,7 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 // PrimeNG
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
-import { Button, ButtonDirective } from 'primeng/button';
-import { FloatLabel } from 'primeng/floatlabel';
+import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Tree } from 'primeng/tree';
 import { TreeTableModule } from 'primeng/treetable';
@@ -57,13 +56,11 @@ import { SubscriptionManager } from '../shared/types';
     CommonModule,
     ButtonDirective,
     FormsModule,
-    FloatLabel,
     Select,
     TreeTableModule,
     PrimeTemplate,
     DownladablefileComponent,
     Tree,
-    Button,
     TransferProgressCardComponent,
   ],
 })
@@ -109,6 +106,8 @@ export class DownloadComponent
   lastTransferTaskId?: string;
   globusMonitorUrl?: string;
   statusPollingActive = false;
+  done = false;
+  datasetUrl = '';
 
   // globus
   token?: string;
@@ -356,6 +355,7 @@ export class DownloadComponent
 
   setData(data: CompareResult): void {
     this.data = data;
+    this.datasetUrl = data.url || '';
     if (!data.data || data.data.length === 0) {
       this.loading = false;
       return;
@@ -467,6 +467,12 @@ export class DownloadComponent
 
   onStatusPollingChange(active: boolean): void {
     this.statusPollingActive = active;
+  }
+
+  goToDataset(): void {
+    if (this.datasetUrl) {
+      window.open(this.datasetUrl, '_blank');
+    }
   }
 
   private buildGlobusMonitorUrl(taskId: string): string {
