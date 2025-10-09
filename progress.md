@@ -46,4 +46,3 @@
 - Revisit shared component/submit/download SCSS to drop any remaining obsolete selectors.
 - Perform a manual smoke test of submit/download screens with both Globus and non-Globus plugins.
 - Refresh documentation (`STYLING_FIX_SUMMARY.md`) if additional styling changes are made.
-- Consider backend follow-ups for additional status details or error handling improvements.
