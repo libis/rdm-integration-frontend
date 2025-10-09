@@ -79,6 +79,35 @@
     color: var(--p-text-color);
     font-weight: 600;
   }
+
+  .status-files-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .status-files-label {
+    font-weight: 600;
+    color: var(--p-text-color);
+  }
+
+  .status-files-count {
+    font-weight: 600;
+    color: var(--p-text-color);
+    white-space: nowrap;
+  }
+
+  p-progressbar {
+    margin-top: 0.25rem;
+  }
+
+  .status-files-failed {
+    margin-top: 0.5rem;
+    font-weight: 500;
+    color: var(--p-red-500, color-mix(in srgb, #ef4444 85%, currentColor));
+  }
 }
 
 .status-timestamp,

@@ -1,6 +1,6 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2025). Apache 2.0 License -->
 @if (hasStatus) {
-  <div class="transfer-status">
+  <div #cardRoot class="transfer-status">
     <div class="status-row" [ngClass]="statusTone">
       <i class="status-icon" [ngClass]="statusIcon" aria-hidden="true"></i>
       <div class="status-body">
@@ -8,20 +8,30 @@
 
         @if (filesSummary.total || filesSummary.failed) {
           <div class="status-files">
-            Files processed
+            <div class="status-files-header">
+              <span class="status-files-label">Files processed</span>
+              @if (filesSummary.total) {
+                <span class="status-files-count">
+                  {{ filesSummary.processed | number }}/{{
+                    filesSummary.total | number
+                  }}
+                </span>
+              } @else {
+                <span class="status-files-count">0</span>
+              }
+            </div>
+
             @if (filesSummary.total) {
-              <p-progressbar [value]="filesProgressPercent">
-                <ng-template #content>
-                  <span>
-                    {{ filesSummary.processed | number }}/{{
-                      filesSummary.total | number
-                    }}
-                  </span>
-                </ng-template>
-              </p-progressbar>
+              <p-progressbar
+                [value]="filesProgressPercent"
+                [showValue]="false"
+              ></p-progressbar>
             }
+
             @if (filesSummary.failed) {
-              <br />Failed: {{ filesSummary.failed }}
+              <div class="status-files-failed">
+                Failed: {{ filesSummary.failed }}
+              </div>
             }
           </div>
         }

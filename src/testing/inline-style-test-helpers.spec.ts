@@ -1,4 +1,7 @@
-import { expectBootstrapTableStyle, parseInlineStyle } from './inline-style-test-helpers';
+import {
+  expectBootstrapTableStyle,
+  parseInlineStyle,
+} from './inline-style-test-helpers';
 
 describe('inline-style-test-helpers', () => {
   describe('parseInlineStyle', () => {
@@ -13,16 +16,17 @@ describe('inline-style-test-helpers', () => {
           width: '100px',
         }),
       );
-  expect(parseInlineStyle(style)['color']).toBeUndefined();
+      expect(parseInlineStyle(style)['color']).toBeUndefined();
       expect(parseInlineStyle(style)['--bs-table-bg']).toBeUndefined();
     });
 
     it('handles colon characters inside values', () => {
-      const style = '--custom-gradient: linear-gradient(90deg, red, blue); color: white';
+      const style =
+        '--custom-gradient: linear-gradient(90deg, red, blue); color: white';
       expect(parseInlineStyle(style)['--custom-gradient']).toBe(
         'linear-gradient(90deg, red, blue)',
       );
-  expect(parseInlineStyle(style)['color']).toBe('white');
+      expect(parseInlineStyle(style)['color']).toBe('white');
     });
   });
 

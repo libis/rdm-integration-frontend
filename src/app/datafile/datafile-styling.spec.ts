@@ -262,7 +262,9 @@ describe('File Action Styling - Real TreeTable Integration', () => {
     // THE CRITICAL TEST: These should NOT be transparent
     // If they are transparent, it means component SCSS is not being applied!
     expect(copyBg)
-  .withContext(`Copy row inline style. Style: ${copyRow.getAttribute('style')}`)
+      .withContext(
+        `Copy row inline style. Style: ${copyRow.getAttribute('style')}`,
+      )
       .not.toBe('rgba(0, 0, 0, 0)');
     expect(copyBg).not.toBe('transparent');
     expect(copyBg).not.toBe('');

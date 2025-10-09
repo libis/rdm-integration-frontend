@@ -70,7 +70,7 @@ export function expectBootstrapTableStyle(
       }),
     );
   } else {
-  expect(map['color']).toBeUndefined();
+    expect(map['color']).toBeUndefined();
     expect(map['--bs-table-color']).toBeUndefined();
   }
 }

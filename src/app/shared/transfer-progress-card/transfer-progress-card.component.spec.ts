@@ -1306,6 +1306,27 @@ describe('TransferProgressCardComponent', () => {
     expect(compiled.textContent).toContain('1/2');
   }));
 
+  it('scrolls the card into view when first displayed', fakeAsync(() => {
+    fixture.detectChanges();
+
+    component.submitting = true;
+    component.ngOnChanges({
+      submitting: new SimpleChange(false, true, false),
+    });
+
+    fixture.detectChanges();
+
+    const cardElement = component['cardRoot']?.nativeElement as HTMLElement;
+    expect(cardElement).toBeTruthy();
+
+    const scrollSpy = jasmine.createSpy('scrollIntoView');
+    (cardElement as any).scrollIntoView = scrollSpy;
+
+    tick();
+
+    expect(scrollSpy).toHaveBeenCalled();
+  }));
+
   it('renders failed files count when present', fakeAsync(() => {
     submit.statuses = [
       {

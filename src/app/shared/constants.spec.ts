@@ -1,11 +1,8 @@
 import {
-    expectBootstrapTableStyle,
-    parseInlineStyle,
+  expectBootstrapTableStyle,
+  parseInlineStyle,
 } from '../../testing/inline-style-test-helpers';
-import {
-    buildInlineStyle,
-    getFileActionStyle,
-} from './constants';
+import { buildInlineStyle, getFileActionStyle } from './constants';
 
 describe('buildInlineStyle', () => {
   it('returns an empty string when no style tokens are provided', () => {

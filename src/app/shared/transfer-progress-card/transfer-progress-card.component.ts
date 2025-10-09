@@ -2,13 +2,16 @@
 
 import { CommonModule } from '@angular/common';
 import {
+  AfterViewInit,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   OnChanges,
   OnDestroy,
   Output,
   SimpleChanges,
+  ViewChild,
   inject,
 } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
@@ -42,9 +45,17 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
   templateUrl: './transfer-progress-card.component.html',
   styleUrls: ['./transfer-progress-card.component.scss'],
 })
-export class TransferProgressCardComponent implements OnChanges, OnDestroy {
+export class TransferProgressCardComponent
+  implements OnChanges, OnDestroy, AfterViewInit
+{
   private readonly submitService = inject(SubmitService);
   private dataUpdatesService = inject(DataUpdatesService);
+
+  @ViewChild('cardRoot')
+  private cardRoot?: ElementRef<HTMLDivElement>;
+
+  private viewInitialized = false;
+  private hasRenderedCard = false;
 
   private statusSubscription?: Subscription;
   private readonly pollIntervalMs = 5000;
@@ -103,10 +114,19 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     if ('submitting' in changes && !this.submitting && !this.taskId) {
       this.reset();
     }
+
+    if (this.viewInitialized) {
+      this.maybeScrollCardIntoView();
+    }
   }
 
   ngOnDestroy(): void {
     this.stopPolling();
+  }
+
+  ngAfterViewInit(): void {
+    this.viewInitialized = true;
+    this.maybeScrollCardIntoView();
   }
 
   get hasStatus(): boolean {
@@ -292,6 +312,7 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     this.stopPolling();
     this.status = undefined;
     this.statusPollingError = undefined;
+    this.hasRenderedCard = false;
   }
 
   private handleStatus(status: TransferTaskStatus): void {
@@ -421,5 +442,18 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     }
     this.statusPollingActive = active;
     this.pollingChange.emit(active);
+  }
+
+  private maybeScrollCardIntoView(): void {
+    const visible = this.hasStatus;
+    if (visible && !this.hasRenderedCard) {
+      setTimeout(() => {
+        this.cardRoot?.nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      });
+    }
+    this.hasRenderedCard = visible;
   }
 }

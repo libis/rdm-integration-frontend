@@ -1,24 +1,24 @@
 import { Location } from '@angular/common';
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-    ComponentFixture,
-    fakeAsync,
-    flushMicrotasks,
-    TestBed,
+  ComponentFixture,
+  fakeAsync,
+  flushMicrotasks,
+  TestBed,
 } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { DatasetService } from '../dataset.service';
 import { MetadatafieldComponent } from '../metadatafield/metadatafield.component';
 import {
-    Fieldaction,
-    FieldDictonary,
-    Metadata,
-    MetadataField,
+  Fieldaction,
+  FieldDictonary,
+  Metadata,
+  MetadataField,
 } from '../models/field';
 import { MetadataSelectorComponent } from './metadata-selector.component';
 

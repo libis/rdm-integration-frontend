@@ -116,6 +116,13 @@
   - Sticky menu now has consistent height and spacing across download and submit pages
   - All 393 tests passing after sticky menu fixes.
 
+- **Transfer progress card UX polish (auto-scroll & clarity)**
+  - Scroll the card into view the first time it renders so users notice active transfers even when starting far down the page.
+  - Reworked the files progress header to show "Files processed" with a clean processed/total counter and explicit zero-state fallback.
+  - Suppressed the inline percent label on the progress bar and surfaced failed file counts beneath when present.
+  - Added unit coverage ensuring the card scrolls into view once per display and verifying the updated layout strings.
+  - Test command: `npm run test:ci` → 400 specs passing, statements 90.07%, branches 81.08%.
+
 ## Completion Summary
 
 ### What Was Accomplished

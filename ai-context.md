@@ -4,7 +4,7 @@
 @org_repo: https://github.com/libis/ai-transition
 @version: 0.6.0
 @workflows_source_api: https://api.github.com/repos/libis/ai-transition/contents/.github?ref=main
-@last_context_update: 2025-10-09T16:50:00Z
+@last_context_update: 2025-10-09T19:22:30Z
 @last_github_sync: 2025-09-15T00:00:00Z
 @upstream_ref: main
 @suggestions_enabled: true
@@ -426,7 +426,7 @@ Note: Examples must avoid PII; use `@<github-handle>` only for attribution.
 {
   "template_source": "https://github.com/libis/ai-transition/blob/main/templates/pilot-starter/ai-context.md",
   "template_version": "0.6.0",
-  "last_context_update": "2025-09-15T00:00:00Z",
+  "last_context_update": "2025-10-09T19:22:30Z",
   "last_github_sync": "2025-09-15T00:00:00Z",
   "last_verified_at": null,
   "upstream_ref": "main",
@@ -615,6 +615,13 @@ This ensures table backgrounds adapt to light/dark theme using PrimeNG's semanti
 
 - `src/app/datafile/datafile-styling.spec.ts` and `src/app/metadata-selector/metadata-selector-styling.spec.ts` check backgrounds against theme defaults.
 
+### Transfer progress card UX polish (2025-10-09)
+
+- Card now captures a `ViewChild` reference and scrolls into view when first rendered so progress remains visible even if the user is far down the page.
+- Files progress header shows "Files processed" with a tight processed/total counter and a zero fallback when the backend omits totals; failed counts render as a distinct line below.
+- PrimeNG progress bar hides its inline percentage text to reduce duplication, relying on the formatted counter instead.
+- Specs cover the scroll-to-view behavior and updated layout strings; latest run `npm run test:ci` succeeded (400 specs, coverage: statements 90.07%, branches 81.08%, functions 90.63%, lines 90.74%).
+
 ### 401 Authentication Error Auto-Reset (CRITICAL FIX)
 
 **Problem**: When authentication tokens expire and API calls return 401 errors, users were stuck in an error loop. They had to manually navigate back to the connect page and manually reset the form.
@@ -667,12 +674,11 @@ error: (err) => {
 
 ### Testing
 
-- Jasmine/Karma with Chrome 141
-- Run: `npm test -- --watch=false` or `npm run test:ci`
-- Coverage target: 70% across all metrics (statements, functions, lines, branches)
-- Current coverage: ~65% statements, ~66% functions, ~65% lines, ~53% branches
-- All tests must pass before deployment
-- Test count: 169 tests (as of latest fixes)
+- Jasmine/Karma with Chrome Headless 141
+- Primary command: `npm run test:ci` (watch disabled, headless Chrome, coverage enabled)
+- Latest run (2025-10-09): statements 90.07%, branches 81.08%, functions 90.63%, lines 90.74%
+- Suite size: 400 specs across components, services, and styling harnesses
+- All tests must pass before deployment; keep coverage at or above 70% on all metrics
 
 **Test Organization**:
 
