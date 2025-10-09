@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-export type InlineStyleMap = Record<string, string>;
+export type InlineStyleMap = Partial<Record<string, string>>;
 
 /**
  * Convert a semicolon-delimited inline style string into a property map.
@@ -44,33 +44,59 @@ export function expectBootstrapTableStyle(
   const map = parseInlineStyle(style);
 
   if (expectedBackground) {
-    expect(map).toEqual(
-      jasmine.objectContaining({
-        'background-color': expectedBackground,
-        '--bs-table-bg': expectedBackground,
-        '--bs-table-striped-bg': expectedBackground,
-        '--bs-table-hover-bg': expectedBackground,
-        '--bs-table-active-bg': expectedBackground,
-        '--bs-table-accent-bg': expectedBackground,
-      }),
-    );
+    const entries: Record<string, string> = {
+      'background-color': expectedBackground,
+      '--bs-table-bg': expectedBackground,
+      '--bs-table-striped-bg': expectedBackground,
+      '--bs-table-hover-bg': expectedBackground,
+      '--bs-table-active-bg': expectedBackground,
+      '--bs-table-accent-bg': expectedBackground,
+    };
+
+    for (const [key, value] of Object.entries(entries)) {
+      if (!Object.prototype.hasOwnProperty.call(map, key) || map[key] !== value) {
+        throw new Error(
+          `Expected ${key} to equal "${value}" but received "${map[key] ?? 'undefined'}"`,
+        );
+      }
+    }
   } else {
-    expect(map['background-color']).toBeUndefined();
-    expect(map['--bs-table-bg']).toBeUndefined();
+    const offending = ['background-color', '--bs-table-bg', '--bs-table-striped-bg', '--bs-table-hover-bg', '--bs-table-active-bg', '--bs-table-accent-bg'].filter((key) =>
+      Object.prototype.hasOwnProperty.call(map, key),
+    );
+
+    if (offending.length > 0) {
+      throw new Error(
+        `Expected no Bootstrap background variables but found: ${offending.join(', ')}`,
+      );
+    }
   }
 
   if (expectedColor) {
-    expect(map).toEqual(
-      jasmine.objectContaining({
-        color: expectedColor,
-        '--bs-table-color': expectedColor,
-        '--bs-table-striped-color': expectedColor,
-        '--bs-table-hover-color': expectedColor,
-        '--bs-table-active-color': expectedColor,
-      }),
-    );
+    const entries: Record<string, string> = {
+      color: expectedColor,
+      '--bs-table-color': expectedColor,
+      '--bs-table-striped-color': expectedColor,
+      '--bs-table-hover-color': expectedColor,
+      '--bs-table-active-color': expectedColor,
+    };
+
+    for (const [key, value] of Object.entries(entries)) {
+      if (!Object.prototype.hasOwnProperty.call(map, key) || map[key] !== value) {
+        throw new Error(
+          `Expected ${key} to equal "${value}" but received "${map[key] ?? 'undefined'}"`,
+        );
+      }
+    }
   } else {
-    expect(map['color']).toBeUndefined();
-    expect(map['--bs-table-color']).toBeUndefined();
+    const offending = ['color', '--bs-table-color', '--bs-table-striped-color', '--bs-table-hover-color', '--bs-table-active-color'].filter((key) =>
+      Object.prototype.hasOwnProperty.call(map, key),
+    );
+
+    if (offending.length > 0) {
+      throw new Error(
+        `Expected no Bootstrap color variables but found: ${offending.join(', ')}`,
+      );
+    }
   }
 }

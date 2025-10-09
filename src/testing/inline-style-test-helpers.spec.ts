@@ -1,6 +1,6 @@
 import {
-  expectBootstrapTableStyle,
-  parseInlineStyle,
+    expectBootstrapTableStyle,
+    parseInlineStyle,
 } from './inline-style-test-helpers';
 
 describe('inline-style-test-helpers', () => {
@@ -36,17 +36,17 @@ describe('inline-style-test-helpers', () => {
 
     it('asserts all Bootstrap background variables when background provided', () => {
       const style = `background-color: ${background}; --bs-table-bg: ${background}; --bs-table-striped-bg: ${background}; --bs-table-hover-bg: ${background}; --bs-table-active-bg: ${background}; --bs-table-accent-bg: ${background};`;
-      expectBootstrapTableStyle(style, background, undefined);
+      expect(() => expectBootstrapTableStyle(style, background, undefined)).not.toThrow();
     });
 
     it('asserts all Bootstrap color variables when color provided', () => {
       const style = `color: ${color}; --bs-table-color: ${color}; --bs-table-striped-color: ${color}; --bs-table-hover-color: ${color}; --bs-table-active-color: ${color};`;
-      expectBootstrapTableStyle(style, undefined, color);
+      expect(() => expectBootstrapTableStyle(style, undefined, color)).not.toThrow();
     });
 
     it('asserts variables are absent when expected values are not provided', () => {
       const style = 'border: 1px solid black;';
-      expectBootstrapTableStyle(style, undefined, undefined);
+      expect(() => expectBootstrapTableStyle(style, undefined, undefined)).not.toThrow();
     });
   });
 });
