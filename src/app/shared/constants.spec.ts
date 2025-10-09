@@ -1,6 +1,6 @@
 import {
-    expectBootstrapTableStyle,
-    parseInlineStyle,
+  expectBootstrapTableStyle,
+  parseInlineStyle,
 } from '../../testing/inline-style-test-helpers';
 import { buildInlineStyle, getFileActionStyle } from './constants';
 

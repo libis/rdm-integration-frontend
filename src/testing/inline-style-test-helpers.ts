@@ -54,16 +54,24 @@ export function expectBootstrapTableStyle(
     };
 
     for (const [key, value] of Object.entries(entries)) {
-      if (!Object.prototype.hasOwnProperty.call(map, key) || map[key] !== value) {
+      if (
+        !Object.prototype.hasOwnProperty.call(map, key) ||
+        map[key] !== value
+      ) {
         throw new Error(
           `Expected ${key} to equal "${value}" but received "${map[key] ?? 'undefined'}"`,
         );
       }
     }
   } else {
-    const offending = ['background-color', '--bs-table-bg', '--bs-table-striped-bg', '--bs-table-hover-bg', '--bs-table-active-bg', '--bs-table-accent-bg'].filter((key) =>
-      Object.prototype.hasOwnProperty.call(map, key),
-    );
+    const offending = [
+      'background-color',
+      '--bs-table-bg',
+      '--bs-table-striped-bg',
+      '--bs-table-hover-bg',
+      '--bs-table-active-bg',
+      '--bs-table-accent-bg',
+    ].filter((key) => Object.prototype.hasOwnProperty.call(map, key));
 
     if (offending.length > 0) {
       throw new Error(
@@ -82,16 +90,23 @@ export function expectBootstrapTableStyle(
     };
 
     for (const [key, value] of Object.entries(entries)) {
-      if (!Object.prototype.hasOwnProperty.call(map, key) || map[key] !== value) {
+      if (
+        !Object.prototype.hasOwnProperty.call(map, key) ||
+        map[key] !== value
+      ) {
         throw new Error(
           `Expected ${key} to equal "${value}" but received "${map[key] ?? 'undefined'}"`,
         );
       }
     }
   } else {
-    const offending = ['color', '--bs-table-color', '--bs-table-striped-color', '--bs-table-hover-color', '--bs-table-active-color'].filter((key) =>
-      Object.prototype.hasOwnProperty.call(map, key),
-    );
+    const offending = [
+      'color',
+      '--bs-table-color',
+      '--bs-table-striped-color',
+      '--bs-table-hover-color',
+      '--bs-table-active-color',
+    ].filter((key) => Object.prototype.hasOwnProperty.call(map, key));
 
     if (offending.length > 0) {
       throw new Error(
