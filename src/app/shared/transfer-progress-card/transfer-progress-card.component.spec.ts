@@ -170,7 +170,9 @@ describe('TransferProgressCardComponent', () => {
 
     tick();
 
-    expect(component.statusPollingError).toContain('Unable to retrieve the latest status from Globus');
+    expect(component.statusPollingError).toContain(
+      'Unable to retrieve the latest status from Globus',
+    );
   }));
 
   it('uses default error message for non-globus when no specific error', fakeAsync(() => {
@@ -185,7 +187,9 @@ describe('TransferProgressCardComponent', () => {
 
     tick();
 
-    expect(component.statusPollingError).toContain('Unable to retrieve the latest transfer status');
+    expect(component.statusPollingError).toContain(
+      'Unable to retrieve the latest transfer status',
+    );
     expect(component.statusPollingError).not.toContain('Globus');
   }));
 
@@ -221,7 +225,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-check';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-check', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-check', true),
+    });
     fixture.detectChanges();
 
     // Polling should be active
@@ -237,7 +243,12 @@ describe('TransferProgressCardComponent', () => {
 
   it('starts polling immediately when taskId is set for non-globus', fakeAsync(() => {
     const mockFiles = [
-      { id: '1', name: 'file.txt', action: Fileaction.Copy, status: Filestatus.New } as any,
+      {
+        id: '1',
+        name: 'file.txt',
+        action: Fileaction.Copy,
+        status: Filestatus.New,
+      } as any,
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
@@ -279,7 +290,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-progress';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-progress', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-progress', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -291,16 +304,20 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('returns undefined progress when bytes_expected is zero', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-no-bytes',
-      status: 'ACTIVE',
-      bytes_transferred: 100,
-      bytes_expected: 0,
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-no-bytes',
+        status: 'ACTIVE',
+        bytes_transferred: 100,
+        bytes_expected: 0,
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-no-bytes';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-no-bytes', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-no-bytes', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -308,18 +325,22 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('calculates files summary correctly', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-files',
-      status: 'ACTIVE',
-      files: 100,
-      files_transferred: 50,
-      files_skipped: 10,
-      files_failed: 5,
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-files',
+        status: 'ACTIVE',
+        files: 100,
+        files_transferred: 50,
+        files_skipped: 10,
+        files_failed: 5,
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-files';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-files', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-files', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -364,7 +385,11 @@ describe('TransferProgressCardComponent', () => {
 
     component.openGlobus();
 
-    expect(window.open).toHaveBeenCalledWith('https://monitor.test/url', '_blank', 'noopener');
+    expect(window.open).toHaveBeenCalledWith(
+      'https://monitor.test/url',
+      '_blank',
+      'noopener',
+    );
   });
 
   it('does not open window when no monitor URL', () => {
@@ -383,7 +408,9 @@ describe('TransferProgressCardComponent', () => {
     component.isGlobus = true;
     component.taskId = 'task-refresh';
     component.statusPollingError = 'Previous error';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-refresh', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-refresh', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -408,14 +435,18 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-reset';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-reset', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-reset', true),
+    });
     fixture.detectChanges();
 
     tick();
     expect(component.statusPollingActive).toBeTrue();
 
     component.taskId = '';
-    component.ngOnChanges({ taskId: new SimpleChange('task-reset', '', false) });
+    component.ngOnChanges({
+      taskId: new SimpleChange('task-reset', '', false),
+    });
 
     expect(component.statusPollingActive).toBeFalse();
     expect(component.status).toBeUndefined();
@@ -436,15 +467,19 @@ describe('TransferProgressCardComponent', () => {
   });
 
   it('recognizes FAILED as error status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-failed',
-      status: 'FAILED',
-      nice_status: 'Transfer failed',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-failed',
+        status: 'FAILED',
+        nice_status: 'Transfer failed',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-failed';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-failed', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-failed', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -455,15 +490,19 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('recognizes CANCELED as error status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-cancel',
-      status: 'CANCELED',
-      nice_status: 'Transfer canceled',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-cancel',
+        status: 'CANCELED',
+        nice_status: 'Transfer canceled',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-cancel';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-cancel', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-cancel', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -483,7 +522,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-inactive';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-inactive', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-inactive', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -498,15 +539,19 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('shows nice_status when present without SUCCEEDED/FAILED', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-nice',
-      status: 'ACTIVE',
-      nice_status: 'Processing files 45/100',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-nice',
+        status: 'ACTIVE',
+        nice_status: 'Processing files 45/100',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-nice';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-nice', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-nice', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -515,14 +560,18 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('shows status when no nice_status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-plain',
-      status: 'PENDING',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-plain',
+        status: 'PENDING',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-plain';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-plain', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-plain', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -531,14 +580,18 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('defaults to waiting message when status is empty', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-empty',
-      status: '',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-empty',
+        status: '',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-empty';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-empty', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-empty', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -547,30 +600,40 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('shows error message with status when FAILED without nice_status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-plain-fail',
-      status: 'FAILED',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-plain-fail',
+        status: 'FAILED',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-plain-fail';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-plain-fail', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-plain-fail', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusMessage).toContain('Transfer ended with status FAILED');
+    expect(component.statusMessage).toContain(
+      'Transfer ended with status FAILED',
+    );
   }));
 
   it('shows success message without nice_status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-plain-success',
-      status: 'SUCCEEDED',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-plain-success',
+        status: 'SUCCEEDED',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-plain-success';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-plain-success', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-plain-success', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -579,16 +642,20 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('clamps progress to 0-100 range', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-clamp',
-      status: 'ACTIVE',
-      bytes_transferred: 500,
-      bytes_expected: 100, // More transferred than expected (edge case)
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-clamp',
+        status: 'ACTIVE',
+        bytes_transferred: 500,
+        bytes_expected: 100, // More transferred than expected (edge case)
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-clamp';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-clamp', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-clamp', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -604,7 +671,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-same';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-same', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-same', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -628,14 +697,28 @@ describe('TransferProgressCardComponent', () => {
     component.taskId = 'task/with/slashes';
     fixture.detectChanges();
 
-    expect(component.formattedMonitorUrl).toContain(encodeURIComponent('task/with/slashes'));
-    expect(component.formattedMonitorUrl).toBe('https://app.globus.org/activity/task%2Fwith%2Fslashes');
+    expect(component.formattedMonitorUrl).toContain(
+      encodeURIComponent('task/with/slashes'),
+    );
+    expect(component.formattedMonitorUrl).toBe(
+      'https://app.globus.org/activity/task%2Fwith%2Fslashes',
+    );
   });
 
   it('counts Update files as complete when status is Equal', fakeAsync(() => {
     const mockFiles = [
-      { id: '1', name: 'file1.txt', action: Fileaction.Update, status: Filestatus.Equal } as any,
-      { id: '2', name: 'file2.txt', action: Fileaction.Update, status: Filestatus.Updated } as any,
+      {
+        id: '1',
+        name: 'file1.txt',
+        action: Fileaction.Update,
+        status: Filestatus.Equal,
+      } as any,
+      {
+        id: '2',
+        name: 'file2.txt',
+        action: Fileaction.Update,
+        status: Filestatus.Updated,
+      } as any,
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
@@ -658,8 +741,18 @@ describe('TransferProgressCardComponent', () => {
 
   it('counts Delete files as complete when status is New', fakeAsync(() => {
     const mockFiles = [
-      { id: '1', name: 'file1.txt', action: Fileaction.Delete, status: Filestatus.New } as any,
-      { id: '2', name: 'file2.txt', action: Fileaction.Delete, status: Filestatus.Deleted } as any,
+      {
+        id: '1',
+        name: 'file1.txt',
+        action: Fileaction.Delete,
+        status: Filestatus.New,
+      } as any,
+      {
+        id: '2',
+        name: 'file2.txt',
+        action: Fileaction.Delete,
+        status: Filestatus.Deleted,
+      } as any,
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
@@ -682,8 +775,18 @@ describe('TransferProgressCardComponent', () => {
 
   it('handles Ignore action files (no progress counted)', fakeAsync(() => {
     const mockFiles = [
-      { id: '1', name: 'file1.txt', action: Fileaction.Ignore, status: Filestatus.Equal } as any,
-      { id: '2', name: 'file2.txt', action: Fileaction.Copy, status: Filestatus.Equal } as any,
+      {
+        id: '1',
+        name: 'file1.txt',
+        action: Fileaction.Ignore,
+        status: Filestatus.Equal,
+      } as any,
+      {
+        id: '2',
+        name: 'file2.txt',
+        action: Fileaction.Copy,
+        status: Filestatus.Equal,
+      } as any,
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
@@ -705,9 +808,24 @@ describe('TransferProgressCardComponent', () => {
 
   it('marks transfer as succeeded when all files complete', fakeAsync(() => {
     const mockFiles = [
-      { id: '1', name: 'file1.txt', action: Fileaction.Copy, status: Filestatus.Equal } as any,
-      { id: '2', name: 'file2.txt', action: Fileaction.Update, status: Filestatus.Equal } as any,
-      { id: '3', name: 'file3.txt', action: Fileaction.Delete, status: Filestatus.New } as any,
+      {
+        id: '1',
+        name: 'file1.txt',
+        action: Fileaction.Copy,
+        status: Filestatus.Equal,
+      } as any,
+      {
+        id: '2',
+        name: 'file2.txt',
+        action: Fileaction.Update,
+        status: Filestatus.Equal,
+      } as any,
+      {
+        id: '3',
+        name: 'file3.txt',
+        action: Fileaction.Delete,
+        status: Filestatus.New,
+      } as any,
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
@@ -727,7 +845,9 @@ describe('TransferProgressCardComponent', () => {
 
     // All files complete
     expect(component.status?.status).toBe('SUCCEEDED');
-    expect(component.statusMessage).toContain('Transfer completed successfully');
+    expect(component.statusMessage).toContain(
+      'Transfer completed successfully',
+    );
     expect(component.statusPollingActive).toBeFalse();
     expect(completions.length).toBe(1);
   }));
@@ -750,15 +870,27 @@ describe('TransferProgressCardComponent', () => {
     expect(component.status?.files).toBe(0);
     expect(component.status?.files_transferred).toBe(0);
     expect(component.status?.status).toBe('SUCCEEDED');
-    expect(component.statusMessage).toContain('Transfer completed successfully');
+    expect(component.statusMessage).toContain(
+      'Transfer completed successfully',
+    );
   }));
 
   it('handles dataUpdate callback when provided', fakeAsync(() => {
     const mockFiles = [
-      { id: '1', name: 'file1.txt', action: Fileaction.Copy, status: Filestatus.New } as any,
+      {
+        id: '1',
+        name: 'file1.txt',
+        action: Fileaction.Copy,
+        status: Filestatus.New,
+      } as any,
     ];
     const updatedFiles = [
-      { id: '1', name: 'file1.txt', action: Fileaction.Copy, status: Filestatus.Equal } as any,
+      {
+        id: '1',
+        name: 'file1.txt',
+        action: Fileaction.Copy,
+        status: Filestatus.Equal,
+      } as any,
     ];
     dataUpdates.updateData.and.returnValue(of({ data: updatedFiles }));
 
@@ -824,7 +956,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-destroy';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-destroy', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-destroy', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -842,12 +976,16 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-generic-error';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-generic-error', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-generic-error', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError).toContain('Unable to retrieve the latest status from Globus');
+    expect(component.statusPollingError).toContain(
+      'Unable to retrieve the latest status from Globus',
+    );
     expect(component.statusTone).toBe('error');
   }));
 
@@ -865,7 +1003,9 @@ describe('TransferProgressCardComponent', () => {
 
     tick();
 
-    expect(component.statusPollingError).toContain('Unable to retrieve the latest transfer status');
+    expect(component.statusPollingError).toContain(
+      'Unable to retrieve the latest transfer status',
+    );
     expect(component.statusPollingError).not.toContain('Globus');
     expect(component.statusTone).toBe('error');
   }));
@@ -875,7 +1015,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-error-property';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-error-property', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-error-property', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -891,7 +1033,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-inactive-check';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-inactive-check', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-inactive-check', true),
+    });
 
     tick();
     expect(component.statusPollingActive).toBeTrue();
@@ -905,16 +1049,20 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('clamps progress to 0-100 range when calculation exceeds bounds', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-clamp',
-      status: 'ACTIVE',
-      bytes_transferred: 150,
-      bytes_expected: 100, // Transferred more than expected
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-clamp',
+        status: 'ACTIVE',
+        bytes_transferred: 150,
+        bytes_expected: 100, // Transferred more than expected
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-clamp';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-clamp', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-clamp', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -924,14 +1072,18 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('returns correct statusIcon for info status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-icon-info',
-      status: 'ACTIVE',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-icon-info',
+        status: 'ACTIVE',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-icon-info';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-icon-info', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-icon-info', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -941,14 +1093,18 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('returns correct statusIcon for success status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-icon-success',
-      status: 'SUCCEEDED',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-icon-success',
+        status: 'SUCCEEDED',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-icon-success';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-icon-success', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-icon-success', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -958,14 +1114,18 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('returns correct statusIcon for error status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-icon-error',
-      status: 'FAILED',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-icon-error',
+        status: 'FAILED',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-icon-error';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-icon-error', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-icon-error', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -983,14 +1143,18 @@ describe('TransferProgressCardComponent', () => {
   });
 
   it('hasStatus returns true when status exists', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-has-status',
-      status: 'ACTIVE',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-has-status',
+        status: 'ACTIVE',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-has-status';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-has-status', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-has-status', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1007,15 +1171,19 @@ describe('TransferProgressCardComponent', () => {
   });
 
   it('uses nice_status as statusMessage when available and not terminal', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-nice',
-      status: 'ACTIVE',
-      nice_status: 'Processing your files',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-nice',
+        status: 'ACTIVE',
+        nice_status: 'Processing your files',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-nice';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-nice', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-nice', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1024,15 +1192,19 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('falls back to "Current status: X" when no nice_status', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-fallback',
-      status: 'PENDING',
-      nice_status: '',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-fallback',
+        status: 'PENDING',
+        nice_status: '',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-fallback';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-fallback', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-fallback', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1041,15 +1213,19 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('uses empty nice_status as default Globus waiting message when status but no value', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-empty-nice',
-      status: '',
-      nice_status: '',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-empty-nice',
+        status: '',
+        nice_status: '',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-empty-nice';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-empty-nice', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-empty-nice', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1058,15 +1234,19 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('renders completion_time in template when available', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-completion-time',
-      status: 'SUCCEEDED',
-      completion_time: '2025-01-10T12:00:00Z',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-completion-time',
+        status: 'SUCCEEDED',
+        completion_time: '2025-01-10T12:00:00Z',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-completion-time';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-completion-time', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-completion-time', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1077,15 +1257,19 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('renders request_time when completion_time not available', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-request-time',
-      status: 'ACTIVE',
-      request_time: '2025-01-10T11:00:00Z',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-request-time',
+        status: 'ACTIVE',
+        request_time: '2025-01-10T11:00:00Z',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-request-time';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-request-time', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-request-time', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1096,16 +1280,20 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('renders bytes_transferred and bytes_expected in template', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-bytes-display',
-      status: 'ACTIVE',
-      bytes_transferred: 1024000,
-      bytes_expected: 2048000,
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-bytes-display',
+        status: 'ACTIVE',
+        bytes_transferred: 1024000,
+        bytes_expected: 2048000,
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-bytes-display';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-bytes-display', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-bytes-display', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1117,18 +1305,22 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('renders failed files count when present', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-failed-files',
-      status: 'ACTIVE',
-      files: 10,
-      files_transferred: 5,
-      files_skipped: 2,
-      files_failed: 3,
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-failed-files',
+        status: 'ACTIVE',
+        files: 10,
+        files_transferred: 5,
+        files_skipped: 2,
+        files_failed: 3,
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-failed-files';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-failed-files', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-failed-files', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1138,18 +1330,22 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('does not render failed files count when zero', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'task-no-failed',
-      status: 'ACTIVE',
-      files: 10,
-      files_transferred: 7,
-      files_skipped: 3,
-      files_failed: 0,
-    }];
+    submit.statuses = [
+      {
+        task_id: 'task-no-failed',
+        status: 'ACTIVE',
+        files: 10,
+        files_transferred: 7,
+        files_skipped: 3,
+        files_failed: 0,
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'task-no-failed';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-no-failed', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-no-failed', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1163,12 +1359,16 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-disable-refresh';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-disable-refresh', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-disable-refresh', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    const refreshButton = fixture.nativeElement.querySelector('button:not(.monitor-link)');
+    const refreshButton = fixture.nativeElement.querySelector(
+      'button:not(.monitor-link)',
+    );
     expect(refreshButton.disabled).toBeTrue();
   }));
 
@@ -1177,7 +1377,9 @@ describe('TransferProgressCardComponent', () => {
 
     component.isGlobus = true;
     component.taskId = 'task-enable-refresh';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-enable-refresh', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-enable-refresh', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1185,19 +1387,25 @@ describe('TransferProgressCardComponent', () => {
     // Wait for terminal status to stop polling
     expect(component.statusPollingActive).toBeFalse();
 
-    const refreshButton = fixture.nativeElement.querySelector('button:not(.monitor-link)');
+    const refreshButton = fixture.nativeElement.querySelector(
+      'button:not(.monitor-link)',
+    );
     expect(refreshButton.disabled).toBeFalse();
   }));
 
   it('renders task ID in template', fakeAsync(() => {
-    submit.statuses = [{
-      task_id: 'display-task-123',
-      status: 'ACTIVE',
-    }];
+    submit.statuses = [
+      {
+        task_id: 'display-task-123',
+        status: 'ACTIVE',
+      },
+    ];
 
     component.isGlobus = true;
     component.taskId = 'display-task-123';
-    component.ngOnChanges({ taskId: new SimpleChange(null, 'display-task-123', true) });
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'display-task-123', true),
+    });
 
     tick();
     fixture.detectChanges();

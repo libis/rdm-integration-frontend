@@ -258,15 +258,13 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
       return of(this.buildStatusFromCompareResult(taskId, this.data));
     }
 
-    return this.dataUpdatesService
-      .updateData(this.data, taskId)
-      .pipe(
-        tap((updated) => {
-          // Update parent component's data for UI refresh
-          this.dataUpdate?.(updated);
-        }),
-        map((updated) => this.buildStatusFromCompareResult(taskId, updated)),
-      );
+    return this.dataUpdatesService.updateData(this.data, taskId).pipe(
+      tap((updated) => {
+        // Update parent component's data for UI refresh
+        this.dataUpdate?.(updated);
+      }),
+      map((updated) => this.buildStatusFromCompareResult(taskId, updated)),
+    );
   }
 
   private stopPolling(): void {

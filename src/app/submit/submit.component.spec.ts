@@ -547,7 +547,9 @@ describe('SubmitComponent', () => {
   });
 
   it('back should merge dataset_id into snapshot storage', () => {
-    const snapshotStorage = TestBed.inject(component['snapshotStorage'].constructor);
+    const snapshotStorage = TestBed.inject(
+      component['snapshotStorage'].constructor,
+    );
     if (snapshotStorage) {
       spyOn(snapshotStorage, 'mergeConnect');
     }
