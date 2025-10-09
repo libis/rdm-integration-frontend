@@ -190,15 +190,6 @@ describe('SubmitComponent', () => {
     expect(credentialsStub.credentials.dataset_id).toBe('doi:new');
   });
 
-  it('getDataSubscription should navigate to /connect and show error on failure', () => {
-    (dataUpdatesServiceStub.updateData as jasmine.Spy).and.returnValue(
-      throwError(() => ({ error: 'boom' })),
-    );
-    component.getDataSubscription();
-    expect(notificationServiceStub.showError).toHaveBeenCalled();
-    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
-  });
-
   it('goToCompute should navigate to compute route with pid', () => {
     component.pid = 'doi:abc';
     component.goToCompute();
@@ -230,32 +221,5 @@ describe('SubmitComponent', () => {
 
   it('sendMails should return plugin service value', () => {
     expect(component.sendMails()).toBeTrue();
-  });
-
-  it('progress helpers reflect transfer state', async () => {
-    expect(component.progressRatio()).toBe(0);
-    expect(component.progressLabel()).toBe('');
-    const files: Datafile[] = [
-      { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-      { action: Fileaction.Update, status: Filestatus.Equal } as any,
-    ];
-    await component.setData(files);
-    component.transferStarted = true;
-    component['recomputeProgress']();
-    expect(component.progressRatio()).toBe(1);
-    expect(component.progressLabel()).toContain('2/2');
-  });
-
-  it('hasUnfinishedDataFiles responds to status changes', async () => {
-    const files: Datafile[] = [
-      { action: Fileaction.Copy, status: Filestatus.New } as any,
-      { action: Fileaction.Update, status: Filestatus.Equal } as any,
-      { action: Fileaction.Delete, status: Filestatus.Deleted } as any,
-    ];
-    await component.setData(files);
-    expect(component.hasUnfinishedDataFiles()).toBeTrue();
-    component.created[0].status = Filestatus.Equal;
-    component.deleted[0].status = Filestatus.New;
-    expect(component.hasUnfinishedDataFiles()).toBeFalse();
   });
 });

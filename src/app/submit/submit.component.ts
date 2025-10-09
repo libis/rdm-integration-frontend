@@ -1,43 +1,37 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { Subscription, firstValueFrom } from 'rxjs';
 
 // Services
-import { DataUpdatesService } from '../data.updates.service';
-import { DataStateService } from '../data.state.service';
-import { SubmitService } from '../submit.service';
-import { PluginService } from '../plugin.service';
-import { UtilsService } from '../utils.service';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
+import { DataStateService } from '../data.state.service';
+import { DataUpdatesService } from '../data.updates.service';
 import { DatasetService } from '../dataset.service';
+import { PluginService } from '../plugin.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
-import { PollingService, PollingHandle } from '../shared/polling.service';
+import { SubmitService } from '../submit.service';
+import { UtilsService } from '../utils.service';
 
 // Models
-import {
-  Datafile,
-  Fileaction,
-  Filestatus,
-  Attributes,
-} from '../models/datafile';
-import { StoreResult } from '../models/store-result';
 import { CompareResult } from '../models/compare-result';
+import { Attributes, Datafile, Fileaction } from '../models/datafile';
 import { Metadata } from '../models/field';
+import { StoreResult } from '../models/store-result';
 
 // PrimeNG
-import { PrimeTemplate } from 'primeng/api';
-import { ButtonDirective, Button } from 'primeng/button';
-import { Dialog } from 'primeng/dialog';
-import { Checkbox } from 'primeng/checkbox';
 import { FormsModule } from '@angular/forms';
+import { PrimeTemplate } from 'primeng/api';
+import { Button, ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { Dialog } from 'primeng/dialog';
 
 // Components
+import { TransferProgressCardComponent } from '../shared/transfer-progress-card/transfer-progress-card.component';
 import { SubmittedFileComponent } from '../submitted-file/submitted-file.component';
 
 // Constants and types
@@ -57,6 +51,7 @@ import { SubscriptionManager } from '../shared/types';
     PrimeTemplate,
     Button,
     SubmittedFileComponent,
+    TransferProgressCardComponent,
   ],
 })
 export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
@@ -72,12 +67,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly datasetService = inject(DatasetService);
   private readonly notificationService = inject(NotificationService);
   private readonly snapshotStorage = inject(SnapshotStorageService);
-  private readonly pollingService = inject(PollingService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
-  // Replaces previous recursive subscription approach for status polling
-  private pollingHandle?: PollingHandle;
 
   // Icon constants
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
@@ -102,38 +94,27 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   hasAccessToCompute = false;
   private incomingMetadata?: Metadata;
   transferStarted = false; // after successful submit ack
-  totalPlanned = 0; // created + updated + deleted
-  completedCount = 0; // processed files
+
+  // Transfer tracking (works for all plugins)
+  transferTaskId?: string | null; // For Globus: task ID; for others: dataset ID
+  transferMonitorUrl?: string | null; // External monitor URL (Globus only)
+  transferInProgress = false;
 
   isGlobus(): boolean {
     return this.credentialsService.credentials.plugin === 'globus';
   }
 
-  progressRatio(): number {
-    if (this.totalPlanned === 0) return 0;
-    return Math.min(1, this.completedCount / this.totalPlanned);
+  onStatusPollingChange(isPolling: boolean): void {
+    this.transferInProgress = isPolling;
   }
 
-  progressLabel(): string {
-    if (!this.transferStarted) return '';
-    return `${this.completedCount}/${this.totalPlanned} files processed`;
-  }
-
-  private recomputeProgress(): void {
-    this.totalPlanned =
-      this.created.length + this.updated.length + this.deleted.length;
-    const doneCreates = this.created.filter(
-      (d) => d.status === Filestatus.Equal,
-    ).length;
-    const doneUpdates = this.updated.filter(
-      (d) => d.status === Filestatus.Equal,
-    ).length;
-    const doneDeletes = this.deleted.filter(
-      (d) => d.status === Filestatus.New || d.status === Filestatus.Equal,
-    ).length;
-    this.completedCount = doneCreates + doneUpdates + doneDeletes;
-    if (this.completedCount >= this.totalPlanned && this.totalPlanned > 0) {
-      this.done = true;
+  /**
+   * Callback for transfer-progress-card to update our local data state.
+   * This keeps the file list UI in sync with backend status for non-Globus transfers.
+   */
+  onDataUpdate(result: CompareResult): void {
+    if (result.data) {
+      this.setData(result.data);
     }
   }
 
@@ -179,40 +160,6 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   ngOnDestroy(): void {
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
-    this.pollingHandle?.cancel();
-  }
-
-  getDataSubscription(): void {
-    this.pollingHandle?.cancel();
-    this.pollingHandle = this.pollingService.poll<CompareResult>({
-      iterate: () => this.dataUpdatesService.updateData(this.data, this.pid),
-      onResult: (res: CompareResult) => {
-        if (res.data !== undefined) {
-          this.setData(res.data);
-        }
-        if (!this.hasUnfinishedDataFiles()) {
-          this.done = true;
-        }
-      },
-      shouldContinue: () => this.hasUnfinishedDataFiles(),
-      delayMs: 1000,
-      onError: (err: unknown) => {
-        const message = (err as { error?: string })?.error || 'unknown error';
-        this.notificationService.showError(
-          `Getting status of data failed: ${message}`,
-        );
-        this.router.navigate(['/connect']);
-        return false;
-      },
-    });
-  }
-
-  hasUnfinishedDataFiles(): boolean {
-    return (
-      this.created.some((d) => d.status !== Filestatus.Equal) ||
-      this.updated.some((d) => d.status !== Filestatus.Equal) ||
-      this.deleted.some((d) => d.status !== Filestatus.New)
-    );
   }
 
   loadData(): void {
@@ -254,7 +201,6 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.updated = updated;
     this.deleted = deleted;
     this.data = [...created, ...updated, ...deleted];
-    this.recomputeProgress();
   }
 
   submit() {
@@ -300,10 +246,18 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             this.router.navigate(['/connect']);
           } else {
             this.transferStarted = true;
-            this.getDataSubscription();
             this.submitted = true;
             this.datasetUrl = data.datasetUrl!;
-            this.recomputeProgress();
+
+            // For Globus: use task ID; for others: use dataset ID for polling
+            if (this.isGlobus()) {
+              this.transferTaskId = data.globusTransferTaskId ?? null;
+              this.transferMonitorUrl = data.globusTransferMonitorUrl ?? null;
+            } else {
+              this.transferTaskId = this.pid;
+            }
+
+            this.transferInProgress = true;
           }
         },
         error: (err) => {

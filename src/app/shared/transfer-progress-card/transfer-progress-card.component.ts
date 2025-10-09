@@ -17,10 +17,24 @@ import { Observable, Subscription, merge, of, timer } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { CredentialsService } from 'src/app/credentials.service';
 import { DataUpdatesService } from 'src/app/data.updates.service';
-import { CompareResult, ResultStatus } from '../../models/compare-result';
-import { Datafile, Filestatus } from '../../models/datafile';
+import { CompareResult } from '../../models/compare-result';
+import { Datafile, Fileaction, Filestatus } from '../../models/datafile';
 import { SubmitService, TransferTaskStatus } from '../../submit.service';
 
+/**
+ * Universal transfer progress card that works with all transfer plugins.
+ *
+ * The parent component must specify the transfer mode via the `isGlobus` input:
+ *
+ * - **Globus transfers** (`isGlobus=true`): Uses `taskId` to poll Globus API and shows
+ *   real-time Globus status
+ * - **Non-Globus transfers** (`isGlobus=false`): Uses `taskId` (dataset ID) + `data`
+ *   (CompareResult) to poll the rdm-integration backend and maps file statuses to a
+ *   unified TransferTaskStatus
+ *
+ * This explicit mode selection avoids relying on global state and ensures correct behavior
+ * regardless of how the user navigated to the page.
+ */
 @Component({
   selector: 'app-transfer-progress-card',
   standalone: true,
@@ -42,18 +56,28 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     'INACTIVE',
   ]);
 
+  // Determines the transfer mode: Globus or non-Globus backend polling
+  // Must be explicitly provided by parent component
+  @Input({ required: true })
+  isGlobus = false;
+
+  // For Globus: this is the Globus task ID
+  // For non-Globus: this is the dataset ID used for backend polling
   @Input({ required: true })
   taskId?: string | null;
 
+  // Optional external monitor URL (Globus only)
   @Input()
   monitorUrl?: string | null;
 
   @Input()
   submitting = false;
 
+  // CompareResult for non-Globus transfers (ignored for Globus)
   @Input()
-  data?: CompareResult | null;
+  data?: Datafile[] | null;
 
+  // Callback to update parent component's data (non-Globus only)
   @Input()
   dataUpdate?: (result: CompareResult) => void;
 
@@ -129,11 +153,15 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     }
 
     if (!this.status && this.statusPollingActive) {
-      return 'Checking Globus transfer status…';
+      return this.isGlobus
+        ? 'Checking Globus transfer status…'
+        : 'Checking transfer status…';
     }
 
     if (!this.status) {
-      return 'Waiting for Globus updates…';
+      return this.isGlobus
+        ? 'Waiting for Globus updates…'
+        : 'Waiting for status updates…';
     }
 
     const niceStatus = this.status.nice_status?.trim();
@@ -220,31 +248,25 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   }
 
   private getTransferStatus(taskId: string): Observable<TransferTaskStatus> {
-    if (!this.isGlobus()) {
-      const compareResult = this.data ?? null;
-      if (!compareResult) {
-        return of(this.buildStatusFromCompareResult(taskId, compareResult));
-      }
-
-      const datasetId =
-        compareResult.id ??
-        this.credentialsService.credentials.dataset_id ??
-        taskId;
-
-      return this.dataUpdatesService
-        .updateData(compareResult.data ?? [], datasetId)
-        .pipe(
-          tap((updated) => {
-            this.dataUpdate?.(updated);
-          }),
-          map((updated) => this.buildStatusFromCompareResult(taskId, updated)),
-        );
+    if (this.isGlobus) {
+      // Globus: poll the Globus API using the task ID
+      return this.submitService.getGlobusTransferStatus(taskId);
     }
-    return this.submitService.getGlobusTransferStatus(taskId);
-  }
 
-  private isGlobus(): boolean {
-    return this.credentialsService.credentials.plugin === 'globus';
+    // Non-Globus: poll the backend using dataset ID and CompareResult
+    if (!this.data) {
+      return of(this.buildStatusFromCompareResult(taskId, this.data));
+    }
+
+    return this.dataUpdatesService
+      .updateData(this.data, taskId)
+      .pipe(
+        tap((updated) => {
+          // Update parent component's data for UI refresh
+          this.dataUpdate?.(updated);
+        }),
+        map((updated) => this.buildStatusFromCompareResult(taskId, updated)),
+      );
   }
 
   private stopPolling(): void {
@@ -270,15 +292,20 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
   private handleError(err: unknown): void {
     this.stopPolling();
     const statusCode = (err as { status?: number })?.status;
+
     if (statusCode === 401) {
-      this.statusPollingError =
-        'Globus session expired. Please reconnect to refresh the transfer status.';
+      this.statusPollingError = this.isGlobus
+        ? 'Globus session expired. Please reconnect to refresh the transfer status.'
+        : 'Session expired. Please reconnect to refresh the transfer status.';
       return;
     }
+
     const errorMessage =
       (err as { error?: string; message?: string })?.error ||
       (err as { message?: string })?.message ||
-      'Unable to retrieve the latest status from Globus.';
+      (this.isGlobus
+        ? 'Unable to retrieve the latest status from Globus.'
+        : 'Unable to retrieve the latest transfer status.');
     this.statusPollingError = errorMessage;
   }
 
@@ -286,12 +313,12 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     taskId: string,
     compareResult?: CompareResult | null,
   ): TransferTaskStatus {
-    const mapped = this.mapCompareResultStatus(compareResult?.status);
     const summary = this.summarizeCompareData(compareResult?.data);
+
     return {
       task_id: taskId,
-      status: mapped.status,
-      nice_status: mapped.message,
+      status: summary.status,
+      nice_status: summary.message,
       files: summary.total,
       files_transferred: summary.completed,
       files_skipped: summary.skipped,
@@ -299,64 +326,59 @@ export class TransferProgressCardComponent implements OnChanges, OnDestroy {
     };
   }
 
-  private mapCompareResultStatus(status?: ResultStatus): {
+  /**
+   * Summarizes file transfer progress based on file actions and statuses.
+   *
+   * Completion rules:
+   * - Copy/Update files: done when status is Equal (file matches source)
+   * - Delete files: done when status is New (file no longer exists in destination)
+   * - Unknown status: counted as failed
+   */
+  private summarizeCompareData(datafiles?: Datafile[] | null): {
     status: string;
     message: string;
-  } {
-    switch (status) {
-      case ResultStatus.Finished:
-        return {
-          status: 'SUCCEEDED',
-          message: 'Transfer completed successfully.',
-        };
-      case ResultStatus.Updating:
-        return {
-          status: 'ACTIVE',
-          message: 'Transfer in progress…',
-        };
-      case ResultStatus.New:
-        return {
-          status: 'PENDING',
-          message: 'Preparing transfer…',
-        };
-      default:
-        return {
-          status: 'ACTIVE',
-          message: 'Waiting for repository updates…',
-        };
-    }
-  }
-
-  private summarizeCompareData(
-    datafiles?: Datafile[] | null,
-  ): {
     total: number;
     completed: number;
     skipped: number;
     failed: number;
   } {
+    const skipped = 0; // Reserved for future use
+    const failed = 0; // Reserved for future use
     const files = datafiles ?? [];
     let completed = 0;
-    let skipped = 0;
-    let failed = 0;
 
     for (const file of files) {
-      switch (file.status) {
-        case Filestatus.Equal:
-          completed++;
+      switch (file.action) {
+        case Fileaction.Copy:
+          if (file.status === Filestatus.Equal) {
+            completed++;
+          }
           break;
-        case Filestatus.Deleted:
-          skipped++;
+        case Fileaction.Update:
+          if (file.status === Filestatus.Equal) {
+            completed++;
+          }
           break;
-        case Filestatus.Unknown:
-          failed++;
-          break;
-        default:
+        case Fileaction.Delete:
+          if (file.status === Filestatus.New) {
+            completed++;
+          }
           break;
       }
     }
 
+    let status: string;
+    let message: string;
+    if (files.length === completed) {
+      status = 'SUCCEEDED';
+      message = 'Transfer completed successfully.';
+    } else {
+      status = 'ACTIVE';
+      message = 'Transfer in progress…';
+    }
     return {
+      status,
+      message,
       total: files.length,
       completed,
       skipped,

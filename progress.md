@@ -22,13 +22,28 @@
   - Verified suite with `npm run test -- --watch=false --browsers=ChromeHeadless`.
 - **Status presentation**
   - `TransferProgressCardComponent` now drives icon/tone/message selection through `statusIcon`, `statusTone`, and `mapCompareResultStatus`, so any consumer (download already, submit once integrated) shares consistent success/error/spinner behavior.
+- **Submit component integration**
+  - Replaced legacy progress bar with `TransferProgressCardComponent`.
+  - Removed old polling logic (`pollingHandle`, `getDataSubscription`, `recomputeProgress`).
+  - Pruned legacy SCSS for progress bar, themed styles, and animations.
+  - Added plugin-neutral properties: `transferTaskId`, `transferMonitorUrl`, `transferInProgress`.
+  - Implemented conditional task ID assignment: Globus uses task ID, others use dataset ID.
+- **Plugin detection refactor**
+  - Changed `TransferProgressCardComponent` from implicit plugin detection to explicit `isGlobus` input.
+  - Submit component passes `[isGlobus]="isGlobus()"` (dynamic based on selected plugin).
+  - Download component passes `[isGlobus]="true"` (always Globus, even when accessed directly).
+  - Removed dependency on global `credentialsService.credentials.plugin` state.
+  - Updated all component tests to set `isGlobus` explicitly.
+- **Documentation**
+  - Created comprehensive `TRANSFER_CARD_ARCHITECTURE.md` explaining the dual-mode design.
+  - Documented plugin detection rationale and explicit input contract.
+  - Added inline comments clarifying Globus vs non-Globus flows.
+  - Updated architecture doc with explicit mode selection benefits.
 
 ## TODO
 
-- Polish the download layout (button alignment, centering) once submit refactor is complete.
-- Replace the submit progress bar with `TransferProgressCardComponent` and prune legacy SCSS.
-- Revisit shared component/submit/download SCSS to drop obsolete selectors after both views adopt the card.
-- Confirm non-Globus transfers still render meaningful status when provided to the shared card.
-- Update submit component unit tests after the template swap removes legacy polling.
-- Perform a manual smoke test of submit/download screens following the shared card rollout.
-- Refresh documentation (`STYLING_FIX_SUMMARY.md`, inline comments) and capture any further backend follow-ups.
+- Polish the download layout (button alignment, centering) for visual consistency.
+- Revisit shared component/submit/download SCSS to drop any remaining obsolete selectors.
+- Perform a manual smoke test of submit/download screens with both Globus and non-Globus plugins.
+- Refresh documentation (`STYLING_FIX_SUMMARY.md`) if additional styling changes are made.
+- Consider backend follow-ups for additional status details or error handling improvements.

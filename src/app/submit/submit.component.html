@@ -54,33 +54,16 @@
 <br />
 
 @if (transferStarted) {
-  <div class="container progress-wrapper">
-    <div class="row align-items-center mb-2">
-      <div class="col-auto progress-label">Progress</div>
-      <div class="col">
-        <div class="progress themed-progress">
-          <div
-            class="progress-bar themed-progress-bar"
-            [ngClass]="{ complete: progressRatio() >= 1 }"
-            [style.width.%]="progressRatio() * 100"
-          ></div>
-        </div>
-      </div>
-      <div class="col-auto small progress-counter">
-        {{ progressLabel() }}
-      </div>
-    </div>
-    <div class="row mb-3 small subtle-text">
-      <div class="col" [hidden]="!isGlobus() || !submitted">
-        <strong>Globus:</strong> Transfer submitted to Globus; detailed progress
-        can be checked on the dataset page. A checkmark here indicates the job
-        was handed off, not that all bytes are moved.
-      </div>
-      <div class="col" [hidden]="isGlobus() || !submitted">
-        Status updates every few seconds until all selected actions complete.
-      </div>
-    </div>
-  </div>
+  <app-transfer-progress-card
+    [isGlobus]="isGlobus()"
+    [taskId]="transferTaskId"
+    [monitorUrl]="transferMonitorUrl"
+    [submitting]="transferInProgress && !transferTaskId"
+    (pollingChange)="onStatusPollingChange($event)"
+    [data]="data"
+    [dataUpdate]="onDataUpdate.bind(this)"
+    (completed)="done = true"
+  ></app-transfer-progress-card>
 }
 
 <h4 class="safety-warning">

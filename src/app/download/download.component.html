@@ -131,6 +131,7 @@
         >
 
         <app-transfer-progress-card
+          [isGlobus]="true"
           [taskId]="lastTransferTaskId"
           [monitorUrl]="globusMonitorUrl"
           [submitting]="downloadInProgress && !lastTransferTaskId"
