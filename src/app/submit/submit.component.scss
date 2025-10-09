@@ -4,12 +4,16 @@
 // Fix white background from Bootstrap table while letting inline row styles override when present
 .submit-table,
 .submit-table .table,
-.submit-table tbody,
+.submit-table tbody {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+}
+
 .submit-table tr,
 .submit-table td,
 .submit-table th {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
+  background-color: inherit;
+  color: inherit;
 }
 
 .inner-table-cell {
@@ -18,12 +22,16 @@
 
   // Target nested tables within inner-table-cell
   .table,
-  .table tbody,
+  .table tbody {
+    background-color: var(--p-content-background);
+    color: var(--p-text-color);
+  }
+
   .table tr,
   .table td,
   .table th {
-    background-color: var(--p-content-background);
-    color: var(--p-text-color);
+    background-color: inherit;
+    color: inherit;
   }
 }
 
