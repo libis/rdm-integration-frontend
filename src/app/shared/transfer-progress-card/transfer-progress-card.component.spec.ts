@@ -1356,7 +1356,7 @@ describe('TransferProgressCardComponent', () => {
     expect(compiled.textContent).not.toContain('Failed:');
   }));
 
-  it('disables refresh button when polling is active', fakeAsync(() => {
+  it('hides refresh button when polling is active', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-disable-refresh', status: 'ACTIVE' }];
 
     component.isGlobus = true;
@@ -1371,11 +1371,11 @@ describe('TransferProgressCardComponent', () => {
     const refreshButton = fixture.nativeElement.querySelector(
       'button:not(.monitor-link)',
     );
-    expect(refreshButton.disabled).toBeTrue();
+    expect(refreshButton).toBeNull();
   }));
 
-  it('enables refresh button when polling is not active', fakeAsync(() => {
-    submit.statuses = [{ task_id: 'task-enable-refresh', status: 'SUCCEEDED' }];
+  it('shows refresh button when polling is not active and not succeeded', fakeAsync(() => {
+    submit.statuses = [{ task_id: 'task-enable-refresh', status: 'INACTIVE' }];
 
     component.isGlobus = true;
     component.taskId = 'task-enable-refresh';
@@ -1392,7 +1392,7 @@ describe('TransferProgressCardComponent', () => {
     const refreshButton = fixture.nativeElement.querySelector(
       'button:not(.monitor-link)',
     );
-    expect(refreshButton.disabled).toBeFalse();
+    expect(refreshButton).not.toBeNull();
   }));
 
   it('renders task ID in template', fakeAsync(() => {
