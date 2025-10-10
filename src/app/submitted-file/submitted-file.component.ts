@@ -1,12 +1,13 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, input } from '@angular/core';
+import { Component, OnInit, inject, input } from '@angular/core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import {
   FileActionStyle,
   buildInlineStyle,
   getFileActionStyle,
 } from '../shared/constants';
+import { CredentialsService } from '../credentials.service';
 
 @Component({
   selector: 'tr[app-submitted-file]',
@@ -15,6 +16,7 @@ import {
   exportAs: 'appSubmittedFile',
 })
 export class SubmittedFileComponent implements OnInit {
+  private readonly credentialsService = inject(CredentialsService);
   readonly datafile = input<Datafile>({});
   readonly isSubmitted = input(false);
 
@@ -66,5 +68,9 @@ export class SubmittedFileComponent implements OnInit {
   getStyle(): string {
     const style = this.resolveHostStyle();
     return buildInlineStyle(style);
+  }
+
+  isGlobus(): boolean {
+    return this.credentialsService.credentials.plugin === 'globus';
   }
 }
