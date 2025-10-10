@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { expectBootstrapTableStyle } from '../../testing/inline-style-test-helpers';
+import { CredentialsService } from '../credentials.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { SubmittedFileComponent } from './submitted-file.component';
 
 describe('SubmittedFileComponent', () => {
   let component: SubmittedFileComponent;
   let fixture: ComponentFixture<SubmittedFileComponent>;
+  let credentialsService: CredentialsService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -14,6 +16,8 @@ describe('SubmittedFileComponent', () => {
 
     fixture = TestBed.createComponent(SubmittedFileComponent);
     component = fixture.componentInstance;
+    credentialsService = TestBed.inject(CredentialsService);
+    credentialsService.credentials = {};
   });
 
   const setDatafile = (overrides: Partial<Datafile>) => {
@@ -70,6 +74,11 @@ describe('SubmittedFileComponent', () => {
     expect(component.getStyle()).toBe('');
   });
 
+  it('falls back to ignore styling when action is missing', () => {
+    setDatafile({ action: undefined, status: Filestatus.Equal });
+    expect(component.getStyle()).toBe('');
+  });
+
   it('formats file path including folder prefix when present', () => {
     setDatafile({ path: 'docs', name: 'file.txt' });
     expect(component.file()).toBe('docs/file.txt');
@@ -90,5 +99,13 @@ describe('SubmittedFileComponent', () => {
     setDatafile({ action: Fileaction.Delete, status: Filestatus.Equal });
     expect(component.isReady()).toBeFalse();
     expect(component.iconClass()).toBe('pi pi-spin pi-spinner');
+  });
+
+  it('detects globus submissions based on credentials service', () => {
+    credentialsService.credentials = { plugin: 'globus' };
+    expect(component.isGlobus()).toBeTrue();
+
+    credentialsService.credentials = { plugin: 'dataverse' };
+    expect(component.isGlobus()).toBeFalse();
   });
 });

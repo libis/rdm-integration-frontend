@@ -142,4 +142,66 @@ describe('DownladablefileComponent', () => {
     expect(parent.data?.action).toBe(Fileaction.Ignore);
     expect(parent.children?.[0].data?.action).toBe(Fileaction.Ignore);
   });
+
+  it('resolves inline styles for custom actions', () => {
+    const { child, map } = buildTree();
+    child.data!.action = Fileaction.Custom;
+
+    fixture.componentRef.setInput('datafile', {
+      id: child.data!.id,
+      name: child.data!.name,
+      path: child.data!.path,
+      hidden: child.data!.hidden,
+      action: Fileaction.Custom,
+      attributes: { isFile: true },
+    });
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput('rowNode', child);
+    fixture.detectChanges();
+
+    expect(component.action()).toBe(DownladablefileComponent.icon_custom);
+    const style = component.getStyle();
+    expect(style).toContain('background-color: var(--app-file-action-custom-bg)');
+    expect(style).toContain('--bs-table-color: var(--app-file-action-custom-color)');
+  });
+
+  it('falls back to ignore style tokens when action is unset', () => {
+    const { child, map } = buildTree();
+    child.data!.action = undefined as unknown as Fileaction;
+
+    fixture.componentRef.setInput('datafile', {
+      id: child.data!.id,
+      name: child.data!.name,
+      path: child.data!.path,
+      hidden: child.data!.hidden,
+      attributes: { isFile: true },
+    });
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput('rowNode', child);
+    fixture.detectChanges();
+
+    expect(component.getStyle()).toBe('');
+    expect(DownladablefileComponent.actionIcon({ data: {} })).toBe(
+      DownladablefileComponent.icon_ignore,
+    );
+  });
+
+  it('returns leaf node action when updating folders', () => {
+    const leaf: TreeNode<Datafile> = {
+      key: 'leaf:file',
+      data: {
+        id: 'leaf',
+        name: 'leaf.txt',
+        path: 'docs',
+        hidden: false,
+        action: Fileaction.Download,
+        attributes: { isFile: true },
+      },
+      children: [],
+    };
+
+    const result = component.updateFolderActions(leaf);
+    expect(result).toBe(Fileaction.Download);
+    expect(leaf.data?.action).toBe(Fileaction.Download);
+  });
 });
