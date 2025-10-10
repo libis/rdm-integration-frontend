@@ -195,9 +195,9 @@ export class TransferProgressCardComponent
       return niceStatus || `Transfer ended with status ${normalized}.`;
     }
 
-    // For active transfers, show "Transferring..." instead of technical status
+    // For active transfers, show "Transfer in progress..." instead of technical status
     if (normalized === 'ACTIVE') {
-      return 'Transferring...';
+      return 'Transfer in progress...';
     }
 
     if (niceStatus) {
