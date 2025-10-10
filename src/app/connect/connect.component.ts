@@ -142,7 +142,6 @@ export class ConnectComponent
   pluginIdSelectHidden = true;
   optionsLoading = false;
   showNewDatasetCreatedMessage = false;
-  showOtherOptions = false;
   repoSearchSubject: Subject<string> = new Subject();
   collectionSearchSubject: Subject<string> = new Subject();
   datasetSearchSubject: Subject<string> = new Subject();

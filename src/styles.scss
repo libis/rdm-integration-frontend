@@ -278,18 +278,6 @@ label {
   color: inherit;
 }
 
-.table-theme-adaptive code {
-  white-space: normal;
-}
-
-@media (prefers-color-scheme: dark) {
-  .table-theme-adaptive code {
-    white-space: normal;
-    letter-spacing: normal;
-    word-spacing: normal;
-  }
-}
-
 @supports (color: color-mix(in srgb, #000 50%, #fff 50%)) {
   .table-theme-adaptive {
     --bs-table-striped-bg: color-mix(
