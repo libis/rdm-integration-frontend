@@ -6,6 +6,7 @@
       type="button"
       class="p-button-sm p-button-raised p-button-secondary"
       (click)="back()"
+      [attr.disabled]="transferStarted ? '' : null"
     >
       <i class="pi pi-angle-double-left"></i>&nbsp;Return
     </button>
