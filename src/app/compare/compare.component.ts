@@ -161,7 +161,7 @@ export class CompareComponent
           this.allowedFolderPathPattern = data.allowedFolderPathPattern;
           if (this.data.status !== ResultStatus.Updating) {
             this.disabled = false;
-            this.loading = false;
+            //this.loading = false;
           } else {
             this.getUpdatedData(0);
           }
@@ -183,9 +183,9 @@ export class CompareComponent
         }
         if (this.data.status !== ResultStatus.Updating) {
           this.disabled = false;
-          this.loading = false;
+          //this.loading = false;
         } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
-          this.loading = false;
+          //this.loading = false;
           this.refreshHidden = false;
         } else {
           await this.utils.sleep(APP_CONSTANTS.RETRY_SLEEP_DURATION);
