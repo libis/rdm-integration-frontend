@@ -1,22 +1,22 @@
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { Routes, Router, RouterOutlet } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
 import { Component } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Router, RouterOutlet, Routes } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+import { BehaviorSubject } from 'rxjs';
 
-import { ConnectComponent } from './connect.component';
 import { CompareComponent } from '../compare/compare.component';
-import { PluginService } from '../plugin.service';
-import { DataStateService } from '../data.state.service';
 import { CredentialsService } from '../credentials.service';
-import { NotificationService } from '../shared/notification.service';
+import { DataStateService } from '../data.state.service';
 import { Credentials } from '../models/credentials';
+import { PluginService } from '../plugin.service';
+import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { ConnectComponent } from './connect.component';
 
 // Minimal stubs
 class PluginServiceStub {
@@ -70,8 +70,9 @@ class PluginServiceStub {
 class DataStateServiceStub {
   private state: any = null;
   private subj = new BehaviorSubject<any>(null);
-  initializeState(creds: Credentials) {
-    this.state = { id: creds.dataset_id, data: [], status: 0 };
+  initializeState(creds?: Credentials) {
+    const datasetId = creds?.dataset_id ?? 'mock-dataset-id';
+    this.state = { id: datasetId, data: [], status: 0 };
     this.subj.next(this.state);
   }
   getObservableState() {

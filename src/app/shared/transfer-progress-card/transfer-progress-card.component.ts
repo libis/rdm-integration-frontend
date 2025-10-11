@@ -2,17 +2,17 @@
 
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-  ViewChild,
-  inject,
+    AfterViewInit,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnDestroy,
+    Output,
+    SimpleChanges,
+    ViewChild,
+    inject,
 } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
 
@@ -197,7 +197,10 @@ export class TransferProgressCardComponent
 
     // For active transfers, show "Transfer in progress..." instead of technical status
     if (normalized === 'ACTIVE') {
-      return 'Transfer in progress...';
+      if (niceStatus) {
+        return niceStatus;
+      }
+      return 'Transfer in progress... (ACTIVE)';
     }
 
     if (niceStatus) {
@@ -413,7 +416,7 @@ export class TransferProgressCardComponent
       message = 'Transfer completed successfully.';
     } else {
       status = 'ACTIVE';
-      message = 'Transfer in progress…';
+      message = 'Transfer in progress...';
     }
     return {
       status,

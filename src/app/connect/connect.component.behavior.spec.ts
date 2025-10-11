@@ -1,22 +1,23 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import {
-  TestBed,
-  fakeAsync,
-  flushMicrotasks,
-  tick,
+    TestBed,
+    fakeAsync,
+    flushMicrotasks,
+    tick,
 } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { SelectItem } from 'primeng/api';
 import { of, throwError } from 'rxjs';
+import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
@@ -29,10 +30,7 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { ConnectComponent } from './connect.component';
 
 class DataStateServiceStub {
-  lastCreds: any;
-  initializeState(creds: any) {
-    this.lastCreds = creds;
-  }
+  initializeState(_creds?: any) {}
 }
 
 class PluginServiceStub {
@@ -179,6 +177,7 @@ describe('ConnectComponent additional behavior/validation', () => {
   let pluginService: PluginServiceStub;
   let repoLookup: RepoLookupServiceStub;
   let snapshotStorage: SnapshotStorageServiceStub;
+  let credentialsService: CredentialsService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -219,6 +218,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     snapshotStorage = TestBed.inject(
       SnapshotStorageService,
     ) as unknown as SnapshotStorageServiceStub;
+    credentialsService = TestBed.inject(CredentialsService);
   });
 
   it('newNonce produces string of expected length', () => {
@@ -359,17 +359,13 @@ describe('ConnectComponent additional behavior/validation', () => {
     comp.plugin = 'github';
     comp.datasetId = 'root:COLL:New Dataset';
     const httpMock = TestBed.inject(HttpTestingController);
-    const ds = TestBed.inject(
-      DataStateService,
-    ) as unknown as DataStateServiceStub;
 
     comp.connect();
     const req = httpMock.expectOne('api/common/useremail');
     expect(req.request.method).toBe('POST');
     req.flush('user@example.com');
 
-    expect(ds.lastCreds).toBeDefined();
-    expect(ds.lastCreds.newly_created).toBeTrue();
+    expect(credentialsService.credentials.newly_created).toBeTrue();
   });
 
   it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', fakeAsync(() => {
