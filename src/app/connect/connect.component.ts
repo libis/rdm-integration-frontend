@@ -8,7 +8,6 @@ import { Subscription } from 'rxjs';
 // Services
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
-import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { OauthService } from '../oauth.service';
@@ -52,6 +51,7 @@ import {
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
+import { CredentialsService } from '../credentials.service';
 
 const new_dataset = 'New Dataset';
 // Toggle detailed restoration tracing (set false for cleaner logs in production builds)
@@ -79,7 +79,6 @@ export class ConnectComponent
   implements OnInit, OnDestroy, SubscriptionManager
 {
   private readonly router = inject(Router);
-  private readonly dataStateService = inject(DataStateService);
   private readonly datasetService = inject(DatasetService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
@@ -92,6 +91,7 @@ export class ConnectComponent
   private readonly snapshotStorage = inject(SnapshotStorageService);
   private readonly connectValidation = inject(ConnectValidationService);
   private readonly navigation = inject(NavigationService);
+  private readonly credentialsService = inject(CredentialsService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -755,7 +755,7 @@ export class ConnectComponent
               dataset_id: this.datasetId,
               collectionId: this.collectionId,
             });
-            this.dataStateService.initializeState(creds);
+            this.credentialsService.credentials = creds;
 
             if (
               this.dataverseToken !== undefined &&

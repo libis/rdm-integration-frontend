@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { DataService } from './data.service';
 import { DataStateService } from './data.state.service';
-import { Credentials } from './models/credentials';
 import { NotificationService } from './shared/notification.service';
 import { UtilsService } from './utils.service';
 
@@ -63,17 +62,8 @@ describe('DataStateService', () => {
     service = TestBed.inject(DataStateService);
   });
 
-  function init(credsIn?: Partial<Credentials>) {
-    service.initializeState({
-      plugin: 'git',
-      pluginId: 'git',
-      repo_name: 'r',
-      user: 'u',
-      url: '',
-      dataset_id: 'doi:123',
-      dataverse_token: 'tok',
-      ...credsIn,
-    });
+  function init() {
+    service.initializeState();
   }
 
   it('initializes and polls until ready true then stores result', fakeAsync(() => {

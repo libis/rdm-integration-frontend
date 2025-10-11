@@ -3,10 +3,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { CredentialsService } from './credentials.service';
 import { DataService } from './data.service';
 import { CachedResponse, CompareResult, Key } from './models/compare-result';
-import { Credentials } from './models/credentials';
 import { NotificationService } from './shared/notification.service';
 import { UtilsService } from './utils.service';
 
@@ -14,7 +12,6 @@ import { UtilsService } from './utils.service';
   providedIn: 'root',
 })
 export class DataStateService {
-  private credentialsService = inject(CredentialsService);
   private dataService = inject(DataService);
   private router = inject(Router);
   private utils = inject(UtilsService);
@@ -25,9 +22,8 @@ export class DataStateService {
 
   constructor() {}
 
-  initializeState(creds: Credentials): void {
+  initializeState(): void {
     this.resetState();
-    this.credentialsService.credentials = creds;
     this.dataService.getData().subscribe({
       next: (key) => this.getCompareData(key),
       error: (err) => {

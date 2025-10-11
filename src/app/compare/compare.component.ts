@@ -138,9 +138,7 @@ export class CompareComponent
     // This preserves prior file action selections when navigating back from
     // metadata-selector or submit components.
     if (this.dataStateService.getCurrentValue() == null) {
-      this.dataStateService.initializeState(
-        this.credentialsService.credentials,
-      );
+      this.dataStateService.initializeState();
     }
     this.setUpdatedDataSubscription();
   }
