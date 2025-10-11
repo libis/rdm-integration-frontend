@@ -90,7 +90,11 @@
 </p-dialog>
 <div style="height: 100% - 2rem; overflow: hidden">
   <div style="float: left; width: 50%">
-    <p-treeTable [value]="rootNodeChildren" [loading]="loading">
+    <p-treeTable
+      [value]="rootNodeChildren"
+      [loading]="loading"
+      loadingIcon="pi pi-spin pi-spinner"
+    >
       <ng-template pTemplate="header">
         <tr>
           <th style="text-align: left">

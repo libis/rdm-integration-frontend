@@ -29,6 +29,7 @@ import { Checkbox } from 'primeng/checkbox';
 import { Dialog } from 'primeng/dialog';
 import { FloatLabel } from 'primeng/floatlabel';
 import { Select } from 'primeng/select';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components
@@ -58,6 +59,7 @@ import { SubscriptionManager } from '../shared/types';
     PrimeTemplate,
     Button,
     TreeTableModule,
+    ProgressSpinnerModule,
     ExecutablefileComponent,
     AutosizeModule,
   ],

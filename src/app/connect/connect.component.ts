@@ -36,6 +36,7 @@ import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Tree } from 'primeng/tree';
 
 // RxJS
@@ -74,6 +75,7 @@ const RESTORE_TRACE = true; // can be wired to environment flag later
     PrimeTemplate,
     Skeleton,
     Tree,
+    ProgressSpinnerModule,
   ],
 })
 export class ConnectComponent

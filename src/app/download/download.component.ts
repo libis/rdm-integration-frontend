@@ -28,6 +28,7 @@ import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Tree } from 'primeng/tree';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components
@@ -61,6 +62,7 @@ import { SubscriptionManager } from '../shared/types';
     PrimeTemplate,
     DownladablefileComponent,
     Tree,
+    ProgressSpinnerModule,
     TransferProgressCardComponent,
   ],
 })

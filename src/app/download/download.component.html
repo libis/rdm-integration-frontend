@@ -86,7 +86,11 @@
 @if (datasetId && data?.id) {
   <div style="height: 100% - 2rem; overflow: hidden">
     <div style="float: left; width: 50%">
-      <p-treeTable [value]="rootNodeChildren" [loading]="loading">
+      <p-treeTable
+        [value]="rootNodeChildren"
+        [loading]="loading"
+        loadingIcon="pi pi-spin pi-spinner"
+      >
         <ng-template pTemplate="header">
           <tr>
             <th style="text-align: left">
@@ -149,6 +153,7 @@
             [value]="rootOptions"
             (onNodeExpand)="getOptions($event.node)"
             [loading]="optionsLoading"
+            loadingIcon="pi pi-spin pi-spinner"
             (onNodeSelect)="optionSelected($event.node)"
           ></p-tree>
         </div>
