@@ -52,6 +52,7 @@ import {
 import { APP_CONSTANTS } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
 import { CredentialsService } from '../credentials.service';
+import { DataStateService } from '../data.state.service';
 
 const new_dataset = 'New Dataset';
 // Toggle detailed restoration tracing (set false for cleaner logs in production builds)
@@ -92,6 +93,7 @@ export class ConnectComponent
   private readonly connectValidation = inject(ConnectValidationService);
   private readonly navigation = inject(NavigationService);
   private readonly credentialsService = inject(CredentialsService);
+  private readonly dataStateService = inject(DataStateService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -755,6 +757,7 @@ export class ConnectComponent
               dataset_id: this.datasetId,
               collectionId: this.collectionId,
             });
+            this.dataStateService.resetState();
             this.credentialsService.credentials = creds;
 
             if (
