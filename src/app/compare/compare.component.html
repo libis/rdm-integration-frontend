@@ -149,7 +149,11 @@
 }
 
 <div height="100% - 2em; overflow: hidden;">
-  <p-treeTable [value]="rootNodeChildren" [loading]="loading">
+  <p-treeTable
+    [value]="rootNodeChildren"
+    [loading]="loading"
+    loadingIcon="pi pi-spin pi-spinner"
+  >
     <ng-template pTemplate="header">
       <tr>
         <th>

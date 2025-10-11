@@ -23,6 +23,7 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { PrimeTemplate, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { PopoverModule } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
 import { TreeTableModule } from 'primeng/treetable';
 
@@ -45,6 +46,7 @@ import { FilterItem, SubscriptionManager } from '../shared/types';
     PrimeTemplate,
     PopoverModule,
     TableModule,
+    ProgressSpinnerModule,
     DatafileComponent,
   ],
 })
