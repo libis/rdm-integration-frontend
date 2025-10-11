@@ -1,6 +1,6 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -36,6 +36,7 @@ describe('SubmitComponent', () => {
   beforeEach(async () => {
     dataStateStub = {
       getCurrentValue: () => ({ id: 'doi:123', data: [] }),
+      cancelInitialization: () => {},
     };
 
     credentialsStub = {

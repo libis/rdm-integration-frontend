@@ -1,18 +1,18 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
 } from '@angular/core/testing';
 
 import { Router } from '@angular/router';
 import { TreeNode } from 'primeng/api';
-import { Observable, Observer } from 'rxjs';
+import { Observable, Observer, Subscription } from 'rxjs';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
@@ -66,6 +66,7 @@ describe('CompareComponent', () => {
     // Stub required services/fields for submit()
     (component as any).dataStateService = {
       updateState: jasmine.createSpy('updateState'),
+      cancelInitialization: jasmine.createSpy('cancelInitialization'),
     };
     (component as any).credentialsService = {
       credentials: { newly_created: true },
@@ -73,6 +74,33 @@ describe('CompareComponent', () => {
     component['data'] = { id: '' } as any; // new dataset heuristic
     component.submit();
     expect(navigateSpy).toHaveBeenCalledWith(['/metadata-selector']);
+  });
+
+  it('ngOnDestroy cancels initialization with reset when loading', () => {
+    const cancelSpy = jasmine.createSpy('cancelInitialization');
+    (component as any).dataStateService = { cancelInitialization: cancelSpy };
+    let unsubscribeCalled = false;
+    (component as any).subscriptions.add(
+      new Subscription(() => {
+        unsubscribeCalled = true;
+      }),
+    );
+    component.loading = true;
+
+    component.ngOnDestroy();
+
+    expect(unsubscribeCalled).toBeTrue();
+    expect(cancelSpy).toHaveBeenCalledOnceWith(true);
+  });
+
+  it('ngOnDestroy skips reset when not loading', () => {
+    const cancelSpy = jasmine.createSpy('cancelInitialization');
+    (component as any).dataStateService = { cancelInitialization: cancelSpy };
+
+    component.loading = false;
+    component.ngOnDestroy();
+
+    expect(cancelSpy).toHaveBeenCalledOnceWith(false);
   });
 
   describe('canProceed() logic', () => {

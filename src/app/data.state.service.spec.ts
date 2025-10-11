@@ -3,9 +3,9 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { fakeAsync, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, Subscription, throwError } from 'rxjs';
 import { DataService } from './data.service';
 import { DataStateService } from './data.state.service';
 import { NotificationService } from './shared/notification.service';
@@ -117,8 +117,9 @@ describe('DataStateService', () => {
 
   it('handles cached error and navigates', fakeAsync(() => {
     init();
-    data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
-    (service as any).getCompareData({ key: 'k2' });
+  data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
+  const generation = (service as any).pollGeneration;
+  (service as any).getCompareData({ key: 'k2' }, generation);
     tick();
     expect(
       notify.errors.some((e) => e.includes('Comparing failed')),
@@ -130,6 +131,73 @@ describe('DataStateService', () => {
           n.extras?.queryParams?.reset === 'true',
       ),
     ).toBeTrue();
+  }));
+
+  it('cancelInitialization unsubscribes and resets by default', () => {
+    let dataObserver: any;
+    let cachedObserver: any;
+    let dataUnsubscribed = false;
+    let cachedUnsubscribed = false;
+
+    data.getData = () =>
+      new Observable((observer) => {
+        dataObserver = observer;
+        return new Subscription(() => {
+          dataUnsubscribed = true;
+        });
+      });
+    data.getCachedData = () =>
+      new Observable((observer) => {
+        cachedObserver = observer;
+        return new Subscription(() => {
+          cachedUnsubscribed = true;
+        });
+      });
+
+    service.initializeState();
+    dataObserver.next({ key: 'kCancel' });
+    service.updateState({ id: 'to-reset' } as any);
+
+    service.cancelInitialization();
+
+    expect(dataUnsubscribed).toBeTrue();
+    expect(cachedUnsubscribed).toBeTrue();
+    expect(service.getCurrentValue()).toBeNull();
+  });
+
+  it('cancelInitialization can skip state reset', () => {
+  service.updateState({ id: 'persist' } as any);
+    service.cancelInitialization(false);
+    expect(service.getCurrentValue()?.id).toBe('persist');
+  });
+
+  it('ignores polling results once generation changes mid-flight', fakeAsync(() => {
+    let dataObserver: any;
+    let cachedObserver: any;
+    let cachedUnsubscribed = false;
+
+    data.getData = () =>
+      new Observable((observer) => {
+        dataObserver = observer;
+        return new Subscription();
+      });
+    data.getCachedData = () =>
+      new Observable((observer) => {
+        cachedObserver = observer;
+        return new Subscription(() => {
+          cachedUnsubscribed = true;
+        });
+      });
+
+    service.initializeState();
+    dataObserver.next({ key: 'kPoll' });
+    cachedObserver.next({ ready: false });
+
+    service.cancelInitialization();
+    flushMicrotasks();
+
+    expect(service.getCurrentValue()).toBeNull();
+    expect(cachedUnsubscribed).toBeTrue();
   }));
 
   it('updateState and resetState manipulate current value', () => {

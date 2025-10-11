@@ -31,6 +31,7 @@ import { ConnectComponent } from './connect.component';
 class DataStateServiceStub {
   initializeState(_creds?: any) {}
   resetState() {}
+  cancelInitialization(_resetState?: boolean) {}
 }
 
 class PluginServiceStub {

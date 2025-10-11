@@ -193,6 +193,7 @@ class MockDatasetService {
       }, 0);
     });
   }
+  cancelInitialization(_resetState?: boolean): void {}
 }
 
 class MockOauthService {

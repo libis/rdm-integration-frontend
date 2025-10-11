@@ -87,6 +87,7 @@ class DataStateServiceStub {
   resetState() {
     this.state = null;
   }
+  cancelInitialization(_resetState?: boolean) {}
 }
 
 class CredentialsServiceStub {

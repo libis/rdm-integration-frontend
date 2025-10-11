@@ -254,6 +254,7 @@ const PILOT_CONFIG: Config = {
 class DataStateServiceStub {
   initializeState(): void {}
   resetState(): void {}
+  cancelInitialization(_resetState?: boolean): void {}
 }
 
 class DatasetServiceStub {

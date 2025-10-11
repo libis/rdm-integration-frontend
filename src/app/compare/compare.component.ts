@@ -149,6 +149,8 @@ export class CompareComponent
     // Clean up all subscriptions
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
+    const shouldReset = this.loading;
+    this.dataStateService.cancelInitialization(shouldReset);
   }
 
   private setUpdatedDataSubscription(): void {
