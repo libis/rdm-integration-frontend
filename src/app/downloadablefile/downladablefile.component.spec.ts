@@ -161,8 +161,12 @@ describe('DownladablefileComponent', () => {
 
     expect(component.action()).toBe(DownladablefileComponent.icon_custom);
     const style = component.getStyle();
-    expect(style).toContain('background-color: var(--app-file-action-custom-bg)');
-    expect(style).toContain('--bs-table-color: var(--app-file-action-custom-color)');
+    expect(style).toContain(
+      'background-color: var(--app-file-action-custom-bg)',
+    );
+    expect(style).toContain(
+      '--bs-table-color: var(--app-file-action-custom-color)',
+    );
   });
 
   it('falls back to ignore style tokens when action is unset', () => {
