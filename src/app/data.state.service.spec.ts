@@ -3,7 +3,12 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
+import {
+  fakeAsync,
+  flushMicrotasks,
+  TestBed,
+  tick,
+} from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Observable, of, Subject, Subscription, throwError } from 'rxjs';
 import { DataService } from './data.service';
@@ -117,9 +122,9 @@ describe('DataStateService', () => {
 
   it('handles cached error and navigates', fakeAsync(() => {
     init();
-  data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
-  const generation = (service as any).pollGeneration;
-  (service as any).getCompareData({ key: 'k2' }, generation);
+    data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
+    const generation = (service as any).pollGeneration;
+    (service as any).getCompareData({ key: 'k2' }, generation);
     tick();
     expect(
       notify.errors.some((e) => e.includes('Comparing failed')),
@@ -166,7 +171,7 @@ describe('DataStateService', () => {
   });
 
   it('cancelInitialization can skip state reset', () => {
-  service.updateState({ id: 'persist' } as any);
+    service.updateState({ id: 'persist' } as any);
     service.cancelInitialization(false);
     expect(service.getCurrentValue()?.id).toBe('persist');
   });

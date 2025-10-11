@@ -89,7 +89,7 @@
       <p-treeTable
         [value]="rootNodeChildren"
         [loading]="loading"
-        loadingIcon="pi pi-spin pi-spinner"
+        loadingIcon=" pi pi-spin pi-spinner"
       >
         <ng-template pTemplate="header">
           <tr>
@@ -153,7 +153,7 @@
             [value]="rootOptions"
             (onNodeExpand)="getOptions($event.node)"
             [loading]="optionsLoading"
-            loadingIcon="pi pi-spin pi-spinner"
+            loadingIcon=" pi pi-spin pi-spinner"
             (onNodeSelect)="optionSelected($event.node)"
           ></p-tree>
         </div>

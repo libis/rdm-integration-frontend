@@ -1,17 +1,17 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-    HttpTestingController,
-    provideHttpClientTesting,
+  HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import {
-    TestBed,
-    fakeAsync,
-    flush,
-    flushMicrotasks,
-    tick,
+  TestBed,
+  fakeAsync,
+  flush,
+  flushMicrotasks,
+  tick,
 } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
