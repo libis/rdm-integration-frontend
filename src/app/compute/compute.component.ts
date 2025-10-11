@@ -28,8 +28,8 @@ import { Button, ButtonDirective } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { Dialog } from 'primeng/dialog';
 import { FloatLabel } from 'primeng/floatlabel';
-import { Select } from 'primeng/select';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { Select } from 'primeng/select';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components

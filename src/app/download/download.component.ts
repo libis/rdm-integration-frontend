@@ -26,9 +26,9 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Tree } from 'primeng/tree';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TreeTableModule } from 'primeng/treetable';
 
 // Components

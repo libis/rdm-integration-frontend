@@ -34,9 +34,9 @@ import {
 } from 'primeng/accordion';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Tree } from 'primeng/tree';
 
 // RxJS
@@ -50,10 +50,10 @@ import {
 } from 'rxjs';
 
 // Constants and types
-import { APP_CONSTANTS } from '../shared/constants';
-import { SubscriptionManager } from '../shared/types';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
+import { APP_CONSTANTS } from '../shared/constants';
+import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
 // Toggle detailed restoration tracing (set false for cleaner logs in production builds)
