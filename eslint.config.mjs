@@ -1,6 +1,11 @@
-import globals from "globals";
 import pluginJs from "@eslint/js";
+import deprecation from "eslint-plugin-deprecation";
+import globals from "globals";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import tseslint from "typescript-eslint";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default [
   { files: ["**/*.{js,mjs,cjs,ts}"] },
@@ -8,7 +13,18 @@ export default [
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ["**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: ["./tsconfig.app.json", "./tsconfig.spec.json"],
+        tsconfigRootDir: __dirname,
+      },
+    },
+    plugins: {
+      deprecation: deprecation,
+    },
     rules: {
+      "deprecation/deprecation": "warn",
       // TypeScript specific rules (without type information)
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -38,6 +54,13 @@ export default [
     files: ["src/**/*.spec.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "deprecation/deprecation": "warn",
+    },
+  },
+  {
+    files: ["src/test.ts"],
+    rules: {
+      "deprecation/deprecation": "warn",
     },
   },
 ];
