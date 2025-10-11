@@ -1,20 +1,19 @@
 import {
-    provideHttpClient,
-    withInterceptorsFromDi,
+  provideHttpClient,
+  withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-    HttpTestingController,
-    provideHttpClientTesting,
+  HttpTestingController,
+  provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import {
-    TestBed,
-    fakeAsync,
-    flushMicrotasks,
-    tick,
+  TestBed,
+  fakeAsync,
+  flushMicrotasks,
+  tick,
 } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
@@ -31,6 +30,7 @@ import { ConnectComponent } from './connect.component';
 
 class DataStateServiceStub {
   initializeState(_creds?: any) {}
+  resetState() {}
 }
 
 class PluginServiceStub {
@@ -181,8 +181,9 @@ describe('ConnectComponent additional behavior/validation', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, ConnectComponent],
+      imports: [ConnectComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         provideNoopAnimations(),
@@ -385,8 +386,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     // Provide query params simulating deep link
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      imports: [RouterTestingModule, ConnectComponent],
+      imports: [ConnectComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         provideNoopAnimations(),
@@ -438,8 +440,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     );
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      imports: [RouterTestingModule, ConnectComponent],
+      imports: [ConnectComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         provideNoopAnimations(),

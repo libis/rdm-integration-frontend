@@ -1,15 +1,15 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
+    ComponentFixture,
+    TestBed,
+    fakeAsync,
+    tick,
 } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
@@ -147,8 +147,9 @@ describe('ComputeComponent', () => {
     notification = new MockNotificationService();
     navigation = new MockNavigationService();
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, ComputeComponent],
+      imports: [ComputeComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataService, useValue: mockData },

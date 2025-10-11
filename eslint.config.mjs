@@ -54,13 +54,6 @@ export default [
     files: ["src/**/*.spec.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
-      "deprecation/deprecation": "warn",
-    },
-  },
-  {
-    files: ["src/test.ts"],
-    rules: {
-      "deprecation/deprecation": "warn",
     },
   },
 ];

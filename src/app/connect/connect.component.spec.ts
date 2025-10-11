@@ -1,11 +1,11 @@
-import { TestBed } from '@angular/core/testing';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 
 import { ConnectComponent } from './connect.component';
 // Router intentionally not imported (was unused)
@@ -38,8 +38,9 @@ describe('ConnectComponent', () => {
     } as Partial<PluginService> as PluginService;
 
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, ConnectComponent],
+      imports: [ConnectComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         provideNoopAnimations(),

@@ -1,11 +1,12 @@
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import {
-  HttpClientTestingModule,
-  HttpTestingController,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { CredentialsService } from './credentials.service';
 import { Datafile } from './models/datafile';
-import { TransferTaskStatus, SubmitService } from './submit.service';
+import { SubmitService, TransferTaskStatus } from './submit.service';
 
 class MockCredentialsService {
   credentials: any = {
@@ -27,8 +28,9 @@ describe('SubmitService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
         { provide: CredentialsService, useClass: MockCredentialsService },
       ],
     });

@@ -5,8 +5,7 @@ import {
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { Router, RouterOutlet, Routes } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter, Router, RouterOutlet, Routes } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
 import { CompareComponent } from '../compare/compare.component';
@@ -85,6 +84,9 @@ class DataStateServiceStub {
     this.state = d;
     this.subj.next(d);
   }
+  resetState() {
+    this.state = null;
+  }
 }
 
 class CredentialsServiceStub {
@@ -128,8 +130,9 @@ describe('Integration: Compare back -> Connect restoration', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule.withRoutes(routes), HostComponent],
+      imports: [HostComponent],
       providers: [
+        provideRouter(routes),
         provideNoopAnimations(),
         provideHttpClient(withInterceptorsFromDi()),
         { provide: PluginService, useClass: PluginServiceStub },

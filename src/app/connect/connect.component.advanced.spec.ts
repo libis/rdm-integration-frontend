@@ -1,12 +1,11 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute, Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -32,6 +31,7 @@ class MockDataStateService {
   getCurrentValue() {
     return null;
   }
+  resetState() {}
 }
 
 class MockPluginService {
@@ -278,8 +278,9 @@ describe('ConnectComponent advanced behaviors', () => {
     navigation = new MockNavigationService();
 
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, ConnectComponent],
+      imports: [ConnectComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         provideNoopAnimations(),

@@ -1,20 +1,19 @@
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import {
-  HttpTestingController,
-  provideHttpClientTesting,
+    HttpTestingController,
+    provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import {
-  TestBed,
-  fakeAsync,
-  flush,
-  flushMicrotasks,
-  tick,
+    TestBed,
+    fakeAsync,
+    flush,
+    flushMicrotasks,
+    tick,
 } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { DataService } from '../data.service';
@@ -207,8 +206,9 @@ describe('DownloadComponent', () => {
     routeSubject = new BehaviorSubject<Record<string, string | undefined>>({});
 
     await TestBed.configureTestingModule({
-      imports: [RouterTestingModule, DownloadComponent],
+      imports: [DownloadComponent],
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: NotificationService, useValue: notification },

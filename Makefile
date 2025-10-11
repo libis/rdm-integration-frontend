@@ -5,8 +5,8 @@ SHELL = /bin/bash
 # Minimum coverage threshold (can be overridden: `make coverage-check MIN_COVERAGE=75` or env MIN_COVERAGE=75)
 MIN_COVERAGE ?= 70
 
-eslint: ## eslint the go code
-	npx eslint src/app/** --fix
+lint: ## lint
+	npm run lint
 
 upgrade_dependencies: ## upgrade all go dependencies
 	npx npm-check-updates -u && npm install
