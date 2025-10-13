@@ -108,7 +108,9 @@ describe('CompareComponent', () => {
       ],
     }).compileComponents();
 
-    dataStateStub = TestBed.inject(DataStateService) as unknown as StubDataStateService;
+    dataStateStub = TestBed.inject(
+      DataStateService,
+    ) as unknown as StubDataStateService;
     credentialsStub = TestBed.inject(
       CredentialsService,
     ) as unknown as StubCredentialsService;
