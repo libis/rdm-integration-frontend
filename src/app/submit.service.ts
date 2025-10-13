@@ -7,7 +7,7 @@ import { CredentialsService } from './credentials.service';
 import { Datafile } from './models/datafile';
 import { StoreResult } from './models/store-result';
 
-export interface DownloadResponse {
+interface DownloadResponse {
   taskId: string;
   monitorUrl?: string;
 }

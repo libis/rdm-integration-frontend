@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-export type InlineStyleMap = Partial<Record<string, string>>;
+type InlineStyleMap = Partial<Record<string, string>>;
 
 /**
  * Convert a semicolon-delimited inline style string into a property map.

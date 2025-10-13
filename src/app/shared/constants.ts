@@ -40,7 +40,7 @@ export const APP_CONSTANTS = {
   },
 } as const;
 
-export type FileActionStyleKey =
+type FileActionStyleKey =
   | 'IGNORE'
   | 'COPY'
   | 'UPDATE'
@@ -53,7 +53,7 @@ export type FileActionStyle = Readonly<{
   color?: string;
 }>;
 
-export type InlineStyleOptions = Readonly<{
+type InlineStyleOptions = Readonly<{
   includeTableVariables?: boolean;
 }>;
 
@@ -127,10 +127,3 @@ export function buildInlineStyle(
 
   return declarations.length ? `${declarations.join('; ')};` : '';
 }
-
-/**
- * Local storage keys
- */
-export const STORAGE_KEYS = {
-  DATAVERSE_TOKEN: 'dataverseToken',
-} as const;

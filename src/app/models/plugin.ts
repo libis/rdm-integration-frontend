@@ -27,7 +27,7 @@ export interface RepoPlugin {
   showTokenGetter?: boolean;
 }
 
-export interface TokenGetter {
+interface TokenGetter {
   URL?: string;
   oauth_client_id?: string;
 }
@@ -48,7 +48,7 @@ export interface Config {
   queues?: Queue[];
 }
 
-export interface Queue {
+interface Queue {
   label: string;
   value: string;
   fileExtensions: string[];

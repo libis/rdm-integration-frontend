@@ -1,14 +1,14 @@
 export interface Metadata {
   datasetVersion: DatasetVersion;
 }
-export interface DatasetVersion {
+interface DatasetVersion {
   metadataBlocks: Metadatablocks;
 }
-export interface Metadatablocks {
+interface Metadatablocks {
   citation: CitationBlock;
 }
 
-export interface CitationBlock {
+interface CitationBlock {
   displayName: string;
   fields: MetadataField[];
   name: string;
@@ -30,7 +30,7 @@ export interface FieldDictonary {
   [index: string]: MetadataField;
 }
 
-export interface Expandedvalue {
+interface Expandedvalue {
   [index: string]: string;
 }
 

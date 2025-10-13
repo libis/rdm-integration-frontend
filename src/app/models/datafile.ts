@@ -36,7 +36,7 @@ export interface Attributes {
   destinationFile?: DestinationFile;
 }
 
-export interface DestinationFile {
+interface DestinationFile {
   id?: number;
   fileSize?: number;
   hash?: string;
