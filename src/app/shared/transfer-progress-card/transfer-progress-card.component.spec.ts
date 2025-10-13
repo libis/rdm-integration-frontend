@@ -238,7 +238,7 @@ describe('TransferProgressCardComponent', () => {
 
     // Status should be retrieved
     expect(component.status?.status).toBe('ACTIVE');
-    expect(component.statusMessage).toContain('ACTIVE');
+    expect(component.statusMessage).toContain('Transfer in progress');
   }));
 
   it('starts polling immediately when taskId is set for non-globus', fakeAsync(() => {
@@ -543,7 +543,7 @@ describe('TransferProgressCardComponent', () => {
     submit.statuses = [
       {
         task_id: 'task-nice',
-        status: 'ACTIVE',
+        status: 'QUEUED',
         nice_status: 'Processing files 45/100',
       },
     ];
@@ -1175,7 +1175,7 @@ describe('TransferProgressCardComponent', () => {
     submit.statuses = [
       {
         task_id: 'task-nice',
-        status: 'ACTIVE',
+        status: 'QUEUED',
         nice_status: 'Processing your files',
       },
     ];
