@@ -466,6 +466,7 @@ export class CompareComponent
     if (rootNode?.children) {
       // Delegate folder aggregation logic to service
       this.folderStatusService.updateTreeRoot(rootNode);
+      this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
       this.rootNodeChildren = rootNode.children;
     }
   }

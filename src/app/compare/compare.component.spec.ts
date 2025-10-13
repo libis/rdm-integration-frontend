@@ -12,15 +12,83 @@ import {
 
 import { Router } from '@angular/router';
 import { TreeNode } from 'primeng/api';
-import { Observable, Observer, Subscription } from 'rxjs';
+import { BehaviorSubject, Observable, Observer, Subscription, of } from 'rxjs';
+import { CredentialsService } from '../credentials.service';
+import { DataStateService } from '../data.state.service';
+import { DataUpdatesService } from '../data.updates.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
+import { PluginService } from '../plugin.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { CompareComponent } from './compare.component';
+
+class StubDataStateService {
+  private readonly state$ = new BehaviorSubject<CompareResult | null>(null);
+
+  initializeState(): void {}
+
+  cancelInitialization(resetState = true): void {
+    if (resetState) {
+      this.state$.next(null);
+    }
+  }
+
+  getObservableState(): Observable<CompareResult | null> {
+    return this.state$.asObservable();
+  }
+
+  updateState(state: CompareResult): void {
+    this.state$.next(state);
+  }
+
+  getCurrentValue(): CompareResult | null {
+    return this.state$.getValue();
+  }
+
+  resetState(): void {
+    this.state$.next(null);
+  }
+}
+
+class StubDataUpdatesService {
+  updateData(data: Datafile[], pid: string) {
+    return of({ id: pid, data } as CompareResult);
+  }
+}
+
+class StubCredentialsService {
+  credentials: any = {
+    pluginId: 'local',
+    plugin: 'local',
+    repo_name: 'owner/repo',
+  };
+}
+
+class StubPluginService {
+  getPlugin(_id: string) {
+    return { name: 'Test Plugin' };
+  }
+
+  dataverseHeader() {
+    return 'Dataverse:';
+  }
+}
+
+class StubSnapshotStorageService {
+  mergeConnect(_snapshot: unknown): void {}
+}
+
+class StubRouter {
+  navigate(commands: any[], _extras?: any) {
+    return Promise.resolve(commands);
+  }
+}
 
 describe('CompareComponent', () => {
   let component: CompareComponent;
   let fixture: ComponentFixture<CompareComponent>;
+  let dataStateStub: StubDataStateService;
+  let credentialsStub: StubCredentialsService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -28,8 +96,22 @@ describe('CompareComponent', () => {
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        { provide: DataStateService, useClass: StubDataStateService },
+        { provide: DataUpdatesService, useClass: StubDataUpdatesService },
+        { provide: CredentialsService, useClass: StubCredentialsService },
+        { provide: PluginService, useClass: StubPluginService },
+        {
+          provide: SnapshotStorageService,
+          useClass: StubSnapshotStorageService,
+        },
+        { provide: Router, useClass: StubRouter },
       ],
     }).compileComponents();
+
+    dataStateStub = TestBed.inject(DataStateService) as unknown as StubDataStateService;
+    credentialsStub = TestBed.inject(
+      CredentialsService,
+    ) as unknown as StubCredentialsService;
 
     fixture = TestBed.createComponent(CompareComponent);
     component = fixture.componentInstance;
@@ -365,6 +447,72 @@ describe('CompareComponent', () => {
       expect(component.rootNodeChildren).toEqual(
         root.children as TreeNode<Datafile>[],
       );
+    });
+
+    it('restores folder aggregate actions after returning from metadata', () => {
+      fixture.destroy();
+      credentialsStub.credentials = {
+        pluginId: 'local',
+        plugin: 'local',
+        repo_name: 'owner/repo',
+        newly_created: true,
+      };
+      const compareResult: CompareResult = {
+        id: 'new-dataset',
+        status: ResultStatus.Finished,
+        data: [
+          {
+            id: 'folder/file1',
+            name: 'file1',
+            path: 'folder',
+            status: Filestatus.New,
+            action: Fileaction.Ignore,
+            hidden: false,
+            attributes: { isFile: true },
+          },
+          {
+            id: 'folder/file2',
+            name: 'file2',
+            path: 'folder',
+            status: Filestatus.New,
+            action: Fileaction.Ignore,
+            hidden: false,
+            attributes: { isFile: true },
+          },
+        ],
+      };
+
+      dataStateStub.updateState(compareResult);
+
+      const firstFixture = TestBed.createComponent(CompareComponent);
+      const firstComponent = firstFixture.componentInstance;
+      firstFixture.detectChanges();
+      firstComponent.updateSelection();
+      expect(firstComponent.rowNodeMap.get('folder')?.data?.action).toBe(
+        Fileaction.Copy,
+      );
+
+      (firstComponent as any).dataStateService.updateState(
+        firstComponent['data'],
+      );
+
+      firstComponent.loading = false;
+      firstFixture.destroy();
+
+      const secondFixture = TestBed.createComponent(CompareComponent);
+      const secondComponent = secondFixture.componentInstance;
+      secondFixture.detectChanges();
+
+      const restoredFolderAction =
+        secondComponent.rowNodeMap.get('folder')?.data?.action;
+      expect(restoredFolderAction).toBe(Fileaction.Copy);
+      compareResult.data?.forEach((file) => {
+        expect(
+          secondComponent.rowNodeMap.get(`${file.id}:file`)?.data?.action,
+        ).toBe(Fileaction.Copy);
+      });
+
+      secondFixture.destroy();
     });
 
     it('folderName derives labels based on plugin context', () => {
