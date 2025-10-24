@@ -6,7 +6,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
@@ -28,6 +28,7 @@ import {
 import { Datafile } from '../models/datafile';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { ElementRef } from '@angular/core';
+import cachedResponseFixture from '../../../tests/response.json';
 
 describe('DdiCdiComponent', () => {
   let dataServiceStub: jasmine.SpyObj<DataService>;
@@ -46,6 +47,8 @@ describe('DdiCdiComponent', () => {
 ex:dataset1 a cdi:DataSet ;
   dcterms:title "Sample dataset" .
 `;
+  const cachedResponseData = cachedResponseFixture as CachedComputeResponse;
+  const CACHED_TURTLE = cachedResponseData.ddiCdi ?? '';
 
   beforeEach(async () => {
     // Create service stubs
@@ -643,6 +646,78 @@ ex:dataset1 a cdi:DataSet ;
       expect(request.content).toBe('original-content');
       expect(console.warn).toHaveBeenCalled();
     });
+  });
+
+  describe('cached CDI response integration', () => {
+    it('should build SHACL shapes with dataset root from cached TTL', () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      const shapes = (component as any).buildShaclShapes(CACHED_TURTLE);
+      expect(shapes).toBeTruthy();
+      expect(shapes as string).toContain(
+        'sh:targetNode <http://localhost:8080/dataset/doi:10.5072/FK2/HWBVZM>',
+      );
+      expect(shapes as string).toContain('sh:targetClass cdi:DataSet;');
+    });
+
+    it('should set SHACL form attributes with cached dataset focus node', fakeAsync(() => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+
+      const mockElement = {
+        setAttribute: jasmine.createSpy('setAttribute'),
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        serialize: jasmine.createSpy('serialize'),
+      };
+
+      component.shaclForm = {
+        nativeElement: mockElement,
+      } as unknown as ElementRef;
+
+      (component as any).setGeneratedOutput(CACHED_TURTLE);
+      tick(150);
+
+      expect(component.shaclError).toBeUndefined();
+      expect(mockElement.setAttribute).toHaveBeenCalledWith(
+        'data-values',
+        CACHED_TURTLE,
+      );
+      expect(mockElement.setAttribute).toHaveBeenCalledWith(
+        'data-values-format',
+        'text/turtle',
+      );
+      expect(mockElement.setAttribute).toHaveBeenCalledWith(
+        'data-values-subject',
+        'http://localhost:8080/dataset/doi:10.5072/FK2/HWBVZM',
+      );
+      expect(mockElement.setAttribute).toHaveBeenCalledWith(
+        'data-shape-subject',
+        jasmine.stringMatching(/^urn:ddi-cdi:DatasetShape/),
+      );
+    }));
+
+    it('should upload cached TTL unchanged when SHACL editor is unavailable', fakeAsync(() => {
+      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      component.datasetId = 'doi:10.5072/FK2/HWBVZM';
+      component.dataverseToken = 'token-123';
+      component.originalDdiCdi = CACHED_TURTLE;
+      component.generatedDdiCdi = CACHED_TURTLE;
+      component.shaclError = 'SHACL editor failed to render';
+      component.shaclForm = undefined;
+
+      component.addFileToDataset();
+      tick();
+
+      const call = dataServiceStub.addFileToDataset.calls.mostRecent();
+      const request: AddFileRequest = call.args[0];
+      expect(request.content).toBe(CACHED_TURTLE);
+    }));
   });
 
   describe('Additional Coverage Tests', () => {

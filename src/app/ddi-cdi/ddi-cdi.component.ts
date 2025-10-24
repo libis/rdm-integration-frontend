@@ -123,6 +123,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   originalDdiCdi?: string;
   private totalSelectableFiles = 0;
   private shaclChangeListener?: EventListener;
+  private shaclTargetNode?: string;
+  private shaclShapeSubject?: string;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -480,6 +482,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.shaclShapes = undefined;
     this.shaclError = undefined;
     this.shaclFormValid = false;
+    this.shaclTargetNode = undefined;
+    this.shaclShapeSubject = undefined;
   }
 
   private setGeneratedOutput(turtle: string): void {
@@ -507,6 +511,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   private buildShaclShapes(turtle: string): string | undefined {
+    this.shaclTargetNode = undefined;
+    this.shaclShapeSubject = undefined;
     try {
       const parser = new Parser();
       const quads = parser.parse(turtle);
@@ -533,14 +539,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       if (!targetNode) {
         return undefined;
       }
+      this.shaclTargetNode = targetNode;
+      const shapeSubject = 'urn:ddi-cdi:DatasetShape';
+      this.shaclShapeSubject = shapeSubject;
       return (
         '@prefix sh: <http://www.w3.org/ns/shacl#>.\n' +
         '@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.\n' +
         '@prefix dcterms: <http://purl.org/dc/terms/>.\n' +
         '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.\n' +
         '@prefix prov: <http://www.w3.org/ns/prov#>.\n\n' +
-        '[] a sh:NodeShape;\n' +
+        `<${shapeSubject}> a sh:NodeShape;\n` +
         `   sh:targetNode <${targetNode}>;\n` +
+        '   sh:targetClass cdi:DataSet;\n' +
         '   sh:property [\n' +
         '     sh:path dcterms:title;\n' +
         '     sh:name "Dataset title";\n' +
@@ -571,6 +581,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         'Failed to build SHACL shapes for generated CDI output',
         error,
       );
+      this.shaclTargetNode = undefined;
+      this.shaclShapeSubject = undefined;
       return undefined;
     }
   }
@@ -596,13 +608,27 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       if (this.shaclShapes) {
         formElement.setAttribute('data-shapes', this.shaclShapes);
         formElement.setAttribute('data-shapes-format', 'text/turtle');
+        if (this.shaclShapeSubject) {
+          formElement.setAttribute(
+            'data-shape-subject',
+            this.shaclShapeSubject,
+          );
+        } else {
+          formElement.removeAttribute('data-shape-subject');
+        }
       } else {
         formElement.removeAttribute('data-shapes');
         formElement.removeAttribute('data-shapes-format');
+        formElement.removeAttribute('data-shape-subject');
       }
 
       formElement.setAttribute('data-values', this.generatedDdiCdi ?? '');
       formElement.setAttribute('data-values-format', 'text/turtle');
+      if (this.shaclTargetNode) {
+        formElement.setAttribute('data-values-subject', this.shaclTargetNode);
+      } else {
+        formElement.removeAttribute('data-values-subject');
+      }
 
       this.shaclChangeListener = (event: Event) => {
         const customEvent = event as CustomEvent;
@@ -643,8 +669,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loading = true;
 
     // Get current data from SHACL form if available
-    let content = this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
     const shaclFormElement = this.shaclForm?.nativeElement;
+    const baseContent = this.shaclError
+      ? this.originalDdiCdi ?? this.generatedDdiCdi ?? ''
+      : this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
+    let content = baseContent;
     if (shaclFormElement && !this.shaclError) {
       try {
         const formData = shaclFormElement.serialize();
@@ -658,8 +687,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         );
       }
     }
-
-    content = content.trim();
     const fileName = `ddi-cdi-${Date.now()}.ttl`;
     const addFileRequest: AddFileRequest = {
       persistentId: this.datasetId!,

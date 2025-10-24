@@ -23,8 +23,8 @@ Reference assets: posted images of the download component (baseline) and current
 - [x] Move the dataset selection dropdown out of the sticky menu and mirror the download component (label, layout, styles).
 - [x] Relocate the `Generate DDI-CDI` button into the right sticky menu and reuse the download component iconography.
 - [x] Replace the "Select" header text in the tree table with a toggleable checkmark matching the download component behaviour (supports select/deselect all).
-- [ ] Investigate and resolve `Error: shacl root node shape not found`, using the captured `response.json` from `/api/common/cachedddicdioutput` to build tests/mocks.
-- [ ] Ensure `Add to Dataset` always uploads clean Turtle output even when the SHACL editor fails to render.
+- [x] Investigate and resolve `Error: shacl root node shape not found`, using the captured `response.json` from `/api/common/cachedddicdioutput` to build tests/mocks.
+- [x] Ensure `Add to Dataset` always uploads clean Turtle output even when the SHACL editor fails to render.
 - [ ] Confirm the SHACL form renders without errors for valid CDI output (address remaining SHACL form issues).
 - [ ] Diagnose the HTTP 500 when calling `api/datasets/:persistentId/add` (`json: cannot unmarshal object into ... AddReplaceFileResponse.message`); verify the request payload (`content` currently only prefixes) and align with backend expectations.
 - [ ] Host the SHACL shapes we design on the backend alongside the embedded frontend config (`Dockerfile`, `frontend.go` `go:embed all:dist/datasync`).
@@ -37,6 +37,7 @@ Reference assets: posted images of the download component (baseline) and current
 - Latest backend fixture in `tests/response.json` cleaned up; use it to drive SHACL mocks and error reproduction.
 - Upload attempt now fails server-side with 500 due to response message type mismatch; request body shows only prefix declarations, suggesting serialization stops before data rows.
 - DDI-CDI layout now mirrors the download component (dropdown placement, sticky action button, select-all icon); validated via `make test`.
+- Cached response-driven regression tests cover SHACL root shape detection and the unedited Turtle upload path; added in `src/app/ddi-cdi/ddi-cdi.component.spec.ts` and verified via `npm run test -- --watch=false`.
 
 ### Next Steps
 - Replace remaining placeholder Turtle strings in SHACL pathways to eliminate N3 parser warnings (`ttl-content`, `final-ttl`, `cached-ttl`, etc.).
