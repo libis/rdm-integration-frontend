@@ -354,16 +354,14 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     };
     this.loading = true;
     this.generatedDdiCdi = undefined;
-    this.dataService
-      .generateDdiCdi(this.req!)
-      .subscribe({
-        next: (key: Key) => {
-          this.getDdiCdiData(key);
-        },
-        error: (err) => {
-          this.notificationService.showError(err);
-        },
-      });
+    this.dataService.generateDdiCdi(this.req!).subscribe({
+      next: (key: Key) => {
+        this.getDdiCdiData(key);
+      },
+      error: (err) => {
+        this.notificationService.showError(err);
+      },
+    });
   }
 
   private getDdiCdiData(key: Key): void {
@@ -462,22 +460,20 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       content: content,
     };
 
-    this.dataService
-      .addFileToDataset(addFileRequest)
-      .subscribe({
-        next: () => {
-          this.loading = false;
-          this.notificationService.showSuccess(
-            `File "${fileName}" added to dataset successfully!`,
-          );
-        },
-        error: (err) => {
-          this.loading = false;
-          this.notificationService.showError(
-            `Failed to add file to dataset: ${err.error}`,
-          );
-        },
-      });
+    this.dataService.addFileToDataset(addFileRequest).subscribe({
+      next: () => {
+        this.loading = false;
+        this.notificationService.showSuccess(
+          `File "${fileName}" added to dataset successfully!`,
+        );
+      },
+      error: (err) => {
+        this.loading = false;
+        this.notificationService.showError(
+          `Failed to add file to dataset: ${err.error}`,
+        );
+      },
+    });
   }
 
   getSupportedExtensionsText(): string {

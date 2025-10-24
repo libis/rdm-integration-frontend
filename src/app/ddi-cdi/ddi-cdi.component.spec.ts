@@ -427,11 +427,10 @@ describe('DdiCdiComponent', () => {
   describe('getDdiCdiData (polling)', () => {
     it('should poll until ready is true', async () => {
       const mockKey: Key = { key: 'job-123' };
-      dataServiceStub.getCachedDdiCdiData
-        .and.returnValues(
-          of({ ready: false, res: 'processing...' }),
-          of({ ready: true, res: 'done', ddiCdi: 'ttl-content' }),
-        );
+      dataServiceStub.getCachedDdiCdiData.and.returnValues(
+        of({ ready: false, res: 'processing...' }),
+        of({ ready: true, res: 'done', ddiCdi: 'ttl-content' }),
+      );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component['getDdiCdiData'](mockKey);
@@ -559,7 +558,9 @@ describe('DdiCdiComponent', () => {
       setTimeout(() => {
         expect(component.loading).toBe(false);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
-          jasmine.stringMatching(/File "ddi-cdi-\d+\.ttl" added to dataset successfully!/),
+          jasmine.stringMatching(
+            /File "ddi-cdi-\d+\.ttl" added to dataset successfully!/,
+          ),
         );
         done();
       }, 50);
@@ -591,7 +592,9 @@ describe('DdiCdiComponent', () => {
       component.generatedDdiCdi = 'original-content';
       // Mock the SHACL form element
       const mockFormElement = {
-        serialize: jasmine.createSpy('serialize').and.returnValue('edited-content'),
+        serialize: jasmine
+          .createSpy('serialize')
+          .and.returnValue('edited-content'),
       };
       component.shaclForm = {
         nativeElement: mockFormElement,
@@ -612,7 +615,9 @@ describe('DdiCdiComponent', () => {
       component.generatedDdiCdi = 'original-content';
       // Mock the SHACL form element with failing serialize
       const mockFormElement = {
-        serialize: jasmine.createSpy('serialize').and.throwError('Serialization error'),
+        serialize: jasmine
+          .createSpy('serialize')
+          .and.throwError('Serialization error'),
       };
       component.shaclForm = {
         nativeElement: mockFormElement,
@@ -977,9 +982,7 @@ describe('DdiCdiComponent', () => {
 
         const mockElement = {
           addEventListener: jasmine.createSpy('addEventListener'),
-          serialize: jasmine
-            .createSpy('serialize')
-            .and.returnValue('new-ttl'),
+          serialize: jasmine.createSpy('serialize').and.returnValue('new-ttl'),
         };
 
         component.shaclForm = {
@@ -1130,7 +1133,10 @@ describe('DdiCdiComponent', () => {
 
         await TestBed.configureTestingModule({
           providers: [
-            { provide: ActivatedRoute, useValue: { queryParams: of(mockParams) } },
+            {
+              provide: ActivatedRoute,
+              useValue: { queryParams: of(mockParams) },
+            },
           ],
         });
 
@@ -1151,7 +1157,10 @@ describe('DdiCdiComponent', () => {
 
         await TestBed.configureTestingModule({
           providers: [
-            { provide: ActivatedRoute, useValue: { queryParams: of(mockParams) } },
+            {
+              provide: ActivatedRoute,
+              useValue: { queryParams: of(mockParams) },
+            },
           ],
         });
 
@@ -1193,10 +1202,10 @@ describe('DdiCdiComponent', () => {
       it('should handle subscription errors', (done) => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        
+
         // Manually trigger an error in the subscription
         component['datasetSearchSubject'].error(new Error('Test error'));
-        
+
         setTimeout(() => {
           // The component should still be in a valid state
           expect(component).toBeDefined();
@@ -1255,11 +1264,11 @@ describe('DdiCdiComponent', () => {
       it('should handle node without data', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        
+
         const node: TreeNode<Datafile> = {
           children: [],
         };
-        
+
         expect(() => component.autoSelectSupportedFiles(node)).not.toThrow();
         expect(component.selectedFiles.size).toBe(0);
       });
@@ -1267,12 +1276,12 @@ describe('DdiCdiComponent', () => {
       it('should handle node with data but no name', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        
+
         const node: TreeNode<Datafile> = {
           data: { directoryLabel: 'test' } as Datafile,
           children: [],
         };
-        
+
         expect(() => component.autoSelectSupportedFiles(node)).not.toThrow();
         expect(component.selectedFiles.size).toBe(0);
       });
@@ -1280,7 +1289,7 @@ describe('DdiCdiComponent', () => {
       it('should recursively process children', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        
+
         const node: TreeNode<Datafile> = {
           data: { name: 'parent.txt', directoryLabel: '' } as Datafile,
           children: [
@@ -1290,7 +1299,7 @@ describe('DdiCdiComponent', () => {
             },
           ],
         };
-        
+
         component.autoSelectSupportedFiles(node);
         expect(component.selectedFiles.has('child.csv')).toBe(true);
         expect(component.selectedFiles.has('parent.txt')).toBe(false);
@@ -1391,12 +1400,12 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.loading = true;
-        
+
         const mockData: CompareResult = {
           id: 'doi:123',
           data: undefined,
         };
-        
+
         component.setData(mockData);
         expect(component.loading).toBe(false);
         expect(component.selectedFiles.size).toBe(0);
@@ -1463,9 +1472,11 @@ describe('DdiCdiComponent', () => {
           const call = dataServiceStub.addFileToDataset.calls.mostRecent();
           const request: AddFileRequest = call.args[0];
           expect(request.fileName).toMatch(/^ddi-cdi-\d+\.ttl$/);
-          
+
           // Extract timestamp from filename
-          const timestamp = parseInt(request.fileName.match(/ddi-cdi-(\d+)\.ttl/)![1]);
+          const timestamp = parseInt(
+            request.fileName.match(/ddi-cdi-(\d+)\.ttl/)![1],
+          );
           expect(timestamp).toBeGreaterThanOrEqual(beforeTime);
           expect(timestamp).toBeLessThanOrEqual(afterTime);
           done();
@@ -1478,21 +1489,21 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-        
+
         // Set some state
         component.output = 'previous output';
         component.outputDisabled = false;
         component.generatedDdiCdi = 'previous ddiCdi';
         component.selectedFiles.add('file1.csv');
         component.selectedFiles.add('file2.csv');
-        
+
         dataServiceStub.getDownloadableFiles.and.returnValue(
           of({ id: 'doi:new', data: [] } as CompareResult),
         );
-        
+
         component.datasetId = 'doi:new';
         component.onDatasetChange();
-        
+
         expect(component.output).toBe('');
         expect(component.outputDisabled).toBe(true);
         expect(component.generatedDdiCdi).toBeUndefined();
