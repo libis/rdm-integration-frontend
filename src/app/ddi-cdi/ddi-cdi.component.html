@@ -240,14 +240,12 @@
       <div
         [style.width]="'100%'"
         [style.margin]="'0.2rem'"
-        style="
-          height: 600px;
-          overflow: auto;
-          border: 1px solid #dee2e6;
-          border-radius: 4px;
-          padding: 1rem;
-          background-color: #fff;
-        "
+        [style.height]="'600px'"
+        [style.overflow]="'auto'"
+        [style.padding]="'1rem'"
+        [style.border]="'1px solid var(--p-surface-border)'"
+        [style.border-radius]="'var(--p-border-radius)'"
+        [style.background-color]="'var(--p-content-background)'"
       >
         <shacl-form
           #shaclForm
