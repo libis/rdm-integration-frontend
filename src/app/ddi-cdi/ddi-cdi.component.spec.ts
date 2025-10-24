@@ -45,6 +45,7 @@ describe('DdiCdiComponent', () => {
       'getDownloadableFiles',
       'generateDdiCdi',
       'getCachedDdiCdiData',
+      'getCachedDdiCdiOutput',
       'addFileToDataset',
     ]);
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
@@ -77,6 +78,9 @@ describe('DdiCdiComponent', () => {
     pluginServiceStub.datasetFieldEditable.and.returnValue(true);
     pluginServiceStub.dataverseHeader.and.returnValue('Dataverse');
     utilsServiceStub.sleep.and.returnValue(Promise.resolve());
+    dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
+      throwError(() => ({ status: 404 })),
+    );
 
     await TestBed.configureTestingModule({
       imports: [DdiCdiComponent],
@@ -1508,6 +1512,181 @@ describe('DdiCdiComponent', () => {
         expect(component.outputDisabled).toBe(true);
         expect(component.generatedDdiCdi).toBeUndefined();
         expect(component.selectedFiles.size).toBe(0);
+      });
+    });
+
+    describe('loadCachedOutput', () => {
+      it('should load cached output successfully', () => {
+        const mockCache = {
+          ddiCdi: 'cached-ttl',
+          consoleOut: 'cached-output',
+          errorMessage: '',
+          timestamp: '2024-10-24T10:00:00Z',
+        };
+        dataServiceStub.getCachedDdiCdiOutput.and.returnValue(of(mockCache));
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+
+        component.loadCachedOutput();
+
+        expect(component.generatedDdiCdi).toBe('cached-ttl');
+        expect(component.cachedOutputLoaded).toBe(true);
+        expect(notificationServiceStub.showSuccess).toHaveBeenCalled();
+      });
+
+      it('should handle cached error message', () => {
+        const mockCache = {
+          ddiCdi: '',
+          consoleOut: '',
+          errorMessage: 'Previous generation failed',
+          timestamp: '2024-10-24T10:00:00Z',
+        };
+        dataServiceStub.getCachedDdiCdiOutput.and.returnValue(of(mockCache));
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+
+        component.loadCachedOutput();
+
+        expect(component.output).toContain('Previous generation failed');
+        expect(component.outputDisabled).toBe(false);
+      });
+
+      it('should handle no cached output found', () => {
+        dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
+          throwError(() => ({ status: 404 })),
+        );
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+
+        component.loadCachedOutput();
+
+        expect(component.cachedOutputLoaded).toBe(false);
+      });
+
+      it('should not call service when datasetId is not set', () => {
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = undefined;
+
+        component.loadCachedOutput();
+
+        expect(dataServiceStub.getCachedDdiCdiOutput).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('refreshOutput', () => {
+      it('should reload cached output', () => {
+        const mockCache = {
+          ddiCdi: 'refreshed-ttl',
+          consoleOut: 'refreshed-output',
+          errorMessage: '',
+          timestamp: '2024-10-24T10:00:00Z',
+        };
+        dataServiceStub.getCachedDdiCdiOutput.and.returnValue(of(mockCache));
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+        component.generatedDdiCdi = 'old-content';
+
+        component.refreshOutput();
+
+        expect(component.generatedDdiCdi).toBe('refreshed-ttl');
+        expect(component.cachedOutputLoaded).toBe(true);
+      });
+
+      it('should clear previous state before refreshing', () => {
+        dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
+          throwError(() => ({ status: 404 })),
+        );
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+        component.generatedDdiCdi = 'old-content';
+        component.output = 'old-output';
+
+        component.refreshOutput();
+
+        expect(component.generatedDdiCdi).toBeUndefined();
+        expect(component.output).toBe('');
+        expect(component.cachedOutputLoaded).toBe(false);
+      });
+    });
+
+    describe('continueSubmitGenerate', () => {
+      it('should close popup and submit job', (done) => {
+        const mockKey: Key = { key: 'job-123' };
+        dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
+        dataServiceStub.getCachedDdiCdiData.and.returnValue(
+          of({ ready: true, res: 'output', ddiCdi: 'ttl-content' }),
+        );
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        fixture.detectChanges();
+        component.datasetId = 'doi:123';
+        component.dataverseToken = 'token';
+        component.selectedFiles.add('file.csv');
+        component.submitPopup = true;
+
+        component.continueSubmitGenerate();
+
+        expect(component.submitPopup).toBe(false);
+        setTimeout(() => {
+          expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
+            jasmine.stringContaining('DDI-CDI generation job submitted'),
+          );
+          done();
+        }, 10);
+      });
+
+      it('should set informative output message', () => {
+        const mockKey: Key = { key: 'job-123' };
+        dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
+        dataServiceStub.getCachedDdiCdiData.and.returnValue(
+          of({ ready: false, res: 'processing' }),
+        );
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+        component.selectedFiles.add('file.csv');
+
+        component.continueSubmitGenerate();
+
+        expect(component.output).toContain('DDI-CDI generation started');
+        expect(component.output).toContain('email');
+      });
+
+      it('should handle error from generation', () => {
+        dataServiceStub.generateDdiCdi.and.returnValue(
+          throwError(() => ({ error: 'Submit failed' })),
+        );
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+        component.selectedFiles.add('file.csv');
+
+        component.continueSubmitGenerate();
+
+        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+          'Generation failed: Submit failed',
+        );
+        expect(component.loading).toBe(false);
+      });
+    });
+
+    describe('submitGenerate with popup', () => {
+      it('should show popup instead of immediately submitting', () => {
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        component.datasetId = 'doi:123';
+        component.selectedFiles.add('file.csv');
+
+        component.submitGenerate();
+
+        expect(component.submitPopup).toBe(true);
+        expect(dataServiceStub.generateDdiCdi).not.toHaveBeenCalled();
       });
     });
   });
