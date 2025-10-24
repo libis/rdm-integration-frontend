@@ -1,0 +1,204 @@
+<!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
+<div class="row justify-content-between sticky-menu">
+  <span class="col-auto">
+    <button
+      style="height: 3rem"
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-secondary"
+      (click)="back()"
+    >
+      <i class="pi pi-angle-double-left"></i>&nbsp;Home
+    </button>
+  </span>
+  @if (showDVToken()) {
+    <span class="col-auto">
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text" style="height: 3rem"
+            >Token:&nbsp;</span
+          >
+        </div>
+        <input
+          type="password"
+          class="form-control"
+          id="dataverseToken"
+          placeholder="Dataverse API token"
+          [(ngModel)]="dataverseToken"
+          #ctrl="ngModel"
+          (onChange)="onUserChange()"
+        />
+      </div>
+    </span>
+  }
+  <span
+    class="col-auto"
+    style="width: 30rem; position: relative; top: 0.275rem"
+  >
+    <p-floatlabel class="w-full md:w-56" variant="on">
+      <p-select
+        appendTo="body"
+        autoWidth="false"
+        [style]="{ width: '100%' }"
+        [editable]="datasetFieldEditable()"
+        id="datasetId"
+        [options]="doiItems"
+        [filter]="true"
+        filterBy="label"
+        [resetFilterOnHide]="true"
+        (onFilter)="onDatasetSearch($event.filter)"
+        [(ngModel)]="datasetId"
+        (onClick)="getDoiOptions()"
+        (onChange)="onDatasetChange()"
+      ></p-select>
+      <label for="datasetId">Select Dataset</label>
+    </p-floatlabel>
+  </span>
+</div>
+
+<br />
+
+<!-- Info box about supported file types -->
+@if (datasetId) {
+  <div class="alert alert-info" role="alert">
+    <i class="pi pi-info-circle"></i>&nbsp; <strong>DDI-CDI Generation</strong
+    ><br />
+    Supported file types: <strong>{{ getSupportedExtensionsText() }}</strong
+    ><br />
+    Supported files are automatically selected. You can change the selection in
+    the table below.
+  </div>
+}
+
+<!-- Add File to Dataset Dialog -->
+<p-dialog
+  header="Add DDI-CDI File to Dataset"
+  position="topright"
+  [modal]="true"
+  [(visible)]="addFilePopup"
+>
+  <p class="m-0">
+    This will add the generated DDI-CDI Turtle file to your dataset.
+  </p>
+  <p class="m-0">
+    The file will be named: <strong>ddi-cdi-[timestamp].ttl</strong>
+  </p>
+  <br />
+  <p class="m-0">Do you want to continue?</p>
+  <ng-template pTemplate="footer">
+    <p-button
+      (onClick)="addFilePopup = false"
+      styleClass="p-button-sm p-button-raised p-button-secondary"
+      >Cancel</p-button
+    >
+    <p-button
+      (onClick)="addFileToDataset()"
+      styleClass="p-button-sm p-button-raised p-button-primary"
+      >Add File</p-button
+    >
+  </ng-template>
+</p-dialog>
+
+<div style="height: 100% - 2rem; overflow: hidden">
+  <div style="float: left; width: 50%">
+    <p-treeTable
+      [value]="rootNodeChildren"
+      [loading]="loading"
+      loadingIcon=" pi pi-spin pi-spinner"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="text-align: left">
+            <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+          </th>
+          <th class="icon_col" style="text-align: center; width: 100px">
+            <span title="Select">Select</span>
+          </th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+        <tr [ttRow]="rowNode">
+          <td>
+            <span
+              [ngClass]="{
+                'supported-file': isFileSupported(rowData.name || ''),
+                'unsupported-file': !isFileSupported(rowData.name || ''),
+              }"
+            >
+              {{ rowData.name }}
+            </span>
+          </td>
+          <td style="text-align: center">
+            @if (isFileSupported(rowData.name || "")) {
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="isFileSelected(rowData.name || '')"
+                (ngModelChange)="toggleFileSelection(rowData.name || '')"
+              ></p-checkbox>
+            } @else {
+              <span class="text-muted" title="File type not supported">
+                -
+              </span>
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-treeTable>
+
+    <div style="margin-top: 1rem; text-align: center">
+      <p-button
+        [disabled]="loading || selectedFiles.size === 0"
+        (onClick)="submitGenerate()"
+        styleClass="p-button-raised p-button-primary"
+      >
+        <i [class]="icon_generate"></i>&nbsp;Generate DDI-CDI
+      </p-button>
+      @if (showAddFileButton()) {
+        <p-button
+          [disabled]="loading"
+          (onClick)="openAddFileDialog()"
+          styleClass="p-button-raised p-button-success"
+          [style]="{ 'margin-left': '1rem' }"
+        >
+          <i class="pi pi-plus"></i>&nbsp;Add to Dataset
+        </p-button>
+      }
+    </div>
+  </div>
+  <div style="float: right; width: 50%">
+    @if (!generatedDdiCdi) {
+      <!-- Console output while generating -->
+      <div [style.width]="'100%'" [style.margin]="'0.2rem'">
+        <textarea
+          [disabled]="outputDisabled"
+          autosize
+          [minRows]="15"
+          [maxRows]="15"
+          [value]="output"
+          [placeholder]="output ? '' : 'Console output...'"
+          style="font-family: monospace"
+        ></textarea>
+      </div>
+    } @else {
+      <!-- SHACL Form for editing DDI-CDI -->
+      <div
+        [style.width]="'100%'"
+        [style.margin]="'0.2rem'"
+        style="
+          height: 600px;
+          overflow: auto;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 1rem;
+          background-color: #fff;
+        "
+      >
+        <shacl-form
+          #shaclForm
+          [attr.data-shapes]="generatedDdiCdi"
+          style="display: block; width: 100%"
+        ></shacl-form>
+      </div>
+    }
+  </div>
+</div>

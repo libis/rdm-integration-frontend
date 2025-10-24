@@ -1,0 +1,115 @@
+// Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
+
+.supported-file {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.unsupported-file {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.sticky-menu {
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 100;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.25rem;
+}
+
+.alert-info {
+  background-color: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  color: #0369a1;
+}
+
+.icon_col {
+  width: 100px;
+}
+
+// SHACL Form styling
+::ng-deep {
+  shacl-form {
+    // Customize form styling
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+      "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+      sans-serif;
+
+    // Form inputs
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+
+      &:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+    }
+
+    // Labels
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+      font-size: 0.875rem;
+    }
+
+    // Field groups
+    .field-group {
+      margin-bottom: 1.5rem;
+    }
+
+    // Buttons
+    button {
+      padding: 0.5rem 1rem;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #2563eb;
+      }
+
+      &:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+      }
+    }
+
+    // Error messages
+    .error-message {
+      color: #dc2626;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    // Success messages
+    .success-message {
+      color: #16a34a;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+  }
+}

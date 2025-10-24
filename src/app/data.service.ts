@@ -3,10 +3,12 @@
 import { Injectable, inject } from '@angular/core';
 import {
   AccessResponse,
+  AddFileRequest,
   CachedComputeResponse,
   CachedResponse,
   CompareResult,
   ComputeRequest,
+  DdiCdiRequest,
   Key,
 } from './models/compare-result';
 import { HttpClient } from '@angular/common/http';
@@ -26,6 +28,9 @@ export class DataService {
   common_get_check_access_files_url = 'api/common/checkaccess';
   common_compute_url = 'api/common/compute';
   common_get_cached_compute_res_url = 'api/common/cachedcompute';
+  common_ddicdi_url = 'api/common/ddicdi';
+  common_get_cached_ddicdi_res_url = 'api/common/cachedddicdi';
+  common_add_file_url = 'api/common/addfile';
   common_get_downloadable_files_url = 'api/common/downloadable';
 
   constructor() {}
@@ -105,5 +110,20 @@ export class DataService {
       this.common_get_downloadable_files_url,
       req,
     );
+  }
+
+  generateDdiCdi(req: DdiCdiRequest): Observable<Key> {
+    return this.http.post<Key>(this.common_ddicdi_url, req);
+  }
+
+  getCachedDdiCdiData(key: Key): Observable<CachedComputeResponse> {
+    return this.http.post<CachedComputeResponse>(
+      this.common_get_cached_ddicdi_res_url,
+      key,
+    );
+  }
+
+  addFileToDataset(req: AddFileRequest): Observable<Key> {
+    return this.http.post<Key>(this.common_add_file_url, req);
   }
 }

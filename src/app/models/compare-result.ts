@@ -48,5 +48,21 @@ export interface CachedComputeResponse {
   key?: string;
   ready?: boolean;
   res?: string;
+  ddiCdi?: string;
   err?: string;
+}
+
+export interface DdiCdiRequest {
+  persistentId: string;
+  dataverseKey?: string;
+  queue: string;
+  fileNames: string[];
+  sendEmailOnSuccess: boolean;
+}
+
+export interface AddFileRequest {
+  persistentId: string;
+  dataverseKey?: string;
+  fileName: string;
+  content: string;
 }

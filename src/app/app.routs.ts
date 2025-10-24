@@ -31,6 +31,11 @@ export const routes: Routes = [
       import('./compute/compute.component').then((m) => m.ComputeComponent),
   },
   {
+    path: 'ddi-cdi',
+    loadComponent: () =>
+      import('./ddi-cdi/ddi-cdi.component').then((m) => m.DdiCdiComponent),
+  },
+  {
     path: 'download',
     loadComponent: () =>
       import('./download/download.component').then((m) => m.DownloadComponent),
