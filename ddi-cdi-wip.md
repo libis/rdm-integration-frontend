@@ -10,7 +10,7 @@ Reference assets: posted images of the download component (baseline) and current
 - Current state: DDI-CDI Angular tests now pass after spec fixes providing valid Turtle fixtures; SHACL warnings remain due to placeholder Turtle in mocks.
 - Data sources: latest cached CDI output stored at `tests/response.json`, sourced from `/api/common/cachedddicdioutput` (ready flag true, warnings about invalid linked DDI XML).
 - Upload issue: calling Dataverse add-file API with payload containing only Turtle prefixes triggers 500 with Go JSON decode error (`AddReplaceFileResponse.message` expects string, backend returns object when upload fails). Need to ensure we send full Turtle and handle response schema; integration service logs show only successful generate jobs (no record of the failing upload).
-- Outstanding UI work: dropdown relocation, sticky button styling, tree-table select-all icon, SHACL form error handling, potential library evaluation (see TODO below).
+- Outstanding UI work: SHACL form error handling and potential library evaluation (see TODO below).
 - SHACL tooling view: ULB Darmstadt’s generic SHACL form component renders fields directly from a SHACL shape graph; it’s viable once we ship full CDI-aligned shapes but currently stalls because we lack a stable root node shape. Without those shapes the renderer can’t reflect our UX or validation needs, so custom Angular forms may serve better until shapes are in place.
 - SHACL shape graph research: official DDI Lifecycle SHACL exports live in the `ddimodel` GitHub releases, but no ready-made CDI-specific shapes turned up—available CDI assets are RDF encodings in the `ddi-cdi` repo/spec, so we’d need to derive shapes ourselves or adapt lifecycle ones.
 
@@ -20,9 +20,9 @@ Reference assets: posted images of the download component (baseline) and current
 - **SHACL** is the constraint language layered on RDF; shapes describe what properties/structures should exist and power validation or auto-generated forms. A SHACL form renderer needs both the shape graph (rules) and the data graph (our CDI TTL) to work.
 
 ### TODO
-- [ ] Move the dataset selection dropdown out of the sticky menu and mirror the download component (label, layout, styles).
-- [ ] Relocate the `Generate DDI-CDI` button into the right sticky menu and reuse the download component iconography.
-- [ ] Replace the "Select" header text in the tree table with a toggleable checkmark matching the download component behaviour (supports select/deselect all).
+- [x] Move the dataset selection dropdown out of the sticky menu and mirror the download component (label, layout, styles).
+- [x] Relocate the `Generate DDI-CDI` button into the right sticky menu and reuse the download component iconography.
+- [x] Replace the "Select" header text in the tree table with a toggleable checkmark matching the download component behaviour (supports select/deselect all).
 - [ ] Investigate and resolve `Error: shacl root node shape not found`, using the captured `response.json` from `/api/common/cachedddicdioutput` to build tests/mocks.
 - [x] Ensure `Add to Dataset` always uploads clean Turtle output even when the SHACL editor fails to render.
 - [ ] Confirm the SHACL form renders without errors for valid CDI output (address remaining SHACL form issues).
@@ -37,6 +37,7 @@ Reference assets: posted images of the download component (baseline) and current
 - Angular unit suite now green after updating `src/app/ddi-cdi/ddi-cdi.component.spec.ts` with valid Turtle fixtures and richer DOM mocks; rerun via `npm run test -- --watch=false`.
 - Latest backend fixture in `tests/response.json` cleaned up; use it to drive SHACL mocks and error reproduction.
 - Upload attempt now fails server-side with 500 due to response message type mismatch; request body shows only prefix declarations, suggesting serialization stops before data rows.
+- DDI-CDI layout now mirrors the download component (dropdown placement, sticky action button, select-all icon); validated via `make test`.
 
 ### Next Steps
 - Replace remaining placeholder Turtle strings in SHACL pathways to eliminate N3 parser warnings (`ttl-content`, `final-ttl`, `cached-ttl`, etc.).

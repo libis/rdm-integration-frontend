@@ -37,7 +37,6 @@ import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { Button, ButtonDirective } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { Dialog } from 'primeng/dialog';
-import { FloatLabel } from 'primeng/floatlabel';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { TreeTableModule } from 'primeng/treetable';
@@ -69,7 +68,6 @@ import { SubscriptionManager } from '../shared/types';
     CommonModule,
     ButtonDirective,
     FormsModule,
-    FloatLabel,
     Select,
     Dialog,
     Checkbox,
@@ -94,9 +92,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   // ViewChild for SHACL form element
   @ViewChild('shaclForm', { static: false }) shaclForm?: ElementRef;
-
-  // Icon constants
-  readonly icon_generate = 'pi pi-file-export';
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;

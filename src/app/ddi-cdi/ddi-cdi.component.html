@@ -1,8 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<div class="row justify-content-between sticky-menu">
-  <span class="col-auto">
+<div class="row justify-content-between align-items-center sticky-menu">
+  <div class="col-auto">
     <button
-      style="height: 3rem"
       pButton
       type="button"
       class="p-button-sm p-button-raised p-button-secondary"
@@ -10,14 +9,12 @@
     >
       <i class="pi pi-angle-double-left"></i>&nbsp;Home
     </button>
-  </span>
+  </div>
   @if (showDVToken()) {
-    <span class="col-auto">
+    <div class="col-auto">
       <div class="input-group">
         <div class="input-group-prepend">
-          <span class="input-group-text" style="height: 3rem"
-            >Token:&nbsp;</span
-          >
+          <span class="input-group-text">Token:&nbsp;</span>
         </div>
         <input
           type="password"
@@ -29,34 +26,44 @@
           (onChange)="onUserChange()"
         />
       </div>
-    </span>
+    </div>
   }
-  <span
-    class="col-auto"
-    style="width: 30rem; position: relative; top: 0.275rem"
-  >
-    <p-floatlabel class="w-full md:w-56" variant="on">
-      <p-select
-        appendTo="body"
-        autoWidth="false"
-        [style]="{ width: '100%' }"
-        [editable]="datasetFieldEditable()"
-        id="datasetId"
-        [options]="doiItems"
-        [filter]="true"
-        filterBy="label"
-        [resetFilterOnHide]="true"
-        (onFilter)="onDatasetSearch($event.filter)"
-        [(ngModel)]="datasetId"
-        (onClick)="getDoiOptions()"
-        (onChange)="onDatasetChange()"
-      ></p-select>
-      <label for="datasetId">Select Dataset</label>
-    </p-floatlabel>
-  </span>
+  <div class="col text-center">
+    <h2 class="page-title m-0">Generate DDI-CDI Metadata</h2>
+  </div>
+  <div class="col-auto d-flex" style="gap: 0.5rem">
+    <button
+      pButton
+      type="button"
+      class="p-button-sm p-button-raised p-button-primary"
+      [disabled]="generateDisabled()"
+      (click)="submitGenerate()"
+    >
+      Generate DDI-CDI&nbsp;<i class="pi pi-angle-double-right"></i>
+    </button>
+  </div>
 </div>
 
 <br />
+
+<div class="mb-3">
+  <label for="datasetId" class="form-label">Dataset DOI</label>
+  <p-select
+    appendTo="body"
+    autoWidth="false"
+    [style]="{ width: '100%' }"
+    [editable]="datasetFieldEditable()"
+    id="datasetId"
+    [options]="doiItems"
+    [filter]="true"
+    filterBy="label"
+    [resetFilterOnHide]="true"
+    (onFilter)="onDatasetSearch($event.filter)"
+    [(ngModel)]="datasetId"
+    (onClick)="getDoiOptions()"
+    (onChange)="onDatasetChange()"
+  ></p-select>
+</div>
 
 <!-- Info box about file filtering -->
 @if (datasetId) {
@@ -155,8 +162,16 @@
           <th style="text-align: left">
             <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
           </th>
-          <th class="icon_col" style="text-align: center; width: 100px">
-            <span title="Select">Select</span>
+          <th class="icon_col" style="text-align: right; width: 100px">
+            <button
+              pButton
+              type="button"
+              class="p-button-sm p-button-outlined p-button-secondary"
+              title="Toggle select all"
+              (click)="toggleSelectAll()"
+            >
+              <i [class]="selectAllIcon()"></i>
+            </button>
           </th>
         </tr>
       </ng-template>
@@ -177,19 +192,11 @@
     </p-treeTable>
 
     <div style="margin-top: 1rem; text-align: center">
-      <p-button
-        [disabled]="loading || selectedFiles.size === 0"
-        (onClick)="submitGenerate()"
-        styleClass="p-button-raised p-button-primary"
-      >
-        <i [class]="icon_generate"></i>&nbsp;Generate DDI-CDI
-      </p-button>
       @if (cachedOutputLoaded || generatedDdiCdi) {
         <p-button
           [disabled]="loading"
           (onClick)="refreshOutput()"
           styleClass="p-button-raised p-button-secondary"
-          [style]="{ 'margin-left': '1rem' }"
           title="Reload the last generated output from cache"
         >
           <i class="pi pi-refresh"></i>&nbsp;Refresh
@@ -200,7 +207,7 @@
           [disabled]="loading"
           (onClick)="openAddFileDialog()"
           styleClass="p-button-raised p-button-success"
-          [style]="{ 'margin-left': '1rem' }"
+          [style]="{ 'margin-left': cachedOutputLoaded || generatedDdiCdi ? '1rem' : '0' }"
         >
           <i class="pi pi-plus"></i>&nbsp;Add to Dataset
         </p-button>
