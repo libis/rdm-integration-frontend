@@ -50,7 +50,11 @@ import '@ulb-darmstadt/shacl-form';
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // Constants and types
-import { APP_CONSTANTS } from '../shared/constants';
+import {
+  APP_CONSTANTS,
+  buildInlineStyle,
+  getFileActionStyle,
+} from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
 
 @Component({
@@ -335,6 +339,14 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     } else {
       this.selectedFiles.add(filename);
     }
+  }
+
+  getFileStyle(filename: string): string {
+    const isSelected = this.isFileSelected(filename);
+    const style = isSelected
+      ? getFileActionStyle('SELECTED')
+      : getFileActionStyle('IGNORE');
+    return buildInlineStyle(style);
   }
 
   submitGenerate(): void {

@@ -161,11 +161,9 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-        <tr [ttRow]="rowNode">
+        <tr [ttRow]="rowNode" [style]="getFileStyle(rowData.name || '')">
           <td>
-            <span class="supported-file">
-              {{ rowData.name }}
-            </span>
+            {{ rowData.name }}
           </td>
           <td style="text-align: center">
             <p-checkbox
