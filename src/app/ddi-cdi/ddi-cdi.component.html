@@ -81,14 +81,26 @@
     Click on "OK" to start the DDI-CDI generation. The job will run
     asynchronously.
   </p>
-  <p class="m-0">
-    You will receive an email notification when the generation is complete.
+  <p class="m-0" [hidden]="!sendMails()">
+    You will receive an email notification if the generation fails.
   </p>
   <p class="m-0">
     <strong>You can close the browser window</strong> and the generation will
     continue in the background.
   </p>
-  <br />
+  <br /><br />
+  <div style="text-align: right">
+    <div class="field-checkbox" [hidden]="!sendMails()">
+      <p-checkbox
+        [(ngModel)]="sendEmailOnSuccess"
+        [binary]="true"
+        inputId="sendEmailOnSuccessCB"
+      ></p-checkbox>
+      <label for="sendEmailOnSuccessCB"
+        >Email me when the generation is completed</label
+      >
+    </div>
+  </div>
   <ng-template pTemplate="footer">
     <p-button
       (onClick)="submitPopup = false"

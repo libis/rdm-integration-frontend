@@ -113,6 +113,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   generatedDdiCdi?: string;
   shaclFormValid = false;
   cachedOutputLoaded = false;
+  sendEmailOnSuccess = false;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -362,17 +363,20 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       dataverseKey: this.dataverseToken,
       queue: 'default',
       fileNames: Array.from(this.selectedFiles),
-      sendEmailOnSuccess: false,
+      sendEmailOnSuccess: this.sendEmailOnSuccess,
     };
     this.loading = true;
     this.generatedDdiCdi = undefined;
-    this.output =
-      'DDI-CDI generation started...\nYou will receive an email when it completes.\nYou can close this window.';
+    const emailMsg = this.sendEmailOnSuccess
+      ? 'You will receive an email when it completes.'
+      : 'You will receive an email if it fails.';
+    this.output = `DDI-CDI generation started...\n${emailMsg}\nYou can close this window.`;
     this.dataService.generateDdiCdi(this.req!).subscribe({
       next: (key: Key) => {
-        this.notificationService.showSuccess(
-          'DDI-CDI generation job submitted. You will be notified by email when complete.',
-        );
+        const successMsg = this.sendEmailOnSuccess
+          ? 'DDI-CDI generation job submitted. You will be notified by email when complete.'
+          : 'DDI-CDI generation job submitted.';
+        this.notificationService.showSuccess(successMsg);
         this.getDdiCdiData(key);
       },
       error: (err) => {
@@ -496,6 +500,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   getSupportedExtensionsText(): string {
     return this.SUPPORTED_EXTENSIONS.join(', ');
+  }
+
+  sendMails(): boolean {
+    return this.pluginService.sendMails();
   }
 
   loadCachedOutput(): void {
