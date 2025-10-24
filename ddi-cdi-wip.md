@@ -10,7 +10,7 @@ Reference assets: posted images of the download component (baseline) and current
 - Current state: DDI-CDI Angular tests now pass after spec fixes providing valid Turtle fixtures; SHACL warnings remain due to placeholder Turtle in mocks.
 - Data sources: latest cached CDI output stored at `tests/response.json`, sourced from `/api/common/cachedddicdioutput` (ready flag true, warnings about invalid linked DDI XML).
 - Upload issue: calling Dataverse add-file API with payload containing only Turtle prefixes triggers 500 with Go JSON decode error (`AddReplaceFileResponse.message` expects string, backend returns object when upload fails). Need to ensure we send full Turtle and handle response schema; integration service logs show only successful generate jobs (no record of the failing upload).
-- Outstanding UI work: SHACL form error handling and potential library evaluation (see TODO below).
+- Outstanding UI work: SHACL form error handling (see TODO below).
 - SHACL tooling view: ULB Darmstadt’s generic SHACL form component renders fields directly from a SHACL shape graph; it’s viable once we ship full CDI-aligned shapes but currently stalls because we lack a stable root node shape. Without those shapes the renderer can’t reflect our UX or validation needs, so custom Angular forms may serve better until shapes are in place.
 - SHACL shape graph research: official DDI Lifecycle SHACL exports live in the `ddimodel` GitHub releases, but no ready-made CDI-specific shapes turned up—available CDI assets are RDF encodings in the `ddi-cdi` repo/spec, so we’d need to derive shapes ourselves or adapt lifecycle ones.
 
@@ -24,9 +24,8 @@ Reference assets: posted images of the download component (baseline) and current
 - [x] Relocate the `Generate DDI-CDI` button into the right sticky menu and reuse the download component iconography.
 - [x] Replace the "Select" header text in the tree table with a toggleable checkmark matching the download component behaviour (supports select/deselect all).
 - [ ] Investigate and resolve `Error: shacl root node shape not found`, using the captured `response.json` from `/api/common/cachedddicdioutput` to build tests/mocks.
-- [x] Ensure `Add to Dataset` always uploads clean Turtle output even when the SHACL editor fails to render.
+- [ ] Ensure `Add to Dataset` always uploads clean Turtle output even when the SHACL editor fails to render.
 - [ ] Confirm the SHACL form renders without errors for valid CDI output (address remaining SHACL form issues).
-- [ ] Evaluate whether the ULB Darmstadt SHACL form library meets our editor needs; if recommending alternatives, document reasoning and get approval before replacing.
 - [ ] Diagnose the HTTP 500 when calling `api/datasets/:persistentId/add` (`json: cannot unmarshal object into ... AddReplaceFileResponse.message`); verify the request payload (`content` currently only prefixes) and align with backend expectations.
 - [ ] Host the SHACL shapes we design on the backend alongside the embedded frontend config (`Dockerfile`, `frontend.go` `go:embed all:dist/datasync`).
 - [ ] Document SHACL shape hosting/contribution guidance in `ddi-cdi.md`, mirroring how `csv_to_cdi.py` participation is covered.
