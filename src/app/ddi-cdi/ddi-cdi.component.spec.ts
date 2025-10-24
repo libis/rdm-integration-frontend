@@ -38,6 +38,14 @@ describe('DdiCdiComponent', () => {
   let utilsServiceStub: jasmine.SpyObj<UtilsService>;
 
   const mockQueryParams = of({});
+  const SIMPLE_TURTLE = `
+@prefix ex: <http://example.com/> .
+@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+ex:dataset1 a cdi:DataSet ;
+  dcterms:title "Sample dataset" .
+`;
 
   beforeEach(async () => {
     // Create service stubs
@@ -930,7 +938,7 @@ describe('DdiCdiComponent', () => {
           of({
             ready: true,
             res: 'output',
-            ddiCdi: 'ttl-content',
+            ddiCdi: SIMPLE_TURTLE,
           } as CachedComputeResponse),
         );
 
@@ -964,7 +972,7 @@ describe('DdiCdiComponent', () => {
           return of({
             ready: true,
             res: 'Final output',
-            ddiCdi: 'final-ttl',
+            ddiCdi: SIMPLE_TURTLE,
           } as CachedComputeResponse);
         });
 
@@ -989,8 +997,16 @@ describe('DdiCdiComponent', () => {
 
         const mockElement = {
           addEventListener: jasmine.createSpy('addEventListener'),
-          serialize: jasmine.createSpy('serialize').and.returnValue('new-ttl'),
-        };
+          removeEventListener: jasmine.createSpy('removeEventListener'),
+          setAttribute: jasmine.createSpy('setAttribute'),
+          removeAttribute: jasmine.createSpy('removeAttribute'),
+          serialize: jasmine
+            .createSpy('serialize')
+            .and.returnValue(SIMPLE_TURTLE),
+        } as any;
+
+        component.generatedDdiCdi = SIMPLE_TURTLE;
+        component.shaclShapes = component['buildShaclShapes'](SIMPLE_TURTLE);
 
         component.shaclForm = {
           nativeElement: mockElement,
@@ -1021,28 +1037,31 @@ describe('DdiCdiComponent', () => {
                 changeHandler = handler;
               }
             }),
+          removeEventListener: jasmine.createSpy('removeEventListener'),
+          setAttribute: jasmine.createSpy('setAttribute'),
+          removeAttribute: jasmine.createSpy('removeAttribute'),
           serialize: jasmine
             .createSpy('serialize')
-            .and.returnValue('updated-ttl'),
-        };
+            .and.returnValue(SIMPLE_TURTLE),
+        } as any;
 
         component.shaclForm = {
           nativeElement: mockElement,
         } as ElementRef;
+
+        component.generatedDdiCdi = SIMPLE_TURTLE;
+        component.shaclShapes = component['buildShaclShapes'](SIMPLE_TURTLE);
 
         component['setupShaclForm']();
 
         setTimeout(() => {
           expect(changeHandler!).toBeDefined();
 
-          const mockEvent = {
-            detail: { valid: true },
-          } as CustomEvent;
 
-          changeHandler!(mockEvent);
+          changeHandler!({ detail: { valid: true } } as CustomEvent);
 
           expect(component.shaclFormValid).toBe(true);
-          expect(component.generatedDdiCdi).toBe('updated-ttl');
+          expect(component.generatedDdiCdi).toBe(SIMPLE_TURTLE);
           done();
         }, 150);
       });
@@ -1061,12 +1080,18 @@ describe('DdiCdiComponent', () => {
                 changeHandler = handler;
               }
             }),
+          removeEventListener: jasmine.createSpy('removeEventListener'),
+          setAttribute: jasmine.createSpy('setAttribute'),
+          removeAttribute: jasmine.createSpy('removeAttribute'),
           serialize: jasmine.createSpy('serialize'),
-        };
+        } as any;
 
         component.shaclForm = {
           nativeElement: mockElement,
         } as ElementRef;
+
+        component.generatedDdiCdi = SIMPLE_TURTLE;
+        component.shaclShapes = component['buildShaclShapes'](SIMPLE_TURTLE);
 
         component['setupShaclForm']();
 

@@ -208,20 +208,7 @@
     </div>
   </div>
   <div style="float: right; width: 50%">
-    @if (!generatedDdiCdi) {
-      <!-- Console output while generating -->
-      <div [style.width]="'100%'" [style.margin]="'0.2rem'">
-        <textarea
-          [disabled]="outputDisabled"
-          autosize
-          [minRows]="15"
-          [maxRows]="15"
-          [value]="output"
-          [placeholder]="output ? '' : 'Console output...'"
-          style="font-family: monospace"
-        ></textarea>
-      </div>
-    } @else {
+    @if (generatedDdiCdi) {
       <!-- SHACL Form for editing DDI-CDI -->
       <div
         [style.width]="'100%'"
@@ -233,11 +220,29 @@
         [style.border-radius]="'var(--p-border-radius)'"
         [style.background-color]="'var(--p-content-background)'"
       >
-        <shacl-form
-          #shaclForm
-          [attr.data-shapes]="generatedDdiCdi"
-          style="display: block; width: 100%"
-        ></shacl-form>
+        @if (shaclError) {
+          <div class="shacl-error" [style.white-space]="'pre-line'">
+            {{ shaclError }}
+          </div>
+          <textarea
+            autosize
+            [minRows]="15"
+            [maxRows]="15"
+            [value]="generatedDdiCdi"
+            readonly
+            style="font-family: monospace; margin-top: 1rem"
+          ></textarea>
+        } @else {
+          <shacl-form
+            #shaclForm
+            [attr.data-shapes]="shaclShapes"
+            [attr.data-values]="generatedDdiCdi"
+            [attr.data-values-format]="'text/turtle'"
+            [attr.data-shapes-format]="'text/turtle'"
+            data-dense="true"
+            style="display: block; width: 100%"
+          ></shacl-form>
+        }
       </div>
     }
   </div>

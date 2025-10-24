@@ -49,6 +49,9 @@ import '@ulb-darmstadt/shacl-form';
 // RxJS
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
+// RDF parsing utilities
+import { Parser } from 'n3';
+
 // Constants and types
 import {
   APP_CONSTANTS,
@@ -97,6 +100,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
+  private readonly RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
+  private readonly CDI_DATASET_TYPE =
+    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/DataSet';
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -117,6 +123,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   shaclFormValid = false;
   cachedOutputLoaded = false;
   sendEmailOnSuccess = false;
+  shaclShapes?: string;
+  shaclError?: string;
+  originalDdiCdi?: string;
+  private totalSelectableFiles = 0;
+  private shaclChangeListener?: EventListener;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -181,6 +192,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // Clean up existing observable subscriptions
     this.datasetSearchResultsSubscription?.unsubscribe();
+
+    // Detach SHACL form listeners before the component is destroyed
+    this.detachShaclListener();
   }
 
   back(): void {
@@ -274,8 +288,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loading = true;
     this.output = '';
     this.outputDisabled = true;
-    this.generatedDdiCdi = undefined;
+    this.resetShaclState();
     this.selectedFiles.clear();
+    this.totalSelectableFiles = 0;
 
     // First, try to load cached output
     this.loadCachedOutput();
@@ -311,6 +326,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     if (rootNode?.children) {
       this.rootNodeChildren = rootNode.children;
     }
+    this.totalSelectableFiles = this.countSelectableFiles(
+      this.rootNodeChildren,
+    );
 
     // Auto-select all files (backend has already filtered to supported types)
     this.rootNodeChildren.forEach((node) => {
@@ -327,6 +345,36 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     if (node.children) {
       node.children.forEach((child) => this.autoSelectAllFiles(child));
     }
+  }
+
+  private countSelectableFiles(nodes: TreeNode<Datafile>[]): number {
+    return nodes.reduce((acc, node) => {
+      const own = node.data?.name ? 1 : 0;
+      const children = node.children
+        ? this.countSelectableFiles(node.children)
+        : 0;
+      return acc + own + children;
+    }, 0);
+  }
+
+  toggleSelectAll(): void {
+    if (this.allFilesSelected()) {
+      this.selectedFiles.clear();
+      return;
+    }
+    this.selectedFiles.clear();
+    this.rootNodeChildren.forEach((node) => this.autoSelectAllFiles(node));
+  }
+
+  selectAllIcon(): string {
+    return this.allFilesSelected() ? 'pi pi-check-square' : 'pi pi-square';
+  }
+
+  allFilesSelected(): boolean {
+    return (
+      this.totalSelectableFiles > 0 &&
+      this.selectedFiles.size >= this.totalSelectableFiles
+    );
   }
 
   isFileSelected(filename: string): boolean {
@@ -358,6 +406,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.submitPopup = true;
   }
 
+  generateDisabled(): boolean {
+    return this.loading || this.selectedFiles.size === 0 || !this.datasetId;
+  }
+
   continueSubmitGenerate(): void {
     this.submitPopup = false;
     this.req = {
@@ -368,7 +420,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       sendEmailOnSuccess: this.sendEmailOnSuccess,
     };
     this.loading = true;
-    this.generatedDdiCdi = undefined;
+    this.resetShaclState();
     const emailMsg = this.sendEmailOnSuccess
       ? 'You will receive an email when it completes.'
       : 'You will receive an email if it fails.';
@@ -397,8 +449,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
             this.output = res.res;
           }
           if (res.ddiCdi) {
-            this.generatedDdiCdi = res.ddiCdi;
-            this.setupShaclForm();
+            this.setGeneratedOutput(res.ddiCdi);
           }
           if (res.err && res.err !== '') {
             this.notificationService.showError(res.err);
@@ -427,24 +478,160 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     });
   }
 
-  private setupShaclForm(): void {
-    // Wait for the form to be rendered in the DOM
-    setTimeout(() => {
-      if (this.shaclForm?.nativeElement) {
-        const formElement = this.shaclForm.nativeElement;
+  private resetShaclState(): void {
+    this.detachShaclListener();
+    this.generatedDdiCdi = undefined;
+    this.originalDdiCdi = undefined;
+    this.shaclShapes = undefined;
+    this.shaclError = undefined;
+    this.shaclFormValid = false;
+  }
 
-        // Listen to form change events
-        formElement.addEventListener('change', (event: CustomEvent) => {
-          if (event.detail?.valid) {
+  private setGeneratedOutput(turtle: string): void {
+    this.resetShaclState();
+    this.originalDdiCdi = turtle;
+    this.generatedDdiCdi = turtle;
+    this.shaclShapes = this.buildShaclShapes(turtle);
+    if (!this.shaclShapes) {
+      this.shaclError =
+        'Unable to render the SHACL editor for this output. The raw Turtle will still be uploaded.';
+    } else {
+      this.shaclError = undefined;
+    }
+    this.setupShaclForm();
+  }
+
+  private detachShaclListener(): void {
+    if (this.shaclForm?.nativeElement && this.shaclChangeListener) {
+      this.shaclForm.nativeElement.removeEventListener(
+        'change',
+        this.shaclChangeListener,
+      );
+    }
+    this.shaclChangeListener = undefined;
+  }
+
+  private buildShaclShapes(turtle: string): string | undefined {
+    try {
+      const parser = new Parser();
+      const quads = parser.parse(turtle);
+      if (!quads.length) {
+        return undefined;
+      }
+      const datasetSubjects: string[] = [];
+      let fallbackSubject: string | undefined;
+      for (const quad of quads) {
+        if (quad.subject.termType === 'NamedNode') {
+          if (!fallbackSubject) {
+            fallbackSubject = quad.subject.value;
+          }
+          if (
+            quad.predicate.value === this.RDF_TYPE &&
+            quad.object.termType === 'NamedNode' &&
+            quad.object.value === this.CDI_DATASET_TYPE
+          ) {
+            datasetSubjects.push(quad.subject.value);
+          }
+        }
+      }
+      const targetNode = datasetSubjects[0] ?? fallbackSubject;
+      if (!targetNode) {
+        return undefined;
+      }
+      return (
+        '@prefix sh: <http://www.w3.org/ns/shacl#>.\n' +
+        '@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.\n' +
+        '@prefix dcterms: <http://purl.org/dc/terms/>.\n' +
+        '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.\n' +
+        '@prefix prov: <http://www.w3.org/ns/prov#>.\n\n' +
+        '[] a sh:NodeShape;\n' +
+        `   sh:targetNode <${targetNode}>;\n` +
+        '   sh:property [\n' +
+        '     sh:path dcterms:title;\n' +
+        '     sh:name "Dataset title";\n' +
+        '     sh:datatype xsd:string;\n' +
+        '     sh:minCount 0;\n' +
+        '   ];\n' +
+        '   sh:property [\n' +
+        '     sh:path cdi:hasLogicalDataSet;\n' +
+        '     sh:name "Logical Data Sets";\n' +
+        '     sh:nodeKind sh:BlankNodeOrIRI;\n' +
+        '     sh:minCount 0;\n' +
+        '   ];\n' +
+        '   sh:property [\n' +
+        '     sh:path cdi:hasPhysicalDataSet;\n' +
+        '     sh:name "Physical Data Sets";\n' +
+        '     sh:nodeKind sh:BlankNodeOrIRI;\n' +
+        '     sh:minCount 0;\n' +
+        '   ];\n' +
+        '   sh:property [\n' +
+        '     sh:path prov:wasGeneratedBy;\n' +
+        '     sh:name "Provenance";\n' +
+        '     sh:nodeKind sh:BlankNodeOrIRI;\n' +
+        '     sh:minCount 0;\n' +
+        '   ].\n'
+      );
+    } catch (error) {
+      console.warn(
+        'Failed to build SHACL shapes for generated CDI output',
+        error,
+      );
+      return undefined;
+    }
+  }
+
+  private setupShaclForm(): void {
+    if (this.shaclError) {
+      return;
+    }
+
+    if (!this.generatedDdiCdi || !this.shaclForm?.nativeElement) {
+      return;
+    }
+
+    // Wait until the form element is present before wiring listeners and data
+    setTimeout(() => {
+      const formElement = this.shaclForm?.nativeElement;
+      if (!formElement) {
+        return;
+      }
+
+      this.detachShaclListener();
+
+      if (this.shaclShapes) {
+        formElement.setAttribute('data-shapes', this.shaclShapes);
+        formElement.setAttribute('data-shapes-format', 'text/turtle');
+      } else {
+        formElement.removeAttribute('data-shapes');
+        formElement.removeAttribute('data-shapes-format');
+      }
+
+      formElement.setAttribute('data-values', this.generatedDdiCdi ?? '');
+      formElement.setAttribute('data-values-format', 'text/turtle');
+
+      this.shaclChangeListener = (event: Event) => {
+        const customEvent = event as CustomEvent;
+        if (!this.shaclForm?.nativeElement) {
+          return;
+        }
+
+        if (customEvent.detail?.valid) {
+          try {
+            const triples = this.shaclForm.nativeElement.serialize();
+            if (triples) {
+              this.generatedDdiCdi = triples;
+            }
             this.shaclFormValid = true;
-            // Get updated data from form
-            const triples = formElement.serialize();
-            this.generatedDdiCdi = triples;
-          } else {
+          } catch (error) {
+            console.warn('Could not serialize form data', error);
             this.shaclFormValid = false;
           }
-        });
-      }
+        } else {
+          this.shaclFormValid = false;
+        }
+      };
+
+      formElement.addEventListener('change', this.shaclChangeListener);
     }, 100);
   }
 
@@ -461,10 +648,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loading = true;
 
     // Get current data from SHACL form if available
-    let content = this.generatedDdiCdi!;
-    if (this.shaclForm?.nativeElement) {
+    let content = this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
+    const shaclFormElement = this.shaclForm?.nativeElement;
+    if (shaclFormElement && !this.shaclError) {
       try {
-        const formData = this.shaclForm.nativeElement.serialize();
+        const formData = shaclFormElement.serialize();
         if (formData) {
           content = formData;
         }
@@ -476,6 +664,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     }
 
+    content = content.trim();
     const fileName = `ddi-cdi-${Date.now()}.ttl`;
     const addFileRequest: AddFileRequest = {
       persistentId: this.datasetId!,
@@ -515,12 +704,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           this.output = `Previous generation failed:\n${cache.errorMessage}`;
           this.outputDisabled = false;
         } else if (cache.ddiCdi) {
-          this.generatedDdiCdi = cache.ddiCdi;
+          this.setGeneratedOutput(cache.ddiCdi);
           if (cache.consoleOut) {
             this.output = cache.consoleOut;
           }
           this.cachedOutputLoaded = true;
-          this.setupShaclForm();
           this.notificationService.showSuccess(
             `Loaded previously generated DDI-CDI metadata (${new Date(cache.timestamp).toLocaleString()})`,
           );
@@ -535,7 +723,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   refreshOutput(): void {
     this.loading = true;
-    this.generatedDdiCdi = undefined;
+    this.resetShaclState();
     this.output = '';
     this.cachedOutputLoaded = false;
     this.loadCachedOutput();
