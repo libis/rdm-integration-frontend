@@ -39,14 +39,30 @@ describe('DdiCdiComponent', () => {
   let utilsServiceStub: jasmine.SpyObj<UtilsService>;
 
   const mockQueryParams = of({});
-  const SIMPLE_TURTLE = `
-@prefix ex: <http://example.com/> .
-@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .
-@prefix dcterms: <http://purl.org/dc/terms/> .
-
-ex:dataset1 a cdi:DataSet ;
-  dcterms:title "Sample dataset" .
-`;
+  const buildDatasetTurtle = (localName: string, title: string) =>
+    [
+      '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
+      '@prefix dcterms: <http://purl.org/dc/terms/> .',
+      '@prefix ex: <http://example.com/> .',
+      '',
+      `ex:${localName} a cdi:DataSet ;`,
+      `  dcterms:identifier "${localName}" ;`,
+      `  dcterms:title "${title}" .`,
+    ].join('\n');
+  const SIMPLE_TURTLE = buildDatasetTurtle('datasetSimple', 'Sample dataset');
+  const GENERATED_TURTLE = buildDatasetTurtle(
+    'datasetGenerated',
+    'Generated dataset',
+  );
+  const FINAL_TURTLE = buildDatasetTurtle('datasetFinal', 'Final dataset');
+  const POLLED_CACHED_TURTLE = buildDatasetTurtle(
+    'datasetCached',
+    'Cached dataset',
+  );
+  const REFRESHED_TURTLE = buildDatasetTurtle(
+    'datasetRefreshed',
+    'Refreshed dataset',
+  );
   const cachedResponseData = cachedResponseFixture as CachedComputeResponse;
   const CACHED_TURTLE = cachedResponseData.ddiCdi ?? '';
 
@@ -401,7 +417,7 @@ ex:dataset1 a cdi:DataSet ;
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
-        of({ ready: true, res: 'output', ddiCdi: 'ttl-content' }),
+        of({ ready: true, res: 'output', ddiCdi: GENERATED_TURTLE }),
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
@@ -447,7 +463,7 @@ ex:dataset1 a cdi:DataSet ;
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.getCachedDdiCdiData.and.returnValues(
         of({ ready: false, res: 'processing...' }),
-        of({ ready: true, res: 'done', ddiCdi: 'ttl-content' }),
+        of({ ready: true, res: 'done', ddiCdi: GENERATED_TURTLE }),
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
@@ -459,14 +475,14 @@ ex:dataset1 a cdi:DataSet ;
     it('should set generatedDdiCdi and call setupShaclForm on success', (done) => {
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
-        of({ ready: true, res: 'output', ddiCdi: 'ttl-content' }),
+        of({ ready: true, res: 'output', ddiCdi: GENERATED_TURTLE }),
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       spyOn<any>(component, 'setupShaclForm');
       component['getDdiCdiData'](mockKey);
       setTimeout(() => {
-        expect(component.generatedDdiCdi).toBe('ttl-content');
+  expect(component.generatedDdiCdi).toBe(GENERATED_TURTLE);
         expect(component.output).toBe('output');
         expect(component.loading).toBe(false);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
@@ -527,7 +543,7 @@ ex:dataset1 a cdi:DataSet ;
     it('should return true when generatedDdiCdi has content', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = 'ttl-content';
+  component.generatedDdiCdi = GENERATED_TURTLE;
       expect(component.showAddFileButton()).toBe(true);
     });
   });
@@ -550,7 +566,7 @@ ex:dataset1 a cdi:DataSet ;
       fixture.detectChanges();
       component.datasetId = 'doi:123';
       component.dataverseToken = 'token';
-      component.generatedDdiCdi = 'ttl-content';
+  component.generatedDdiCdi = GENERATED_TURTLE;
       component.addFileToDataset();
       expect(component.addFilePopup).toBe(false);
       // loading is set to false after synchronous observable completion
@@ -559,7 +575,7 @@ ex:dataset1 a cdi:DataSet ;
         const request: AddFileRequest = call.args[0];
         expect(request.persistentId).toBe('doi:123');
         expect(request.dataverseKey).toBe('token');
-        expect(request.content).toBe('ttl-content');
+  expect(request.content).toBe(GENERATED_TURTLE);
         expect(request.fileName).toMatch(/^ddi-cdi-\d+\.ttl$/);
         expect(component.loading).toBe(false); // loading should be false after completion
         done();
@@ -571,7 +587,7 @@ ex:dataset1 a cdi:DataSet ;
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.datasetId = 'doi:123';
-      component.generatedDdiCdi = 'ttl-content';
+  component.generatedDdiCdi = GENERATED_TURTLE;
       component.addFileToDataset();
       setTimeout(() => {
         expect(component.loading).toBe(false);
@@ -591,7 +607,7 @@ ex:dataset1 a cdi:DataSet ;
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.datasetId = 'doi:123';
-      component.generatedDdiCdi = 'ttl-content';
+  component.generatedDdiCdi = GENERATED_TURTLE;
       component.addFileToDataset();
       setTimeout(() => {
         expect(component.loading).toBe(false);
@@ -964,7 +980,7 @@ ex:dataset1 a cdi:DataSet ;
           return of({
             ready: true,
             res: 'Complete',
-            ddiCdi: 'final-ttl',
+            ddiCdi: FINAL_TURTLE,
           } as CachedComputeResponse);
         });
 
@@ -977,7 +993,7 @@ ex:dataset1 a cdi:DataSet ;
         setTimeout(() => {
           expect(callCount).toBeGreaterThanOrEqual(3);
           expect(component.loading).toBe(false);
-          expect(component.generatedDdiCdi).toBe('final-ttl');
+          expect(component.generatedDdiCdi).toBe(FINAL_TURTLE);
           done();
         }, 100);
       });
@@ -1564,7 +1580,7 @@ ex:dataset1 a cdi:DataSet ;
     describe('loadCachedOutput', () => {
       it('should load cached output successfully', () => {
         const mockCache = {
-          ddiCdi: 'cached-ttl',
+          ddiCdi: POLLED_CACHED_TURTLE,
           consoleOut: 'cached-output',
           errorMessage: '',
           timestamp: '2024-10-24T10:00:00Z',
@@ -1576,7 +1592,7 @@ ex:dataset1 a cdi:DataSet ;
 
         component.loadCachedOutput();
 
-        expect(component.generatedDdiCdi).toBe('cached-ttl');
+  expect(component.generatedDdiCdi).toBe(POLLED_CACHED_TURTLE);
         expect(component.cachedOutputLoaded).toBe(true);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalled();
       });
@@ -1626,7 +1642,7 @@ ex:dataset1 a cdi:DataSet ;
     describe('refreshOutput', () => {
       it('should reload cached output', () => {
         const mockCache = {
-          ddiCdi: 'refreshed-ttl',
+          ddiCdi: REFRESHED_TURTLE,
           consoleOut: 'refreshed-output',
           errorMessage: '',
           timestamp: '2024-10-24T10:00:00Z',
@@ -1639,7 +1655,7 @@ ex:dataset1 a cdi:DataSet ;
 
         component.refreshOutput();
 
-        expect(component.generatedDdiCdi).toBe('refreshed-ttl');
+  expect(component.generatedDdiCdi).toBe(REFRESHED_TURTLE);
         expect(component.cachedOutputLoaded).toBe(true);
       });
 
@@ -1666,7 +1682,7 @@ ex:dataset1 a cdi:DataSet ;
         const mockKey: Key = { key: 'job-123' };
         dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
         dataServiceStub.getCachedDdiCdiData.and.returnValue(
-          of({ ready: true, res: 'output', ddiCdi: 'ttl-content' }),
+          of({ ready: true, res: 'output', ddiCdi: GENERATED_TURTLE }),
         );
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;

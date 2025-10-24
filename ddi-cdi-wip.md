@@ -7,7 +7,7 @@ Reference assets: posted images of the download component (baseline) and current
 ### Summary (Oct 25, 2025)
 - Environment: backend lives in `/home/eryk/projects/rdm-integration` (Dataverse + integration Go service); frontend is this repo (`rdm-integration-frontend`).
 - Typical commands: backend `make dev_up` (brings up docker stack) / `make dev_down`; frontend `npm run test -- --watch=false`, `make fmt`, `make lint`, `ng serve` (via repo script if needed).
-- Current state: DDI-CDI Angular tests now pass after spec fixes providing valid Turtle fixtures; SHACL warnings remain due to placeholder Turtle in mocks.
+- Current state: DDI-CDI Angular tests now pass after spec fixes providing valid Turtle fixtures; SHACL warnings cleared after replacing placeholder Turtle in mocks.
 - Data sources: latest cached CDI output stored at `tests/response.json`, sourced from `/api/common/cachedddicdioutput` (ready flag true, warnings about invalid linked DDI XML).
 - Upload issue: calling Dataverse add-file API with payload containing only Turtle prefixes triggers 500 with Go JSON decode error (`AddReplaceFileResponse.message` expects string, backend returns object when upload fails). Need to ensure we send full Turtle and handle response schema; integration service logs show only successful generate jobs (no record of the failing upload).
 - Outstanding UI work: SHACL form error handling (see TODO below).
@@ -38,9 +38,9 @@ Reference assets: posted images of the download component (baseline) and current
 - Upload attempt now fails server-side with 500 due to response message type mismatch; request body shows only prefix declarations, suggesting serialization stops before data rows.
 - DDI-CDI layout now mirrors the download component (dropdown placement, sticky action button, select-all icon); validated via `make test`.
 - Cached response-driven regression tests cover SHACL root shape detection and the unedited Turtle upload path; added in `src/app/ddi-cdi/ddi-cdi.component.spec.ts` and verified via `npm run test -- --watch=false`.
+- Replaced placeholder Turtle strings in SHACL-related mocks with valid CDI dataset snippets to eliminate parser warnings during tests.
 
 ### Next Steps
-- Replace remaining placeholder Turtle strings in SHACL pathways to eliminate N3 parser warnings (`ttl-content`, `final-ttl`, `cached-ttl`, etc.).
 - Wire the SHACL form integration to emit full CDI Turtle (not just prefixes) before invoking upload.
 - Reproduce and trace the add-file 500 in integration logs; confirm expected response schema and adjust request handling or backend client accordingly.
 - Continue UI alignment tasks in TODO list once backend flow is stable.
