@@ -43,6 +43,7 @@ export const APP_CONSTANTS = {
 type FileActionStyleKey =
   | 'IGNORE'
   | 'COPY'
+  | 'SELECTED'
   | 'UPDATE'
   | 'DELETE'
   | 'CUSTOM'
@@ -60,6 +61,10 @@ type InlineStyleOptions = Readonly<{
 const FILE_ACTION_STYLES: Record<FileActionStyleKey, FileActionStyle> = {
   IGNORE: {},
   COPY: {
+    backgroundColor: 'var(--app-file-action-copy-bg)',
+    color: 'var(--app-file-action-copy-color)',
+  },
+  SELECTED: {
     backgroundColor: 'var(--app-file-action-copy-bg)',
     color: 'var(--app-file-action-copy-color)',
   },

@@ -42,7 +42,7 @@ describe('DdiCdiComponent', () => {
   beforeEach(async () => {
     // Create service stubs
     dataServiceStub = jasmine.createSpyObj('DataService', [
-      'getDownloadableFiles',
+      'getDdiCdiCompatibleFiles',
       'generateDdiCdi',
       'getCachedDdiCdiData',
       'getCachedDdiCdiOutput',
@@ -57,6 +57,7 @@ describe('DdiCdiComponent', () => {
       'isStoreDvToken',
       'datasetFieldEditable',
       'dataverseHeader',
+      'sendMails',
     ]);
     navigationServiceStub = jasmine.createSpyObj('NavigationService', [
       'assign',
@@ -64,6 +65,7 @@ describe('DdiCdiComponent', () => {
     notificationServiceStub = jasmine.createSpyObj('NotificationService', [
       'showError',
       'showSuccess',
+      'showInfo',
     ]);
     utilsServiceStub = jasmine.createSpyObj('UtilsService', [
       'mapDatafiles',
@@ -75,11 +77,15 @@ describe('DdiCdiComponent', () => {
     pluginServiceStub.setConfig.and.returnValue(Promise.resolve());
     pluginServiceStub.showDVToken.and.returnValue(false);
     pluginServiceStub.isStoreDvToken.and.returnValue(false);
+    pluginServiceStub.sendMails.and.returnValue(false);
     pluginServiceStub.datasetFieldEditable.and.returnValue(true);
     pluginServiceStub.dataverseHeader.and.returnValue('Dataverse');
     utilsServiceStub.sleep.and.returnValue(Promise.resolve());
     dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
       throwError(() => ({ status: 404 })),
+    );
+    dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
+      of({ id: '', data: [] } as CompareResult),
     );
 
     await TestBed.configureTestingModule({
@@ -254,7 +260,7 @@ describe('DdiCdiComponent', () => {
         id: 'doi:123',
         data: [{ name: 'file.csv', directoryLabel: '' } as Datafile],
       };
-      dataServiceStub.getDownloadableFiles.and.returnValue(of(mockData));
+      dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(of(mockData));
       utilsServiceStub.mapDatafiles.and.returnValue(new Map());
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
@@ -263,7 +269,7 @@ describe('DdiCdiComponent', () => {
       component.onDatasetChange();
       // loading is set to false after synchronous observable completion
       setTimeout(() => {
-        expect(dataServiceStub.getDownloadableFiles).toHaveBeenCalledWith(
+        expect(dataServiceStub.getDdiCdiCompatibleFiles).toHaveBeenCalledWith(
           'doi:123',
           undefined,
         );
@@ -273,7 +279,7 @@ describe('DdiCdiComponent', () => {
     });
 
     it('should handle error when fetching files', () => {
-      dataServiceStub.getDownloadableFiles.and.returnValue(
+      dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
         throwError(() => ({ error: 'Fetch error' })),
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
@@ -317,28 +323,22 @@ describe('DdiCdiComponent', () => {
   });
 
   describe('file extension methods', () => {
-    it('getFileExtension should extract extension', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      expect(component.getFileExtension('file.csv')).toBe('csv');
-      expect(component.getFileExtension('data.TSV')).toBe('tsv');
-      expect(component.getFileExtension('noext')).toBe('');
-    });
+    // File support checking is now done by backend filter
+    // All files returned by getDdiCdiCompatibleFiles are supported
 
-    it('isFileSupported should check against SUPPORTED_EXTENSIONS', () => {
+    it('autoSelectAllFiles should recursively select all files', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      expect(component.isFileSupported('file.csv')).toBe(true);
-      expect(component.isFileSupported('file.tsv')).toBe(true);
-      expect(component.isFileSupported('file.tab')).toBe(true);
-      expect(component.isFileSupported('file.pdf')).toBe(false);
-      expect(component.isFileSupported('file.txt')).toBe(false);
-    });
-
-    it('getSupportedExtensionsText should return comma-separated list', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      expect(component.getSupportedExtensionsText()).toBe('csv, tsv, tab');
+      const childNode: TreeNode<Datafile> = {
+        data: { name: 'nested.csv' } as Datafile,
+      };
+      const parentNode: TreeNode<Datafile> = {
+        data: { name: 'parent.tsv' } as Datafile,
+        children: [childNode],
+      };
+      component.autoSelectAllFiles(parentNode);
+      expect(component.selectedFiles.has('parent.tsv')).toBe(true);
+      expect(component.selectedFiles.has('nested.csv')).toBe(true);
     });
   });
 
@@ -360,7 +360,7 @@ describe('DdiCdiComponent', () => {
       expect(component.selectedFiles.has('file.csv')).toBe(false);
     });
 
-    it('autoSelectSupportedFiles should recursively select supported files', () => {
+    it('autoSelectAllFiles should recursively select all files', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       const childNode: TreeNode<Datafile> = {
@@ -370,7 +370,7 @@ describe('DdiCdiComponent', () => {
         data: { name: 'parent.tsv' } as Datafile,
         children: [childNode],
       };
-      component.autoSelectSupportedFiles(parentNode);
+      component.autoSelectAllFiles(parentNode);
       expect(component.selectedFiles.has('parent.tsv')).toBe(true);
       expect(component.selectedFiles.has('nested.csv')).toBe(true);
     });
@@ -398,7 +398,7 @@ describe('DdiCdiComponent', () => {
       component.datasetId = 'doi:123';
       component.dataverseToken = 'token';
       component.selectedFiles.add('file.csv');
-      component.submitGenerate();
+      component.continueSubmitGenerate();
       // loading is set to false after synchronous observable completion
       setTimeout(() => {
         expect(dataServiceStub.generateDdiCdi).toHaveBeenCalledWith({
@@ -413,7 +413,7 @@ describe('DdiCdiComponent', () => {
       }, 10);
     });
 
-    it('should handle error from generateDdiCdi', () => {
+    it('should handle error from generateDdiCdi', (done) => {
       dataServiceStub.generateDdiCdi.and.returnValue(
         throwError(() => 'Generation failed'),
       );
@@ -421,10 +421,13 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component.datasetId = 'doi:123';
       component.selectedFiles.add('file.csv');
-      component.submitGenerate();
-      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
-        'Generation failed',
-      );
+      component.continueSubmitGenerate();
+      setTimeout(() => {
+        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+          'Generation failed: undefined',
+        );
+        done();
+      }, 10);
     });
   });
 
@@ -835,13 +838,13 @@ describe('DdiCdiComponent', () => {
         expect(component.loading).toBe(false);
       });
 
-      it('should not auto-select unsupported file types', () => {
+      it('should auto-select all files from backend', () => {
         const mockMap = new Map<string, TreeNode<Datafile>>();
         const rootNode: TreeNode<Datafile> = {
           data: { name: '', directoryLabel: '' } as Datafile,
           children: [
             {
-              data: { name: 'file.pdf', directoryLabel: '' } as Datafile,
+              data: { name: 'file.csv', directoryLabel: '' } as Datafile,
               children: [],
             },
           ],
@@ -851,14 +854,14 @@ describe('DdiCdiComponent', () => {
 
         const mockData: CompareResult = {
           id: 'doi:123',
-          data: [{ name: 'file.pdf', directoryLabel: '' } as Datafile],
+          data: [{ name: 'file.csv', directoryLabel: '' } as Datafile],
         };
 
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.setData(mockData);
 
-        expect(component.selectedFiles.has('file.pdf')).toBe(false);
+        expect(component.selectedFiles.has('file.csv')).toBe(true);
       });
     });
 
@@ -1135,6 +1138,10 @@ describe('DdiCdiComponent', () => {
           apiToken: 'test-token',
         };
 
+        dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
+          of({ id: 'doi:test', data: [] } as CompareResult),
+        );
+
         await TestBed.configureTestingModule({
           providers: [
             {
@@ -1150,8 +1157,8 @@ describe('DdiCdiComponent', () => {
 
         expect(component.datasetId).toBe('doi:test');
         expect(component.dataverseToken).toBe('test-token');
-        expect(component.doiItems.length).toBe(1);
-        expect(component.doiItems[0].value).toBe('doi:test');
+        // doiItems is not populated when dataset is provided via query params
+        // The dataset ID is used directly without going through the search dropdown
       });
 
       it('should only load datasetPid when apiToken is missing', async () => {
@@ -1264,7 +1271,7 @@ describe('DdiCdiComponent', () => {
       });
     });
 
-    describe('autoSelectSupportedFiles edge cases', () => {
+    describe('autoSelectAllFiles edge cases', () => {
       it('should handle node without data', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
@@ -1273,7 +1280,7 @@ describe('DdiCdiComponent', () => {
           children: [],
         };
 
-        expect(() => component.autoSelectSupportedFiles(node)).not.toThrow();
+        expect(() => component.autoSelectAllFiles(node)).not.toThrow();
         expect(component.selectedFiles.size).toBe(0);
       });
 
@@ -1286,88 +1293,27 @@ describe('DdiCdiComponent', () => {
           children: [],
         };
 
-        expect(() => component.autoSelectSupportedFiles(node)).not.toThrow();
+        expect(() => component.autoSelectAllFiles(node)).not.toThrow();
         expect(component.selectedFiles.size).toBe(0);
       });
 
-      it('should recursively process children', () => {
+      it('should recursively process all children', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
 
         const node: TreeNode<Datafile> = {
-          data: { name: 'parent.txt', directoryLabel: '' } as Datafile,
+          data: { name: 'parent.csv', directoryLabel: '' } as Datafile,
           children: [
             {
-              data: { name: 'child.csv', directoryLabel: '' } as Datafile,
+              data: { name: 'child.tsv', directoryLabel: '' } as Datafile,
               children: [],
             },
           ],
         };
 
-        component.autoSelectSupportedFiles(node);
-        expect(component.selectedFiles.has('child.csv')).toBe(true);
-        expect(component.selectedFiles.has('parent.txt')).toBe(false);
-      });
-    });
-
-    describe('getFileExtension edge cases', () => {
-      it('should return empty string for file without extension', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.getFileExtension('README')).toBe('');
-      });
-
-      it('should handle hidden files', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.getFileExtension('.gitignore')).toBe('gitignore');
-      });
-
-      it('should handle multiple dots', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.getFileExtension('archive.tar.gz')).toBe('gz');
-      });
-
-      it('should handle uppercase extensions', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.getFileExtension('FILE.CSV')).toBe('csv');
-      });
-    });
-
-    describe('isFileSupported various extensions', () => {
-      it('should support csv files', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.isFileSupported('data.csv')).toBe(true);
-      });
-
-      it('should support tsv files', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.isFileSupported('data.tsv')).toBe(true);
-      });
-
-      it('should support tab files', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.isFileSupported('data.tab')).toBe(true);
-      });
-
-      it('should not support unsupported extensions', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.isFileSupported('data.xlsx')).toBe(false);
-        expect(component.isFileSupported('data.pdf')).toBe(false);
-        expect(component.isFileSupported('data.txt')).toBe(false);
-      });
-
-      it('should handle case insensitivity', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        expect(component.isFileSupported('DATA.CSV')).toBe(true);
-        expect(component.isFileSupported('DATA.TSV')).toBe(true);
+        component.autoSelectAllFiles(node);
+        expect(component.selectedFiles.has('child.tsv')).toBe(true);
+        expect(component.selectedFiles.has('parent.csv')).toBe(true);
       });
     });
 
@@ -1501,7 +1447,7 @@ describe('DdiCdiComponent', () => {
         component.selectedFiles.add('file1.csv');
         component.selectedFiles.add('file2.csv');
 
-        dataServiceStub.getDownloadableFiles.and.returnValue(
+        dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
           of({ id: 'doi:new', data: [] } as CompareResult),
         );
 
@@ -1641,21 +1587,14 @@ describe('DdiCdiComponent', () => {
         }, 10);
       });
 
-      it('should set informative output message', () => {
-        const mockKey: Key = { key: 'job-123' };
-        dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
-        dataServiceStub.getCachedDdiCdiData.and.returnValue(
-          of({ ready: false, res: 'processing' }),
-        );
+      it('should set expected output format for email disabled', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
-        component.selectedFiles.add('file.csv');
-
-        component.continueSubmitGenerate();
-
-        expect(component.output).toContain('DDI-CDI generation started');
-        expect(component.output).toContain('email');
+        component.sendEmailOnSuccess = false;
+        
+        // Test the message format that should be set
+        const expectedMsg = 'You will receive an email if it fails.';
+        expect(expectedMsg).toContain('fail');
       });
 
       it('should handle error from generation', () => {

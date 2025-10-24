@@ -32,6 +32,7 @@ export class DataService {
   common_ddicdi_url = 'api/common/ddicdi';
   common_get_cached_ddicdi_res_url = 'api/common/cachedddicdi';
   common_get_cached_ddicdi_output_url = 'api/common/cachedddicdioutput';
+  common_get_ddicdi_compatible_files_url = 'api/common/ddicdicompatible';
   common_add_file_url = 'api/common/addfile';
   common_get_downloadable_files_url = 'api/common/downloadable';
 
@@ -122,6 +123,20 @@ export class DataService {
     return this.http.post<CachedComputeResponse>(
       this.common_get_cached_ddicdi_res_url,
       key,
+    );
+  }
+
+  getDdiCdiCompatibleFiles(
+    pid: string,
+    dataverse_token?: string,
+  ): Observable<CompareResult> {
+    const req = {
+      persistentId: pid,
+      dataverseKey: dataverse_token,
+    };
+    return this.http.post<CompareResult>(
+      this.common_get_ddicdi_compatible_files_url,
+      req,
     );
   }
 

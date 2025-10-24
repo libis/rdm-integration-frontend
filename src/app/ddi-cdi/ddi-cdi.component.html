@@ -58,14 +58,13 @@
 
 <br />
 
-<!-- Info box about supported file types -->
+<!-- Info box about file filtering -->
 @if (datasetId) {
   <div class="alert alert-info" role="alert">
     <i class="pi pi-info-circle"></i>&nbsp; <strong>DDI-CDI Generation</strong
     ><br />
-    Supported file types: <strong>{{ getSupportedExtensionsText() }}</strong
-    ><br />
-    Supported files are automatically selected. You can change the selection in
+    Only compatible files are shown below (csv, tsv, tab, sps, sas, dct). All
+    compatible files are automatically selected. You can change the selection in
     the table below.
   </div>
 }
@@ -164,27 +163,16 @@
       <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
         <tr [ttRow]="rowNode">
           <td>
-            <span
-              [ngClass]="{
-                'supported-file': isFileSupported(rowData.name || ''),
-                'unsupported-file': !isFileSupported(rowData.name || ''),
-              }"
-            >
+            <span class="supported-file">
               {{ rowData.name }}
             </span>
           </td>
           <td style="text-align: center">
-            @if (isFileSupported(rowData.name || "")) {
-              <p-checkbox
-                [binary]="true"
-                [ngModel]="isFileSelected(rowData.name || '')"
-                (ngModelChange)="toggleFileSelection(rowData.name || '')"
-              ></p-checkbox>
-            } @else {
-              <span class="text-muted" title="File type not supported">
-                -
-              </span>
-            }
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isFileSelected(rowData.name || '')"
+              (ngModelChange)="toggleFileSelection(rowData.name || '')"
+            ></p-checkbox>
           </td>
         </tr>
       </ng-template>

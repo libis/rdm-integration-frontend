@@ -93,7 +93,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
-  readonly SUPPORTED_EXTENSIONS = ['csv', 'tsv', 'tab'];
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -278,7 +277,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loadCachedOutput();
 
     this.dataService
-      .getDownloadableFiles(this.datasetId!, this.dataverseToken)
+      .getDdiCdiCompatibleFiles(this.datasetId!, this.dataverseToken)
       .subscribe({
         next: (data) => {
           this.setData(data);
@@ -295,6 +294,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.data = data;
     if (!data.data || data.data.length === 0) {
       this.loading = false;
+      // Show message if no compatible files found
+      this.notificationService.showInfo(
+        'No compatible files found in this dataset. Only files with supported extensions (csv, tsv, tab, sps, sas, dct) can be processed for DDI-CDI generation.',
+      );
       return;
     }
     const rowDataMap = this.utils.mapDatafiles(data.data);
@@ -305,34 +308,21 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.rootNodeChildren = rootNode.children;
     }
 
-    // Auto-select supported files
+    // Auto-select all files (backend has already filtered to supported types)
     this.rootNodeChildren.forEach((node) => {
-      this.autoSelectSupportedFiles(node);
+      this.autoSelectAllFiles(node);
     });
 
     this.loading = false;
   }
 
-  autoSelectSupportedFiles(node: TreeNode<Datafile>): void {
+  autoSelectAllFiles(node: TreeNode<Datafile>): void {
     if (node.data?.name) {
-      const extension = this.getFileExtension(node.data.name);
-      if (this.SUPPORTED_EXTENSIONS.includes(extension)) {
-        this.selectedFiles.add(node.data.name);
-      }
+      this.selectedFiles.add(node.data.name);
     }
     if (node.children) {
-      node.children.forEach((child) => this.autoSelectSupportedFiles(child));
+      node.children.forEach((child) => this.autoSelectAllFiles(child));
     }
-  }
-
-  getFileExtension(filename: string): string {
-    const parts = filename.split('.');
-    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
-  }
-
-  isFileSupported(filename: string): boolean {
-    const extension = this.getFileExtension(filename);
-    return this.SUPPORTED_EXTENSIONS.includes(extension);
   }
 
   isFileSelected(filename: string): boolean {
@@ -496,10 +486,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         );
       },
     });
-  }
-
-  getSupportedExtensionsText(): string {
-    return this.SUPPORTED_EXTENSIONS.join(', ');
   }
 
   sendMails(): boolean {
