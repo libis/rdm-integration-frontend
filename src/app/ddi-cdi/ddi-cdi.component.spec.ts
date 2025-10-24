@@ -482,7 +482,7 @@ describe('DdiCdiComponent', () => {
       spyOn<any>(component, 'setupShaclForm');
       component['getDdiCdiData'](mockKey);
       setTimeout(() => {
-  expect(component.generatedDdiCdi).toBe(GENERATED_TURTLE);
+        expect(component.generatedDdiCdi).toBe(GENERATED_TURTLE);
         expect(component.output).toBe('output');
         expect(component.loading).toBe(false);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
@@ -543,7 +543,7 @@ describe('DdiCdiComponent', () => {
     it('should return true when generatedDdiCdi has content', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-  component.generatedDdiCdi = GENERATED_TURTLE;
+      component.generatedDdiCdi = GENERATED_TURTLE;
       expect(component.showAddFileButton()).toBe(true);
     });
   });
@@ -566,7 +566,7 @@ describe('DdiCdiComponent', () => {
       fixture.detectChanges();
       component.datasetId = 'doi:123';
       component.dataverseToken = 'token';
-  component.generatedDdiCdi = GENERATED_TURTLE;
+      component.generatedDdiCdi = GENERATED_TURTLE;
       component.addFileToDataset();
       expect(component.addFilePopup).toBe(false);
       // loading is set to false after synchronous observable completion
@@ -575,7 +575,7 @@ describe('DdiCdiComponent', () => {
         const request: AddFileRequest = call.args[0];
         expect(request.persistentId).toBe('doi:123');
         expect(request.dataverseKey).toBe('token');
-  expect(request.content).toBe(GENERATED_TURTLE);
+        expect(request.content).toBe(GENERATED_TURTLE);
         expect(request.fileName).toMatch(/^ddi-cdi-\d+\.ttl$/);
         expect(component.loading).toBe(false); // loading should be false after completion
         done();
@@ -587,7 +587,7 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.datasetId = 'doi:123';
-  component.generatedDdiCdi = GENERATED_TURTLE;
+      component.generatedDdiCdi = GENERATED_TURTLE;
       component.addFileToDataset();
       setTimeout(() => {
         expect(component.loading).toBe(false);
@@ -607,7 +607,7 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.datasetId = 'doi:123';
-  component.generatedDdiCdi = GENERATED_TURTLE;
+      component.generatedDdiCdi = GENERATED_TURTLE;
       component.addFileToDataset();
       setTimeout(() => {
         expect(component.loading).toBe(false);
@@ -1148,7 +1148,6 @@ describe('DdiCdiComponent', () => {
         setTimeout(() => {
           expect(changeHandler!).toBeDefined();
 
-
           changeHandler!({ detail: { valid: true } } as CustomEvent);
 
           expect(component.shaclFormValid).toBe(true);
@@ -1592,7 +1591,7 @@ describe('DdiCdiComponent', () => {
 
         component.loadCachedOutput();
 
-  expect(component.generatedDdiCdi).toBe(POLLED_CACHED_TURTLE);
+        expect(component.generatedDdiCdi).toBe(POLLED_CACHED_TURTLE);
         expect(component.cachedOutputLoaded).toBe(true);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalled();
       });
@@ -1655,7 +1654,7 @@ describe('DdiCdiComponent', () => {
 
         component.refreshOutput();
 
-  expect(component.generatedDdiCdi).toBe(REFRESHED_TURTLE);
+        expect(component.generatedDdiCdi).toBe(REFRESHED_TURTLE);
         expect(component.cachedOutputLoaded).toBe(true);
       });
 

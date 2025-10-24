@@ -207,7 +207,9 @@
           [disabled]="loading"
           (onClick)="openAddFileDialog()"
           styleClass="p-button-raised p-button-success"
-          [style]="{ 'margin-left': cachedOutputLoaded || generatedDdiCdi ? '1rem' : '0' }"
+          [style]="{
+            'margin-left': cachedOutputLoaded || generatedDdiCdi ? '1rem' : '0',
+          }"
         >
           <i class="pi pi-plus"></i>&nbsp;Add to Dataset
         </p-button>

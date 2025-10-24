@@ -671,8 +671,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     // Get current data from SHACL form if available
     const shaclFormElement = this.shaclForm?.nativeElement;
     const baseContent = this.shaclError
-      ? this.originalDdiCdi ?? this.generatedDdiCdi ?? ''
-      : this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
+      ? (this.originalDdiCdi ?? this.generatedDdiCdi ?? '')
+      : (this.generatedDdiCdi ?? this.originalDdiCdi ?? '');
     let content = baseContent;
     if (shaclFormElement && !this.shaclError) {
       try {
