@@ -70,6 +70,39 @@
   </div>
 }
 
+<!-- Submit Generation Dialog -->
+<p-dialog
+  header="Generate DDI-CDI Metadata"
+  position="topright"
+  [modal]="true"
+  [(visible)]="submitPopup"
+>
+  <p class="m-0">
+    Click on "OK" to start the DDI-CDI generation. The job will run
+    asynchronously.
+  </p>
+  <p class="m-0">
+    You will receive an email notification when the generation is complete.
+  </p>
+  <p class="m-0">
+    <strong>You can close the browser window</strong> and the generation will
+    continue in the background.
+  </p>
+  <br />
+  <ng-template pTemplate="footer">
+    <p-button
+      (onClick)="submitPopup = false"
+      styleClass="p-button-sm p-button-raised p-button-secondary"
+      >Cancel</p-button
+    >
+    <p-button
+      (onClick)="continueSubmitGenerate()"
+      styleClass="p-button-sm p-button-raised p-button-primary"
+      >OK</p-button
+    >
+  </ng-template>
+</p-dialog>
+
 <!-- Add File to Dataset Dialog -->
 <p-dialog
   header="Add DDI-CDI File to Dataset"
@@ -153,6 +186,17 @@
       >
         <i [class]="icon_generate"></i>&nbsp;Generate DDI-CDI
       </p-button>
+      @if (cachedOutputLoaded || generatedDdiCdi) {
+        <p-button
+          [disabled]="loading"
+          (onClick)="refreshOutput()"
+          styleClass="p-button-raised p-button-secondary"
+          [style]="{ 'margin-left': '1rem' }"
+          title="Reload the last generated output from cache"
+        >
+          <i class="pi pi-refresh"></i>&nbsp;Refresh
+        </p-button>
+      }
       @if (showAddFileButton()) {
         <p-button
           [disabled]="loading"

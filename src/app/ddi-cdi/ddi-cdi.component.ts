@@ -107,10 +107,12 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   >();
   loading = false;
   addFilePopup = false;
+  submitPopup = false;
   outputDisabled = true;
   selectedFiles: Set<string> = new Set<string>();
   generatedDdiCdi?: string;
   shaclFormValid = false;
+  cachedOutputLoaded = false;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -139,8 +141,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.route.queryParams.subscribe((params) => {
       const pid = params['datasetPid'];
       if (pid) {
-        this.doiItems = [{ label: pid, value: pid }];
         this.datasetId = pid;
+        this.onDatasetChange();
       }
       const apiToken = params['apiToken'];
       if (apiToken) {
@@ -270,6 +272,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.outputDisabled = true;
     this.generatedDdiCdi = undefined;
     this.selectedFiles.clear();
+
+    // First, try to load cached output
+    this.loadCachedOutput();
+
     this.dataService
       .getDownloadableFiles(this.datasetId!, this.dataverseToken)
       .subscribe({
@@ -345,6 +351,12 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.notificationService.showError('Please select at least one file');
       return;
     }
+    // Show async popup
+    this.submitPopup = true;
+  }
+
+  continueSubmitGenerate(): void {
+    this.submitPopup = false;
     this.req = {
       persistentId: this.datasetId!,
       dataverseKey: this.dataverseToken,
@@ -354,12 +366,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     };
     this.loading = true;
     this.generatedDdiCdi = undefined;
+    this.output =
+      'DDI-CDI generation started...\nYou will receive an email when it completes.\nYou can close this window.';
     this.dataService.generateDdiCdi(this.req!).subscribe({
       next: (key: Key) => {
+        this.notificationService.showSuccess(
+          'DDI-CDI generation job submitted. You will be notified by email when complete.',
+        );
         this.getDdiCdiData(key);
       },
       error: (err) => {
-        this.notificationService.showError(err);
+        this.notificationService.showError(`Generation failed: ${err.error}`);
+        this.loading = false;
       },
     });
   }
@@ -478,5 +496,43 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   getSupportedExtensionsText(): string {
     return this.SUPPORTED_EXTENSIONS.join(', ');
+  }
+
+  loadCachedOutput(): void {
+    if (!this.datasetId) {
+      return;
+    }
+
+    this.dataService.getCachedDdiCdiOutput(this.datasetId).subscribe({
+      next: (cache) => {
+        if (cache.errorMessage) {
+          this.output = `Previous generation failed:\n${cache.errorMessage}`;
+          this.outputDisabled = false;
+        } else if (cache.ddiCdi) {
+          this.generatedDdiCdi = cache.ddiCdi;
+          if (cache.consoleOut) {
+            this.output = cache.consoleOut;
+          }
+          this.cachedOutputLoaded = true;
+          this.setupShaclForm();
+          this.notificationService.showSuccess(
+            `Loaded previously generated DDI-CDI metadata (${new Date(cache.timestamp).toLocaleString()})`,
+          );
+        }
+      },
+      error: () => {
+        // No cached output found, which is fine
+        this.cachedOutputLoaded = false;
+      },
+    });
+  }
+
+  refreshOutput(): void {
+    this.loading = true;
+    this.generatedDdiCdi = undefined;
+    this.output = '';
+    this.cachedOutputLoaded = false;
+    this.loadCachedOutput();
+    this.loading = false;
   }
 }

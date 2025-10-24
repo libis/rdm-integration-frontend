@@ -66,3 +66,10 @@ export interface AddFileRequest {
   fileName: string;
   content: string;
 }
+
+export interface DdiCdiOutputCache {
+  ddiCdi: string;
+  consoleOut: string;
+  errorMessage: string;
+  timestamp: string;
+}
