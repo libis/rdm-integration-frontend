@@ -1591,7 +1591,7 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.sendEmailOnSuccess = false;
-        
+
         // Test the message format that should be set
         const expectedMsg = 'You will receive an email if it fails.';
         expect(expectedMsg).toContain('fail');
