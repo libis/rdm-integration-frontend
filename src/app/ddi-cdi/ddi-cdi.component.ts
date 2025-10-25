@@ -923,13 +923,16 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // Wait until the form element is present before wiring listeners and data
     setTimeout(() => {
-      const formElement = this.shaclForm?.nativeElement;
+      const formElement = this.shaclForm?.nativeElement as
+        | HTMLElement
+        | undefined;
       if (!formElement) {
         return;
       }
 
       this.detachShaclListener();
 
+      // Set SHACL shapes using both attributes and properties for maximum compatibility
       if (this.shaclShapes) {
         formElement.setAttribute('data-shapes', this.shaclShapes);
         formElement.setAttribute('data-shapes-format', 'text/turtle');
@@ -941,18 +944,52 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         } else {
           formElement.removeAttribute('data-shape-subject');
         }
+
+        // Also set as properties
+        const formWithProps = formElement as HTMLElement & {
+          dataShapes?: string;
+          dataShapesFormat?: string;
+          dataShapeSubject?: string;
+        };
+        if (formWithProps.dataShapes !== undefined) {
+          formWithProps.dataShapes = this.shaclShapes;
+          formWithProps.dataShapesFormat = 'text/turtle';
+          if (this.shaclShapeSubject) {
+            formWithProps.dataShapeSubject = this.shaclShapeSubject;
+          }
+        }
       } else {
         formElement.removeAttribute('data-shapes');
         formElement.removeAttribute('data-shapes-format');
         formElement.removeAttribute('data-shape-subject');
       }
 
+      // Set data values using both attributes and properties
       formElement.setAttribute('data-values', this.generatedDdiCdi ?? '');
       formElement.setAttribute('data-values-format', 'text/turtle');
       if (this.shaclTargetNode) {
         formElement.setAttribute('data-values-subject', this.shaclTargetNode);
       } else {
         formElement.removeAttribute('data-values-subject');
+      }
+
+      // Also set as properties
+      const formWithProps = formElement as HTMLElement & {
+        dataValues?: string;
+        dataValuesFormat?: string;
+        dataValuesSubject?: string;
+      };
+      if (formWithProps.dataValues !== undefined) {
+        formWithProps.dataValues = this.generatedDdiCdi ?? '';
+        formWithProps.dataValuesFormat = 'text/turtle';
+        if (this.shaclTargetNode) {
+          formWithProps.dataValuesSubject = this.shaclTargetNode;
+        }
+      }
+
+      // Dispatch a load event to notify the component that data has been set
+      if (typeof formElement.dispatchEvent === 'function') {
+        formElement.dispatchEvent(new CustomEvent('load', { bubbles: true }));
       }
 
       this.shaclChangeListener = (event: Event) => {
