@@ -159,6 +159,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:name "Logical data sets";
      sh:minCount 1;
      sh:nodeKind sh:BlankNodeOrIRI;
+     sh:class cdi:LogicalDataSet;
      sh:node <urn:ddi-cdi:LogicalDataSetShape>;
    ];
    sh:property [
@@ -214,7 +215,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path cdi:containsVariable;
      sh:name "Variables";
      sh:minCount 1;
-     sh:nodeKind sh:IRI;
+     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:class cdi:Variable;
      sh:node <urn:ddi-cdi:VariableShape>;
    ].
 
