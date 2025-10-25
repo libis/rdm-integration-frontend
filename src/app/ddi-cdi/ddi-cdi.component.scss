@@ -51,126 +51,15 @@
   }
 }
 
-// SHACL Form styling with theme awareness
-::ng-deep {
-  shacl-form {
-    // Customize form styling
-    font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-      "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-      sans-serif;
+.input {
+  background-color: var(--p-input-background);
+  color: var(--p-input-text-color);
+  border: 1px solid var(--p-input-border-color);
+  border-radius: var(--p-border-radius);
+  padding: 0.5rem 0.75rem;
 
-    // Set CSS custom properties that can penetrate shadow DOM
-    --form-background: var(--p-form-field-background);
-    --form-color: var(--p-form-field-color);
-    --form-border-color: var(--p-form-field-border-color);
-    --form-focus-border-color: var(--p-form-field-focus-border-color);
-    --form-disabled-background: var(--p-form-field-disabled-background);
-    --form-disabled-color: var(--p-form-field-disabled-color);
-    --form-placeholder-color: var(--p-form-field-placeholder-color);
-    --text-color: var(--p-text-color);
-    --content-background: var(--p-content-background);
-    --border-color: var(--p-surface-border);
-
-    // Form inputs - keep light mode colors even in dark theme for better visibility
-    input,
-    textarea,
-    select {
-      width: 100%;
-      padding: var(--p-form-field-padding-y, 0.5rem)
-        var(--p-form-field-padding-x, 0.5rem);
-      background: #ffffff !important;
-      color: #000000 !important;
-      border: 1px solid #d1d5db !important;
-      border-radius: var(--p-form-field-border-radius, 0.375rem);
-      font-size: 0.875rem;
-      transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
-
-      &:focus {
-        outline: none;
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
-      }
-
-      &:disabled {
-        background: #f3f4f6 !important;
-        color: #6b7280 !important;
-        opacity: 1;
-        cursor: not-allowed;
-      }
-
-      &::placeholder {
-        color: #9ca3af !important;
-      }
-    }
-
-    // Labels - use theme text color
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 500;
-      color: var(--p-text-color) !important;
-      font-size: 0.875rem;
-    }
-
-    // Field groups
-    .field-group {
-      margin-bottom: 1.5rem;
-      background-color: var(--p-content-background);
-      color: var(--p-text-color);
-    }
-
-    // Ensure all text within the form uses theme color
-    * {
-      color: var(--p-text-color);
-    }
-
-    // Buttons - use PrimeNG primary button colors
-    button {
-      padding: 0.5rem 1rem;
-      background-color: var(--p-button-primary-background);
-      color: var(--p-button-primary-color);
-      border: none;
-      border-radius: var(--p-border-radius);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background-color: var(--p-button-primary-hover-background);
-      }
-
-      &:disabled {
-        background-color: var(--p-button-secondary-background);
-        color: var(--p-button-secondary-color);
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
-    }
-
-    // Error messages - use danger colors
-    .error-message {
-      color: var(--p-red-500);
-      font-size: 0.75rem;
-      margin-top: 0.25rem;
-
-      @media (prefers-color-scheme: dark) {
-        color: var(--p-red-400);
-      }
-    }
-
-    // Success messages - use success colors
-    .success-message {
-      color: var(--p-green-500);
-      font-size: 0.75rem;
-      margin-top: 0.25rem;
-
-      @media (prefers-color-scheme: dark) {
-        color: var(--p-green-400);
-      }
-    }
+  &:focus {
+    outline: none;
+    border-color: var(--p-primary-color);
   }
 }
