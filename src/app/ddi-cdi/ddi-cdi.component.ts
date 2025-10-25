@@ -215,7 +215,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path cdi:containsVariable;
      sh:name "Variables";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:nodeKind sh:IRI;
      sh:class cdi:Variable;
      sh:node <urn:ddi-cdi:VariableShape>;
    ].

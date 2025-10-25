@@ -5,7 +5,7 @@
       <button
         pButton
         type="button"
-        class="p-button-sm p-button-raised p-button-primary"
+        class="p-button-sm p-button-raised p-button-primary header-button"
         (click)="submitGenerate()"
       >
         Regenerate
@@ -38,7 +38,7 @@
       <button
         pButton
         type="button"
-        class="p-button-sm p-button-raised p-button-primary"
+        class="p-button-sm p-button-raised p-button-primary header-button"
         [disabled]="loading"
         (click)="openAddFileDialog()"
       >
@@ -48,7 +48,7 @@
       <button
         pButton
         type="button"
-        class="p-button-sm p-button-raised p-button-primary"
+        class="p-button-sm p-button-raised p-button-primary header-button"
         [disabled]="generateDisabled()"
         (click)="submitGenerate()"
       >
@@ -212,7 +212,7 @@
         <p-button
           [disabled]="loading"
           (onClick)="refreshOutput()"
-          styleClass="p-button-raised p-button-secondary"
+          styleClass="p-button-raised p-button-secondary header-button"
           title="Reload the form (this discards unsaved edits)"
         >
           Reload form
