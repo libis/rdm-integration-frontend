@@ -1840,5 +1840,197 @@ describe('DdiCdiComponent', () => {
         expect(dataServiceStub.generateDdiCdi).not.toHaveBeenCalled();
       });
     });
+
+    describe('Logical dataset form rendering', () => {
+      it('should populate logical dataset with variables from real response', fakeAsync(() => {
+        // Use the real cached response that has logical datasets with variables
+        dataServiceStub.getShaclTemplate.and.returnValue(of(''));
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        fixture.detectChanges();
+
+        // Create mock form element with methods and properties
+        const mockFormElement = document.createElement('div');
+        const mockShaclForm = {
+          nativeElement: mockFormElement,
+        } as ElementRef;
+        component['shaclForm'] = mockShaclForm;
+
+        // Track what gets set on the form element
+        const setAttributes: Record<string, string> = {};
+        const setProperties: Record<string, unknown> = {};
+
+        spyOn(mockFormElement, 'setAttribute').and.callFake(
+          (name: string, value: string) => {
+            setAttributes[name] = value;
+          },
+        );
+        spyOn(mockFormElement, 'removeAttribute');
+        spyOn(mockFormElement, 'addEventListener');
+
+        // Define property setters
+        Object.defineProperties(mockFormElement, {
+          dataShapes: {
+            set(value: string) {
+              setProperties['dataShapes'] = value;
+            },
+            configurable: true,
+          },
+          dataShapesFormat: {
+            set(value: string) {
+              setProperties['dataShapesFormat'] = value;
+            },
+            configurable: true,
+          },
+          dataShapeSubject: {
+            set(value: string) {
+              setProperties['dataShapeSubject'] = value;
+            },
+            configurable: true,
+          },
+          dataValues: {
+            set(value: string) {
+              setProperties['dataValues'] = value;
+            },
+            configurable: true,
+          },
+          dataValuesFormat: {
+            set(value: string) {
+              setProperties['dataValuesFormat'] = value;
+            },
+            configurable: true,
+          },
+          dataValuesSubject: {
+            set(value: string) {
+              setProperties['dataValuesSubject'] = value;
+            },
+            configurable: true,
+          },
+        });
+
+        // Set the generated DDI-CDI data with logical datasets
+        component['setGeneratedOutput'](CACHED_TURTLE);
+        tick(200); // Wait for setTimeout in setupShaclForm
+
+        // Verify that data-values was set with the turtle containing logical datasets
+        expect(setAttributes['data-values']).toBe(CACHED_TURTLE);
+        expect(setAttributes['data-values-format']).toBe('text/turtle');
+
+        // Verify the turtle contains logical datasets with variables
+        expect(CACHED_TURTLE).toContain('cdi:LogicalDataSet');
+        expect(CACHED_TURTLE).toContain('cdi:containsVariable');
+
+        // Verify that properties were also set
+        expect(setProperties['dataValues']).toBe(CACHED_TURTLE);
+        expect(setProperties['dataValuesFormat']).toBe('text/turtle');
+
+        // Verify the form was configured with SHACL shapes
+        expect(setAttributes['data-shapes']).toBeDefined();
+        expect(setAttributes['data-shapes']).toContain('LogicalDataSetShape');
+        expect(setAttributes['data-shapes']).toContain('cdi:containsVariable');
+      }));
+
+      it('should set both attributes and properties for web component compatibility', fakeAsync(() => {
+        dataServiceStub.getShaclTemplate.and.returnValue(of(''));
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        fixture.detectChanges();
+
+        const mockFormElement = document.createElement('div');
+        const mockShaclForm = {
+          nativeElement: mockFormElement,
+        } as ElementRef;
+        component['shaclForm'] = mockShaclForm;
+
+        let dataValuesAttribute: string | undefined;
+        let dataValuesProperty: string | undefined;
+
+        spyOn(mockFormElement, 'setAttribute').and.callFake(
+          (name: string, value: string) => {
+            if (name === 'data-values') {
+              dataValuesAttribute = value;
+            }
+          },
+        );
+        spyOn(mockFormElement, 'removeAttribute');
+        spyOn(mockFormElement, 'addEventListener');
+
+        Object.defineProperty(mockFormElement, 'dataValues', {
+          set(value: string) {
+            dataValuesProperty = value;
+          },
+          configurable: true,
+        });
+
+        Object.defineProperty(mockFormElement, 'dataValuesFormat', {
+          set() {
+            /* no-op */
+          },
+          configurable: true,
+        });
+
+        Object.defineProperty(mockFormElement, 'dataValuesSubject', {
+          set() {
+            /* no-op */
+          },
+          configurable: true,
+        });
+
+        // Set turtle with logical datasets
+        const turtleWithLogical = `
+@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .
+@prefix ex: <http://example.com/> .
+
+ex:dataset a cdi:DataSet ;
+  cdi:hasLogicalDataSet [
+    a cdi:LogicalDataSet ;
+    cdi:containsVariable <http://example.com/var1>, <http://example.com/var2>
+  ] .
+`;
+
+        component['setGeneratedOutput'](turtleWithLogical);
+        tick(200);
+
+        // Both attribute and property should be set with the same data
+        expect(dataValuesAttribute).toBe(turtleWithLogical);
+        expect(dataValuesProperty).toBe(turtleWithLogical);
+      }));
+
+      it('should dispatch load event after setting form data', fakeAsync(() => {
+        dataServiceStub.getShaclTemplate.and.returnValue(of(''));
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        fixture.detectChanges();
+
+        const mockFormElement = document.createElement('div');
+        const mockShaclForm = {
+          nativeElement: mockFormElement,
+        } as ElementRef;
+        component['shaclForm'] = mockShaclForm;
+
+        let loadEventDispatched = false;
+        spyOn(mockFormElement, 'setAttribute');
+        spyOn(mockFormElement, 'removeAttribute');
+        spyOn(mockFormElement, 'addEventListener');
+        spyOn(mockFormElement, 'dispatchEvent').and.callFake((event: Event) => {
+          if (event.type === 'load') {
+            loadEventDispatched = true;
+          }
+          return true;
+        });
+
+        Object.defineProperties(mockFormElement, {
+          dataValues: { set() {}, configurable: true },
+          dataValuesFormat: { set() {}, configurable: true },
+          dataValuesSubject: { set() {}, configurable: true },
+        });
+
+        component['setGeneratedOutput'](CACHED_TURTLE);
+        tick(200);
+
+        // Verify load event was dispatched to notify the web component
+        expect(loadEventDispatched).toBe(true);
+      }));
+    });
   });
 });

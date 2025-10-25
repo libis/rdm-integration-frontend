@@ -973,18 +973,16 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         formElement.removeAttribute('data-values-subject');
       }
 
-      // Also set as properties
+      // Also set as properties (web components often need both attributes and properties)
       const formWithProps = formElement as HTMLElement & {
         dataValues?: string;
         dataValuesFormat?: string;
         dataValuesSubject?: string;
       };
-      if (formWithProps.dataValues !== undefined) {
-        formWithProps.dataValues = this.generatedDdiCdi ?? '';
-        formWithProps.dataValuesFormat = 'text/turtle';
-        if (this.shaclTargetNode) {
-          formWithProps.dataValuesSubject = this.shaclTargetNode;
-        }
+      formWithProps.dataValues = this.generatedDdiCdi ?? '';
+      formWithProps.dataValuesFormat = 'text/turtle';
+      if (this.shaclTargetNode) {
+        formWithProps.dataValuesSubject = this.shaclTargetNode;
       }
 
       // Dispatch a load event to notify the component that data has been set
