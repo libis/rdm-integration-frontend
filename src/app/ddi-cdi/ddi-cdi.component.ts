@@ -49,7 +49,7 @@ import '@ulb-darmstadt/shacl-form';
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // RDF parsing utilities
-import { Parser } from 'n3';
+import { Parser, Quad, Writer } from 'n3';
 
 // Constants and types
 import {
@@ -519,27 +519,55 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       if (!quads.length) {
         return undefined;
       }
-      const datasetSubjects: string[] = [];
-      let fallbackSubject: string | undefined;
+
+      type SubjectSelection = {
+        shapesNode: string;
+        attributeValue?: string;
+      };
+
+      const toSubjectSelection = (
+        subject: { termType: string; value: string },
+      ): SubjectSelection | undefined => {
+        if (subject.termType === 'NamedNode') {
+          return {
+            shapesNode: `<${subject.value}>`,
+            attributeValue: subject.value,
+          };
+        }
+        if (subject.termType === 'BlankNode') {
+          return {
+            shapesNode: `_:${subject.value}`,
+          };
+        }
+        return undefined;
+      };
+
+      const datasetSubjects: SubjectSelection[] = [];
+      let fallbackSubject: SubjectSelection | undefined;
+
       for (const quad of quads) {
-        if (quad.subject.termType === 'NamedNode') {
-          if (!fallbackSubject) {
-            fallbackSubject = quad.subject.value;
-          }
-          if (
-            quad.predicate.value === this.RDF_TYPE &&
-            quad.object.termType === 'NamedNode' &&
-            quad.object.value === this.CDI_DATASET_TYPE
-          ) {
-            datasetSubjects.push(quad.subject.value);
-          }
+        const selection = toSubjectSelection(quad.subject);
+        if (!selection) {
+          continue;
+        }
+        if (!fallbackSubject) {
+          fallbackSubject = selection;
+        }
+        if (
+          quad.predicate.value === this.RDF_TYPE &&
+          quad.object.termType === 'NamedNode' &&
+          quad.object.value === this.CDI_DATASET_TYPE
+        ) {
+          datasetSubjects.push(selection);
         }
       }
-      const targetNode = datasetSubjects[0] ?? fallbackSubject;
-      if (!targetNode) {
+
+      const targetSelection = datasetSubjects[0] ?? fallbackSubject;
+      if (!targetSelection) {
         return undefined;
       }
-      this.shaclTargetNode = targetNode;
+
+      this.shaclTargetNode = targetSelection.attributeValue;
       const shapeSubject = 'urn:ddi-cdi:DatasetShape';
       this.shaclShapeSubject = shapeSubject;
       return (
@@ -549,7 +577,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.\n' +
         '@prefix prov: <http://www.w3.org/ns/prov#>.\n\n' +
         `<${shapeSubject}> a sh:NodeShape;\n` +
-        `   sh:targetNode <${targetNode}>;\n` +
+        `   sh:targetNode ${targetSelection.shapesNode};\n` +
         '   sh:targetClass cdi:DataSet;\n' +
         '   sh:property [\n' +
         '     sh:path dcterms:title;\n' +
@@ -584,6 +612,105 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.shaclTargetNode = undefined;
       this.shaclShapeSubject = undefined;
       return undefined;
+    }
+  }
+
+  private parseTurtleGraph(
+    turtle: string,
+  ): { quads: Quad[]; prefixes: Record<string, string> } {
+    const parser = new Parser();
+    const quads = parser.parse(turtle);
+    const parserWithPrefixes = parser as Parser & {
+      _prefixes?: Record<string, unknown>;
+    };
+    const prefixes: Record<string, string> = {};
+
+    Object.entries(parserWithPrefixes._prefixes ?? {}).forEach(([key, value]) => {
+      if (key === '_') {
+        return;
+      }
+      if (typeof value === 'string') {
+        prefixes[key] = value;
+      } else if (value && typeof value === 'object' && 'value' in value) {
+        prefixes[key] = (value as { value: string }).value;
+      }
+    });
+
+    return { quads, prefixes };
+  }
+
+  private getTermKey(
+    term: Quad['subject'] | Quad['predicate'] | Quad['object'] | Quad['graph'],
+  ): string {
+    if (term.termType === 'DefaultGraph') {
+      return 'DefaultGraph:';
+    }
+    return `${term.termType}:${term.value}`;
+  }
+
+  private getQuadKey(quad: Quad): string {
+    return [
+      this.getTermKey(quad.subject),
+      this.getTermKey(quad.predicate),
+      this.getTermKey(quad.graph),
+    ].join('|');
+  }
+
+  private mergeTurtleGraphs(baseTurtle: string, formTurtle: string): string {
+    const normalizedBase = baseTurtle.trim();
+    const normalizedForm = formTurtle.trim();
+    if (normalizedBase === normalizedForm) {
+      return baseTurtle;
+    }
+
+    let merged = formTurtle;
+    try {
+      const base = this.parseTurtleGraph(baseTurtle);
+      const updates = this.parseTurtleGraph(formTurtle);
+
+      if (!updates.quads.length) {
+        return baseTurtle;
+      }
+
+      const updateKeys = new Set(updates.quads.map((quad) => this.getQuadKey(quad)));
+      const retainedBase = base.quads.filter(
+        (quad) => !updateKeys.has(this.getQuadKey(quad)),
+      );
+      const combined = [...retainedBase, ...updates.quads];
+
+      const writer = new Writer({
+        prefixes: { ...base.prefixes, ...updates.prefixes },
+      });
+      writer.addQuads(combined);
+      writer.end((error, result) => {
+        if (!error && result) {
+          merged = result;
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to merge SHACL form data with original Turtle', error);
+    }
+
+    return merged;
+  }
+
+  private buildMergedFormContent(): string {
+    const baseContent = this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
+    const formElement = this.shaclForm?.nativeElement;
+
+    if (!formElement || this.shaclError) {
+      return baseContent;
+    }
+
+    try {
+      const serialized = formElement.serialize();
+      if (!serialized) {
+        return baseContent;
+      }
+      return this.mergeTurtleGraphs(baseContent, serialized);
+    } catch (error) {
+      console.warn('Could not serialize SHACL form data, using base content', error);
+      return baseContent;
     }
   }
 
@@ -638,9 +765,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
         if (customEvent.detail?.valid) {
           try {
-            const triples = this.shaclForm.nativeElement.serialize();
-            if (triples) {
-              this.generatedDdiCdi = triples;
+            const mergedContent = this.buildMergedFormContent();
+            if (mergedContent) {
+              this.generatedDdiCdi = mergedContent;
             }
             this.shaclFormValid = true;
           } catch (error) {
@@ -669,24 +796,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loading = true;
 
     // Get current data from SHACL form if available
-    const shaclFormElement = this.shaclForm?.nativeElement;
-    const baseContent = this.shaclError
-      ? (this.originalDdiCdi ?? this.generatedDdiCdi ?? '')
-      : (this.generatedDdiCdi ?? this.originalDdiCdi ?? '');
-    let content = baseContent;
-    if (shaclFormElement && !this.shaclError) {
-      try {
-        const formData = shaclFormElement.serialize();
-        if (formData) {
-          content = formData;
-        }
-      } catch (error) {
-        console.warn(
-          'Could not serialize form data, using original content',
-          error,
-        );
-      }
-    }
+    const content = this.buildMergedFormContent();
+    this.generatedDdiCdi = content;
     const fileName = `ddi-cdi-${Date.now()}.ttl`;
     const addFileRequest: AddFileRequest = {
       persistentId: this.datasetId!,

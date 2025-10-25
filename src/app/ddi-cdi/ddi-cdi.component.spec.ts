@@ -63,6 +63,24 @@ describe('DdiCdiComponent', () => {
     'datasetRefreshed',
     'Refreshed dataset',
   );
+  const UPDATED_TITLE_TURTLE = [
+    '@prefix dcterms: <http://purl.org/dc/terms/> .',
+    '@prefix ex: <http://example.com/> .',
+    '',
+    'ex:datasetSimple dcterms:title "Updated dataset" .',
+  ].join('\n');
+  const PREFIX_ONLY_TURTLE = [
+    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
+    '@prefix dcterms: <http://purl.org/dc/terms/> .',
+  ].join('\n');
+  const BLANK_NODE_TURTLE = [
+    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
+    '@prefix dcterms: <http://purl.org/dc/terms/> .',
+    '',
+    '_:datasetBlank a cdi:DataSet ;',
+    '  dcterms:identifier "datasetBlank" ;',
+    '  dcterms:title "Blank dataset" .',
+  ].join('\n');
   const cachedResponseData = cachedResponseFixture as CachedComputeResponse;
   const CACHED_TURTLE = cachedResponseData.ddiCdi ?? '';
 
@@ -618,25 +636,37 @@ describe('DdiCdiComponent', () => {
       }, 50);
     });
 
-    it('should use serialized form data if available', () => {
+    it('should merge serialized form data with original graph', () => {
       dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.datasetId = 'doi:123';
-      component.generatedDdiCdi = 'original-content';
+      component.generatedDdiCdi = SIMPLE_TURTLE;
+      component.originalDdiCdi = SIMPLE_TURTLE;
       // Mock the SHACL form element
       const mockFormElement = {
         serialize: jasmine
           .createSpy('serialize')
-          .and.returnValue('edited-content'),
+          .and.returnValue(UPDATED_TITLE_TURTLE),
       };
       component.shaclForm = {
         nativeElement: mockFormElement,
       } as any;
+      const merged = (component as any).mergeTurtleGraphs(
+        SIMPLE_TURTLE,
+        UPDATED_TITLE_TURTLE,
+      );
+      expect(merged).toContain('dcterms:title "Updated dataset"');
       component.addFileToDataset();
       const call = dataServiceStub.addFileToDataset.calls.mostRecent();
       const request: AddFileRequest = call.args[0];
-      expect(request.content).toBe('edited-content');
+      expect(request.content).toContain(
+        'dcterms:title "Updated dataset"',
+      );
+      expect(request.content).toContain(
+        'dcterms:identifier "datasetSimple"',
+      );
+      expect(request.content).not.toContain('Sample dataset');
       expect(mockFormElement.serialize).toHaveBeenCalled();
     });
 
@@ -661,6 +691,31 @@ describe('DdiCdiComponent', () => {
       const request: AddFileRequest = call.args[0];
       expect(request.content).toBe('original-content');
       expect(console.warn).toHaveBeenCalled();
+    });
+
+    it('should retain original turtle when serialized output has no triples', () => {
+      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      component.datasetId = 'doi:123';
+      component.generatedDdiCdi = SIMPLE_TURTLE;
+      component.originalDdiCdi = SIMPLE_TURTLE;
+      const mockFormElement = {
+        serialize: jasmine
+          .createSpy('serialize')
+          .and.returnValue(PREFIX_ONLY_TURTLE),
+      };
+      component.shaclForm = {
+        nativeElement: mockFormElement,
+      } as any;
+
+      component.addFileToDataset();
+
+      const call = dataServiceStub.addFileToDataset.calls.mostRecent();
+      const request: AddFileRequest = call.args[0];
+      expect(request.content).toContain('dcterms:identifier "datasetSimple"');
+      expect(request.content).toContain('Sample dataset');
+      expect(mockFormElement.serialize).toHaveBeenCalled();
     });
   });
 
@@ -733,6 +788,46 @@ describe('DdiCdiComponent', () => {
       const call = dataServiceStub.addFileToDataset.calls.mostRecent();
       const request: AddFileRequest = call.args[0];
       expect(request.content).toBe(CACHED_TURTLE);
+    }));
+
+    it('should build SHACL shapes when dataset subject is a blank node', () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+
+      const shapes = (component as any).buildShaclShapes(BLANK_NODE_TURTLE);
+
+  expect(shapes).toBeTruthy();
+  expect(shapes as string).toMatch(/sh:targetNode _:[^;]+;/);
+      expect((component as any).shaclTargetNode).toBeUndefined();
+    });
+
+    it('should skip binding data-values-subject when focus node is a blank node', fakeAsync(() => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+
+      const mockElement = {
+        setAttribute: jasmine.createSpy('setAttribute'),
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        serialize: jasmine.createSpy('serialize'),
+      };
+
+      component.shaclForm = {
+        nativeElement: mockElement,
+      } as unknown as ElementRef;
+
+      (component as any).setGeneratedOutput(BLANK_NODE_TURTLE);
+      tick(150);
+
+      expect(mockElement.removeAttribute).toHaveBeenCalledWith(
+        'data-values-subject',
+      );
+      expect(mockElement.setAttribute).not.toHaveBeenCalledWith(
+        'data-values-subject',
+        jasmine.any(String),
+      );
+      expect(component.shaclError).toBeUndefined();
     }));
   });
 
