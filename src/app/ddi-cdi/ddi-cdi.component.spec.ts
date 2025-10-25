@@ -92,6 +92,7 @@ describe('DdiCdiComponent', () => {
       'getCachedDdiCdiData',
       'getCachedDdiCdiOutput',
       'addFileToDataset',
+      'getShaclTemplate',
     ]);
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
       'getItems',
@@ -131,6 +132,11 @@ describe('DdiCdiComponent', () => {
     );
     dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
       of({ id: '', data: [] } as CompareResult),
+    );
+    dataServiceStub.getShaclTemplate.and.returnValue(
+      of(
+        '@prefix sh: <http://www.w3.org/ns/shacl#>.\n__TARGET_NODE__ a sh:NodeShape .',
+      ),
     );
 
     await TestBed.configureTestingModule({
@@ -660,12 +666,8 @@ describe('DdiCdiComponent', () => {
       component.addFileToDataset();
       const call = dataServiceStub.addFileToDataset.calls.mostRecent();
       const request: AddFileRequest = call.args[0];
-      expect(request.content).toContain(
-        'dcterms:title "Updated dataset"',
-      );
-      expect(request.content).toContain(
-        'dcterms:identifier "datasetSimple"',
-      );
+      expect(request.content).toContain('dcterms:title "Updated dataset"');
+      expect(request.content).toContain('dcterms:identifier "datasetSimple"');
       expect(request.content).not.toContain('Sample dataset');
       expect(mockFormElement.serialize).toHaveBeenCalled();
     });
@@ -796,8 +798,8 @@ describe('DdiCdiComponent', () => {
 
       const shapes = (component as any).buildShaclShapes(BLANK_NODE_TURTLE);
 
-  expect(shapes).toBeTruthy();
-  expect(shapes as string).toMatch(/sh:targetNode _:[^;]+;/);
+      expect(shapes).toBeTruthy();
+      expect(shapes as string).toMatch(/sh:targetNode _:[^;]+;/);
       expect((component as any).shaclTargetNode).toBeUndefined();
     });
 

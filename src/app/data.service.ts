@@ -35,6 +35,7 @@ export class DataService {
   common_get_ddicdi_compatible_files_url = 'api/common/ddicdicompatible';
   common_add_file_url = 'api/common/addfile';
   common_get_downloadable_files_url = 'api/common/downloadable';
+  frontend_get_shacl_url = 'api/frontend/shacl';
 
   constructor() {}
 
@@ -149,5 +150,11 @@ export class DataService {
 
   addFileToDataset(req: AddFileRequest): Observable<Key> {
     return this.http.post<Key>(this.common_add_file_url, req);
+  }
+
+  getShaclTemplate(): Observable<string> {
+    return this.http.get(this.frontend_get_shacl_url, {
+      responseType: 'text',
+    });
   }
 }

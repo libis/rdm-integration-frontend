@@ -125,6 +125,183 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private shaclChangeListener?: EventListener;
   private shaclTargetNode?: string;
   private shaclShapeSubject?: string;
+  private shaclTemplate?: string;
+  private readonly shaclTemplatePlaceholder = '__TARGET_NODE__';
+  private readonly SHACL_NODE_SHAPE = 'http://www.w3.org/ns/shacl#NodeShape';
+  private readonly fallbackShaclTemplate = `@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.
+@prefix prov: <http://www.w3.org/ns/prov#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+
+<urn:ddi-cdi:DatasetShape> a sh:NodeShape;
+   sh:targetNode __TARGET_NODE__;
+  sh:targetClass cdi:DataSet;
+   sh:class cdi:DataSet;
+   sh:property [
+     sh:path dcterms:identifier;
+     sh:name "Dataset identifier";
+     sh:datatype xsd:string;
+     sh:minCount 1;
+     sh:minLength 1;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path dcterms:title;
+     sh:name "Dataset title";
+     sh:datatype xsd:string;
+     sh:minCount 0;
+     sh:minLength 1;
+   ];
+   sh:property [
+     sh:path cdi:hasLogicalDataSet;
+     sh:name "Logical data sets";
+     sh:minCount 1;
+     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:node <urn:ddi-cdi:LogicalDataSetShape>;
+   ];
+   sh:property [
+     sh:path cdi:hasPhysicalDataSet;
+     sh:name "Physical data sets";
+     sh:minCount 1;
+     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:node <urn:ddi-cdi:PhysicalDataSetShape>;
+   ];
+   sh:property [
+     sh:path prov:wasGeneratedBy;
+     sh:name "Generation process";
+     sh:minCount 1;
+     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:node <urn:ddi-cdi:ProcessStepShape>;
+   ].
+
+<urn:ddi-cdi:PhysicalDataSetShape> a sh:NodeShape;
+   sh:targetClass cdi:PhysicalDataSet;
+   sh:property [
+     sh:path dcterms:format;
+     sh:name "File format";
+     sh:datatype xsd:string;
+     sh:minCount 1;
+     sh:minLength 1;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path dcterms:identifier;
+     sh:name "File access URI";
+     sh:nodeKind sh:IRI;
+     sh:minCount 0;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path dcterms:provenance;
+     sh:name "File checksum";
+     sh:datatype xsd:string;
+     sh:pattern "^md5:[0-9a-f]{32}$";
+     sh:minCount 0;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path dcterms:source;
+     sh:name "Source DDI";
+     sh:nodeKind sh:Literal;
+     sh:minCount 0;
+   ].
+
+<urn:ddi-cdi:LogicalDataSetShape> a sh:NodeShape;
+   sh:targetClass cdi:LogicalDataSet;
+   sh:property [
+     sh:path cdi:containsVariable;
+     sh:name "Variables";
+     sh:minCount 1;
+     sh:nodeKind sh:IRI;
+     sh:node <urn:ddi-cdi:VariableShape>;
+   ].
+
+<urn:ddi-cdi:VariableShape> a sh:NodeShape;
+   sh:targetClass cdi:Variable;
+   sh:property [
+     sh:path skos:prefLabel;
+     sh:name "Primary label";
+     sh:datatype xsd:string;
+     sh:minCount 1;
+     sh:minLength 1;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path skos:altLabel;
+     sh:name "Alternative label";
+     sh:datatype xsd:string;
+     sh:minCount 0;
+     sh:minLength 1;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path dcterms:identifier;
+     sh:name "Variable identifier";
+     sh:datatype xsd:string;
+     sh:minCount 1;
+     sh:minLength 1;
+     sh:maxCount 1;
+   ];
+   sh:property [
+     sh:path cdi:hasRepresentation;
+     sh:name "Variable datatype";
+     sh:minCount 1;
+     sh:maxCount 1;
+     sh:nodeKind sh:IRI;
+     sh:in (
+       xsd:boolean
+       xsd:dateTime
+       xsd:decimal
+       xsd:integer
+       xsd:string
+     );
+   ];
+   sh:property [
+     sh:path cdi:hasRole;
+     sh:name "Variable role";
+     sh:minCount 1;
+     sh:maxCount 1;
+     sh:nodeKind sh:IRI;
+     sh:node <urn:ddi-cdi:RoleShape>;
+   ];
+   sh:property [
+     sh:path skos:note;
+     sh:name "Variable note";
+     sh:datatype xsd:string;
+     sh:minCount 0;
+     sh:minLength 1;
+   ].
+
+<urn:ddi-cdi:RoleShape> a sh:NodeShape;
+   sh:targetClass cdi:Role;
+   sh:property [
+     sh:path skos:prefLabel;
+     sh:name "Role label";
+     sh:datatype xsd:string;
+     sh:minCount 1;
+     sh:minLength 1;
+     sh:maxCount 1;
+     sh:in (
+       "identifier"
+       "measure"
+       "dimension"
+       "attribute"
+     );
+   ].
+
+<urn:ddi-cdi:ProcessStepShape> a sh:NodeShape;
+   sh:targetClass cdi:ProcessStep;
+   sh:property [
+     sh:path dcterms:description;
+     sh:name "Generation description";
+     sh:datatype xsd:string;
+     sh:minCount 1;
+     sh:minLength 1;
+     sh:maxCount 1;
+   ].
+`;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -146,6 +323,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   async ngOnInit() {
     await this.pluginService.setConfig();
+    await this.loadShaclTemplate();
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
@@ -525,9 +703,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         attributeValue?: string;
       };
 
-      const toSubjectSelection = (
-        subject: { termType: string; value: string },
-      ): SubjectSelection | undefined => {
+      const toSubjectSelection = (subject: {
+        termType: string;
+        value: string;
+      }): SubjectSelection | undefined => {
         if (subject.termType === 'NamedNode') {
           return {
             shapesNode: `<${subject.value}>`,
@@ -568,42 +747,33 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
 
       this.shaclTargetNode = targetSelection.attributeValue;
-      const shapeSubject = 'urn:ddi-cdi:DatasetShape';
-      this.shaclShapeSubject = shapeSubject;
-      return (
-        '@prefix sh: <http://www.w3.org/ns/shacl#>.\n' +
-        '@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.\n' +
-        '@prefix dcterms: <http://purl.org/dc/terms/>.\n' +
-        '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.\n' +
-        '@prefix prov: <http://www.w3.org/ns/prov#>.\n\n' +
-        `<${shapeSubject}> a sh:NodeShape;\n` +
-        `   sh:targetNode ${targetSelection.shapesNode};\n` +
-        '   sh:targetClass cdi:DataSet;\n' +
-        '   sh:property [\n' +
-        '     sh:path dcterms:title;\n' +
-        '     sh:name "Dataset title";\n' +
-        '     sh:datatype xsd:string;\n' +
-        '     sh:minCount 0;\n' +
-        '   ];\n' +
-        '   sh:property [\n' +
-        '     sh:path cdi:hasLogicalDataSet;\n' +
-        '     sh:name "Logical Data Sets";\n' +
-        '     sh:nodeKind sh:BlankNodeOrIRI;\n' +
-        '     sh:minCount 0;\n' +
-        '   ];\n' +
-        '   sh:property [\n' +
-        '     sh:path cdi:hasPhysicalDataSet;\n' +
-        '     sh:name "Physical Data Sets";\n' +
-        '     sh:nodeKind sh:BlankNodeOrIRI;\n' +
-        '     sh:minCount 0;\n' +
-        '   ];\n' +
-        '   sh:property [\n' +
-        '     sh:path prov:wasGeneratedBy;\n' +
-        '     sh:name "Provenance";\n' +
-        '     sh:nodeKind sh:BlankNodeOrIRI;\n' +
-        '     sh:minCount 0;\n' +
-        '   ].\n'
-      );
+      const template = this.getShaclTemplateContent();
+      const substituted = template
+        .split(this.shaclTemplatePlaceholder)
+        .join(targetSelection.shapesNode);
+
+      try {
+        const shapesParser = new Parser();
+        const shapeQuads = shapesParser.parse(substituted);
+        const nodeShapeQuad = shapeQuads.find(
+          (quad) =>
+            quad.predicate.value === this.RDF_TYPE &&
+            quad.object.termType === 'NamedNode' &&
+            quad.object.value === this.SHACL_NODE_SHAPE,
+        );
+        if (nodeShapeQuad) {
+          const subjectSelection = toSubjectSelection(nodeShapeQuad.subject);
+          this.shaclShapeSubject =
+            subjectSelection?.attributeValue ?? undefined;
+        } else {
+          this.shaclShapeSubject = undefined;
+        }
+      } catch (shapeError) {
+        console.warn('Failed to parse SHACL template', shapeError);
+        this.shaclShapeSubject = undefined;
+      }
+
+      return substituted;
     } catch (error) {
       console.warn(
         'Failed to build SHACL shapes for generated CDI output',
@@ -615,9 +785,25 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
   }
 
-  private parseTurtleGraph(
-    turtle: string,
-  ): { quads: Quad[]; prefixes: Record<string, string> } {
+  private async loadShaclTemplate(): Promise<void> {
+    try {
+      this.shaclTemplate = await firstValueFrom(
+        this.dataService.getShaclTemplate(),
+      );
+    } catch (error) {
+      console.warn('Failed to load SHACL template from backend', error);
+      this.shaclTemplate = undefined;
+    }
+  }
+
+  private getShaclTemplateContent(): string {
+    return this.shaclTemplate ?? this.fallbackShaclTemplate;
+  }
+
+  private parseTurtleGraph(turtle: string): {
+    quads: Quad[];
+    prefixes: Record<string, string>;
+  } {
     const parser = new Parser();
     const quads = parser.parse(turtle);
     const parserWithPrefixes = parser as Parser & {
@@ -625,16 +811,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     };
     const prefixes: Record<string, string> = {};
 
-    Object.entries(parserWithPrefixes._prefixes ?? {}).forEach(([key, value]) => {
-      if (key === '_') {
-        return;
-      }
-      if (typeof value === 'string') {
-        prefixes[key] = value;
-      } else if (value && typeof value === 'object' && 'value' in value) {
-        prefixes[key] = (value as { value: string }).value;
-      }
-    });
+    Object.entries(parserWithPrefixes._prefixes ?? {}).forEach(
+      ([key, value]) => {
+        if (key === '_') {
+          return;
+        }
+        if (typeof value === 'string') {
+          prefixes[key] = value;
+        } else if (value && typeof value === 'object' && 'value' in value) {
+          prefixes[key] = (value as { value: string }).value;
+        }
+      },
+    );
 
     return { quads, prefixes };
   }
@@ -672,7 +860,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         return baseTurtle;
       }
 
-      const updateKeys = new Set(updates.quads.map((quad) => this.getQuadKey(quad)));
+      const updateKeys = new Set(
+        updates.quads.map((quad) => this.getQuadKey(quad)),
+      );
       const retainedBase = base.quads.filter(
         (quad) => !updateKeys.has(this.getQuadKey(quad)),
       );
@@ -688,7 +878,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         }
       });
     } catch (error) {
-      console.warn('Failed to merge SHACL form data with original Turtle', error);
+      console.warn(
+        'Failed to merge SHACL form data with original Turtle',
+        error,
+      );
     }
 
     return merged;
@@ -709,7 +902,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
       return this.mergeTurtleGraphs(baseContent, serialized);
     } catch (error) {
-      console.warn('Could not serialize SHACL form data, using base content', error);
+      console.warn(
+        'Could not serialize SHACL form data, using base content',
+        error,
+      );
       return baseContent;
     }
   }
