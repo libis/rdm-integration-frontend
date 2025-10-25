@@ -781,16 +781,75 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       try {
         const shapesParser = new Parser();
         const shapeQuads = shapesParser.parse(substituted);
-        const nodeShapeQuad = shapeQuads.find(
-          (quad) =>
-            quad.predicate.value === this.RDF_TYPE &&
-            quad.object.termType === 'NamedNode' &&
-            quad.object.value === this.SHACL_NODE_SHAPE,
-        );
+
+        // Helper: find a NodeShape subject by exact subject IRI match
+        const findNodeShapeBySubject = (subjectIri: string) =>
+          shapeQuads.find(
+            (q) =>
+              q.subject.termType === 'NamedNode' &&
+              q.subject.value === subjectIri &&
+              q.predicate.value === this.RDF_TYPE &&
+              q.object.termType === 'NamedNode' &&
+              q.object.value === this.SHACL_NODE_SHAPE,
+          );
+
+        // 1) Prefer the well-known dataset root node shape if present
+        const preferredDatasetShapeIri = 'urn:ddi-cdi:DatasetShape';
+        let nodeShapeQuad = findNodeShapeBySubject(preferredDatasetShapeIri);
+
+        // 2) Otherwise, prefer any NodeShape with targetClass cdi:DataSet
+        if (!nodeShapeQuad) {
+          const TARGET_CLASS = 'http://www.w3.org/ns/shacl#targetClass';
+          const CDI_DATASET_TYPE = this.CDI_DATASET_TYPE;
+
+          // Collect all NodeShape subjects
+          const nodeShapeSubjects = new Set(
+            shapeQuads
+              .filter(
+                (q) =>
+                  q.predicate.value === this.RDF_TYPE &&
+                  q.object.termType === 'NamedNode' &&
+                  q.object.value === this.SHACL_NODE_SHAPE,
+              )
+              .map((q) => q.subject.value),
+          );
+
+          // Find a NodeShape subject that has targetClass cdi:DataSet
+          const datasetNodeSubject = Array.from(nodeShapeSubjects).find(
+            (subj) =>
+              shapeQuads.some(
+                (q) =>
+                  q.subject.value === subj &&
+                  q.predicate.value === TARGET_CLASS &&
+                  q.object.termType === 'NamedNode' &&
+                  q.object.value === CDI_DATASET_TYPE,
+              ),
+          );
+
+          if (datasetNodeSubject) {
+            nodeShapeQuad = shapeQuads.find(
+              (q) =>
+                q.subject.value === datasetNodeSubject &&
+                q.predicate.value === this.RDF_TYPE &&
+                q.object.termType === 'NamedNode' &&
+                q.object.value === this.SHACL_NODE_SHAPE,
+            );
+          }
+        }
+
+        // 3) Fallback: pick the first NodeShape found
+        if (!nodeShapeQuad) {
+          nodeShapeQuad = shapeQuads.find(
+            (quad) =>
+              quad.predicate.value === this.RDF_TYPE &&
+              quad.object.termType === 'NamedNode' &&
+              quad.object.value === this.SHACL_NODE_SHAPE,
+          );
+        }
+
         if (nodeShapeQuad) {
           const subjectSelection = toSubjectSelection(nodeShapeQuad.subject);
-          this.shaclShapeSubject =
-            subjectSelection?.attributeValue ?? undefined;
+          this.shaclShapeSubject = subjectSelection?.attributeValue ?? undefined;
         } else {
           this.shaclShapeSubject = undefined;
         }
