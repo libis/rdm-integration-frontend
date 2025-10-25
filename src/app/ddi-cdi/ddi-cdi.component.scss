@@ -65,31 +65,37 @@
 }
 
 // Override SHACL form web component's internal CSS custom properties
-// The component uses --rootkit-* variables in its :host selector
+// The component uses --rokit-* variables in its :host selector
 // By redefining them here, they inherit into the shadow DOM and override the defaults
 shacl-form {
-  // Background colors - map to PrimeNG theme
-  --rootkit-background-color: var(--p-form-field-background);
-  --rootkit-surface-color: var(--p-content-background);
+  // Critical background colors that control form field styling
+  // Note: The component uses "rokit" (single 'o'), not "rootkit"
+  --rokit-background-color-inner: var(--p-form-field-background);
+  --rokit-light-background-color-inner: var(--p-content-background);
+  --rokit-light-background-darker-color-inner: var(--p-surface-100);
+  
+  // Additional theme mappings for comprehensive dark mode support
+  --rokit-background-color: var(--p-form-field-background);
+  --rokit-surface-color: var(--p-content-background);
   
   // Text colors
-  --rootkit-text-color: var(--p-form-field-color);
-  --rootkit-text-secondary-color: var(--p-text-muted-color);
+  --rokit-text-color: var(--p-form-field-color);
+  --rokit-text-secondary-color: var(--p-text-muted-color);
   
   // Border colors
-  --rootkit-border-color: var(--p-form-field-border-color);
+  --rokit-border-color: var(--p-form-field-border-color);
   
   // Form field states
-  --rootkit-input-background: var(--p-form-field-background);
-  --rootkit-input-color: var(--p-form-field-color);
-  --rootkit-input-border-color: var(--p-form-field-border-color);
-  --rootkit-input-hover-border-color: var(--p-form-field-hover-border-color);
-  --rootkit-input-focus-border-color: var(--p-form-field-focus-border-color);
+  --rokit-input-background: var(--p-form-field-background);
+  --rokit-input-color: var(--p-form-field-color);
+  --rokit-input-border-color: var(--p-form-field-border-color);
+  --rokit-input-hover-border-color: var(--p-form-field-hover-border-color);
+  --rokit-input-focus-border-color: var(--p-form-field-focus-border-color);
   
   // Disabled state
-  --rootkit-input-disabled-background: var(--p-form-field-disabled-background);
-  --rootkit-input-disabled-color: var(--p-form-field-disabled-color);
+  --rokit-input-disabled-background: var(--p-form-field-disabled-background);
+  --rokit-input-disabled-color: var(--p-form-field-disabled-color);
   
   // Placeholder
-  --rootkit-input-placeholder-color: var(--p-form-field-placeholder-color);
+  --rokit-input-placeholder-color: var(--p-form-field-placeholder-color);
 }
