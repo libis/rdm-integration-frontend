@@ -245,9 +245,11 @@
           <shacl-form
             #shaclForm
             [attr.data-shapes]="shaclShapes"
+            [attr.data-shape-subject]="shaclShapeSubject ?? null"
             [attr.data-values]="generatedDdiCdi"
             [attr.data-values-format]="'text/turtle'"
             [attr.data-shapes-format]="'text/turtle'"
+            [attr.data-values-subject]="shaclTargetNode ?? null"
             data-dense="true"
             style="display: block; width: 100%"
           ></shacl-form>

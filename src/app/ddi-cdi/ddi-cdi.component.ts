@@ -123,8 +123,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   originalDdiCdi?: string;
   private totalSelectableFiles = 0;
   private shaclChangeListener?: EventListener;
-  private shaclTargetNode?: string;
-  private shaclShapeSubject?: string;
+  shaclTargetNode?: string;
+  shaclShapeSubject?: string;
   private shaclTemplate?: string;
   private readonly shaclTemplatePlaceholder = '__TARGET_NODE__';
   private readonly SHACL_NODE_SHAPE = 'http://www.w3.org/ns/shacl#NodeShape';
