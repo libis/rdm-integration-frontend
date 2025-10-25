@@ -1,14 +1,16 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto">
-    <button
-      pButton
-      type="button"
-      class="p-button-sm p-button-raised p-button-secondary"
-      (click)="back()"
-    >
-      <i class="pi pi-angle-double-left"></i>&nbsp;Home
-    </button>
+    @if (generatedDdiCdi) {
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised p-button-primary"
+        (click)="submitGenerate()"
+      >
+        Regenerate
+      </button>
+    }
   </div>
   @if (showDVToken()) {
     <div class="col-auto">
@@ -32,15 +34,27 @@
     <h2 class="page-title m-0">Generate DDI-CDI Metadata</h2>
   </div>
   <div class="col-auto d-flex" style="gap: 0.5rem">
-    <button
-      pButton
-      type="button"
-      class="p-button-sm p-button-raised p-button-primary"
-      [disabled]="generateDisabled()"
-      (click)="submitGenerate()"
-    >
-      Generate DDI-CDI&nbsp;<i class="pi pi-angle-double-right"></i>
-    </button>
+    @if (showAddFileButton()) {
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised p-button-primary"
+        [disabled]="loading"
+        (click)="openAddFileDialog()"
+      >
+        Add to Dataset
+      </button>
+    } @else {
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised p-button-primary"
+        [disabled]="generateDisabled()"
+        (click)="submitGenerate()"
+      >
+        Generate DDI-CDI
+      </button>
+    }
   </div>
 </div>
 
@@ -191,33 +205,19 @@
       </ng-template>
     </p-treeTable>
 
-    <div style="margin-top: 1rem; text-align: center">
-      @if (cachedOutputLoaded || generatedDdiCdi) {
+  </div>
+  <div style="float: right; width: 50%">
+    @if (generatedDdiCdi) {
+      <div style="text-align: right; margin-bottom: 0.5rem">
         <p-button
           [disabled]="loading"
           (onClick)="refreshOutput()"
           styleClass="p-button-raised p-button-secondary"
-          title="Reload the last generated output from cache"
+          title="Reload the form (this discards unsaved edits)"
         >
-          <i class="pi pi-refresh"></i>&nbsp;Refresh
+          Reload form
         </p-button>
-      }
-      @if (showAddFileButton()) {
-        <p-button
-          [disabled]="loading"
-          (onClick)="openAddFileDialog()"
-          styleClass="p-button-raised p-button-success"
-          [style]="{
-            'margin-left': cachedOutputLoaded || generatedDdiCdi ? '1rem' : '0',
-          }"
-        >
-          <i class="pi pi-plus"></i>&nbsp;Add to Dataset
-        </p-button>
-      }
-    </div>
-  </div>
-  <div style="float: right; width: 50%">
-    @if (generatedDdiCdi) {
+      </div>
       <!-- SHACL Form for editing DDI-CDI -->
       <div
         [style.width]="'100%'"
