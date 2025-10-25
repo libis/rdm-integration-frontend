@@ -60,6 +60,18 @@
       "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
       sans-serif;
 
+    // Set CSS custom properties that can penetrate shadow DOM
+    --form-background: var(--p-form-field-background);
+    --form-color: var(--p-form-field-color);
+    --form-border-color: var(--p-form-field-border-color);
+    --form-focus-border-color: var(--p-form-field-focus-border-color);
+    --form-disabled-background: var(--p-form-field-disabled-background);
+    --form-disabled-color: var(--p-form-field-disabled-color);
+    --form-placeholder-color: var(--p-form-field-placeholder-color);
+    --text-color: var(--p-text-color);
+    --content-background: var(--p-content-background);
+    --border-color: var(--p-surface-border);
+
     // Form inputs - use theme variables
     input,
     textarea,
@@ -67,9 +79,9 @@
       width: 100%;
       padding: var(--p-form-field-padding-y, 0.5rem)
         var(--p-form-field-padding-x, 0.5rem);
-      background: var(--p-form-field-background);
-      color: var(--p-form-field-color);
-      border: 1px solid var(--p-form-field-border-color);
+      background: var(--p-form-field-background) !important;
+      color: var(--p-form-field-color) !important;
+      border: 1px solid var(--p-form-field-border-color) !important;
       border-radius: var(--p-form-field-border-radius, 0.375rem);
       font-size: 0.875rem;
       transition:
@@ -78,19 +90,19 @@
 
       &:focus {
         outline: none;
-        border-color: var(--p-form-field-focus-border-color);
-        box-shadow: var(--p-form-field-focus-ring-shadow);
+        border-color: var(--p-form-field-focus-border-color) !important;
+        box-shadow: var(--p-form-field-focus-ring-shadow) !important;
       }
 
       &:disabled {
-        background: var(--p-form-field-disabled-background);
-        color: var(--p-form-field-disabled-color);
+        background: var(--p-form-field-disabled-background) !important;
+        color: var(--p-form-field-disabled-color) !important;
         opacity: 1;
         cursor: not-allowed;
       }
 
       &::placeholder {
-        color: var(--p-form-field-placeholder-color);
+        color: var(--p-form-field-placeholder-color) !important;
       }
     }
 
@@ -99,13 +111,20 @@
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
-      color: var(--p-text-color);
+      color: var(--p-text-color) !important;
       font-size: 0.875rem;
     }
 
     // Field groups
     .field-group {
       margin-bottom: 1.5rem;
+      background-color: var(--p-content-background);
+      color: var(--p-text-color);
+    }
+
+    // Ensure all text within the form uses theme color
+    * {
+      color: var(--p-text-color);
     }
 
     // Buttons - use PrimeNG primary button colors
