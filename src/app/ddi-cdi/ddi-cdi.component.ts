@@ -129,6 +129,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly shaclTemplatePlaceholder = '__TARGET_NODE__';
   private readonly SHACL_NODE_SHAPE = 'http://www.w3.org/ns/shacl#NodeShape';
   private readonly fallbackShaclTemplate = `@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix dash: <http://datashapes.org/dash#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix dcterms: <http://purl.org/dc/terms/>.
 @prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.
@@ -151,6 +152,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path dcterms:title;
      sh:name "Dataset title";
      sh:datatype xsd:string;
+     dash:singleLine false;
+     sh:minCount 0;
+     sh:minLength 1;
+   ];
+   sh:property [
+     sh:path dcterms:description;
+     sh:name "Dataset description";
+     sh:datatype xsd:string;
+     dash:singleLine false;
      sh:minCount 0;
      sh:minLength 1;
    ];
@@ -206,6 +216,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path dcterms:source;
      sh:name "Source DDI";
      sh:nodeKind sh:Literal;
+     dash:singleLine false;
      sh:minCount 0;
    ].
 
@@ -231,6 +242,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path dcterms:description;
      sh:name "Logical dataset description";
      sh:datatype xsd:string;
+     dash:singleLine false;
      sh:minCount 0;
      sh:minLength 1;
      sh:maxCount 1;
@@ -296,6 +308,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path skos:note;
      sh:name "Variable note";
      sh:datatype xsd:string;
+     dash:singleLine false;
      sh:minCount 0;
      sh:minLength 1;
    ].
@@ -323,6 +336,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path dcterms:description;
      sh:name "Generation description";
      sh:datatype xsd:string;
+     dash:singleLine false;
      sh:minCount 1;
      sh:minLength 1;
      sh:maxCount 1;
