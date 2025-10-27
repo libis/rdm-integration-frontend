@@ -1064,6 +1064,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       // Set data values using both attributes and properties
       formElement.setAttribute('data-values', this.generatedDdiCdi ?? '');
       formElement.setAttribute('data-values-format', 'text/turtle');
+      // CRITICAL: Explicitly set the graph to load values into
+      // Without this, values may be loaded into the shapes graph instead
+      formElement.setAttribute('data-values-graph', 'loaded-data');
       if (this.shaclTargetNode) {
         formElement.setAttribute('data-values-subject', this.shaclTargetNode);
       } else {
@@ -1075,9 +1078,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         dataValues?: string;
         dataValuesFormat?: string;
         dataValuesSubject?: string;
+        dataValuesGraph?: string;
       };
       formWithProps.dataValues = this.generatedDdiCdi ?? '';
       formWithProps.dataValuesFormat = 'text/turtle';
+      formWithProps.dataValuesGraph = 'loaded-data';
       if (this.shaclTargetNode) {
         formWithProps.dataValuesSubject = this.shaclTargetNode;
       }
