@@ -29,6 +29,26 @@
   width: 100px;
 }
 
+.console-output {
+  background-color: var(--p-form-field-background);
+  color: var(--p-form-field-color);
+  border: 1px solid var(--p-form-field-border-color);
+  border-radius: var(--p-border-radius);
+  padding: 0.75rem;
+  resize: vertical;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--p-form-field-focus-border-color);
+  }
+  
+  &:disabled {
+    background-color: var(--p-form-field-disabled-background);
+    color: var(--p-form-field-disabled-color);
+    cursor: not-allowed;
+  }
+}
+
 // Ensure TreeTable inherits theme-aware colors (matches compare component pattern)
 ::ng-deep {
   .p-treetable {
