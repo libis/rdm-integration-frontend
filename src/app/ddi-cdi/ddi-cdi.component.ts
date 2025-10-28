@@ -50,7 +50,7 @@ import '../shacl-form-patch';
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
 
 // RDF parsing utilities
-import { Parser, Quad, Writer } from 'n3';
+import { Parser, Quad, Store, Writer } from 'n3';
 
 // Constants and types
 import {
@@ -996,47 +996,36 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         return !this.preserveBasePredicates.has(quad.predicate.value);
       });
 
-      const exactUpdateKeys = new Set(
-        filteredUpdateQuads.map((quad) => this.getQuadKeyWithObject(quad)),
-      );
-      const updateSubjectPredicateKeys = new Set(
-        filteredUpdateQuads.map((quad) => this.getSubjectPredicateKey(quad)),
-      );
-      const retainedBase = base.quads.filter(
-        (quad) => {
-          const exactKey = this.getQuadKeyWithObject(quad);
-          if (exactUpdateKeys.has(exactKey)) {
-            return false;
-          }
+      const baseStore = new Store(base.quads);
 
-          const predicateIri =
-            quad.predicate.termType === 'NamedNode'
-              ? quad.predicate.value
-              : undefined;
-          const subjectPredicateKey = this.getSubjectPredicateKey(quad);
+      for (const quad of filteredUpdateQuads) {
+        const predicateIri =
+          quad.predicate.termType === 'NamedNode'
+            ? quad.predicate.value
+            : undefined;
 
-          if (
-            predicateIri &&
-            !this.isMultiValuePredicate(predicateIri) &&
-            updateSubjectPredicateKeys.has(subjectPredicateKey)
-          ) {
-            return false;
-          }
+        if (predicateIri && this.preserveBasePredicates.has(predicateIri)) {
+          continue;
+        }
 
-          return true;
-        },
-      );
-      const combined = [...retainedBase, ...filteredUpdateQuads];
+        if (predicateIri && this.isMultiValuePredicate(predicateIri)) {
+          baseStore.removeQuad(quad);
+        } else if (predicateIri) {
+          baseStore.removeMatches(quad.subject, quad.predicate, null, quad.graph);
+        }
+
+        baseStore.addQuad(quad);
+      }
 
       const writer = new Writer({
         prefixes: { ...base.prefixes, ...updates.prefixes },
       });
-      writer.addQuads(combined);
+      writer.addQuads(baseStore.getQuads(null, null, null, null));
       writer.end((error, result) => {
         if (!error && result) {
-          merged = result;
           try {
-            this.parseTurtleGraph(merged);
+            this.parseTurtleGraph(result);
+            merged = result;
           } catch (validationError) {
             console.warn(
               'Merged Turtle from SHACL form was invalid; reverting to base content',
@@ -1051,6 +1040,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         'Failed to merge SHACL form data with original Turtle',
         error,
       );
+      merged = baseTurtle;
     }
 
     return merged;
