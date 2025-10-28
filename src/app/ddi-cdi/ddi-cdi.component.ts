@@ -644,7 +644,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.req = {
       persistentId: this.datasetId!,
       dataverseKey: this.dataverseToken,
-      queue: 'default',
+      queue: '',
       fileNames: Array.from(this.selectedFiles),
       sendEmailOnSuccess: this.sendEmailOnSuccess,
     };

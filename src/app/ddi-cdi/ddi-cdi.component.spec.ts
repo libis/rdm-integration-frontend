@@ -491,7 +491,7 @@ describe('DdiCdiComponent', () => {
         expect(dataServiceStub.generateDdiCdi).toHaveBeenCalledWith({
           persistentId: 'doi:123',
           dataverseKey: 'token',
-          queue: 'default',
+          queue: '',
           fileNames: ['file.csv'],
           sendEmailOnSuccess: false,
         });
