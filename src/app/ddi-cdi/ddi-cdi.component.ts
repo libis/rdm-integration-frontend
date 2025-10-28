@@ -106,6 +106,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/hasPhysicalDataSet',
     'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/containsVariable',
   ]);
+  private readonly preserveBasePredicates = new Set<string>([
+    'http://purl.org/dc/terms/source',
+  ]);
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -986,11 +989,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         return baseTurtle;
       }
 
+      const filteredUpdateQuads = updates.quads.filter((quad) => {
+        if (quad.predicate.termType !== 'NamedNode') {
+          return true;
+        }
+        return !this.preserveBasePredicates.has(quad.predicate.value);
+      });
+
       const exactUpdateKeys = new Set(
-        updates.quads.map((quad) => this.getQuadKeyWithObject(quad)),
+        filteredUpdateQuads.map((quad) => this.getQuadKeyWithObject(quad)),
       );
       const updateSubjectPredicateKeys = new Set(
-        updates.quads.map((quad) => this.getSubjectPredicateKey(quad)),
+        filteredUpdateQuads.map((quad) => this.getSubjectPredicateKey(quad)),
       );
       const retainedBase = base.quads.filter(
         (quad) => {
@@ -1016,7 +1026,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           return true;
         },
       );
-      const combined = [...retainedBase, ...updates.quads];
+      const combined = [...retainedBase, ...filteredUpdateQuads];
 
       const writer = new Writer({
         prefixes: { ...base.prefixes, ...updates.prefixes },
@@ -1025,6 +1035,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       writer.end((error, result) => {
         if (!error && result) {
           merged = result;
+          try {
+            this.parseTurtleGraph(merged);
+          } catch (validationError) {
+            console.warn(
+              'Merged Turtle from SHACL form was invalid; reverting to base content',
+              validationError,
+            );
+            merged = baseTurtle;
+          }
         }
       });
     } catch (error) {
