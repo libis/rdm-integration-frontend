@@ -166,62 +166,69 @@
 
 <div style="height: 100% - 2rem; overflow: hidden">
   <div style="float: left; width: 50%">
-    @if (!generatedDdiCdi && !output) {
-      <!-- Show file selection tree when no generation has started -->
-      <p-treeTable
-        [value]="rootNodeChildren"
-        [loading]="loading"
-        loadingIcon=" pi pi-spin pi-spinner"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="text-align: left">
-              <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
-            </th>
-            <th class="icon_col" style="text-align: right; width: 100px">
-              <button
-                pButton
-                type="button"
-                class="p-button-sm p-button-outlined p-button-secondary"
-                title="Toggle select all"
-                (click)="toggleSelectAll()"
-              >
-                <i [class]="selectAllIcon()"></i>
-              </button>
-            </th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-          <tr [ttRow]="rowNode" [style]="getFileStyle(rowData.name || '')">
-            <td>
-              {{ rowData.name }}
-            </td>
-            <td style="text-align: center">
-              <p-checkbox
-                [binary]="true"
-                [ngModel]="isFileSelected(rowData.name || '')"
-                (ngModelChange)="toggleFileSelection(rowData.name || '')"
-              ></p-checkbox>
-            </td>
-          </tr>
-        </ng-template>
-      </p-treeTable>
-    } @else {
-      <!-- Show console output when generation is running or complete -->
-      <div style="margin-bottom: 0.5rem">
-        <strong>Console Output:</strong>
-      </div>
-      <textarea
-        autosize
-        [minRows]="20"
-        [maxRows]="25"
-        [(ngModel)]="output"
-        readonly
-        [disabled]="outputDisabled"
-        class="console-output"
-        style="width: 100%; font-family: monospace; font-size: 0.9rem"
-      ></textarea>
-    }
+    <p-tabs [(value)]="activeTab">
+      <p-tablist>
+        <p-tab value="files">Select files</p-tab>
+        <p-tab value="console">Console output</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="files">
+          <p-treeTable
+            [value]="rootNodeChildren"
+            [loading]="loading"
+            loadingIcon=" pi pi-spin pi-spinner"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="text-align: left">
+                  <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+                </th>
+                <th class="icon_col" style="text-align: right; width: 100px">
+                  <button
+                    pButton
+                    type="button"
+                    class="p-button-sm p-button-outlined p-button-secondary"
+                    title="Toggle select all"
+                    (click)="toggleSelectAll()"
+                  >
+                    <i [class]="selectAllIcon()"></i>
+                  </button>
+                </th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
+              <tr [ttRow]="rowNode" [style]="getFileStyle(rowData.name || '')">
+                <td>
+                  {{ rowData.name }}
+                </td>
+                <td style="text-align: center">
+                  <p-checkbox
+                    [binary]="true"
+                    [ngModel]="isFileSelected(rowData.name || '')"
+                    (ngModelChange)="toggleFileSelection(rowData.name || '')"
+                  ></p-checkbox>
+                </td>
+              </tr>
+            </ng-template>
+          </p-treeTable>
+        </p-tabpanel>
+        <p-tabpanel value="console">
+          <div style="margin-bottom: 0.5rem">
+            <strong>Console Output:</strong>
+          </div>
+          <textarea
+            autosize
+            [minRows]="20"
+            [maxRows]="25"
+            [(ngModel)]="output"
+            readonly
+            [disabled]="outputDisabled"
+            class="console-output"
+            style="width: 100%; font-family: monospace; font-size: 0.9rem"
+          ></textarea>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
   </div>
   <div style="float: right; width: 50%">
     @if (generatedDdiCdi) {

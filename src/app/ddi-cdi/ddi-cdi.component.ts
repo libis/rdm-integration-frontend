@@ -40,6 +40,7 @@ import { Dialog } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { TreeTableModule } from 'primeng/treetable';
+import { TabsModule } from 'primeng/tabs';
 
 // Third-party
 import { AutosizeModule } from 'ngx-autosize';
@@ -76,6 +77,7 @@ import { SubscriptionManager } from '../shared/types';
     TreeTableModule,
     ProgressSpinnerModule,
     AutosizeModule,
+    TabsModule,
   ],
 })
 export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
@@ -127,6 +129,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   shaclShapes?: string;
   shaclError?: string;
   originalDdiCdi?: string;
+  activeTab: string = 'files';
   private totalSelectableFiles = 0;
   private shaclChangeListener?: EventListener;
   shaclTargetNode?: string;
@@ -512,6 +515,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.resetShaclState();
     this.selectedFiles.clear();
     this.totalSelectableFiles = 0;
+    this.activeTab = 'files';
 
     // First, try to load cached output
     this.loadCachedOutput();
@@ -633,6 +637,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   continueSubmitGenerate(): void {
     this.submitPopup = false;
+    this.activeTab = 'console';
     this.req = {
       persistentId: this.datasetId!,
       dataverseKey: this.dataverseToken,
