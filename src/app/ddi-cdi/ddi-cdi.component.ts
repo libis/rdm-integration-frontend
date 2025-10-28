@@ -1183,7 +1183,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // Get current data from SHACL form if available
     const content = this.buildMergedFormContent();
-    this.generatedDdiCdi = content;
     const fileName = `ddi-cdi-${Date.now()}.ttl`;
     const addFileRequest: AddFileRequest = {
       persistentId: this.datasetId!,
@@ -1198,6 +1197,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         this.notificationService.showSuccess(
           `File "${fileName}" added to dataset successfully!`,
         );
+        this.setGeneratedOutput(content);
       },
       error: (err) => {
         this.loading = false;

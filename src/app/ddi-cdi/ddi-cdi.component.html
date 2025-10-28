@@ -8,7 +8,7 @@
         class="p-button-sm p-button-raised p-button-primary header-button"
         (click)="submitGenerate()"
       >
-        Regenerate
+        <i class="pi pi-angle-double-left"></i>&nbsp;Regenerate
       </button>
     }
   </div>
@@ -42,7 +42,7 @@
         [disabled]="loading"
         (click)="openAddFileDialog()"
       >
-        Add to Dataset
+        Add to Dataset&nbsp;<i class="pi pi-angle-double-right"></i>
       </button>
     } @else {
       <button
@@ -52,7 +52,7 @@
         [disabled]="generateDisabled()"
         (click)="submitGenerate()"
       >
-        Generate DDI-CDI
+        Generate DDI-CDI&nbsp;<i class="pi pi-angle-double-right"></i>
       </button>
     }
   </div>
@@ -232,14 +232,14 @@
   </div>
   <div style="float: right; width: 50%">
     @if (generatedDdiCdi) {
-      <div style="text-align: right; margin-bottom: 0.5rem">
+      <div style="text-align: left; margin-bottom: 0.5rem">
         <p-button
           [disabled]="loading"
           (onClick)="refreshOutput()"
           styleClass="p-button-raised p-button-secondary header-button"
           title="Reload the form (this discards unsaved edits)"
         >
-          Reload form
+          <i class="pi pi-refresh"></i>&nbsp;Reload form
         </p-button>
       </div>
       <!-- SHACL Form for editing DDI-CDI -->
