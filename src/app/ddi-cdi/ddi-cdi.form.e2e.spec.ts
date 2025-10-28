@@ -1,7 +1,7 @@
 // E2E-like test to reproduce empty SHACL form rendering for LogicalDataSets
 /* eslint-disable no-console */
 
-import '@ulb-darmstadt/shacl-form';
+import '../shacl-form-patch';
 import { Parser } from 'n3';
 
 // Small async helper to wait for the web component to render
@@ -55,7 +55,7 @@ function buildShapesForTargetNode(targetNodeIri: string): string {
      sh:path cdi:hasLogicalDataSet;
      sh:name "Logical data sets";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+  sh:nodeKind sh:BlankNode;
      sh:class cdi:LogicalDataSet;
      sh:node <urn:ddi-cdi:LogicalDataSetShape>;
    ];
@@ -63,14 +63,14 @@ function buildShapesForTargetNode(targetNodeIri: string): string {
      sh:path cdi:hasPhysicalDataSet;
      sh:name "Physical data sets";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+  sh:nodeKind sh:BlankNode;
      sh:node <urn:ddi-cdi:PhysicalDataSetShape>;
    ];
    sh:property [
      sh:path prov:wasGeneratedBy;
      sh:name "Generation process";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+  sh:nodeKind sh:BlankNode;
      sh:node <urn:ddi-cdi:ProcessStepShape>;
    ].
 

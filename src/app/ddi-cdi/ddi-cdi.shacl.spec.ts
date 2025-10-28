@@ -12,26 +12,26 @@ describe('DDI-CDI SHACL Shape Tests', () => {
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://localhost:8080/dataset/doi:10.5072/FK2/TEST> a cdi:DataSet ;
-    dcterms:identifier "doi:10.5072/FK2/TEST" ;
-    dcterms:title "Test Dataset" ;
-    cdi:hasLogicalDataSet <http://localhost:8080/dataset/doi:10.5072/FK2/TEST#logical/logical_sample_tab>,
-        <http://localhost:8080/dataset/doi:10.5072/FK2/TEST#logical/logical_simple_data_dct> .
-
-<http://localhost:8080/dataset/doi:10.5072/FK2/TEST#logical/logical_sample_tab> a cdi:LogicalDataSet ;
+  dcterms:identifier "doi:10.5072/FK2/TEST" ;
+  dcterms:title "Test Dataset" ;
+  cdi:hasLogicalDataSet [
+    a cdi:LogicalDataSet ;
     dcterms:description """Test
 
 Logical representation of data from file: sample.tab""" ;
     dcterms:identifier "logical-dataset-logical_sample_tab" ;
     cdi:containsVariable <http://localhost:8080/dataset/doi:10.5072/FK2/TEST#var/col_1> ;
-    skos:prefLabel "Logical dataset: sample.tab" .
-
-<http://localhost:8080/dataset/doi:10.5072/FK2/TEST#logical/logical_simple_data_dct> a cdi:LogicalDataSet ;
+    skos:prefLabel "Logical dataset: sample.tab"
+  ],
+  [
+    a cdi:LogicalDataSet ;
     dcterms:description """Test
 
 Logical representation of data from file: simple_data.dct""" ;
     dcterms:identifier "logical-dataset-logical_simple_data_dct" ;
     cdi:containsVariable <http://localhost:8080/dataset/doi:10.5072/FK2/TEST#var/col_1> ;
-    skos:prefLabel "Logical dataset: simple_data.dct" .
+    skos:prefLabel "Logical dataset: simple_data.dct"
+  ] .
 
 <http://localhost:8080/dataset/doi:10.5072/FK2/TEST#var/col_1> a cdi:Variable ;
     dcterms:identifier "col_1" ;
@@ -65,7 +65,7 @@ Logical representation of data from file: simple_data.dct""" ;
      sh:path cdi:hasLogicalDataSet;
      sh:name "Logical data sets";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:nodeKind sh:BlankNode;
      sh:class cdi:LogicalDataSet;
      sh:node <urn:ddi-cdi:LogicalDataSetShape>;
    ].

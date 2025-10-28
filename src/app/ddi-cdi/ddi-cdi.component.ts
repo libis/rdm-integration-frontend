@@ -43,7 +43,7 @@ import { TreeTableModule } from 'primeng/treetable';
 
 // Third-party
 import { AutosizeModule } from 'ngx-autosize';
-import '@ulb-darmstadt/shacl-form';
+import '../shacl-form-patch';
 
 // RxJS
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
@@ -98,6 +98,12 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
   private readonly CDI_DATASET_TYPE =
     'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/DataSet';
+  // Predicates where multiple values are expected and must be preserved during merge
+  private readonly multiValuePredicates = new Set<string>([
+    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/hasLogicalDataSet',
+    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/hasPhysicalDataSet',
+    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/containsVariable',
+  ]);
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -168,7 +174,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path cdi:hasLogicalDataSet;
      sh:name "Logical data sets";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:nodeKind sh:BlankNode;
      sh:class cdi:LogicalDataSet;
      sh:node <urn:ddi-cdi:LogicalDataSetShape>;
    ];
@@ -176,14 +182,14 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
      sh:path cdi:hasPhysicalDataSet;
      sh:name "Physical data sets";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:nodeKind sh:BlankNode;
      sh:node <urn:ddi-cdi:PhysicalDataSetShape>;
    ];
    sh:property [
      sh:path prov:wasGeneratedBy;
      sh:name "Generation process";
      sh:minCount 1;
-     sh:nodeKind sh:BlankNodeOrIRI;
+     sh:nodeKind sh:BlankNode;
      sh:node <urn:ddi-cdi:ProcessStepShape>;
    ].
 
@@ -935,12 +941,28 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     return `${term.termType}:${term.value}`;
   }
 
-  private getQuadKey(quad: Quad): string {
+  private getSubjectPredicateKey(quad: Quad): string {
     return [
       this.getTermKey(quad.subject),
       this.getTermKey(quad.predicate),
       this.getTermKey(quad.graph),
     ].join('|');
+  }
+
+  private getQuadKeyWithObject(quad: Quad): string {
+    return [
+      this.getTermKey(quad.subject),
+      this.getTermKey(quad.predicate),
+      this.getTermKey(quad.object),
+      this.getTermKey(quad.graph),
+    ].join('|');
+  }
+
+  private isMultiValuePredicate(predicateIri: string | undefined): boolean {
+    if (!predicateIri) {
+      return false;
+    }
+    return this.multiValuePredicates.has(predicateIri);
   }
 
   private mergeTurtleGraphs(baseTurtle: string, formTurtle: string): string {
@@ -959,11 +981,35 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         return baseTurtle;
       }
 
-      const updateKeys = new Set(
-        updates.quads.map((quad) => this.getQuadKey(quad)),
+      const exactUpdateKeys = new Set(
+        updates.quads.map((quad) => this.getQuadKeyWithObject(quad)),
+      );
+      const updateSubjectPredicateKeys = new Set(
+        updates.quads.map((quad) => this.getSubjectPredicateKey(quad)),
       );
       const retainedBase = base.quads.filter(
-        (quad) => !updateKeys.has(this.getQuadKey(quad)),
+        (quad) => {
+          const exactKey = this.getQuadKeyWithObject(quad);
+          if (exactUpdateKeys.has(exactKey)) {
+            return false;
+          }
+
+          const predicateIri =
+            quad.predicate.termType === 'NamedNode'
+              ? quad.predicate.value
+              : undefined;
+          const subjectPredicateKey = this.getSubjectPredicateKey(quad);
+
+          if (
+            predicateIri &&
+            !this.isMultiValuePredicate(predicateIri) &&
+            updateSubjectPredicateKeys.has(subjectPredicateKey)
+          ) {
+            return false;
+          }
+
+          return true;
+        },
       );
       const combined = [...retainedBase, ...updates.quads];
 

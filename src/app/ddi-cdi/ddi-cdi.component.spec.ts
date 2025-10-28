@@ -76,10 +76,46 @@ describe('DdiCdiComponent', () => {
   const BLANK_NODE_TURTLE = [
     '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
     '@prefix dcterms: <http://purl.org/dc/terms/> .',
+    '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .',
     '',
     '_:datasetBlank a cdi:DataSet ;',
     '  dcterms:identifier "datasetBlank" ;',
     '  dcterms:title "Blank dataset" .',
+  ].join('\n');
+  const MULTI_LOGICAL_DATASETS_BASE = [
+    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
+    '@prefix dcterms: <http://purl.org/dc/terms/> .',
+    '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .',
+    '@prefix ex: <http://example.com/> .',
+    '',
+    'ex:dataset a cdi:DataSet ;',
+    '  dcterms:identifier "ds-multi" ;',
+    '  dcterms:title "Multi dataset" ;',
+    '  cdi:hasLogicalDataSet _:logicOne ;',
+    '  cdi:hasLogicalDataSet _:logicTwo .',
+    '',
+    '_:logicOne a cdi:LogicalDataSet ;',
+    '  dcterms:identifier "logic-one" ;',
+    '  skos:prefLabel "Logic One" .',
+    '',
+    '_:logicTwo a cdi:LogicalDataSet ;',
+    '  dcterms:identifier "logic-two" ;',
+    '  skos:prefLabel "Logic Two" .',
+  ].join('\n');
+  const MULTI_LOGICAL_DATASETS_FORM = [
+    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
+    '@prefix dcterms: <http://purl.org/dc/terms/> .',
+    '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .',
+    '@prefix ex: <http://example.com/> .',
+    '',
+    'ex:dataset a cdi:DataSet ;',
+    '  dcterms:identifier "ds-multi" ;',
+    '  dcterms:title "Multi dataset updated" ;',
+    '  cdi:hasLogicalDataSet _:logicUpdated .',
+    '',
+    '_:logicUpdated a cdi:LogicalDataSet ;',
+    '  dcterms:identifier "logic-one" ;',
+    '  skos:prefLabel "Logic One Updated" .',
   ].join('\n');
   const cachedResponseData = cachedResponseFixture as CachedComputeResponse;
   const CACHED_TURTLE = cachedResponseData.ddiCdi ?? '';
@@ -670,6 +706,21 @@ describe('DdiCdiComponent', () => {
       expect(request.content).toContain('dcterms:identifier "datasetSimple"');
       expect(request.content).not.toContain('Sample dataset');
       expect(mockFormElement.serialize).toHaveBeenCalled();
+    });
+
+    it('should retain unedited logical datasets when merging multi-valued triples', () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+
+      const merged = (component as any).mergeTurtleGraphs(
+        MULTI_LOGICAL_DATASETS_BASE,
+        MULTI_LOGICAL_DATASETS_FORM,
+      );
+
+      expect(merged).toContain('Multi dataset updated');
+      expect(merged).toContain('Logic One Updated');
+      expect(merged).toContain('logic-two');
+      expect(merged).toContain('Logic Two');
     });
 
     it('should fallback to original content if serialization fails', () => {
