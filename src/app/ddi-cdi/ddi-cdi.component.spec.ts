@@ -248,15 +248,6 @@ describe('DdiCdiComponent', () => {
     });
   });
 
-  describe('back', () => {
-    it('should navigate to connect page', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.back();
-      expect(navigationServiceStub.assign).toHaveBeenCalledWith('connect');
-    });
-  });
-
   describe('onUserChange', () => {
     it('should clear doiItems and datasetId', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
@@ -690,6 +681,11 @@ describe('DdiCdiComponent', () => {
         serialize: jasmine
           .createSpy('serialize')
           .and.returnValue(UPDATED_TITLE_TURTLE),
+        setAttribute: jasmine.createSpy('setAttribute'),
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent'),
       };
       component.shaclForm = {
         nativeElement: mockFormElement,
@@ -735,6 +731,11 @@ describe('DdiCdiComponent', () => {
         serialize: jasmine
           .createSpy('serialize')
           .and.throwError('Serialization error'),
+        setAttribute: jasmine.createSpy('setAttribute'),
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent'),
       };
       component.shaclForm = {
         nativeElement: mockFormElement,
@@ -757,6 +758,11 @@ describe('DdiCdiComponent', () => {
         serialize: jasmine
           .createSpy('serialize')
           .and.returnValue(PREFIX_ONLY_TURTLE),
+        setAttribute: jasmine.createSpy('setAttribute'),
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        dispatchEvent: jasmine.createSpy('dispatchEvent'),
       };
       component.shaclForm = {
         nativeElement: mockFormElement,
@@ -881,6 +887,33 @@ describe('DdiCdiComponent', () => {
         jasmine.any(String),
       );
       expect(component.shaclError).toBeUndefined();
+    }));
+
+    it('should expose SHACL fallback message when Turtle parsing fails', fakeAsync(() => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+
+      const mockElement = {
+        setAttribute: jasmine.createSpy('setAttribute'),
+        removeAttribute: jasmine.createSpy('removeAttribute'),
+        addEventListener: jasmine.createSpy('addEventListener'),
+        removeEventListener: jasmine.createSpy('removeEventListener'),
+        serialize: jasmine.createSpy('serialize'),
+      };
+
+      component.shaclForm = {
+        nativeElement: mockElement,
+      } as unknown as ElementRef;
+
+      const fallbackMessage = (component as any).shaclUnavailableMessage;
+
+      (component as any).setGeneratedOutput('plain text content');
+      tick(150);
+
+      expect(component.generatedDdiCdi).toBe('plain text content');
+      expect(component.shaclError).toBe(fallbackMessage);
+      expect(component.shaclShapes).toBeUndefined();
+      expect(mockElement.setAttribute).not.toHaveBeenCalled();
     }));
   });
 

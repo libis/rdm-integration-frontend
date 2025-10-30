@@ -109,6 +109,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly preserveBasePredicates = new Set<string>([
     'http://purl.org/dc/terms/source',
   ]);
+  private readonly shaclUnavailableMessage =
+    'Unable to render the SHACL editor for this output. The raw Turtle will still be uploaded.';
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -424,10 +426,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.detachShaclListener();
   }
 
-  back(): void {
-    this.navigation.assign('connect');
-  }
-
   showDVToken(): boolean {
     return this.pluginService.showDVToken();
   }
@@ -722,13 +720,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.resetShaclState();
     this.originalDdiCdi = turtle;
     this.generatedDdiCdi = turtle;
+    if (!this.isValidTurtleDocument(turtle)) {
+      this.shaclError = this.shaclUnavailableMessage;
+      return;
+    }
+
     this.shaclShapes = this.buildShaclShapes(turtle);
     if (!this.shaclShapes) {
-      this.shaclError =
-        'Unable to render the SHACL editor for this output. The raw Turtle will still be uploaded.';
-    } else {
-      this.shaclError = undefined;
+      this.shaclError = this.shaclUnavailableMessage;
+      return;
     }
+
+    this.shaclError = undefined;
     this.setupShaclForm();
   }
 
@@ -940,30 +943,16 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     return { quads, prefixes };
   }
 
-  private getTermKey(
-    term: Quad['subject'] | Quad['predicate'] | Quad['object'] | Quad['graph'],
-  ): string {
-    if (term.termType === 'DefaultGraph') {
-      return 'DefaultGraph:';
+  private isValidTurtleDocument(turtle: string): boolean {
+    if (!turtle || !turtle.trim()) {
+      return false;
     }
-    return `${term.termType}:${term.value}`;
-  }
-
-  private getSubjectPredicateKey(quad: Quad): string {
-    return [
-      this.getTermKey(quad.subject),
-      this.getTermKey(quad.predicate),
-      this.getTermKey(quad.graph),
-    ].join('|');
-  }
-
-  private getQuadKeyWithObject(quad: Quad): string {
-    return [
-      this.getTermKey(quad.subject),
-      this.getTermKey(quad.predicate),
-      this.getTermKey(quad.object),
-      this.getTermKey(quad.graph),
-    ].join('|');
+    try {
+      this.parseTurtleGraph(turtle);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private isMultiValuePredicate(predicateIri: string | undefined): boolean {
@@ -1011,7 +1000,17 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         if (predicateIri && this.isMultiValuePredicate(predicateIri)) {
           baseStore.removeQuad(quad);
         } else if (predicateIri) {
-          baseStore.removeMatches(quad.subject, quad.predicate, null, quad.graph);
+          const matches = baseStore.getQuads(
+            quad.subject,
+            quad.predicate,
+            null,
+            quad.graph,
+          );
+          // n3 removeMatches does not reliably clear existing quads for default graph
+          // entries, so remove matches explicitly to avoid duplicate single-valued fields.
+          for (const match of matches) {
+            baseStore.removeQuad(match);
+          }
         }
 
         baseStore.addQuad(quad);
