@@ -216,7 +216,9 @@ describe('shacl-form response fixture coverage', () => {
         );
 
     expect(logicalDatasetInstances.length)
-      .withContext('Should render every logical dataset instance from response graph')
+      .withContext(
+        'Should render every logical dataset instance from response graph',
+      )
       .toBe(4);
 
     form.remove();

@@ -383,21 +383,28 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.dataverseToken = dvToken;
     }
     this.route.queryParams.subscribe((params) => {
-      const pid = params['datasetPid'];
-      if (pid) {
-        this.datasetId = pid;
-        this.onDatasetChange();
-      }
       const apiToken = params['apiToken'];
       if (apiToken) {
         this.dataverseToken = apiToken;
+      }
+      const pid = params['datasetPid'] ?? params['pid'];
+      if (pid) {
+        void this.populateDatasetOption(pid);
+        this.datasetId = pid;
+        this.onDatasetChange();
       }
     });
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.doiItems = v))
+            .then((v) => {
+              this.doiItems = v;
+              if (this.datasetId) {
+                const match = v.find((item) => item.value === this.datasetId);
+                this.ensureSelectedDatasetOption(this.datasetId, match?.label);
+              }
+            })
             .catch(
               (err) =>
                 (this.doiItems = [
@@ -448,10 +455,16 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.doiItems.length !== 0 &&
       this.doiItems.find((x) => x === this.loadingItem) === undefined
     ) {
+      if (this.datasetId) {
+        this.ensureSelectedDatasetOption(this.datasetId);
+      }
       return;
     }
+    const previouslySelected = this.datasetId;
     this.doiItems = this.loadingItems;
-    this.datasetId = undefined;
+    if (!previouslySelected) {
+      this.datasetId = undefined;
+    }
 
     this.dvObjectLookupService
       .getItems('', 'Dataset', undefined, this.dataverseToken)
@@ -459,16 +472,31 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         next: (items: SelectItem<string>[]) => {
           if (items && items.length > 0) {
             this.doiItems = items;
-            this.datasetId = undefined;
+            if (previouslySelected) {
+              const match = items.find(
+                (item) => item.value === previouslySelected,
+              );
+              this.ensureSelectedDatasetOption(
+                previouslySelected,
+                match?.label,
+              );
+              this.datasetId = previouslySelected;
+            } else {
+              this.datasetId = undefined;
+            }
           } else {
             this.doiItems = [];
-            this.datasetId = undefined;
+            if (!previouslySelected) {
+              this.datasetId = undefined;
+            }
           }
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems = [];
-          this.datasetId = undefined;
+          if (!previouslySelected) {
+            this.datasetId = undefined;
+          }
         },
       });
   }
@@ -503,6 +531,58 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         this.dataverseToken,
       ),
     );
+  }
+
+  private ensureSelectedDatasetOption(pid: string, label?: string): void {
+    if (!pid) {
+      return;
+    }
+    const existingIndex = this.doiItems.findIndex((item) => item.value === pid);
+    const resolvedLabel =
+      label ?? (existingIndex >= 0 ? this.doiItems[existingIndex].label : pid);
+    const option: SelectItem<string> = {
+      label: resolvedLabel ?? pid,
+      value: pid,
+    };
+
+    if (existingIndex === -1) {
+      this.doiItems = [option, ...this.doiItems];
+      return;
+    }
+
+    if (resolvedLabel && this.doiItems[existingIndex].label !== resolvedLabel) {
+      const updated = [...this.doiItems];
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        label: resolvedLabel,
+      };
+      this.doiItems = updated;
+    }
+  }
+
+  private async populateDatasetOption(pid: string): Promise<void> {
+    if (!pid) {
+      return;
+    }
+
+    this.ensureSelectedDatasetOption(pid);
+
+    try {
+      const items = await firstValueFrom(
+        this.dvObjectLookupService.getItems(
+          '',
+          'Dataset',
+          pid,
+          this.dataverseToken,
+        ),
+      );
+      const match = items.find((item) => item.value === pid);
+      if (match) {
+        this.ensureSelectedDatasetOption(pid, match.label);
+      }
+    } catch (error) {
+      console.warn('Failed to preload dataset option', error);
+    }
   }
 
   dataverseHeader(): string {
@@ -880,7 +960,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
         if (nodeShapeQuad) {
           const subjectSelection = toSubjectSelection(nodeShapeQuad.subject);
-          this.shaclShapeSubject = subjectSelection?.attributeValue ?? undefined;
+          this.shaclShapeSubject =
+            subjectSelection?.attributeValue ?? undefined;
         } else {
           this.shaclShapeSubject = undefined;
         }

@@ -1015,7 +1015,7 @@ describe('DdiCdiComponent', () => {
         expect(component.datasetId).toBeUndefined();
       });
 
-      it('should clear datasetId when items are loaded', () => {
+      it('should keep datasetId and ensure option exists when items are loaded', () => {
         const mockItems: SelectItem<string>[] = [
           { label: 'doi:1', value: 'doi:1' },
         ];
@@ -1024,7 +1024,8 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         component.datasetId = 'old-value';
         component.getDoiOptions();
-        expect(component.datasetId).toBeUndefined();
+        expect(component.datasetId).toBe('old-value');
+        expect(component.doiItems[0].value).toBe('old-value');
       });
     });
 

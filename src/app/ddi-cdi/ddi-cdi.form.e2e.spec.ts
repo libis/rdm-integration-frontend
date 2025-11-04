@@ -365,7 +365,9 @@ Logical representation of data from file: simple_data.sps""" ;
 describe('shacl-form rendering with realistic CDI data', () => {
   it('should render non-empty form controls for Dataset and nested LogicalDataSets', async () => {
     const datasetIri = getDatasetSubject(realisticTurtle);
-    expect(datasetIri).withContext('Dataset subject IRI should be discovered').toBeTruthy();
+    expect(datasetIri)
+      .withContext('Dataset subject IRI should be discovered')
+      .toBeTruthy();
 
     const shapes = buildShapesForTargetNode(datasetIri!);
 
@@ -405,7 +407,9 @@ describe('shacl-form rendering with realistic CDI data', () => {
     form.dispatchEvent(new CustomEvent('load', { bubbles: true }));
     await sleep(700);
 
-    const shadow = (form.shadowRoot ?? (form as any).renderRoot) as ShadowRoot | undefined;
+    const shadow = (form.shadowRoot ?? (form as any).renderRoot) as
+      | ShadowRoot
+      | undefined;
 
     // Query for any interactive controls commonly used by the component
     const controls = shadow
@@ -422,7 +426,9 @@ describe('shacl-form rendering with realistic CDI data', () => {
             'rokit-textarea',
           ].join(', '),
         )
-      : (form.querySelectorAll('input, textarea, select') as NodeListOf<Element>);
+      : (form.querySelectorAll(
+          'input, textarea, select',
+        ) as NodeListOf<Element>);
 
     // Expect multiple controls to be present if the form rendered properly
     expect(controls.length)

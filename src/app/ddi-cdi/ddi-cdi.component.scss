@@ -36,12 +36,12 @@
   border-radius: var(--p-border-radius);
   padding: 0.75rem;
   resize: vertical;
-  
+
   &:focus {
     outline: none;
     border-color: var(--p-form-field-focus-border-color);
   }
-  
+
   &:disabled {
     background-color: var(--p-form-field-disabled-background);
     color: var(--p-form-field-disabled-color);
@@ -93,29 +93,29 @@ shacl-form {
   --rokit-background-color-inner: var(--p-form-field-background);
   --rokit-light-background-color-inner: var(--p-content-background);
   --rokit-light-background-darker-color-inner: var(--p-surface-100);
-  
+
   // Additional theme mappings for comprehensive dark mode support
   --rokit-background-color: var(--p-form-field-background);
   --rokit-surface-color: var(--p-content-background);
-  
+
   // Text colors
   --rokit-text-color: var(--p-form-field-color);
   --rokit-text-secondary-color: var(--p-text-muted-color);
-  
+
   // Border colors
   --rokit-border-color: var(--p-form-field-border-color);
-  
+
   // Form field states
   --rokit-input-background: var(--p-form-field-background);
   --rokit-input-color: var(--p-form-field-color);
   --rokit-input-border-color: var(--p-form-field-border-color);
   --rokit-input-hover-border-color: var(--p-form-field-hover-border-color);
   --rokit-input-focus-border-color: var(--p-form-field-focus-border-color);
-  
+
   // Disabled state
   --rokit-input-disabled-background: var(--p-form-field-disabled-background);
   --rokit-input-disabled-color: var(--p-form-field-disabled-color);
-  
+
   // Placeholder
   --rokit-input-placeholder-color: var(--p-form-field-placeholder-color);
 }

@@ -257,12 +257,14 @@ ex:role-status a cdi:Role ;
       const label = quads.find(
         (quad) =>
           quad.subject.value === subject &&
-          quad.predicate.value === 'http://www.w3.org/2004/02/skos/core#prefLabel',
+          quad.predicate.value ===
+            'http://www.w3.org/2004/02/skos/core#prefLabel',
       );
       const typeTriple = quads.find(
         (quad) =>
           quad.subject.value === subject &&
-          quad.predicate.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+          quad.predicate.value ===
+            'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
       );
 
       expect(typeTriple?.object.value)

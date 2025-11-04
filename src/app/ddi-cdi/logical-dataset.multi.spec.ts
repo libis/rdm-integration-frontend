@@ -204,7 +204,9 @@ describe('shacl-form multi logical dataset support', () => {
           "[data-path='http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/hasLogicalDataSet']",
         );
 
-    expect(logicalDatasetInstances.length).withContext('Should render both logical dataset instances').toBe(2);
+    expect(logicalDatasetInstances.length)
+      .withContext('Should render both logical dataset instances')
+      .toBe(2);
 
     form.remove();
   });

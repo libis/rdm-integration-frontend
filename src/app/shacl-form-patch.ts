@@ -7,20 +7,30 @@ import '@ulb-darmstadt/shacl-form';
 
 interface ShaclPropertyPrototype extends HTMLElement {
   template?: { qualifiedValueShape?: unknown };
-  filterValidValues?: (values: unknown[], subject: unknown) => Promise<unknown[]>;
+  filterValidValues?: (
+    values: unknown[],
+    subject: unknown,
+  ) => Promise<unknown[]>;
 }
 
-const shaclPropertyCtor = customElements.get('shacl-property') as (CustomElementConstructor & {
+const shaclPropertyCtor = customElements.get(
+  'shacl-property',
+) as CustomElementConstructor & {
   __rdmFilterGuardApplied?: boolean;
-});
+};
 
 if (shaclPropertyCtor && !shaclPropertyCtor.__rdmFilterGuardApplied) {
-  const prototype = shaclPropertyCtor.prototype as unknown as ShaclPropertyPrototype;
+  const prototype =
+    shaclPropertyCtor.prototype as unknown as ShaclPropertyPrototype;
 
   const originalFilter = prototype.filterValidValues;
 
   if (typeof originalFilter === 'function') {
-    prototype.filterValidValues = async function (this: ShaclPropertyPrototype, values: unknown[], subject: unknown) {
+    prototype.filterValidValues = async function (
+      this: ShaclPropertyPrototype,
+      values: unknown[],
+      subject: unknown,
+    ) {
       if (!this?.template?.qualifiedValueShape) {
         return values;
       }
