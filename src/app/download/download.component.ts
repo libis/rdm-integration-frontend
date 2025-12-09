@@ -267,7 +267,7 @@ export class DownloadComponent
     this.datasetId = undefined;
 
     const httpSubscription = this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, this.dataverseToken)
+      .getItems('', 'Dataset', undefined, this.dataverseToken, true)
       .subscribe({
         next: (items: SelectItem<string>[]) => {
           if (items && items.length > 0) {
@@ -315,6 +315,7 @@ export class DownloadComponent
         'Dataset',
         searchTerm,
         this.dataverseToken,
+        true,
       ),
     );
   }

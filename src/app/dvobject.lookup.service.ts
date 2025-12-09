@@ -20,12 +20,14 @@ export class DvObjectLookupService {
     objectType: string,
     searchTerm?: string,
     token?: string,
+    forDownload?: boolean,
   ): Observable<SelectItem<string>[]> {
     const req = {
       token: token,
       collectionId: collectionId,
       objectType: objectType,
       searchTerm: searchTerm,
+      forDownload: forDownload ?? false,
     };
 
     return this.http.post<SelectItem<string>[]>(this.url, req);
