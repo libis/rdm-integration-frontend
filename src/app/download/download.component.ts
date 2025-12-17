@@ -25,7 +25,8 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 // PrimeNG
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
+import { Button, ButtonDirective } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Tree } from 'primeng/tree';
@@ -55,7 +56,9 @@ import { SubscriptionManager } from '../shared/types';
   styleUrl: './download.component.scss',
   imports: [
     CommonModule,
+    Button,
     ButtonDirective,
+    Dialog,
     FormsModule,
     Select,
     TreeTableModule,
@@ -110,6 +113,7 @@ export class DownloadComponent
   statusPollingActive = false;
   done = false;
   datasetUrl = '';
+  showGuestLoginPopup = false;
 
   // globus
   token?: string;
@@ -142,6 +146,20 @@ export class DownloadComponent
 
   async ngOnInit() {
     await this.pluginService.setConfig();
+
+    // Check if guest download popup should be shown
+    if (this.isGlobusGuestDownloadEnabled()) {
+      try {
+        const userInfo = await firstValueFrom(this.dataService.getUserInfo());
+        if (!userInfo.loggedIn) {
+          this.showGuestLoginPopup = true;
+        }
+      } catch {
+        // If we can't check, assume not logged in and show popup
+        this.showGuestLoginPopup = true;
+      }
+    }
+
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
@@ -240,6 +258,25 @@ export class DownloadComponent
 
   showDVToken(): boolean {
     return this.pluginService.showDVToken();
+  }
+
+  isGlobusGuestDownloadEnabled(): boolean {
+    return this.pluginService.isGlobusGuestDownloadEnabled();
+  }
+
+  getLoginRedirectUrl(): string {
+    return this.pluginService.getLoginRedirectUrl();
+  }
+
+  redirectToLogin(): void {
+    const loginUrl = this.getLoginRedirectUrl();
+    if (loginUrl) {
+      this.navigation.assign(loginUrl);
+    }
+  }
+
+  continueAsGuest(): void {
+    this.showGuestLoginPopup = false;
   }
 
   onUserChange() {
