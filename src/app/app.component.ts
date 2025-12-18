@@ -55,14 +55,125 @@ export class AppComponent implements OnInit {
     this.checkLoginRequired(this.router.url);
   }
 
+  /**
+   * Checks if the current URL represents a download flow that should skip login redirect.
+   * Download flows allow guest access with Globus OAuth only.
+   * 
+   * This includes:
+   * - Direct /download page access
+   * - /connect with callback containing downloadId (Dataverse Globus callback)
+   * - Any URL with state param containing download: true (OAuth return)
+   */
+  private isDownloadFlow(url: string): boolean {
+    // Direct download page
+    if (url.includes('/download')) {
+      return true;
+    }
+
+    // Check query parameters
+    try {
+      const urlObj = new URL(url, window.location.origin);
+      
+      // Check callback param for downloadId (Dataverse Globus integration callback)
+      const callback = urlObj.searchParams.get('callback');
+      if (callback) {
+        try {
+          const decodedCallback = atob(callback);
+          if (decodedCallback.includes('downloadId=')) {
+            return true;
+          }
+        } catch {
+          // Invalid base64, not a download callback
+        }
+      }
+
+      // Check state param for download flag (OAuth return)
+      const state = urlObj.searchParams.get('state');
+      if (state) {
+        try {
+          const loginState = JSON.parse(state);
+          if (loginState.download) {
+            return true;
+          }
+        } catch {
+          // Invalid JSON, not a valid state
+        }
+      }
+    } catch {
+      // URL parsing failed, fall through to default
+    }
+
+    return false;
+  }
+
+  private static readonly REDIRECT_STORAGE_KEY = 'loginRedirectAttempt';
+  private static readonly MAX_REDIRECTS = 2;
+  private static readonly REDIRECT_WINDOW_MS = 30000; // 30 seconds
+
+  /**
+   * Checks for redirect loops by tracking redirect attempts in sessionStorage.
+   * Returns true if we should stop redirecting to prevent infinite loop.
+   */
+  private isRedirectLoop(): boolean {
+    try {
+      const stored = sessionStorage.getItem(AppComponent.REDIRECT_STORAGE_KEY);
+      const now = Date.now();
+      
+      if (stored) {
+        const data = JSON.parse(stored) as { count: number; timestamp: number };
+        const elapsed = now - data.timestamp;
+        
+        if (elapsed < AppComponent.REDIRECT_WINDOW_MS) {
+          // Within time window - check count
+          if (data.count >= AppComponent.MAX_REDIRECTS) {
+            // eslint-disable-next-line no-console
+            console.warn('[AppComponent] Redirect loop detected, stopping redirects');
+            return true;
+          }
+          // Increment count
+          sessionStorage.setItem(
+            AppComponent.REDIRECT_STORAGE_KEY,
+            JSON.stringify({ count: data.count + 1, timestamp: data.timestamp })
+          );
+        } else {
+          // Time window expired, reset
+          sessionStorage.setItem(
+            AppComponent.REDIRECT_STORAGE_KEY,
+            JSON.stringify({ count: 1, timestamp: now })
+          );
+        }
+      } else {
+        // First redirect attempt
+        sessionStorage.setItem(
+          AppComponent.REDIRECT_STORAGE_KEY,
+          JSON.stringify({ count: 1, timestamp: now })
+        );
+      }
+    } catch {
+      // sessionStorage not available, allow redirect
+    }
+    return false;
+  }
+
+  /**
+   * Clears the redirect loop counter. Call when user successfully logs in.
+   */
+  private clearRedirectCounter(): void {
+    try {
+      sessionStorage.removeItem(AppComponent.REDIRECT_STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
+  }
+
   private async checkLoginRequired(url: string): Promise<void> {
     // eslint-disable-next-line no-console
     console.debug('[AppComponent] checkLoginRequired called, url:', url);
     
-    // Skip redirect for download page - it shows popup instead
-    if (url.includes('/download')) {
+    // Skip redirect for download flow - it shows popup instead and allows guest access
+    if (this.isDownloadFlow(url)) {
       // eslint-disable-next-line no-console
-      console.debug('[AppComponent] Skipping redirect for download page');
+      console.debug('[AppComponent] Skipping redirect for download flow');
       return;
     }
 
@@ -77,10 +188,18 @@ export class AppComponent implements OnInit {
         // eslint-disable-next-line no-console
         console.debug('[AppComponent] getUserInfo response:', userInfo);
         if (!userInfo.loggedIn) {
+          // Check for redirect loop before redirecting
+          if (this.isRedirectLoop()) {
+            // eslint-disable-next-line no-console
+            console.error('[AppComponent] Login redirect loop detected - authentication may be misconfigured');
+            return;
+          }
           // eslint-disable-next-line no-console
           console.debug('[AppComponent] User not logged in, redirecting...');
           this.pluginService.redirectToLogin();
         } else {
+          // User is logged in, clear any redirect counter
+          this.clearRedirectCounter();
           // eslint-disable-next-line no-console
           console.debug('[AppComponent] User is logged in, no redirect needed');
         }
@@ -88,6 +207,12 @@ export class AppComponent implements OnInit {
       error: (err) => {
         // eslint-disable-next-line no-console
         console.error('[AppComponent] getUserInfo error:', err);
+        // Check for redirect loop before redirecting
+        if (this.isRedirectLoop()) {
+          // eslint-disable-next-line no-console
+          console.error('[AppComponent] Login redirect loop detected - authentication may be misconfigured');
+          return;
+        }
         // eslint-disable-next-line no-console
         console.debug('[AppComponent] Assuming not logged in, redirecting...');
         this.pluginService.redirectToLogin();
