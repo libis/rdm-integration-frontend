@@ -43,11 +43,10 @@ export interface Config {
   showDvToken: boolean;
   redirect_uri: string;
   storeDvToken?: boolean;
+  loginRedirectUrl?: string;
   sendMails: boolean;
   plugins: RepoPlugin[];
   queues?: Queue[];
-  globusGuestDownloadEnabled?: boolean;
-  loginRedirectUrl?: string;
 }
 
 interface Queue {

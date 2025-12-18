@@ -146,6 +146,20 @@ export class DownloadComponent
 
   async ngOnInit() {
     await this.pluginService.setConfig();
+    
+    // Check if user is logged in and show popup if not
+    this.dataService.getUserInfo().subscribe({
+      next: (userInfo) => {
+        if (!userInfo.loggedIn) {
+          this.showGuestLoginPopup = true;
+        }
+      },
+      error: () => {
+        // If we can't check user info, assume not logged in
+        this.showGuestLoginPopup = true;
+      },
+    });
+    
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
@@ -246,11 +260,7 @@ export class DownloadComponent
     return this.pluginService.showDVToken();
   }
 
-  isGlobusGuestDownloadEnabled(): boolean {
-    return this.pluginService.isGlobusGuestDownloadEnabled();
-  }
-
-  getLoginRedirectUrl(): string {
+  getLoginRedirectUrl(): string | undefined {
     return this.pluginService.getLoginRedirectUrl();
   }
 
@@ -283,6 +293,8 @@ export class DownloadComponent
   }
 
   continueAsGuest(): void {
+    // User chose to continue without Dataverse login
+    // They will still need to authenticate with Globus OAuth
     this.showGuestLoginPopup = false;
   }
 

@@ -157,4 +157,8 @@ export class DataService {
       responseType: 'text',
     });
   }
+
+  getUserInfo(): Observable<{ loggedIn: boolean }> {
+    return this.http.get<{ loggedIn: boolean }>('api/common/userinfo');
+  }
 }

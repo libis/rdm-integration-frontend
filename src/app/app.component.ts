@@ -3,7 +3,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { PrimeNG } from 'primeng/config';
 import { DataService } from './data.service';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
+import { PluginService } from './plugin.service';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +16,8 @@ import { RouterOutlet } from '@angular/router';
 export class AppComponent implements OnInit {
   private primengConfig = inject(PrimeNG);
   dataService = inject(DataService);
+  private router = inject(Router);
+  private pluginService = inject(PluginService);
 
   title = 'datasync';
 
@@ -40,5 +44,40 @@ export class AppComponent implements OnInit {
           computeLink?.style.setProperty('display', 'none');
         },
       });
+
+    // Redirect to login for non-download pages when user is not logged in
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.checkLoginRequired(event.url);
+      });
+    // Also check on initial load
+    this.checkLoginRequired(this.router.url);
+  }
+
+  private checkLoginRequired(url: string): void {
+    // Skip redirect for download page - it shows popup instead
+    if (url.includes('/download')) {
+      return;
+    }
+
+    // Check if user is logged in
+    this.dataService.getUserInfo().subscribe({
+      next: (userInfo) => {
+        if (!userInfo.loggedIn) {
+          const loginUrl = this.pluginService.getLoginRedirectUrl();
+          if (loginUrl) {
+            window.location.href = loginUrl;
+          }
+        }
+      },
+      error: () => {
+        // If we can't check user info, assume not logged in
+        const loginUrl = this.pluginService.getLoginRedirectUrl();
+        if (loginUrl) {
+          window.location.href = loginUrl;
+        }
+      },
+    });
   }
 }

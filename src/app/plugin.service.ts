@@ -133,12 +133,8 @@ export class PluginService {
     return this.config.redirect_uri;
   }
 
-  isGlobusGuestDownloadEnabled(): boolean {
-    return this.config.globusGuestDownloadEnabled ?? false;
-  }
-
-  getLoginRedirectUrl(): string {
-    return this.config.loginRedirectUrl ?? '';
+  getLoginRedirectUrl(): string | undefined {
+    return this.config.loginRedirectUrl;
   }
 
   sendMails(): boolean {
