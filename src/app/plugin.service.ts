@@ -146,12 +146,4 @@ export class PluginService {
           })
       : [];
   }
-
-  getLoginRedirectUrl(): string {
-    return this.config.loginRedirectUrl ?? '';
-  }
-
-  isGlobusGuestDownloadEnabled(): boolean {
-    return this.config.globusGuestDownloadEnabled ?? false;
-  }
 }
