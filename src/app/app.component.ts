@@ -65,18 +65,12 @@ export class AppComponent implements OnInit {
     this.dataService.getUserInfo().subscribe({
       next: (userInfo) => {
         if (!userInfo.loggedIn) {
-          const loginUrl = this.pluginService.getLoginRedirectUrl();
-          if (loginUrl) {
-            window.location.href = loginUrl;
-          }
+          this.pluginService.redirectToLogin();
         }
       },
       error: () => {
         // If we can't check user info, assume not logged in
-        const loginUrl = this.pluginService.getLoginRedirectUrl();
-        if (loginUrl) {
-          window.location.href = loginUrl;
-        }
+        this.pluginService.redirectToLogin();
       },
     });
   }

@@ -73,7 +73,7 @@ export class DownloadComponent
   implements OnInit, OnDestroy, SubscriptionManager
 {
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
-  private readonly pluginService = inject(PluginService);
+  readonly pluginService = inject(PluginService);
   dataService = inject(DataService);
   submit = inject(SubmitService);
   private readonly utils = inject(UtilsService);
@@ -146,7 +146,7 @@ export class DownloadComponent
 
   async ngOnInit() {
     await this.pluginService.setConfig();
-    
+
     // Check if user is logged in and show popup if not
     this.dataService.getUserInfo().subscribe({
       next: (userInfo) => {
@@ -159,7 +159,7 @@ export class DownloadComponent
         this.showGuestLoginPopup = true;
       },
     });
-    
+
     const dvToken = localStorage.getItem('dataverseToken');
     if (dvToken !== null) {
       this.dataverseToken = dvToken;
@@ -260,36 +260,8 @@ export class DownloadComponent
     return this.pluginService.showDVToken();
   }
 
-  getLoginRedirectUrl(): string | undefined {
-    return this.pluginService.getLoginRedirectUrl();
-  }
-
   redirectToLogin(): void {
-    const loginUrl = this.getLoginRedirectUrl();
-    if (!loginUrl) {
-      return;
-    }
-
-    // Build the return URL with preserved dataset PID
-    const currentPath = window.location.pathname;
-    const params = new URLSearchParams();
-
-    // Preserve dataset PID if selected
-    if (this.datasetId && this.datasetId !== '?') {
-      params.set('datasetPid', this.datasetId);
-    }
-
-    // Preserve download ID if present
-    if (this.downloadId) {
-      params.set('downloadId', this.downloadId);
-    }
-
-    const returnUrl = params.toString()
-      ? `${currentPath}?${params.toString()}`
-      : currentPath;
-
-    // Redirect to login with encoded return URL
-    window.location.href = `${loginUrl}?returnUrl=${encodeURIComponent(returnUrl)}`;
+    this.pluginService.redirectToLogin();
   }
 
   continueAsGuest(): void {

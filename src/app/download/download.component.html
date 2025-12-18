@@ -20,7 +20,7 @@
     <p-button
       (click)="redirectToLogin()"
       styleClass="p-button-sm p-button-raised p-button-primary"
-      [disabled]="!getLoginRedirectUrl()"
+      [disabled]="!pluginService.getLoginRedirectUrl()"
       >Log in</p-button
     >
   </ng-template>

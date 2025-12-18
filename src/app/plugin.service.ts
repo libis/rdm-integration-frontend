@@ -137,6 +137,29 @@ export class PluginService {
     return this.config.loginRedirectUrl;
   }
 
+  redirectToLogin(): void {
+    const loginUrl = this.getLoginRedirectUrl();
+    if (!loginUrl) {
+      return;
+    }
+
+    // Build the full return URL including current path and query parameters
+    const currentUrl = window.location.href;
+
+    // Parse the login URL to extract base and target parameter
+    const loginUrlObj = new URL(loginUrl);
+    const targetParam = loginUrlObj.searchParams.get('target');
+
+    if (targetParam) {
+      // Replace the hardcoded target with the current URL
+      loginUrlObj.searchParams.set('target', currentUrl);
+      window.location.href = loginUrlObj.toString();
+    } else {
+      // Fallback to original URL if no target parameter found
+      window.location.href = loginUrl;
+    }
+  }
+
   sendMails(): boolean {
     return this.config.sendMails;
   }
