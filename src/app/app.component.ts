@@ -55,7 +55,7 @@ export class AppComponent implements OnInit {
     this.checkLoginRequired(this.router.url);
   }
 
-  private checkLoginRequired(url: string): void {
+  private async checkLoginRequired(url: string): Promise<void> {
     // eslint-disable-next-line no-console
     console.debug('[AppComponent] checkLoginRequired called, url:', url);
     
@@ -65,6 +65,9 @@ export class AppComponent implements OnInit {
       console.debug('[AppComponent] Skipping redirect for download page');
       return;
     }
+
+    // Ensure config is loaded before checking login
+    await this.pluginService.setConfig();
 
     // Check if user is logged in
     // eslint-disable-next-line no-console
