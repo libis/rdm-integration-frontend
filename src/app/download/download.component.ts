@@ -146,16 +146,30 @@ export class DownloadComponent
 
   async ngOnInit() {
     await this.pluginService.setConfig();
+    // eslint-disable-next-line no-console
+    console.debug('[DownloadComponent] Config loaded');
 
     // Check if user is logged in and show popup if not
+    // eslint-disable-next-line no-console
+    console.debug('[DownloadComponent] Checking user info for popup...');
     this.dataService.getUserInfo().subscribe({
       next: (userInfo) => {
+        // eslint-disable-next-line no-console
+        console.debug('[DownloadComponent] getUserInfo response:', userInfo);
         if (!userInfo.loggedIn) {
+          // eslint-disable-next-line no-console
+          console.debug('[DownloadComponent] User not logged in, showing popup');
           this.showGuestLoginPopup = true;
+        } else {
+          // eslint-disable-next-line no-console
+          console.debug('[DownloadComponent] User is logged in, no popup needed');
         }
       },
-      error: () => {
-        // If we can't check user info, assume not logged in
+      error: (err) => {
+        // eslint-disable-next-line no-console
+        console.error('[DownloadComponent] getUserInfo error:', err);
+        // eslint-disable-next-line no-console
+        console.debug('[DownloadComponent] Assuming not logged in, showing popup');
         this.showGuestLoginPopup = true;
       },
     });

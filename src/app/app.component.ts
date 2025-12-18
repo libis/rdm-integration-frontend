@@ -56,20 +56,37 @@ export class AppComponent implements OnInit {
   }
 
   private checkLoginRequired(url: string): void {
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] checkLoginRequired called, url:', url);
+    
     // Skip redirect for download page - it shows popup instead
     if (url.includes('/download')) {
+      // eslint-disable-next-line no-console
+      console.debug('[AppComponent] Skipping redirect for download page');
       return;
     }
 
     // Check if user is logged in
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] Checking user info...');
     this.dataService.getUserInfo().subscribe({
       next: (userInfo) => {
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] getUserInfo response:', userInfo);
         if (!userInfo.loggedIn) {
+          // eslint-disable-next-line no-console
+          console.debug('[AppComponent] User not logged in, redirecting...');
           this.pluginService.redirectToLogin();
+        } else {
+          // eslint-disable-next-line no-console
+          console.debug('[AppComponent] User is logged in, no redirect needed');
         }
       },
-      error: () => {
-        // If we can't check user info, assume not logged in
+      error: (err) => {
+        // eslint-disable-next-line no-console
+        console.error('[AppComponent] getUserInfo error:', err);
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] Assuming not logged in, redirecting...');
         this.pluginService.redirectToLogin();
       },
     });
