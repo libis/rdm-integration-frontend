@@ -1,4 +1,31 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
+
+<!-- Guest/Login choice popup -->
+<p-dialog
+  header="Access Options"
+  [modal]="true"
+  [(visible)]="showGuestLoginPopup"
+  [closable]="false"
+>
+  <p class="m-0">
+    You are not logged in. You can continue as a guest to download publicly
+    accessible files, or log in to access restricted files.
+  </p>
+  <ng-template pTemplate="footer">
+    <p-button
+      (click)="continueAsGuest()"
+      styleClass="p-button-sm p-button-raised p-button-secondary"
+      >Continue as guest</p-button
+    >
+    <p-button
+      (click)="redirectToLogin()"
+      styleClass="p-button-sm p-button-raised p-button-primary"
+      [disabled]="!getLoginRedirectUrl()"
+      >Log in</p-button
+    >
+  </ng-template>
+</p-dialog>
+
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto">
     <button

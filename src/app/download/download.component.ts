@@ -25,7 +25,8 @@ import { RepoLookupRequest } from '../models/repo-lookup';
 // PrimeNG
 import { FormsModule } from '@angular/forms';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
+import { Button, ButtonDirective } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Tree } from 'primeng/tree';
@@ -55,7 +56,9 @@ import { SubscriptionManager } from '../shared/types';
   styleUrl: './download.component.scss',
   imports: [
     CommonModule,
+    Button,
     ButtonDirective,
+    Dialog,
     FormsModule,
     Select,
     TreeTableModule,
@@ -110,6 +113,7 @@ export class DownloadComponent
   statusPollingActive = false;
   done = false;
   datasetUrl = '';
+  showGuestLoginPopup = false;
 
   // globus
   token?: string;
@@ -240,6 +244,46 @@ export class DownloadComponent
 
   showDVToken(): boolean {
     return this.pluginService.showDVToken();
+  }
+
+  isGlobusGuestDownloadEnabled(): boolean {
+    return this.pluginService.isGlobusGuestDownloadEnabled();
+  }
+
+  getLoginRedirectUrl(): string {
+    return this.pluginService.getLoginRedirectUrl();
+  }
+
+  redirectToLogin(): void {
+    const loginUrl = this.getLoginRedirectUrl();
+    if (!loginUrl) {
+      return;
+    }
+
+    // Build the return URL with preserved dataset PID
+    const currentPath = window.location.pathname;
+    const params = new URLSearchParams();
+
+    // Preserve dataset PID if selected
+    if (this.datasetId && this.datasetId !== '?') {
+      params.set('datasetPid', this.datasetId);
+    }
+
+    // Preserve download ID if present
+    if (this.downloadId) {
+      params.set('downloadId', this.downloadId);
+    }
+
+    const returnUrl = params.toString()
+      ? `${currentPath}?${params.toString()}`
+      : currentPath;
+
+    // Redirect to login with encoded return URL
+    window.location.href = `${loginUrl}?returnUrl=${encodeURIComponent(returnUrl)}`;
+  }
+
+  continueAsGuest(): void {
+    this.showGuestLoginPopup = false;
   }
 
   onUserChange() {

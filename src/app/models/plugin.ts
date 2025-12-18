@@ -46,6 +46,8 @@ export interface Config {
   sendMails: boolean;
   plugins: RepoPlugin[];
   queues?: Queue[];
+  globusGuestDownloadEnabled?: boolean;
+  loginRedirectUrl?: string;
 }
 
 interface Queue {
