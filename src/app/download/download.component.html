@@ -104,6 +104,7 @@
   [isGlobus]="true"
   [taskId]="lastTransferTaskId"
   [monitorUrl]="globusMonitorUrl"
+  [oauthSessionId]="token"
   [submitting]="downloadInProgress && !lastTransferTaskId"
   (pollingChange)="onStatusPollingChange($event)"
   (completed)="done = true"

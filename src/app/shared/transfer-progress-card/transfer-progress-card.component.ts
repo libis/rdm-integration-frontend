@@ -80,6 +80,10 @@ export class TransferProgressCardComponent
   @Input()
   monitorUrl?: string | null;
 
+  // OAuth session ID for Globus status polling
+  @Input()
+  oauthSessionId?: string | null;
+
   @Input()
   submitting = false;
 
@@ -289,8 +293,11 @@ export class TransferProgressCardComponent
 
   private getTransferStatus(taskId: string): Observable<TransferTaskStatus> {
     if (this.isGlobus) {
-      // Globus: poll the Globus API using the task ID
-      return this.submitService.getGlobusTransferStatus(taskId);
+      // Globus: poll the Globus API using the task ID and OAuth session ID
+      return this.submitService.getGlobusTransferStatus(
+        taskId,
+        this.oauthSessionId || undefined,
+      );
     }
 
     // Non-Globus: poll the backend using dataset ID and CompareResult

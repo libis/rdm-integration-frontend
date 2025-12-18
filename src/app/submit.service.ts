@@ -87,9 +87,16 @@ export class SubmitService {
     return this.http.post<DownloadResponse>(this.download_url, req);
   }
 
-  getGlobusTransferStatus(taskId: string): Observable<TransferTaskStatus> {
+  getGlobusTransferStatus(
+    taskId: string,
+    oauthSessionId?: string,
+  ): Observable<TransferTaskStatus> {
+    const params: { [key: string]: string } = { taskId };
+    if (oauthSessionId) {
+      params['oauthSessionId'] = oauthSessionId;
+    }
     return this.http.get<TransferTaskStatus>('api/common/globus/status', {
-      params: { taskId },
+      params,
     });
   }
 }
