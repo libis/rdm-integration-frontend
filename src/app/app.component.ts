@@ -70,37 +70,47 @@ export class AppComponent implements OnInit {
       return true;
     }
 
-    // Check query parameters
-    try {
-      const urlObj = new URL(url, window.location.origin);
-      
-      // Check callback param for downloadId (Dataverse Globus integration callback)
-      const callback = urlObj.searchParams.get('callback');
-      if (callback) {
-        try {
-          const decodedCallback = atob(callback);
-          if (decodedCallback.includes('downloadId=')) {
-            return true;
+    // For hash-based routing (#/connect?callback=...), query params are in the fragment,
+    // not the actual URL query string. Parse from window.location.href directly.
+    const fullUrl = window.location.href;
+    const hashIndex = fullUrl.indexOf('#');
+    if (hashIndex !== -1) {
+      const hashPart = fullUrl.substring(hashIndex + 1);
+      const queryIndex = hashPart.indexOf('?');
+      if (queryIndex !== -1) {
+        const queryString = hashPart.substring(queryIndex + 1);
+        const params = new URLSearchParams(queryString);
+        
+        // Check callback param for downloadId (Dataverse Globus integration callback)
+        const callback = params.get('callback');
+        if (callback) {
+          try {
+            const decodedCallback = atob(callback);
+            if (decodedCallback.includes('downloadId=')) {
+              // eslint-disable-next-line no-console
+              console.debug('[AppComponent] Download flow detected via callback with downloadId');
+              return true;
+            }
+          } catch {
+            // Invalid base64, not a download callback
           }
-        } catch {
-          // Invalid base64, not a download callback
         }
-      }
 
-      // Check state param for download flag (OAuth return)
-      const state = urlObj.searchParams.get('state');
-      if (state) {
-        try {
-          const loginState = JSON.parse(state);
-          if (loginState.download) {
-            return true;
+        // Check state param for download flag (OAuth return)
+        const state = params.get('state');
+        if (state) {
+          try {
+            const loginState = JSON.parse(state);
+            if (loginState.download) {
+              // eslint-disable-next-line no-console
+              console.debug('[AppComponent] Download flow detected via state.download flag');
+              return true;
+            }
+          } catch {
+            // Invalid JSON, not a valid state
           }
-        } catch {
-          // Invalid JSON, not a valid state
         }
       }
-    } catch {
-      // URL parsing failed, fall through to default
     }
 
     return false;
