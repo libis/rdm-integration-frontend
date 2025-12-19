@@ -42,6 +42,7 @@ describe('DvObjectLookupService', () => {
       collectionId: 'root',
       objectType: 'Dataset',
       searchTerm: 'term',
+      forDownload: false,
     });
 
     req.flush([{ label: 'Dataset', value: 'doi:1' }]);
@@ -58,6 +59,7 @@ describe('DvObjectLookupService', () => {
       collectionId: 'root',
       objectType: 'Collection',
       searchTerm: undefined,
+      forDownload: false,
     });
 
     req.flush([]);

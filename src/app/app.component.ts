@@ -56,17 +56,44 @@ export class AppComponent implements OnInit {
    * Download flows allow guest access with Globus OAuth only.
    */
   private isDownloadFlow(params: Record<string, string | undefined>): boolean {
-    // Check if we're on the download page
-    if (this.router.url.includes('/download')) {
+    // For testing: allow overriding window.location.href
+    const locationHref = (this as any)._testWindowLocationHref ?? window.location.href;
+
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] isDownloadFlow check:', {
+      routerUrl: this.router.url,
+      params: params,
+      windowLocation: locationHref
+    });
+
+    // Check if we're on the download page (via router or window.location)
+    if (this.router.url.includes('/download') || locationHref.includes('/download')) {
+      // eslint-disable-next-line no-console
+      console.debug('[AppComponent] isDownloadFlow: true (download page)');
       return true;
     }
 
     // Check callback param for downloadId (Dataverse Globus integration callback)
-    const callback = params['callback'];
+    // First try Angular params, then fall back to parsing from URL
+    let callback = params['callback'];
+    if (!callback && Object.keys(params).length === 0) {
+      // Angular params empty (route didn't match) - parse from URL
+      try {
+        const url = new URL(locationHref);
+        callback = url.searchParams.get('callback') ?? undefined;
+      } catch {
+        // Invalid URL, ignore
+      }
+    }
+
     if (callback) {
       try {
         const decodedCallback = atob(callback);
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] decoded callback:', decodedCallback);
         if (decodedCallback.includes('downloadId=')) {
+          // eslint-disable-next-line no-console
+          console.debug('[AppComponent] isDownloadFlow: true (downloadId in callback)');
           return true;
         }
       } catch {
@@ -75,11 +102,23 @@ export class AppComponent implements OnInit {
     }
 
     // Check state param for download flag (OAuth return)
-    const state = params['state'];
+    let state = params['state'];
+    if (!state && Object.keys(params).length === 0) {
+      // Angular params empty - parse from URL
+      try {
+        const url = new URL(locationHref);
+        state = url.searchParams.get('state') ?? undefined;
+      } catch {
+        // Invalid URL, ignore
+      }
+    }
+
     if (state) {
       try {
         const loginState = JSON.parse(state);
         if (loginState.download) {
+          // eslint-disable-next-line no-console
+          console.debug('[AppComponent] isDownloadFlow: true (download flag in state)');
           return true;
         }
       } catch {
@@ -87,6 +126,8 @@ export class AppComponent implements OnInit {
       }
     }
 
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] isDownloadFlow: false');
     return false;
   }
 

@@ -97,6 +97,7 @@ class MockDvObjectLookupService {
 class MockDataService {
   response: any = { data: [] };
   error?: string;
+  userLoggedIn = false;
 
   getDownloadableFiles() {
     return new Observable<any>((obs) => {
@@ -109,6 +110,10 @@ class MockDataService {
         }
       }, 0);
     });
+  }
+
+  getUserInfo() {
+    return of({ loggedIn: this.userLoggedIn });
   }
 }
 
