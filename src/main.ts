@@ -9,7 +9,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideRouter, withHashLocation } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { definePreset } from '@primeng/themes';
 import Lara from '@primeng/themes/lara';
@@ -38,7 +38,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes, withHashLocation()),
+    provideRouter(routes),
     importProvidersFrom(
       BrowserModule,
       NgbModule,
