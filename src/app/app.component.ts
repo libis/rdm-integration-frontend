@@ -65,50 +65,75 @@ export class AppComponent implements OnInit {
    * - Any URL with state param containing download: true (OAuth return)
    */
   private isDownloadFlow(url: string): boolean {
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] isDownloadFlow called with url:', url);
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] window.location.href:', window.location.href);
+    
     // Direct download page
     if (url.includes('/download')) {
+      // eslint-disable-next-line no-console
+      console.debug('[AppComponent] URL contains /download, returning true');
       return true;
     }
 
     // Parse query parameters from the URL
     const queryIndex = url.indexOf('?');
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] queryIndex:', queryIndex);
     if (queryIndex === -1) {
+      // eslint-disable-next-line no-console
+      console.debug('[AppComponent] No query string found, returning false');
       return false;
     }
     
     const queryString = url.substring(queryIndex + 1);
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] queryString:', queryString);
     const params = new URLSearchParams(queryString);
     
     // Check callback param for downloadId (Dataverse Globus integration callback)
     const callback = params.get('callback');
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] callback param:', callback);
     if (callback) {
       try {
         const decodedCallback = atob(callback);
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] decodedCallback:', decodedCallback);
         if (decodedCallback.includes('downloadId=')) {
           // eslint-disable-next-line no-console
           console.debug('[AppComponent] Download flow detected via callback with downloadId');
           return true;
         }
-      } catch {
-        // Invalid base64, not a download callback
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] Failed to decode callback as base64:', e);
       }
     }
 
     // Check state param for download flag (OAuth return)
     const state = params.get('state');
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] state param:', state);
     if (state) {
       try {
         const loginState = JSON.parse(state);
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] parsed loginState:', loginState);
         if (loginState.download) {
           // eslint-disable-next-line no-console
           console.debug('[AppComponent] Download flow detected via state.download flag');
           return true;
         }
-      } catch {
-        // Invalid JSON, not a valid state
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('[AppComponent] Failed to parse state as JSON:', e);
       }
     }
 
+    // eslint-disable-next-line no-console
+    console.debug('[AppComponent] No download flow detected, returning false');
     return false;
   }
 
