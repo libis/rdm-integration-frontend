@@ -604,6 +604,41 @@ describe('DownloadComponent', () => {
     expect(state.datasetId).toBeUndefined();
   });
 
+  it('getRepoToken strips session_required_single_domain for guest users', () => {
+    initComponent();
+    component.globusPlugin = {
+      ...plugin.getGlobusPlugin(),
+      tokenGetter: {
+        URL: 'https://auth.globus.org/authorize?scope=openid&session_required_single_domain=kuleuven.be',
+        oauth_client_id: 'client-id',
+      },
+    } as any;
+    component.showGuestLoginPopup = true; // user is not logged in
+    component.datasetId = 'doi:GUEST';
+    component.getRepoToken();
+    expect(navigation.assign).toHaveBeenCalled();
+    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    expect(redirectUrl).not.toContain('session_required_single_domain');
+    expect(redirectUrl).toContain('scope=openid');
+  });
+
+  it('getRepoToken keeps session_required_single_domain for logged-in users', () => {
+    initComponent();
+    component.globusPlugin = {
+      ...plugin.getGlobusPlugin(),
+      tokenGetter: {
+        URL: 'https://auth.globus.org/authorize?scope=openid&session_required_single_domain=kuleuven.be',
+        oauth_client_id: 'client-id',
+      },
+    } as any;
+    component.showGuestLoginPopup = false; // user is logged in
+    component.datasetId = 'doi:LOGGED';
+    component.getRepoToken();
+    expect(navigation.assign).toHaveBeenCalled();
+    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    expect(redirectUrl).toContain('session_required_single_domain=kuleuven.be');
+  });
+
   it('optionSelected clears selection when node empty', () => {
     initComponent();
     component.optionSelected({

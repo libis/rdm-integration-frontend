@@ -693,6 +693,10 @@ export class DownloadComponent
     if (tg.URL?.includes('://')) {
       url = tg.URL;
     }
+    // For guest users, strip session_required_single_domain to allow any Globus identity
+    if (this.showGuestLoginPopup) {
+      url = url.replace(/[&?]session_required_single_domain=[^&]*/g, '');
+    }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       const nonce = this.newNonce(44);
       // Only include datasetId if one is actually selected
