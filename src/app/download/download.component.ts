@@ -158,18 +158,24 @@ export class DownloadComponent
         console.debug('[DownloadComponent] getUserInfo response:', userInfo);
         if (!userInfo.loggedIn) {
           // eslint-disable-next-line no-console
-          console.debug('[DownloadComponent] User not logged in, showing popup');
+          console.debug(
+            '[DownloadComponent] User not logged in, showing popup',
+          );
           this.showGuestLoginPopup = true;
         } else {
           // eslint-disable-next-line no-console
-          console.debug('[DownloadComponent] User is logged in, no popup needed');
+          console.debug(
+            '[DownloadComponent] User is logged in, no popup needed',
+          );
         }
       },
       error: (err) => {
         // eslint-disable-next-line no-console
         console.error('[DownloadComponent] getUserInfo error:', err);
         // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] Assuming not logged in, showing popup');
+        console.debug(
+          '[DownloadComponent] Assuming not logged in, showing popup',
+        );
         this.showGuestLoginPopup = true;
       },
     });

@@ -143,10 +143,12 @@ export class PluginService {
     const loginUrl = this.getLoginRedirectUrl();
     // eslint-disable-next-line no-console
     console.debug('[PluginService] loginRedirectUrl from config:', loginUrl);
-    
+
     if (!loginUrl) {
       // eslint-disable-next-line no-console
-      console.warn('[PluginService] No loginRedirectUrl configured, cannot redirect');
+      console.warn(
+        '[PluginService] No loginRedirectUrl configured, cannot redirect',
+      );
       return;
     }
 
@@ -159,7 +161,10 @@ export class PluginService {
     const loginUrlObj = new URL(loginUrl);
     const targetParam = loginUrlObj.searchParams.get('target');
     // eslint-disable-next-line no-console
-    console.debug('[PluginService] Target parameter from loginUrl:', targetParam);
+    console.debug(
+      '[PluginService] Target parameter from loginUrl:',
+      targetParam,
+    );
 
     if (targetParam) {
       // Replace the hardcoded target with the current URL
@@ -171,7 +176,10 @@ export class PluginService {
     } else {
       // Fallback to original URL if no target parameter found
       // eslint-disable-next-line no-console
-      console.debug('[PluginService] No target param, redirecting to:', loginUrl);
+      console.debug(
+        '[PluginService] No target param, redirecting to:',
+        loginUrl,
+      );
       window.location.href = loginUrl;
     }
   }

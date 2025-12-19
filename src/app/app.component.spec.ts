@@ -159,7 +159,7 @@ describe('AppComponent isDownloadFlow', () => {
   // Helper to access private method
   function callIsDownloadFlow(
     params: Record<string, string | undefined>,
-    windowLocationHref?: string
+    windowLocationHref?: string,
   ): boolean {
     // Mock window.location.href by setting a test property on component
     if (windowLocationHref) {
@@ -175,25 +175,35 @@ describe('AppComponent isDownloadFlow', () => {
 
   describe('when Angular routing works correctly', () => {
     it('should return true when router.url includes /download', () => {
-      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/download');
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/download',
+      );
       expect(callIsDownloadFlow({})).toBe(true);
     });
 
     it('should return true when callback param contains downloadId', () => {
-      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/connect');
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/connect',
+      );
       // Base64 encoded: "https://example.com/api/v1/datasets/123/globusDownloadParameters?downloadId=abc"
-      const callback = btoa('https://example.com/api/v1/datasets/123/globusDownloadParameters?downloadId=abc');
+      const callback = btoa(
+        'https://example.com/api/v1/datasets/123/globusDownloadParameters?downloadId=abc',
+      );
       expect(callIsDownloadFlow({ callback })).toBe(true);
     });
 
     it('should return true when state param contains download flag', () => {
-      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/connect');
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/connect',
+      );
       const state = JSON.stringify({ download: true });
       expect(callIsDownloadFlow({ state })).toBe(true);
     });
 
     it('should return false for normal connect page', () => {
-      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/connect');
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/connect',
+      );
       expect(callIsDownloadFlow({})).toBe(false);
     });
   });
@@ -209,7 +219,7 @@ describe('AppComponent isDownloadFlow', () => {
       spyOnProperty(component['router'], 'url', 'get').and.returnValue('/');
       const result = callIsDownloadFlow(
         {},
-        'https://www.rdm.libis.kuleuven.be/integration/connect/download?dvLocale=en&callback=aHR0cHM6Ly93d3cucmRtLmxpYmlzLmt1bGV1dmVuLmJlL2FwaS92MS9kYXRhc2V0cy84MTUzL2dsb2J1c0Rvd25sb2FkUGFyYW1ldGVycz9sb2NhbGU9ZW4mZG93bmxvYWRJZD03NmEzYjk2NC1hMGQyLTQwZWEtYWMxNy0xNzc4ODMzNmJmNTI='
+        'https://www.rdm.libis.kuleuven.be/integration/connect/download?dvLocale=en&callback=aHR0cHM6Ly93d3cucmRtLmxpYmlzLmt1bGV1dmVuLmJlL2FwaS92MS9kYXRhc2V0cy84MTUzL2dsb2J1c0Rvd25sb2FkUGFyYW1ldGVycz9sb2NhbGU9ZW4mZG93bmxvYWRJZD03NmEzYjk2NC1hMGQyLTQwZWEtYWMxNy0xNzc4ODMzNmJmNTI=',
       );
       expect(result).toBe(true);
     });
@@ -219,7 +229,7 @@ describe('AppComponent isDownloadFlow', () => {
       // Real URL from the bug report
       const result = callIsDownloadFlow(
         {},
-        'https://www.rdm.libis.kuleuven.be/integration/connect/download?dvLocale=en&callback=aHR0cHM6Ly93d3cucmRtLmxpYmlzLmt1bGV1dmVuLmJlL2FwaS92MS9kYXRhc2V0cy84MTUzL2dsb2J1c0Rvd25sb2FkUGFyYW1ldGVycz9sb2NhbGU9ZW4mZG93bmxvYWRJZD03NmEzYjk2NC1hMGQyLTQwZWEtYWMxNy0xNzc4ODMzNmJmNTI='
+        'https://www.rdm.libis.kuleuven.be/integration/connect/download?dvLocale=en&callback=aHR0cHM6Ly93d3cucmRtLmxpYmlzLmt1bGV1dmVuLmJlL2FwaS92MS9kYXRhc2V0cy84MTUzL2dsb2J1c0Rvd25sb2FkUGFyYW1ldGVycz9sb2NhbGU9ZW4mZG93bmxvYWRJZD03NmEzYjk2NC1hMGQyLTQwZWEtYWMxNy0xNzc4ODMzNmJmNTI=',
       );
       expect(result).toBe(true);
     });

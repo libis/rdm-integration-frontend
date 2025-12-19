@@ -57,17 +57,21 @@ export class AppComponent implements OnInit {
    */
   private isDownloadFlow(params: Record<string, string | undefined>): boolean {
     // For testing: allow overriding window.location.href
-    const locationHref = (this as any)._testWindowLocationHref ?? window.location.href;
+    const locationHref =
+      (this as any)._testWindowLocationHref ?? window.location.href;
 
     // eslint-disable-next-line no-console
     console.debug('[AppComponent] isDownloadFlow check:', {
       routerUrl: this.router.url,
       params: params,
-      windowLocation: locationHref
+      windowLocation: locationHref,
     });
 
     // Check if we're on the download page (via router or window.location)
-    if (this.router.url.includes('/download') || locationHref.includes('/download')) {
+    if (
+      this.router.url.includes('/download') ||
+      locationHref.includes('/download')
+    ) {
       // eslint-disable-next-line no-console
       console.debug('[AppComponent] isDownloadFlow: true (download page)');
       return true;
@@ -93,7 +97,9 @@ export class AppComponent implements OnInit {
         console.debug('[AppComponent] decoded callback:', decodedCallback);
         if (decodedCallback.includes('downloadId=')) {
           // eslint-disable-next-line no-console
-          console.debug('[AppComponent] isDownloadFlow: true (downloadId in callback)');
+          console.debug(
+            '[AppComponent] isDownloadFlow: true (downloadId in callback)',
+          );
           return true;
         }
       } catch {
@@ -118,7 +124,9 @@ export class AppComponent implements OnInit {
         const loginState = JSON.parse(state);
         if (loginState.download) {
           // eslint-disable-next-line no-console
-          console.debug('[AppComponent] isDownloadFlow: true (download flag in state)');
+          console.debug(
+            '[AppComponent] isDownloadFlow: true (download flag in state)',
+          );
           return true;
         }
       } catch {
@@ -143,35 +151,40 @@ export class AppComponent implements OnInit {
     try {
       const stored = sessionStorage.getItem(AppComponent.REDIRECT_STORAGE_KEY);
       const now = Date.now();
-      
+
       if (stored) {
         const data = JSON.parse(stored) as { count: number; timestamp: number };
         const elapsed = now - data.timestamp;
-        
+
         if (elapsed < AppComponent.REDIRECT_WINDOW_MS) {
           // Within time window - check count
           if (data.count >= AppComponent.MAX_REDIRECTS) {
             // eslint-disable-next-line no-console
-            console.warn('[AppComponent] Redirect loop detected, stopping redirects');
+            console.warn(
+              '[AppComponent] Redirect loop detected, stopping redirects',
+            );
             return true;
           }
           // Increment count
           sessionStorage.setItem(
             AppComponent.REDIRECT_STORAGE_KEY,
-            JSON.stringify({ count: data.count + 1, timestamp: data.timestamp })
+            JSON.stringify({
+              count: data.count + 1,
+              timestamp: data.timestamp,
+            }),
           );
         } else {
           // Time window expired, reset
           sessionStorage.setItem(
             AppComponent.REDIRECT_STORAGE_KEY,
-            JSON.stringify({ count: 1, timestamp: now })
+            JSON.stringify({ count: 1, timestamp: now }),
           );
         }
       } else {
         // First redirect attempt
         sessionStorage.setItem(
           AppComponent.REDIRECT_STORAGE_KEY,
-          JSON.stringify({ count: 1, timestamp: now })
+          JSON.stringify({ count: 1, timestamp: now }),
         );
       }
     } catch {
@@ -191,7 +204,9 @@ export class AppComponent implements OnInit {
     }
   }
 
-  private async checkLoginRequired(params: Record<string, string | undefined>): Promise<void> {
+  private async checkLoginRequired(
+    params: Record<string, string | undefined>,
+  ): Promise<void> {
     // Skip redirect for download flow - it shows popup instead and allows guest access
     if (this.isDownloadFlow(params)) {
       return;
@@ -207,7 +222,9 @@ export class AppComponent implements OnInit {
           // Check for redirect loop before redirecting
           if (this.isRedirectLoop()) {
             // eslint-disable-next-line no-console
-            console.error('[AppComponent] Login redirect loop detected - authentication may be misconfigured');
+            console.error(
+              '[AppComponent] Login redirect loop detected - authentication may be misconfigured',
+            );
             return;
           }
           this.pluginService.redirectToLogin();
@@ -220,7 +237,9 @@ export class AppComponent implements OnInit {
         // Check for redirect loop before redirecting
         if (this.isRedirectLoop()) {
           // eslint-disable-next-line no-console
-          console.error('[AppComponent] Login redirect loop detected - authentication may be misconfigured');
+          console.error(
+            '[AppComponent] Login redirect loop detected - authentication may be misconfigured',
+          );
           return;
         }
         this.pluginService.redirectToLogin();
