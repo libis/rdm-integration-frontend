@@ -279,48 +279,8 @@ export class ConnectComponent
     if (apiToken) {
       this.dataverseToken = apiToken;
     }
-    const callback = params['callback'];
-    if (callback) {
-      this.handleGlobusCallback(callback, apiToken, datasetPid);
-    }
-  }
-
-  private handleGlobusCallback(
-    callback: string,
-    apiToken?: string,
-    datasetPid?: string,
-  ): void {
-    const p = this.pluginService.getGlobusPlugin();
-    if (!p) return;
-    // If datasetPid is explicitly provided, no need to parse callback
-    if (datasetPid) return;
-
-    // Parse callback to extract dataset info for the connect page (upload flow)
-    // Download flows are now handled by AppComponent routing to /download directly
-    const callbackUrl = atob(callback);
-    const parts = callbackUrl.split('/');
-    if (parts.length <= 6) return;
-    const datasetDbId = parts[6];
-
-    const versionSubscription = this.datasetService
-      .getDatasetVersion(datasetDbId, apiToken)
-      .subscribe((x) => {
-        const persistentId = x.persistentId;
-        this.datasetId = persistentId;
-        // Add the dataset to doiItems so it displays correctly in the dropdown
-        if (
-          persistentId &&
-          !this.doiItems.some((i) => i.value === persistentId)
-        ) {
-          this.doiItems = [
-            { label: persistentId, value: persistentId },
-            ...this.doiItems,
-          ];
-        }
-        this.subscriptions.delete(versionSubscription);
-        versionSubscription.unsubscribe();
-      });
-    this.subscriptions.add(versionSubscription);
+    // Note: callback parameter is now handled by AppComponent which parses it
+    // and redirects to /connect with datasetPid already resolved
   }
 
   private restoreFromOauthState(

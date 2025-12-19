@@ -233,5 +233,176 @@ describe('AppComponent isDownloadFlow', () => {
       );
       expect(result).toBe(true);
     });
+
+    it('should NOT detect upload URL as download flow', () => {
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/');
+      // Upload URL - no downloadId in callback
+      const uploadCallback = btoa(
+        'https://www.rdm.libis.kuleuven.be/api/v1/datasets/10442/globusUploadParameters?locale=en&until=2025-12-19T13:22:26.793&user=u0050020',
+      );
+      const result = callIsDownloadFlow(
+        {},
+        `https://www.rdm.libis.kuleuven.be/integration/connect/upload?dvLocale=en&callback=${uploadCallback}`,
+      );
+      expect(result).toBe(false);
+    });
+  });
+});
+
+/**
+ * Test suite for parseGlobusCallback utility
+ * Tests the parsing of base64-encoded Globus callback URLs
+ */
+describe('AppComponent parseGlobusCallback', () => {
+  let component: AppComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
+  });
+
+  // Helper to access private method
+  function callParseGlobusCallback(callback: string): {
+    datasetDbId: string;
+    downloadId?: string;
+  } | null {
+    return (component as any).parseGlobusCallback(callback);
+  }
+
+  it('should parse download callback with downloadId', () => {
+    const callback = btoa(
+      'https://example.com/api/v1/datasets/8153/globusDownloadParameters?locale=en&downloadId=76a3b964-a0d2-40ea-ac17-17788336bf52',
+    );
+    const result = callParseGlobusCallback(callback);
+    expect(result).toEqual({
+      datasetDbId: '8153',
+      downloadId: '76a3b964-a0d2-40ea-ac17-17788336bf52',
+    });
+  });
+
+  it('should parse upload callback without downloadId', () => {
+    const callback = btoa(
+      'https://example.com/api/v1/datasets/10442/globusUploadParameters?locale=en&until=2025-12-19T13:22:26.793&user=u0050020',
+    );
+    const result = callParseGlobusCallback(callback);
+    expect(result).toEqual({
+      datasetDbId: '10442',
+      downloadId: undefined,
+    });
+  });
+
+  it('should return null for invalid base64', () => {
+    const result = callParseGlobusCallback('not-valid-base64!!!');
+    expect(result).toBeNull();
+  });
+
+  it('should return null for too short URL path', () => {
+    const callback = btoa('https://example.com/short');
+    const result = callParseGlobusCallback(callback);
+    expect(result).toBeNull();
+  });
+});
+
+/**
+ * Test suite for upload/download redirect handling
+ * Tests that /connect/upload and /connect/download URLs are redirected correctly
+ */
+describe('AppComponent redirect handling', () => {
+  let component: AppComponent;
+  let routerNavigateSpy: jasmine.Spy;
+  let datasetServiceSpy: jasmine.Spy;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
+    routerNavigateSpy = spyOn(component['router'], 'navigate');
+  });
+
+  afterEach(() => {
+    delete (component as any)._testWindowLocationHref;
+  });
+
+  describe('redirectToConnect', () => {
+    it('should redirect /connect/upload to /connect with datasetPid after fetching persistentId', (done) => {
+      const uploadCallback = btoa(
+        'https://example.com/api/v1/datasets/10442/globusUploadParameters?locale=en&user=testuser',
+      );
+      const locationHref = `https://example.com/integration/connect/upload?dvLocale=en&callback=${uploadCallback}`;
+
+      // Mock datasetService.getDatasetVersion to return persistentId
+      datasetServiceSpy = spyOn(
+        component['datasetService'],
+        'getDatasetVersion',
+      ).and.returnValue({
+        subscribe: (callbacks: any) => {
+          callbacks.next({ persistentId: 'doi:10.5072/FK2/ABCDEF' });
+          return { unsubscribe: () => {} };
+        },
+      } as any);
+
+      (component as any).redirectToConnect(locationHref);
+
+      setTimeout(() => {
+        expect(datasetServiceSpy).toHaveBeenCalledWith('10442', undefined);
+        expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect'], {
+          queryParams: jasmine.objectContaining({
+            datasetPid: 'doi:10.5072/FK2/ABCDEF',
+          }),
+        });
+        done();
+      }, 10);
+    });
+  });
+
+  describe('redirectToDownload', () => {
+    it('should redirect /connect/download to /download with datasetPid and downloadId', (done) => {
+      const downloadCallback = btoa(
+        'https://example.com/api/v1/datasets/8153/globusDownloadParameters?locale=en&downloadId=76a3b964-a0d2-40ea-ac17-17788336bf52',
+      );
+      const locationHref = `https://example.com/integration/connect/download?dvLocale=en&callback=${downloadCallback}`;
+
+      datasetServiceSpy = spyOn(
+        component['datasetService'],
+        'getDatasetVersion',
+      ).and.returnValue({
+        subscribe: (callbacks: any) => {
+          callbacks.next({ persistentId: 'doi:10.5072/FK2/XYZABC' });
+          return { unsubscribe: () => {} };
+        },
+      } as any);
+
+      (component as any).redirectToDownload(locationHref);
+
+      setTimeout(() => {
+        expect(datasetServiceSpy).toHaveBeenCalledWith('8153', undefined);
+        expect(routerNavigateSpy).toHaveBeenCalledWith(['/download'], {
+          queryParams: jasmine.objectContaining({
+            downloadId: '76a3b964-a0d2-40ea-ac17-17788336bf52',
+            datasetPid: 'doi:10.5072/FK2/XYZABC',
+          }),
+        });
+        done();
+      }, 10);
+    });
   });
 });

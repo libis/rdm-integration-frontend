@@ -57,6 +57,7 @@ export class AppComponent implements OnInit {
    * Checks if the query params indicate a download flow that should skip login redirect.
    * Download flows allow guest access with Globus OAuth only.
    * Also handles navigation to /download when URL contains /download but route doesn't match.
+   * Also handles navigation to /connect when URL contains /upload but route doesn't match.
    */
   private isDownloadFlow(params: Record<string, string | undefined>): boolean {
     // For testing: allow overriding window.location.href
@@ -70,6 +71,21 @@ export class AppComponent implements OnInit {
       params: params,
       windowLocation: locationHref,
     });
+
+    // Check if URL contains /upload but Angular routing failed (e.g., /connect/upload)
+    // In this case, redirect to /connect with the same query params
+    if (
+      locationHref.includes('/upload') &&
+      !this.router.url.includes('/connect')
+    ) {
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[AppComponent] URL contains /upload but route does not match, redirecting to /connect',
+      );
+      this.redirectToConnect(locationHref);
+      // Return false - uploads require login, so continue with login check
+      return false;
+    }
 
     // Check if we're on the download page via router
     if (this.router.url.includes('/download')) {
@@ -157,37 +173,27 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * Parses the Globus callback from the URL and redirects to /download with the correct params.
-   * The callback is a base64-encoded URL like:
-   * https://example.com/api/v1/datasets/{datasetDbId}/globusDownloadParameters?locale=en&downloadId={uuid}
+   * Parses a base64-encoded Globus callback URL to extract dataset info.
+   * The callback URL format is:
+   * https://example.com/api/v1/datasets/{datasetDbId}/globus[Upload|Download]Parameters?...
+   *
+   * @param callback Base64-encoded callback URL
+   * @returns Parsed data or null if invalid
    */
-  private redirectToDownload(locationHref: string): void {
+  private parseGlobusCallback(
+    callback: string,
+  ): { datasetDbId: string; downloadId?: string } | null {
     try {
-      const url = new URL(locationHref);
-      const callback = url.searchParams.get('callback');
-
-      if (!callback) {
-        // No callback, just navigate to /download
-        this.router.navigate(['/download']);
-        return;
-      }
-
       const callbackUrl = atob(callback);
       const parts = callbackUrl.split('/');
       if (parts.length <= 6) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          '[AppComponent] Invalid callback URL format:',
-          callbackUrl,
-        );
-        this.router.navigate(['/download']);
-        return;
+        return null;
       }
 
       // Extract datasetDbId from URL (position 6 in the path)
       const datasetDbId = parts[6];
 
-      // Extract downloadId from query params
+      // Extract downloadId from query params (only present for download flows)
       let downloadId: string | undefined;
       const queryString = callbackUrl.split('?')[1];
       if (queryString) {
@@ -200,36 +206,76 @@ export class AppComponent implements OnInit {
         }
       }
 
-      // Get the persistent ID (DOI) from the dataset database ID
-      const dvToken = localStorage.getItem('dataverseToken');
-      this.datasetService
-        .getDatasetVersion(datasetDbId, dvToken ?? undefined)
-        .subscribe({
-          next: (x) => {
-            // eslint-disable-next-line no-console
-            console.debug('[AppComponent] Redirecting to /download with:', {
-              downloadId,
-              datasetPid: x.persistentId,
-            });
-            this.router.navigate(['/download'], {
-              queryParams: {
-                downloadId: downloadId,
-                datasetPid: x.persistentId,
-                apiToken: dvToken,
-              },
-            });
-          },
-          error: (err) => {
-            // eslint-disable-next-line no-console
-            console.error('[AppComponent] Failed to get dataset version:', err);
-            // Navigate anyway with what we have
-            this.router.navigate(['/download'], {
-              queryParams: {
-                downloadId: downloadId,
-              },
-            });
-          },
-        });
+      return { datasetDbId, downloadId };
+    } catch {
+      // Invalid base64 or URL format
+      return null;
+    }
+  }
+
+  /**
+   * Fetches persistentId from datasetDbId and navigates to the target route.
+   * Used by both upload (→ /connect) and download (→ /download) redirect flows.
+   */
+  private fetchAndRedirect(
+    targetRoute: string,
+    datasetDbId: string,
+    downloadId?: string,
+  ): void {
+    const dvToken = localStorage.getItem('dataverseToken');
+    this.datasetService
+      .getDatasetVersion(datasetDbId, dvToken ?? undefined)
+      .subscribe({
+        next: (x) => {
+          const queryParams: Record<string, string | null | undefined> = {
+            datasetPid: x.persistentId,
+            apiToken: dvToken,
+          };
+          if (downloadId) {
+            queryParams['downloadId'] = downloadId;
+          }
+          // eslint-disable-next-line no-console
+          console.debug(
+            `[AppComponent] Redirecting to ${targetRoute} with:`,
+            queryParams,
+          );
+          this.router.navigate([targetRoute], { queryParams });
+        },
+        error: (err) => {
+          // eslint-disable-next-line no-console
+          console.error('[AppComponent] Failed to get dataset version:', err);
+          // Navigate anyway with what we have
+          const fallbackParams: Record<string, string | undefined> = {};
+          if (downloadId) {
+            fallbackParams['downloadId'] = downloadId;
+          }
+          this.router.navigate([targetRoute], { queryParams: fallbackParams });
+        },
+      });
+  }
+
+  /**
+   * Parses the Globus callback from the URL and redirects to /download with the correct params.
+   */
+  private redirectToDownload(locationHref: string): void {
+    try {
+      const url = new URL(locationHref);
+      const callback = url.searchParams.get('callback');
+
+      if (!callback) {
+        this.router.navigate(['/download']);
+        return;
+      }
+
+      const parsed = this.parseGlobusCallback(callback);
+      if (!parsed) {
+        // eslint-disable-next-line no-console
+        console.warn('[AppComponent] Invalid callback for download redirect');
+        this.router.navigate(['/download']);
+        return;
+      }
+
+      this.fetchAndRedirect('/download', parsed.datasetDbId, parsed.downloadId);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(
@@ -237,6 +283,39 @@ export class AppComponent implements OnInit {
         e,
       );
       this.router.navigate(['/download']);
+    }
+  }
+
+  /**
+   * Parses the Globus callback from the URL and redirects to /connect with the correct params.
+   * Used when Dataverse sends users to /connect/upload which Angular can't route.
+   */
+  private redirectToConnect(locationHref: string): void {
+    try {
+      const url = new URL(locationHref);
+      const callback = url.searchParams.get('callback');
+
+      if (!callback) {
+        this.router.navigate(['/connect']);
+        return;
+      }
+
+      const parsed = this.parseGlobusCallback(callback);
+      if (!parsed) {
+        // eslint-disable-next-line no-console
+        console.warn('[AppComponent] Invalid callback for connect redirect');
+        this.router.navigate(['/connect']);
+        return;
+      }
+
+      this.fetchAndRedirect('/connect', parsed.datasetDbId);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[AppComponent] Failed to parse URL for connect redirect:',
+        e,
+      );
+      this.router.navigate(['/connect']);
     }
   }
 

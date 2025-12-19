@@ -370,20 +370,9 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(err2).toBe('Malformed source url');
   });
 
-  it('handleGlobusCallback restores dataset from callback URL', fakeAsync(() => {
-    const { comp } = createComponent();
-    const callback = btoa(
-      'https://globus.example/api/files/visit/12345/details?downloadId=DLID&x=1',
-    );
-    comp['handleGlobusCallback'](callback, 'apiTok', undefined);
-    tick();
-    expect(datasetService.lastArgs).toEqual({
-      datasetDbId: '12345',
-      apiToken: 'apiTok',
-    });
-    expect(comp.datasetId).toBe('doi:10.123/RESTORED');
-    // Note: Download redirect is now handled by AppComponent, not connect component
-  }));
+  // Note: handleGlobusCallback was removed from ConnectComponent.
+  // Callback parsing is now handled by AppComponent which redirects to /connect with datasetPid.
+  // See app.component.spec.ts for tests of parseGlobusCallback and redirect handling.
 
   it('restoreFromOauthState populates selections and fetches token', fakeAsync(() => {
     const { comp } = createComponent();
