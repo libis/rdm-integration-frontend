@@ -5,7 +5,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -370,10 +370,8 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(err2).toBe('Malformed source url');
   });
 
-  it('handleGlobusCallback restores dataset and navigates to download', fakeAsync(() => {
+  it('handleGlobusCallback restores dataset from callback URL', fakeAsync(() => {
     const { comp } = createComponent();
-    const router = TestBed.inject(Router);
-    const navSpy = spyOn(router, 'navigate');
     const callback = btoa(
       'https://globus.example/api/files/visit/12345/details?downloadId=DLID&x=1',
     );
@@ -384,13 +382,7 @@ describe('ConnectComponent advanced behaviors', () => {
       apiToken: 'apiTok',
     });
     expect(comp.datasetId).toBe('doi:10.123/RESTORED');
-    expect(navSpy).toHaveBeenCalledWith(['/download'], {
-      queryParams: {
-        downloadId: 'DLID',
-        datasetPid: 'doi:10.123/RESTORED',
-        apiToken: 'apiTok',
-      },
-    });
+    // Note: Download redirect is now handled by AppComponent, not connect component
   }));
 
   it('restoreFromOauthState populates selections and fetches token', fakeAsync(() => {

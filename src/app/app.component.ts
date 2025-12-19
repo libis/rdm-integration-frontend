@@ -3,6 +3,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { PrimeNG } from 'primeng/config';
 import { DataService } from './data.service';
+import { DatasetService } from './dataset.service';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { PluginService } from './plugin.service';
 
@@ -15,6 +16,7 @@ import { PluginService } from './plugin.service';
 export class AppComponent implements OnInit {
   private primengConfig = inject(PrimeNG);
   dataService = inject(DataService);
+  private datasetService = inject(DatasetService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private pluginService = inject(PluginService);
@@ -54,10 +56,12 @@ export class AppComponent implements OnInit {
   /**
    * Checks if the query params indicate a download flow that should skip login redirect.
    * Download flows allow guest access with Globus OAuth only.
+   * Also handles navigation to /download when URL contains /download but route doesn't match.
    */
   private isDownloadFlow(params: Record<string, string | undefined>): boolean {
     // For testing: allow overriding window.location.href
     const locationHref =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this as any)._testWindowLocationHref ?? window.location.href;
 
     // eslint-disable-next-line no-console
@@ -67,13 +71,26 @@ export class AppComponent implements OnInit {
       windowLocation: locationHref,
     });
 
-    // Check if we're on the download page (via router or window.location)
+    // Check if we're on the download page via router
+    if (this.router.url.includes('/download')) {
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[AppComponent] isDownloadFlow: true (router matches /download)',
+      );
+      return true;
+    }
+
+    // Check if URL contains /download but Angular routing failed (e.g., /connect/download)
+    // In this case, parse the callback and navigate to /download with the correct params
     if (
-      this.router.url.includes('/download') ||
-      locationHref.includes('/download')
+      locationHref.includes('/download') &&
+      !this.router.url.includes('/download')
     ) {
       // eslint-disable-next-line no-console
-      console.debug('[AppComponent] isDownloadFlow: true (download page)');
+      console.debug(
+        '[AppComponent] URL contains /download but route does not match, redirecting to /download',
+      );
+      this.redirectToDownload(locationHref);
       return true;
     }
 
@@ -137,6 +154,90 @@ export class AppComponent implements OnInit {
     // eslint-disable-next-line no-console
     console.debug('[AppComponent] isDownloadFlow: false');
     return false;
+  }
+
+  /**
+   * Parses the Globus callback from the URL and redirects to /download with the correct params.
+   * The callback is a base64-encoded URL like:
+   * https://example.com/api/v1/datasets/{datasetDbId}/globusDownloadParameters?locale=en&downloadId={uuid}
+   */
+  private redirectToDownload(locationHref: string): void {
+    try {
+      const url = new URL(locationHref);
+      const callback = url.searchParams.get('callback');
+
+      if (!callback) {
+        // No callback, just navigate to /download
+        this.router.navigate(['/download']);
+        return;
+      }
+
+      const callbackUrl = atob(callback);
+      const parts = callbackUrl.split('/');
+      if (parts.length <= 6) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[AppComponent] Invalid callback URL format:',
+          callbackUrl,
+        );
+        this.router.navigate(['/download']);
+        return;
+      }
+
+      // Extract datasetDbId from URL (position 6 in the path)
+      const datasetDbId = parts[6];
+
+      // Extract downloadId from query params
+      let downloadId: string | undefined;
+      const queryString = callbackUrl.split('?')[1];
+      if (queryString) {
+        const globusParams = queryString.split('&');
+        for (const p of globusParams) {
+          if (p.startsWith('downloadId=')) {
+            downloadId = p.substring('downloadId='.length);
+            break;
+          }
+        }
+      }
+
+      // Get the persistent ID (DOI) from the dataset database ID
+      const dvToken = localStorage.getItem('dataverseToken');
+      this.datasetService
+        .getDatasetVersion(datasetDbId, dvToken ?? undefined)
+        .subscribe({
+          next: (x) => {
+            // eslint-disable-next-line no-console
+            console.debug('[AppComponent] Redirecting to /download with:', {
+              downloadId,
+              datasetPid: x.persistentId,
+            });
+            this.router.navigate(['/download'], {
+              queryParams: {
+                downloadId: downloadId,
+                datasetPid: x.persistentId,
+                apiToken: dvToken,
+              },
+            });
+          },
+          error: (err) => {
+            // eslint-disable-next-line no-console
+            console.error('[AppComponent] Failed to get dataset version:', err);
+            // Navigate anyway with what we have
+            this.router.navigate(['/download'], {
+              queryParams: {
+                downloadId: downloadId,
+              },
+            });
+          },
+        });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[AppComponent] Failed to parse URL for download redirect:',
+        e,
+      );
+      this.router.navigate(['/download']);
+    }
   }
 
   private static readonly REDIRECT_STORAGE_KEY = 'loginRedirectAttempt';

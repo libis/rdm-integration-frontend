@@ -292,22 +292,16 @@ export class ConnectComponent
   ): void {
     const p = this.pluginService.getGlobusPlugin();
     if (!p) return;
-    // Don't preselect plugin - only preselect the dataset
-    // this.plugin = 'globus';
-    // this.pluginId = 'globus';
+    // If datasetPid is explicitly provided, no need to parse callback
     if (datasetPid) return;
+
+    // Parse callback to extract dataset info for the connect page (upload flow)
+    // Download flows are now handled by AppComponent routing to /download directly
     const callbackUrl = atob(callback);
     const parts = callbackUrl.split('/');
     if (parts.length <= 6) return;
     const datasetDbId = parts[6];
-    const g = callbackUrl.split('?');
-    const globusParams = g[g.length - 1].split('&');
-    let downloadId: string | undefined = undefined;
-    globusParams.forEach((p) => {
-      if (p.startsWith('downloadId=')) {
-        downloadId = p.substring('downloadId='.length);
-      }
-    });
+
     const versionSubscription = this.datasetService
       .getDatasetVersion(datasetDbId, apiToken)
       .subscribe((x) => {
@@ -325,15 +319,6 @@ export class ConnectComponent
         }
         this.subscriptions.delete(versionSubscription);
         versionSubscription.unsubscribe();
-        if (downloadId) {
-          this.router.navigate(['/download'], {
-            queryParams: {
-              downloadId: downloadId,
-              datasetPid: x.persistentId,
-              apiToken: apiToken,
-            },
-          });
-        }
       });
     this.subscriptions.add(versionSubscription);
   }
@@ -349,8 +334,11 @@ export class ConnectComponent
     } catch {
       return; // malformed state
     }
+    // Download flows with state.download are normally caught by AppComponent
+    // and routed to /download. This is a fallback for edge cases.
     if (loginState.download) {
       this.router.navigate(['/download'], { queryParams: params });
+      return;
     }
     this.sourceUrl = loginState.sourceUrl;
     this.url = loginState.url;
