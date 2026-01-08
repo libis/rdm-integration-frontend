@@ -13,26 +13,6 @@
     <p class="m-0">
       You are not logged in. Choose how you want to access Globus:
     </p>
-
-    <ng-template pTemplate="footer">
-      <div>
-        <p-button
-          (click)="continueAsGuest()"
-          styleClass="p-button-sm p-button-raised p-button-secondary"
-          >Continue as guest</p-button
-        >
-        <p-button
-          (click)="showPreviewUrlInput = true"
-          styleClass="p-button-sm p-button-raised p-button-warning"
-          >Use preview URL</p-button
-        >
-        <p-button
-          (click)="continueWithLogin()"
-          styleClass="p-button-sm p-button-raised p-button-primary"
-          >Log in with KU Leuven</p-button
-        >
-      </div>
-    </ng-template>
   }
 
   <!-- Step 2: Preview URL input view -->
@@ -53,8 +33,31 @@
         class="w-full"
       />
     </div>
+  }
 
-    <ng-template pTemplate="footer">
+  <ng-template pTemplate="footer">
+    <!-- Step 1 buttons -->
+    @if (!showPreviewUrlInput) {
+      <div>
+        <p-button
+          (click)="continueAsGuest()"
+          styleClass="p-button-sm p-button-raised p-button-secondary"
+          >Continue as guest</p-button
+        >
+        <p-button
+          (click)="showPreviewUrlInput = true"
+          styleClass="p-button-sm p-button-raised p-button-warning"
+          >Use preview URL</p-button
+        >
+        <p-button
+          (click)="continueWithLogin()"
+          styleClass="p-button-sm p-button-raised p-button-primary"
+          >Log in with KU Leuven</p-button
+        >
+      </div>
+    }
+    <!-- Step 2 buttons -->
+    @if (showPreviewUrlInput) {
       <div>
         <p-button
           (click)="showPreviewUrlInput = false; previewUrlInput = ''"
@@ -68,8 +71,8 @@
           >Continue</p-button
         >
       </div>
-    </ng-template>
-  }
+    }
+  </ng-template>
 </p-dialog>
 
 <div class="row justify-content-between align-items-center sticky-menu">
