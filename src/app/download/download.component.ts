@@ -575,6 +575,14 @@ export class DownloadComponent
     ) {
       return;
     }
+    // Don't reload if we're currently fetching DOI from globusDownloadParameters
+    if (this.loading) {
+      return;
+    }
+    // Don't reload if we already have a valid datasetId
+    if (this.datasetId && this.datasetId !== '?' && this.datasetId !== 'undefined') {
+      return;
+    }
     this.doiItems = this.loadingItems;
     this.datasetId = undefined;
 
@@ -582,6 +590,11 @@ export class DownloadComponent
       .getItems('', 'Dataset', undefined, this.dataverseToken, true)
       .subscribe({
         next: (items: SelectItem<string>[]) => {
+          httpSubscription.unsubscribe();
+          // Don't overwrite if a valid DOI was set while we were loading
+          if (this.datasetId && this.datasetId !== '?' && this.datasetId !== 'undefined') {
+            return;
+          }
           if (items && items.length > 0) {
             this.doiItems = items;
             this.datasetId = undefined;
@@ -589,9 +602,13 @@ export class DownloadComponent
             this.doiItems = [];
             this.datasetId = undefined;
           }
-          httpSubscription.unsubscribe();
         },
         error: (err) => {
+          httpSubscription.unsubscribe();
+          // Don't show error if a valid DOI was set while we were loading
+          if (this.datasetId && this.datasetId !== '?' && this.datasetId !== 'undefined') {
+            return;
+          }
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems = [];
           this.datasetId = undefined;
@@ -649,9 +666,20 @@ export class DownloadComponent
         },
         error: (err) => {
           subscription.unsubscribe();
-          this.notificationService.showError(
-            `Getting downloadable files failed: ${err.error}`,
-          );
+          this.loading = false;
+          // Check if this is an anonymized preview URL case
+          if (this.accessMode === 'preview' && this.dataverseToken) {
+            this.notificationService.showError(
+              'Anonymous Preview URLs are not supported for Globus downloads. ' +
+                'Please ask the dataset owner to create a General Preview URL instead. ' +
+                'Anonymous Preview URLs (for blind peer review) are restricted by Dataverse ' +
+                'and cannot access the Globus file transfer APIs.',
+            );
+          } else {
+            this.notificationService.showError(
+              `Getting downloadable files failed: ${err.error}`,
+            );
+          }
         },
       });
   }
