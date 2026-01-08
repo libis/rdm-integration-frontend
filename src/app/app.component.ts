@@ -207,7 +207,8 @@ export class AppComponent implements OnInit {
         }
       }
 
-      return { datasetDbId, downloadId, token };
+      // Only include token in result if it's defined
+      return { datasetDbId, downloadId, ...(token !== undefined && { token }) };
     } catch {
       // Invalid base64 or URL format
       return null;
