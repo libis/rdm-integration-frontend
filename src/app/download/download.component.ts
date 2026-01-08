@@ -154,31 +154,47 @@ export class DownloadComponent
     // eslint-disable-next-line no-console
     console.debug('[DownloadComponent] Config loaded');
 
+    // Get initial params to check if this is an OAuth callback
+    const initialParams = await firstValueFrom(this.route.queryParams);
+    const isOAuthCallback = initialParams['code'] !== undefined;
+
     // Check if user is logged in and show popup if not
+    // But skip popup for OAuth callbacks - user already made their choice
     // eslint-disable-next-line no-console
     console.debug('[DownloadComponent] Checking user info for popup...');
-    try {
-      const userInfo = await firstValueFrom(this.dataService.getUserInfo());
-      // eslint-disable-next-line no-console
-      console.debug('[DownloadComponent] getUserInfo response:', userInfo);
-      if (!userInfo.loggedIn) {
+    if (!isOAuthCallback) {
+      try {
+        const userInfo = await firstValueFrom(this.dataService.getUserInfo());
         // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] User not logged in, showing popup');
+        console.debug('[DownloadComponent] getUserInfo response:', userInfo);
+        if (!userInfo.loggedIn) {
+          // eslint-disable-next-line no-console
+          console.debug(
+            '[DownloadComponent] User not logged in, showing popup',
+          );
+          this.showGuestLoginPopup = true;
+        } else {
+          // eslint-disable-next-line no-console
+          console.debug(
+            '[DownloadComponent] User is logged in, no popup needed',
+          );
+          // Logged-in users should keep session_required_single_domain
+          this.accessMode = 'login';
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[DownloadComponent] getUserInfo error:', err);
+        // eslint-disable-next-line no-console
+        console.debug(
+          '[DownloadComponent] Assuming not logged in, showing popup',
+        );
         this.showGuestLoginPopup = true;
-      } else {
-        // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] User is logged in, no popup needed');
-        // Logged-in users should keep session_required_single_domain
-        this.accessMode = 'login';
       }
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error('[DownloadComponent] getUserInfo error:', err);
+    } else {
       // eslint-disable-next-line no-console
       console.debug(
-        '[DownloadComponent] Assuming not logged in, showing popup',
+        '[DownloadComponent] OAuth callback detected, skipping popup',
       );
-      this.showGuestLoginPopup = true;
     }
 
     this.route.queryParams.subscribe((params) => {
