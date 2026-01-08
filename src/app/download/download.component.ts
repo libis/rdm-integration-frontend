@@ -354,6 +354,22 @@ export class DownloadComponent
 
   continueAsGuest(): void {
     // User chose to continue as guest - now redirect to Globus OAuth
+    // If still loading DOI, wait for it to complete
+    if (this.loading) {
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[DownloadComponent] Still loading DOI, waiting before redirect',
+      );
+      const checkInterval = setInterval(() => {
+        if (!this.loading) {
+          clearInterval(checkInterval);
+          this.accessMode = 'guest';
+          this.showGuestLoginPopup = false;
+          this.getRepoToken();
+        }
+      }, 100);
+      return;
+    }
     this.accessMode = 'guest';
     this.showGuestLoginPopup = false;
     this.getRepoToken();
