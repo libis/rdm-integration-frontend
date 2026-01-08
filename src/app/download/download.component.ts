@@ -116,6 +116,7 @@ export class DownloadComponent
   done = false;
   datasetUrl = '';
   showGuestLoginPopup = false;
+  showPreviewUrlInput = false;
   previewUrlInput = '';
   // Access mode: 'guest' | 'preview' | 'login' - tracks user's choice for Globus session
   accessMode: 'guest' | 'preview' | 'login' = 'guest';
