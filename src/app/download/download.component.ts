@@ -173,7 +173,9 @@ export class DownloadComponent
       // eslint-disable-next-line no-console
       console.error('[DownloadComponent] getUserInfo error:', err);
       // eslint-disable-next-line no-console
-      console.debug('[DownloadComponent] Assuming not logged in, showing popup');
+      console.debug(
+        '[DownloadComponent] Assuming not logged in, showing popup',
+      );
       this.showGuestLoginPopup = true;
     }
 
@@ -210,7 +212,10 @@ export class DownloadComponent
             this.accessMode = loginState.accessMode;
           }
           // If preview mode, use the stored token as API token
-          if (loginState.accessMode === 'preview' && loginState.previewUrlToken) {
+          if (
+            loginState.accessMode === 'preview' &&
+            loginState.previewUrlToken
+          ) {
             this.dataverseToken = loginState.previewUrlToken;
           }
 
@@ -326,7 +331,8 @@ export class DownloadComponent
     if (!input) return null;
     const trimmed = input.trim();
     // If it's just a UUID-like token, return it directly
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidPattern.test(trimmed)) {
       return trimmed;
     }
@@ -339,7 +345,9 @@ export class DownloadComponent
       // Not a valid URL, ignore
     }
     // Try regex fallback for token= in any string
-    const tokenMatch = trimmed.match(/token=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    const tokenMatch = trimmed.match(
+      /token=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i,
+    );
     if (tokenMatch) return tokenMatch[1];
     return null;
   }
@@ -763,7 +771,8 @@ export class DownloadComponent
         download: true,
         downloadId: this.downloadId,
         accessMode: this.accessMode,
-        previewUrlToken: this.accessMode === 'preview' ? this.dataverseToken : undefined,
+        previewUrlToken:
+          this.accessMode === 'preview' ? this.dataverseToken : undefined,
       };
       let clId = '?client_id=';
       if (url.includes('?')) {
