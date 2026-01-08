@@ -168,6 +168,8 @@ export class DownloadComponent
       } else {
         // eslint-disable-next-line no-console
         console.debug('[DownloadComponent] User is logged in, no popup needed');
+        // Logged-in users should keep session_required_single_domain
+        this.accessMode = 'login';
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -179,10 +181,6 @@ export class DownloadComponent
       this.showGuestLoginPopup = true;
     }
 
-    const dvToken = localStorage.getItem('dataverseToken');
-    if (dvToken !== null) {
-      this.dataverseToken = dvToken;
-    }
     this.route.queryParams.subscribe((params) => {
       const apiToken = params['apiToken'];
       if (apiToken) {
@@ -227,9 +225,7 @@ export class DownloadComponent
             .getToken('globus', code, loginState.nonce)
             .subscribe((x) => {
               this.token = x.session_id;
-              if (!this.pluginService.isStoreDvToken()) {
-                localStorage.removeItem('dataverseToken');
-              }
+
               tokenSubscription.unsubscribe();
             });
         }
@@ -355,12 +351,6 @@ export class DownloadComponent
   onUserChange() {
     this.doiItems = [];
     this.datasetId = undefined;
-    if (
-      this.dataverseToken !== undefined &&
-      this.pluginService.isStoreDvToken()
-    ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken!);
-    }
   }
 
   // DV OBJECTS: COMMON
@@ -742,9 +732,6 @@ export class DownloadComponent
   }
 
   getRepoToken() {
-    if (this.dataverseToken !== undefined) {
-      localStorage.setItem('dataverseToken', this.dataverseToken!);
-    }
     const tg = this.globusPlugin?.tokenGetter;
     if (tg === undefined) {
       return;

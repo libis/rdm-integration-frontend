@@ -349,7 +349,6 @@ describe('ConnectComponent pilot plugin configuration', () => {
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
     sessionStorage.clear();
-    localStorage.clear();
   });
 
   afterEach(() => {

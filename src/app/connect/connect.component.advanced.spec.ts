@@ -37,7 +37,6 @@ class MockDataStateService {
 class MockPluginService {
   oauthClientId = 'client-id';
   repoNameFieldInteractive = true;
-  storeDvToken = false;
   showTokenGetter = true;
   showDvToken = true;
   repoNameFieldHasInit = true;
@@ -116,9 +115,6 @@ class MockPluginService {
   }
   getExternalURL() {
     return 'https://dataverse.example';
-  }
-  isStoreDvToken() {
-    return this.storeDvToken;
   }
   getGlobusPlugin() {
     return {
@@ -301,7 +297,6 @@ describe('ConnectComponent advanced behaviors', () => {
         { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
     }).compileComponents();
-    localStorage.clear();
     navigation.assign.calls.reset();
   });
 
@@ -321,7 +316,7 @@ describe('ConnectComponent advanced behaviors', () => {
     ).toBeTrue();
   });
 
-  it('getRepoToken stores DV token and builds redirect url including dataset', () => {
+  it('getRepoToken builds redirect url including dataset', () => {
     const { comp } = createComponent();
     comp.plugin = 'github';
     comp.pluginId = 'github';
@@ -334,7 +329,6 @@ describe('ConnectComponent advanced behaviors', () => {
 
     comp.getRepoToken();
 
-    expect(localStorage.getItem('dataverseToken')).toBe('tok');
     expect(navigation.assign).toHaveBeenCalled();
     const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
     expect(redirectUrl).toContain('client_id=');

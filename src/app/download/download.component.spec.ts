@@ -145,15 +145,11 @@ class MockUtilsService {
 }
 
 class MockPluginService {
-  storeDvToken = false;
   showDvToken = false;
   oauthClientId = 'client-id';
 
   setConfig() {
     return Promise.resolve();
-  }
-  isStoreDvToken() {
-    return this.storeDvToken;
   }
   showDVToken() {
     return this.showDvToken;
@@ -255,7 +251,6 @@ describe('DownloadComponent', () => {
 
   afterEach(() => {
     httpMock.verify();
-    localStorage.clear();
     submit.succeed = true;
   });
 
@@ -564,14 +559,12 @@ describe('DownloadComponent', () => {
     expect(component.doiItems[0].value).toBe('doi:existing');
   });
 
-  it('onUserChange resets selections and persists token when configured', () => {
+  it('onUserChange resets selections', () => {
     initComponent();
-    plugin.storeDvToken = true;
     component.dataverseToken = 'dvTok';
     component.doiItems = [{ label: 'a', value: 'a' }];
     component.datasetId = 'a';
     component.onUserChange();
-    expect(localStorage.getItem('dataverseToken')).toBe('dvTok');
     expect(component.doiItems.length).toBe(0);
     expect(component.datasetId).toBeUndefined();
   });
@@ -582,7 +575,6 @@ describe('DownloadComponent', () => {
     component.datasetId = 'doi:ABC';
     component.dataverseToken = 'tok';
     component.getRepoToken();
-    expect(localStorage.getItem('dataverseToken')).toBe('tok');
     expect(navigation.assign).toHaveBeenCalled();
     const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
     const match = redirectUrl.match(/state=([^&]+)/);
@@ -632,6 +624,7 @@ describe('DownloadComponent', () => {
       },
     } as any;
     component.showGuestLoginPopup = false; // user is logged in
+    component.accessMode = 'login'; // logged-in users have 'login' mode
     component.datasetId = 'doi:LOGGED';
     component.getRepoToken();
     expect(navigation.assign).toHaveBeenCalled();
@@ -715,7 +708,6 @@ describe('DownloadComponent', () => {
   }));
 
   it('ngOnInit processes globus callback state and fetches token', fakeAsync(() => {
-    localStorage.setItem('dataverseToken', 'persisted');
     let datasetSpy!: jasmine.Spy<() => void>;
     initComponent(
       {
@@ -743,7 +735,6 @@ describe('DownloadComponent', () => {
 
     expect(datasetSpy).toHaveBeenCalled();
     expect(component.token).toBe('session-xyz');
-    expect(localStorage.getItem('dataverseToken')).toBeNull();
   }));
 
   it('ngOnInit skips dataset load when state value is placeholder', fakeAsync(() => {
@@ -770,6 +761,7 @@ describe('DownloadComponent', () => {
   }));
 
   it('ngOnInit without oauth code triggers repo token lookup', fakeAsync(() => {
+    dataService.userLoggedIn = true;
     let tokenSpy!: jasmine.Spy<() => void>;
     initComponent(
       {

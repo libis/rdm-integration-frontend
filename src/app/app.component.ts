@@ -26,9 +26,8 @@ export class AppComponent implements OnInit {
   constructor() {}
   ngOnInit(): void {
     this.primengConfig.ripple.set(true);
-    const dvToken = localStorage.getItem('dataverseToken');
     const subscription = this.dataService
-      .checkAccessToQueue('', dvToken ? dvToken : '', '')
+      .checkAccessToQueue('', '', '')
       .subscribe({
         next: (access) => {
           subscription.unsubscribe();
@@ -222,14 +221,12 @@ export class AppComponent implements OnInit {
     datasetDbId: string,
     downloadId?: string,
   ): void {
-    const dvToken = localStorage.getItem('dataverseToken');
     this.datasetService
-      .getDatasetVersion(datasetDbId, dvToken ?? undefined)
+      .getDatasetVersion(datasetDbId, undefined)
       .subscribe({
         next: (x) => {
           const queryParams: Record<string, string | null | undefined> = {
             datasetPid: x.persistentId,
-            apiToken: dvToken,
           };
           if (downloadId) {
             queryParams['downloadId'] = downloadId;

@@ -86,7 +86,6 @@ describe('PluginService', () => {
     const cfg = mockConfig({
       showDvTokenGetter: false,
       showDvToken: false,
-      storeDvToken: true,
       plugins: [
         {
           id: 'globus',
@@ -140,7 +139,6 @@ describe('PluginService', () => {
 
     expect(service.showDVTokenGetter()).toBeFalse();
     expect(service.showDVToken()).toBeFalse();
-    expect(service.isStoreDvToken()).toBeTrue();
     expect(service.getRedirectUri()).toBe('http://redirect');
 
     const pluginValues = service.getPlugins().map((item) => item.value);
@@ -156,11 +154,6 @@ describe('PluginService', () => {
     expect(service.getPlugin('git-full').showTokenGetter).toBeTrue();
     expect(service.getPlugin('git-empty').showTokenGetter).toBeFalse();
     expect(service.getPlugin('svn-plugin').showTokenGetter).toBeFalse();
-  });
-
-  it('isStoreDvToken returns false if undefined', () => {
-    // storeDvToken missing from default config => false
-    expect(service.isStoreDvToken()).toBeFalse();
   });
 
   it('getter methods return expected defaults before config loaded', () => {

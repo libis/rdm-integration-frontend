@@ -33,7 +33,6 @@ describe('ConnectComponent', () => {
       createNewDatasetEnabled: () => true,
       getRedirectUri: () => '',
       getExternalURL: () => '',
-      isStoreDvToken: () => false,
       getGlobusPlugin: () => undefined,
     } as Partial<PluginService> as PluginService;
 

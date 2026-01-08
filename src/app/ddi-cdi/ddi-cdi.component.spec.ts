@@ -136,7 +136,6 @@ describe('DdiCdiComponent', () => {
     pluginServiceStub = jasmine.createSpyObj('PluginService', [
       'setConfig',
       'showDVToken',
-      'isStoreDvToken',
       'datasetFieldEditable',
       'dataverseHeader',
       'sendMails',
@@ -158,7 +157,6 @@ describe('DdiCdiComponent', () => {
     // Default stub behaviors
     pluginServiceStub.setConfig.and.returnValue(Promise.resolve());
     pluginServiceStub.showDVToken.and.returnValue(false);
-    pluginServiceStub.isStoreDvToken.and.returnValue(false);
     pluginServiceStub.sendMails.and.returnValue(false);
     pluginServiceStub.datasetFieldEditable.and.returnValue(true);
     pluginServiceStub.dataverseHeader.and.returnValue('Dataverse');
@@ -211,14 +209,6 @@ describe('DdiCdiComponent', () => {
       expect(pluginServiceStub.setConfig).toHaveBeenCalled();
     });
 
-    it('should load dataverseToken from localStorage if present', async () => {
-      spyOn(localStorage, 'getItem').and.returnValue('test-token');
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      await component.ngOnInit();
-      expect(component.dataverseToken).toBe('test-token');
-    });
-
     it('should set datasetId from query params', async () => {
       const testRoute = TestBed.inject(ActivatedRoute);
       (testRoute as any).queryParams = of({
@@ -257,19 +247,6 @@ describe('DdiCdiComponent', () => {
       component.onUserChange();
       expect(component.doiItems).toEqual([]);
       expect(component.datasetId).toBeUndefined();
-    });
-
-    it('should store token in localStorage when isStoreDvToken is true', () => {
-      spyOn(localStorage, 'setItem');
-      pluginServiceStub.isStoreDvToken.and.returnValue(true);
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.dataverseToken = 'new-token';
-      component.onUserChange();
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        'dataverseToken',
-        'new-token',
-      );
     });
   });
 
@@ -962,41 +939,6 @@ describe('DdiCdiComponent', () => {
       });
     });
 
-    describe('onUserChange with token storage', () => {
-      it('should store token in localStorage when isStoreDvToken is true', () => {
-        pluginServiceStub.isStoreDvToken.and.returnValue(true);
-        spyOn(localStorage, 'setItem');
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.dataverseToken = 'test-token';
-        component.onUserChange();
-        expect(localStorage.setItem).toHaveBeenCalledWith(
-          'dataverseToken',
-          'test-token',
-        );
-      });
-
-      it('should not store token when isStoreDvToken is false', () => {
-        pluginServiceStub.isStoreDvToken.and.returnValue(false);
-        spyOn(localStorage, 'setItem');
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.dataverseToken = 'test-token';
-        component.onUserChange();
-        expect(localStorage.setItem).not.toHaveBeenCalled();
-      });
-
-      it('should not store token when token is undefined', () => {
-        pluginServiceStub.isStoreDvToken.and.returnValue(true);
-        spyOn(localStorage, 'setItem');
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.dataverseToken = undefined;
-        component.onUserChange();
-        expect(localStorage.setItem).not.toHaveBeenCalled();
-      });
-    });
-
     describe('getDoiOptions edge cases', () => {
       it('should not fetch when doiItems already has non-loading items', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
@@ -1485,24 +1427,6 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component['datasetSearchResultsObservable']).toBeDefined();
-      });
-    });
-
-    describe('ngOnInit with localStorage', () => {
-      it('should load token from localStorage if present', async () => {
-        spyOn(localStorage, 'getItem').and.returnValue('stored-token');
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        await component.ngOnInit();
-        expect(component.dataverseToken).toBe('stored-token');
-      });
-
-      it('should not set token when localStorage returns null', async () => {
-        spyOn(localStorage, 'getItem').and.returnValue(null);
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        await component.ngOnInit();
-        expect(component.dataverseToken).toBeUndefined();
       });
     });
 

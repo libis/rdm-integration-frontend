@@ -378,10 +378,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   async ngOnInit() {
     await this.pluginService.setConfig();
     await this.loadShaclTemplate();
-    const dvToken = localStorage.getItem('dataverseToken');
-    if (dvToken !== null) {
-      this.dataverseToken = dvToken;
-    }
     this.route.queryParams.subscribe((params) => {
       const apiToken = params['apiToken'];
       if (apiToken) {
@@ -440,12 +436,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   onUserChange() {
     this.doiItems = [];
     this.datasetId = undefined;
-    if (
-      this.dataverseToken !== undefined &&
-      this.pluginService.isStoreDvToken()
-    ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken!);
-    }
   }
 
   // DV OBJECTS: COMMON

@@ -124,11 +124,6 @@ export class PluginService {
     return this.config.showDvToken;
   }
 
-  isStoreDvToken(): boolean {
-    const v = this.config.storeDvToken;
-    return v === undefined ? false : v;
-  }
-
   getRedirectUri(): string {
     return this.config.redirect_uri;
   }

@@ -80,7 +80,6 @@ class MockPluginService {
   showDvToken = false;
   datasetEditable = true;
   mailEnabled = false;
-  storeDvToken = false;
 
   setConfig() {
     return Promise.resolve();
@@ -93,9 +92,6 @@ class MockPluginService {
   }
   sendMails() {
     return this.mailEnabled;
-  }
-  isStoreDvToken() {
-    return this.storeDvToken;
   }
   dataverseHeader() {
     return 'Dataverse:';
@@ -166,7 +162,6 @@ describe('ComputeComponent', () => {
     fixture = TestBed.createComponent(ComputeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-    localStorage.clear();
     navigation.assign.calls.reset();
   });
 
@@ -258,13 +253,11 @@ describe('ComputeComponent', () => {
     expect(component.doiItems[0].value).toBe('doi:X');
   });
 
-  it('onUserChange clears selections and stores token when enabled', () => {
-    plugin.storeDvToken = true;
+  it('onUserChange clears selections', () => {
     component.dataverseToken = 'dvTok';
     component.doiItems = [{ label: 'a', value: 'a' }];
     component.datasetId = 'a';
     component.onUserChange();
-    expect(localStorage.getItem('dataverseToken')).toBe('dvTok');
     expect(component.doiItems.length).toBe(0);
     expect(component.datasetId).toBeUndefined();
   });

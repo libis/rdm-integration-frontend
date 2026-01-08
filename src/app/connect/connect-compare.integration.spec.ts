@@ -58,9 +58,6 @@ class PluginServiceStub {
   getExternalURL() {
     return '';
   }
-  isStoreDvToken() {
-    return false;
-  }
   getGlobusPlugin() {
     return undefined;
   }

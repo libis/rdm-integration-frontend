@@ -180,10 +180,6 @@ export class ConnectComponent
   async ngOnInit() {
     this.attemptFullRestore('[ngOnInit]');
     await this.pluginService.setConfig();
-    const dvToken = localStorage.getItem('dataverseToken');
-    if (dvToken !== null) {
-      this.dataverseToken = dvToken;
-    }
     this.repoSearchResultsSubscription =
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
@@ -351,9 +347,6 @@ export class ConnectComponent
         .getToken(this.pluginId, code, loginState.nonce)
         .subscribe((x) => {
           this.token = x.session_id;
-          if (!this.pluginService.isStoreDvToken()) {
-            localStorage.removeItem('dataverseToken');
-          }
           this.subscriptions.delete(tokenSubscription);
           tokenSubscription.unsubscribe();
         });
@@ -567,9 +560,6 @@ export class ConnectComponent
       this.notificationService.showError('Repository type is missing');
       return;
     }
-    if (this.dataverseToken !== undefined) {
-      localStorage.setItem('dataverseToken', this.dataverseToken!);
-    }
     const tg = this.pluginService.getPlugin(this.pluginId).tokenGetter!;
     let url = this.url + (tg.URL === undefined ? '' : tg.URL);
     if (tg.URL?.includes('://')) {
@@ -709,13 +699,6 @@ export class ConnectComponent
             });
             this.dataStateService.resetState();
             this.credentialsService.credentials = creds;
-
-            if (
-              this.dataverseToken !== undefined &&
-              this.pluginService.isStoreDvToken()
-            ) {
-              localStorage.setItem('dataverseToken', this.dataverseToken!);
-            }
 
             this.router.navigate(['/compare', this.datasetId], {
               state: {
@@ -1271,12 +1254,6 @@ export class ConnectComponent
     this.collectionItems = [];
     this.datasetId = undefined;
     this.collectionId = undefined;
-    if (
-      this.dataverseToken !== undefined &&
-      this.pluginService.isStoreDvToken()
-    ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken!);
-    }
   }
 
   // DV OBJECTS: COMMON
