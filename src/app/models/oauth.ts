@@ -15,6 +15,7 @@ export interface LoginState {
   download?: boolean;
   downloadId?: string;
   accessMode?: 'guest' | 'preview' | 'login';
+  dataverseToken?: string;
 }
 
 export interface Item {

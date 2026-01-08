@@ -262,6 +262,9 @@ export class DownloadComponent
           if (loginState.accessMode) {
             this.accessMode = loginState.accessMode;
           }
+          if (loginState.dataverseToken) {
+            this.dataverseToken = loginState.dataverseToken;
+          }
 
           // eslint-disable-next-line no-console
           console.debug('[DownloadComponent] State after restore:', {
@@ -950,6 +953,7 @@ export class DownloadComponent
         download: true,
         downloadId: this.downloadId,
         accessMode: this.accessMode,
+        dataverseToken: this.dataverseToken,
       };
       // eslint-disable-next-line no-console
       console.debug('[DownloadComponent] getRepoToken loginState:', {
