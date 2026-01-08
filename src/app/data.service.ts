@@ -10,6 +10,7 @@ import {
   ComputeRequest,
   DdiCdiOutputCache,
   DdiCdiRequest,
+  GlobusDownloadParams,
   Key,
 } from './models/compare-result';
 import { HttpClient } from '@angular/common/http';
@@ -160,5 +161,21 @@ export class DataService {
 
   getUserInfo(): Observable<{ loggedIn: boolean }> {
     return this.http.get<{ loggedIn: boolean }>('api/common/userinfo');
+  }
+
+  /**
+   * Call Dataverse globusDownloadParameters API to get dataset info from downloadId.
+   * Uses the preview URL token as API key.
+   */
+  getGlobusDownloadParams(
+    dataverseUrl: string,
+    datasetDbId: string,
+    downloadId: string,
+    previewToken: string,
+  ): Observable<GlobusDownloadParams> {
+    const url = `${dataverseUrl}/api/datasets/${datasetDbId}/globusDownloadParameters?downloadId=${downloadId}`;
+    return this.http.get<GlobusDownloadParams>(url, {
+      headers: { 'X-Dataverse-key': previewToken },
+    });
   }
 }

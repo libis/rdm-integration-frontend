@@ -137,6 +137,7 @@ export class DownloadComponent
   optionsLoading = false;
   globusPlugin?: RepoPlugin;
   downloadId?: string;
+  datasetDbId?: string; // Database ID for preview URL users
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
@@ -208,6 +209,10 @@ export class DownloadComponent
         this.datasetId = pid;
       }
       this.downloadId = params['downloadId'];
+      // datasetDbId is passed when getDatasetVersion fails (preview URL users)
+      if (params['datasetDbId']) {
+        this.datasetDbId = params['datasetDbId'];
+      }
       const code = params['code'];
       if (code !== undefined) {
         const loginState: LoginState = JSON.parse(params['state']);
@@ -222,6 +227,9 @@ export class DownloadComponent
           if (loginState.downloadId) {
             this.downloadId = loginState.downloadId;
           }
+          if (loginState.datasetDbId) {
+            this.datasetDbId = loginState.datasetDbId;
+          }
           if (loginState.accessMode) {
             this.accessMode = loginState.accessMode;
           }
@@ -233,8 +241,17 @@ export class DownloadComponent
             this.dataverseToken = loginState.previewUrlToken;
           }
 
-          // Only try to load files if we have a valid dataset ID
-          if (doi && doi !== '?' && doi !== 'undefined') {
+          // If we don't have a valid datasetId but have datasetDbId, downloadId and token,
+          // fetch the datasetPid from globusDownloadParameters API
+          if (
+            (!doi || doi === '?' || doi === 'undefined') &&
+            this.datasetDbId &&
+            this.downloadId &&
+            this.dataverseToken
+          ) {
+            this.fetchDatasetPidFromGlobusParams();
+          } else if (doi && doi !== '?' && doi !== 'undefined') {
+            // Only try to load files if we have a valid dataset ID
             this.onDatasetChange();
           }
           const tokenSubscription = this.oauth
@@ -337,6 +354,59 @@ export class DownloadComponent
     // After login, they'll return as logged in user and Globus OAuth will happen with session_required_single_domain
     this.showGuestLoginPopup = false;
     this.redirectToLogin();
+  }
+
+  /**
+   * Fetches the datasetPid from Dataverse globusDownloadParameters API.
+   * Used for preview URL users who don't have the datasetPid in their callback.
+   */
+  private fetchDatasetPidFromGlobusParams(): void {
+    if (!this.datasetDbId || !this.downloadId || !this.dataverseToken) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[DownloadComponent] Missing required params for globusDownloadParams',
+      );
+      return;
+    }
+    const dataverseUrl = this.pluginService.getExternalURL();
+    // eslint-disable-next-line no-console
+    console.debug(
+      '[DownloadComponent] Fetching datasetPid from globusDownloadParameters',
+    );
+    this.dataService
+      .getGlobusDownloadParams(
+        dataverseUrl,
+        this.datasetDbId,
+        this.downloadId,
+        this.dataverseToken,
+      )
+      .subscribe({
+        next: (response) => {
+          const pid = response.data?.queryParameters?.datasetPid;
+          if (pid) {
+            // eslint-disable-next-line no-console
+            console.debug(
+              '[DownloadComponent] Got datasetPid from globusDownloadParameters:',
+              pid,
+            );
+            this.datasetId = pid;
+            this.doiItems = [{ label: pid, value: pid }];
+            this.onDatasetChange();
+          } else {
+            // eslint-disable-next-line no-console
+            console.error(
+              '[DownloadComponent] No datasetPid in globusDownloadParameters response',
+            );
+          }
+        },
+        error: (err) => {
+          // eslint-disable-next-line no-console
+          console.error(
+            '[DownloadComponent] Failed to get globusDownloadParameters:',
+            err,
+          );
+        },
+      });
   }
 
   extractPreviewUrlToken(input: string): string | null {
@@ -773,6 +843,7 @@ export class DownloadComponent
         nonce: nonce,
         download: true,
         downloadId: this.downloadId,
+        datasetDbId: this.datasetDbId, // For preview URL users to call globusDownloadParameters
         accessMode: this.accessMode,
         previewUrlToken:
           this.accessMode === 'preview' ? this.dataverseToken : undefined,

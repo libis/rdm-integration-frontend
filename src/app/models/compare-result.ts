@@ -73,3 +73,28 @@ export interface DdiCdiOutputCache {
   errorMessage: string;
   timestamp: string;
 }
+
+/**
+ * Response from Dataverse globusDownloadParameters API
+ */
+export interface GlobusDownloadParams {
+  status: string;
+  data: {
+    queryParameters: {
+      datasetId: number;
+      siteUrl: string;
+      datasetVersion: string;
+      dvLocale: string;
+      datasetPid: string;
+      managed: string;
+      endpoint: string;
+      files: Record<string, string>;
+    };
+    signedUrls: Array<{
+      name: string;
+      httpMethod: string;
+      signedUrl: string;
+      timeOut: number;
+    }>;
+  };
+}

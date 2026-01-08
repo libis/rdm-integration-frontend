@@ -239,8 +239,10 @@ export class AppComponent implements OnInit {
       error: (err) => {
         // eslint-disable-next-line no-console
         console.error('[AppComponent] Failed to get dataset version:', err);
-        // Navigate anyway with what we have
-        const fallbackParams: Record<string, string | undefined> = {};
+        // Navigate anyway with what we have - include datasetDbId for preview URL users
+        const fallbackParams: Record<string, string | undefined> = {
+          datasetDbId: datasetDbId,
+        };
         if (downloadId) {
           fallbackParams['downloadId'] = downloadId;
         }

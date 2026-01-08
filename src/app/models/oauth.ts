@@ -16,6 +16,7 @@ export interface LoginState {
   downloadId?: string;
   accessMode?: 'guest' | 'preview' | 'login';
   previewUrlToken?: string;
+  datasetDbId?: string; // Database ID for preview URL users to call globusDownloadParameters
 }
 
 export interface Item {
