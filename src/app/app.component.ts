@@ -181,7 +181,7 @@ export class AppComponent implements OnInit {
    */
   private parseGlobusCallback(
     callback: string,
-  ): { datasetDbId: string; downloadId?: string; token?: string } | null {
+  ): { datasetDbId: string; downloadId?: string } | null {
     try {
       const callbackUrl = atob(callback);
       const parts = callbackUrl.split('/');
@@ -192,23 +192,19 @@ export class AppComponent implements OnInit {
       // Extract datasetDbId from URL (position 6 in the path)
       const datasetDbId = parts[6];
 
-      // Extract downloadId and token from query params
+      // Extract downloadId from query params
       let downloadId: string | undefined;
-      let token: string | undefined;
       const queryString = callbackUrl.split('?')[1];
       if (queryString) {
         const globusParams = queryString.split('&');
         for (const p of globusParams) {
           if (p.startsWith('downloadId=')) {
             downloadId = p.substring('downloadId='.length);
-          } else if (p.startsWith('token=')) {
-            token = p.substring('token='.length);
           }
         }
       }
 
-      // Only include token in result if it's defined
-      return { datasetDbId, downloadId, ...(token !== undefined && { token }) };
+      return { datasetDbId, downloadId };
     } catch {
       // Invalid base64 or URL format
       return null;
@@ -218,13 +214,11 @@ export class AppComponent implements OnInit {
   /**
    * Fetches persistentId from datasetDbId and navigates to the target route.
    * Used by both upload (→ /connect) and download (→ /download) redirect flows.
-   * For preview URL users, token is passed to enable API calls.
    */
   private fetchAndRedirect(
     targetRoute: string,
     datasetDbId: string,
     downloadId?: string,
-    token?: string,
   ): void {
     this.datasetService.getDatasetVersion(datasetDbId, undefined).subscribe({
       next: (x) => {
@@ -234,12 +228,7 @@ export class AppComponent implements OnInit {
           console.warn(
             '[AppComponent] getDatasetVersion returned empty persistentId, using fallback',
           );
-          this.navigateWithFallback(
-            targetRoute,
-            datasetDbId,
-            downloadId,
-            token,
-          );
+          this.navigateWithFallback(targetRoute, datasetDbId, downloadId);
           return;
         }
         const queryParams: Record<string, string | null | undefined> = {
@@ -258,7 +247,7 @@ export class AppComponent implements OnInit {
       error: (err) => {
         // eslint-disable-next-line no-console
         console.error('[AppComponent] Failed to get dataset version:', err);
-        this.navigateWithFallback(targetRoute, datasetDbId, downloadId, token);
+        this.navigateWithFallback(targetRoute, datasetDbId, downloadId);
       },
     });
   }
@@ -270,16 +259,12 @@ export class AppComponent implements OnInit {
     targetRoute: string,
     datasetDbId: string,
     downloadId?: string,
-    token?: string,
   ): void {
     const fallbackParams: Record<string, string | undefined> = {
       datasetDbId: datasetDbId,
     };
     if (downloadId) {
       fallbackParams['downloadId'] = downloadId;
-    }
-    if (token) {
-      fallbackParams['token'] = token;
     }
     // eslint-disable-next-line no-console
     console.debug(
@@ -310,12 +295,7 @@ export class AppComponent implements OnInit {
         return;
       }
 
-      this.fetchAndRedirect(
-        '/download',
-        parsed.datasetDbId,
-        parsed.downloadId,
-        parsed.token,
-      );
+      this.fetchAndRedirect('/download', parsed.datasetDbId, parsed.downloadId);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(

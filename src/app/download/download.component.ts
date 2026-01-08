@@ -214,16 +214,6 @@ export class DownloadComponent
       if (apiToken) {
         this.dataverseToken = apiToken;
       }
-      // token param is passed for preview URL users from the Dataverse callback
-      const token = params['token'];
-      if (token) {
-        this.dataverseToken = token;
-        this.accessMode = 'preview';
-        // eslint-disable-next-line no-console
-        console.debug(
-          '[DownloadComponent] Got token from params (preview mode)',
-        );
-      }
       const pid = params['datasetPid'];
       if (pid) {
         this.doiItems = [{ label: pid, value: pid }];
