@@ -378,13 +378,25 @@ export class DownloadComponent
 
   continueWithPreviewUrl(): void {
     // User chose to continue with preview URL - extract token and datasetDbId, then fetch DOI
+    // eslint-disable-next-line no-console
+    console.debug(
+      '[DownloadComponent] continueWithPreviewUrl called. Input:',
+      this.previewUrlInput,
+    );
     const parsed = this.extractFromPreviewUrl(this.previewUrlInput);
+    // eslint-disable-next-line no-console
+    console.debug('[DownloadComponent] Parsed result:', parsed);
     if (!parsed?.token) {
       // eslint-disable-next-line no-console
       console.error('[DownloadComponent] Could not extract token from input');
       return;
     }
     this.dataverseToken = parsed.token;
+    // eslint-disable-next-line no-console
+    console.debug(
+      '[DownloadComponent] Token set. this.dataverseToken:',
+      this.dataverseToken,
+    );
     if (parsed.datasetDbId) {
       this.datasetDbId = parsed.datasetDbId;
     }
@@ -949,6 +961,13 @@ export class DownloadComponent
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       const nonce = this.newNonce(44);
       // Include all state to preserve across OAuth redirect
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[DownloadComponent] getRepoToken called. this.dataverseToken:',
+        this.dataverseToken,
+        'this.accessMode:',
+        this.accessMode,
+      );
       const loginState: LoginState = {
         datasetId:
           this.datasetId && this.datasetId !== '?'
