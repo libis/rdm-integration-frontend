@@ -221,34 +221,32 @@ export class AppComponent implements OnInit {
     datasetDbId: string,
     downloadId?: string,
   ): void {
-    this.datasetService
-      .getDatasetVersion(datasetDbId, undefined)
-      .subscribe({
-        next: (x) => {
-          const queryParams: Record<string, string | null | undefined> = {
-            datasetPid: x.persistentId,
-          };
-          if (downloadId) {
-            queryParams['downloadId'] = downloadId;
-          }
-          // eslint-disable-next-line no-console
-          console.debug(
-            `[AppComponent] Redirecting to ${targetRoute} with:`,
-            queryParams,
-          );
-          this.router.navigate([targetRoute], { queryParams });
-        },
-        error: (err) => {
-          // eslint-disable-next-line no-console
-          console.error('[AppComponent] Failed to get dataset version:', err);
-          // Navigate anyway with what we have
-          const fallbackParams: Record<string, string | undefined> = {};
-          if (downloadId) {
-            fallbackParams['downloadId'] = downloadId;
-          }
-          this.router.navigate([targetRoute], { queryParams: fallbackParams });
-        },
-      });
+    this.datasetService.getDatasetVersion(datasetDbId, undefined).subscribe({
+      next: (x) => {
+        const queryParams: Record<string, string | null | undefined> = {
+          datasetPid: x.persistentId,
+        };
+        if (downloadId) {
+          queryParams['downloadId'] = downloadId;
+        }
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[AppComponent] Redirecting to ${targetRoute} with:`,
+          queryParams,
+        );
+        this.router.navigate([targetRoute], { queryParams });
+      },
+      error: (err) => {
+        // eslint-disable-next-line no-console
+        console.error('[AppComponent] Failed to get dataset version:', err);
+        // Navigate anyway with what we have
+        const fallbackParams: Record<string, string | undefined> = {};
+        if (downloadId) {
+          fallbackParams['downloadId'] = downloadId;
+        }
+        this.router.navigate([targetRoute], { queryParams: fallbackParams });
+      },
+    });
   }
 
   /**
