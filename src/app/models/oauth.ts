@@ -13,6 +13,9 @@ export interface LoginState {
   datasetId?: Item;
   collectionId?: Item;
   download?: boolean;
+  downloadId?: string;
+  accessMode?: 'guest' | 'preview' | 'login';
+  previewUrlToken?: string;
 }
 
 export interface Item {

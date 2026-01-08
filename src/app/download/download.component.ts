@@ -27,6 +27,7 @@ import { FormsModule } from '@angular/forms';
 import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
 import { Button, ButtonDirective } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Select } from 'primeng/select';
 import { Tree } from 'primeng/tree';
@@ -60,6 +61,7 @@ import { SubscriptionManager } from '../shared/types';
     ButtonDirective,
     Dialog,
     FormsModule,
+    InputTextModule,
     Select,
     TreeTableModule,
     PrimeTemplate,
@@ -114,6 +116,9 @@ export class DownloadComponent
   done = false;
   datasetUrl = '';
   showGuestLoginPopup = false;
+  previewUrlInput = '';
+  // Access mode: 'guest' | 'preview' | 'login' - tracks user's choice for Globus session
+  accessMode: 'guest' | 'preview' | 'login' = 'guest';
 
   // globus
   token?: string;
@@ -196,6 +201,19 @@ export class DownloadComponent
             : '?';
           this.doiItems = [{ label: doi, value: doi }];
           this.datasetId = doi;
+
+          // Restore state from OAuth redirect
+          if (loginState.downloadId) {
+            this.downloadId = loginState.downloadId;
+          }
+          if (loginState.accessMode) {
+            this.accessMode = loginState.accessMode;
+          }
+          // If preview mode, use the stored token as API token
+          if (loginState.accessMode === 'preview' && loginState.previewUrlToken) {
+            this.dataverseToken = loginState.previewUrlToken;
+          }
+
           // Only try to load files if we have a valid dataset ID
           if (doi && doi !== '?' && doi !== 'undefined') {
             this.onDatasetChange();
@@ -212,8 +230,11 @@ export class DownloadComponent
         }
         this.globusPlugin = this.pluginService.getGlobusPlugin();
       } else {
+        // First arrival - only redirect if user is logged in (popup not shown)
         this.globusPlugin = this.pluginService.getGlobusPlugin();
-        this.getRepoToken();
+        if (!this.showGuestLoginPopup) {
+          this.getRepoToken();
+        }
       }
     });
     this.datasetSearchResultsSubscription =
@@ -277,9 +298,50 @@ export class DownloadComponent
   }
 
   continueAsGuest(): void {
-    // User chose to continue without Dataverse login
-    // They will still need to authenticate with Globus OAuth
+    // User chose to continue as guest - now redirect to Globus OAuth
+    this.accessMode = 'guest';
     this.showGuestLoginPopup = false;
+    this.getRepoToken();
+  }
+
+  continueWithPreviewUrl(): void {
+    // User chose to continue with preview URL - extract token and redirect to Globus OAuth
+    const token = this.extractPreviewUrlToken(this.previewUrlInput);
+    if (token) {
+      this.dataverseToken = token;
+      this.accessMode = 'preview';
+      this.showGuestLoginPopup = false;
+      this.getRepoToken();
+    }
+  }
+
+  continueWithLogin(): void {
+    // User chose to log in - redirect to Dataverse login first
+    // After login, they'll return as logged in user and Globus OAuth will happen with session_required_single_domain
+    this.showGuestLoginPopup = false;
+    this.redirectToLogin();
+  }
+
+  extractPreviewUrlToken(input: string): string | null {
+    if (!input) return null;
+    const trimmed = input.trim();
+    // If it's just a UUID-like token, return it directly
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(trimmed)) {
+      return trimmed;
+    }
+    // Try to extract token from URL like https://.../previewurl.xhtml?token=...
+    try {
+      const url = new URL(trimmed);
+      const token = url.searchParams.get('token');
+      if (token) return token;
+    } catch {
+      // Not a valid URL, ignore
+    }
+    // Try regex fallback for token= in any string
+    const tokenMatch = trimmed.match(/token=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    if (tokenMatch) return tokenMatch[1];
+    return null;
   }
 
   onUserChange() {
@@ -685,13 +747,13 @@ export class DownloadComponent
     if (tg.URL?.includes('://')) {
       url = tg.URL;
     }
-    // For guest users, strip session_required_single_domain to allow any Globus identity
-    if (this.showGuestLoginPopup) {
+    // For guest/preview users, strip session_required_single_domain to allow any Globus identity
+    if (this.accessMode === 'guest' || this.accessMode === 'preview') {
       url = url.replace(/[&?]session_required_single_domain=[^&]*/g, '');
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       const nonce = this.newNonce(44);
-      // Only include datasetId if one is actually selected
+      // Include all state to preserve across OAuth redirect
       const loginState: LoginState = {
         datasetId:
           this.datasetId && this.datasetId !== '?'
@@ -699,6 +761,9 @@ export class DownloadComponent
             : undefined,
         nonce: nonce,
         download: true,
+        downloadId: this.downloadId,
+        accessMode: this.accessMode,
+        previewUrlToken: this.accessMode === 'preview' ? this.dataverseToken : undefined,
       };
       let clId = '?client_id=';
       if (url.includes('?')) {

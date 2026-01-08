@@ -8,21 +8,44 @@
   [closable]="false"
 >
   <p class="m-0">
-    You are not logged in. You can continue as a guest to download publicly
-    accessible files, or log in to access restricted files.
+    You are not logged in. Choose how you want to access Globus:
   </p>
+
+  <!-- Preview URL input section -->
+  <div class="preview-url-section mt-3">
+    <p class="m-0">
+      <strong>Have a preview URL?</strong> Paste it below to access draft files:
+    </p>
+    <div class="p-inputgroup mt-2">
+      <input
+        type="text"
+        pInputText
+        [(ngModel)]="previewUrlInput"
+        placeholder="Paste preview URL or token here"
+        class="w-full"
+      />
+    </div>
+  </div>
+
   <ng-template pTemplate="footer">
-    <p-button
-      (click)="continueAsGuest()"
-      styleClass="p-button-sm p-button-raised p-button-secondary"
-      >Continue as guest</p-button
-    >
-    <p-button
-      (click)="redirectToLogin()"
-      styleClass="p-button-sm p-button-raised p-button-primary"
-      [disabled]="!pluginService.getLoginRedirectUrl()"
-      >Log in</p-button
-    >
+    <div>
+      <p-button
+        (click)="continueAsGuest()"
+        styleClass="p-button-sm p-button-raised p-button-secondary"
+        >Continue as guest</p-button
+      >
+      <p-button
+        (click)="continueWithPreviewUrl()"
+        styleClass="p-button-sm p-button-raised p-button-warning"
+        [disabled]="!previewUrlInput"
+        >Continue with preview URL</p-button
+      >
+      <p-button
+        (click)="continueWithLogin()"
+        styleClass="p-button-sm p-button-raised p-button-primary"
+        >Log in with KU Leuven</p-button
+      >
+    </div>
   </ng-template>
 </p-dialog>
 
