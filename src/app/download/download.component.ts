@@ -580,7 +580,11 @@ export class DownloadComponent
       return;
     }
     // Don't reload if we already have a valid datasetId
-    if (this.datasetId && this.datasetId !== '?' && this.datasetId !== 'undefined') {
+    if (
+      this.datasetId &&
+      this.datasetId !== '?' &&
+      this.datasetId !== 'undefined'
+    ) {
       return;
     }
     this.doiItems = this.loadingItems;
@@ -592,7 +596,11 @@ export class DownloadComponent
         next: (items: SelectItem<string>[]) => {
           httpSubscription.unsubscribe();
           // Don't overwrite if a valid DOI was set while we were loading
-          if (this.datasetId && this.datasetId !== '?' && this.datasetId !== 'undefined') {
+          if (
+            this.datasetId &&
+            this.datasetId !== '?' &&
+            this.datasetId !== 'undefined'
+          ) {
             return;
           }
           if (items && items.length > 0) {
@@ -606,7 +614,11 @@ export class DownloadComponent
         error: (err) => {
           httpSubscription.unsubscribe();
           // Don't show error if a valid DOI was set while we were loading
-          if (this.datasetId && this.datasetId !== '?' && this.datasetId !== 'undefined') {
+          if (
+            this.datasetId &&
+            this.datasetId !== '?' &&
+            this.datasetId !== 'undefined'
+          ) {
             return;
           }
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
