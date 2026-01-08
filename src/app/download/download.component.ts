@@ -199,9 +199,22 @@ export class DownloadComponent
     }
 
     this.route.queryParams.subscribe((params) => {
+      // eslint-disable-next-line no-console
+      console.debug('[DownloadComponent] Route params received:', params);
+
       const apiToken = params['apiToken'];
       if (apiToken) {
         this.dataverseToken = apiToken;
+      }
+      // token param is passed for preview URL users from the Dataverse callback
+      const token = params['token'];
+      if (token) {
+        this.dataverseToken = token;
+        this.accessMode = 'preview';
+        // eslint-disable-next-line no-console
+        console.debug(
+          '[DownloadComponent] Got token from params (preview mode)',
+        );
       }
       const pid = params['datasetPid'];
       if (pid) {
@@ -212,10 +225,29 @@ export class DownloadComponent
       // datasetDbId is passed when getDatasetVersion fails (preview URL users)
       if (params['datasetDbId']) {
         this.datasetDbId = params['datasetDbId'];
+        // eslint-disable-next-line no-console
+        console.debug(
+          '[DownloadComponent] Got datasetDbId from params:',
+          this.datasetDbId,
+        );
       }
+
+      // If we have datasetDbId and downloadId but no DOI, fetch it now
+      if (this.datasetDbId && this.downloadId && !this.datasetId) {
+        // eslint-disable-next-line no-console
+        console.debug(
+          '[DownloadComponent] Auto-fetching DOI from globusDownloadParameters',
+        );
+        this.fetchDoiFromGlobusParams();
+      }
+
       const code = params['code'];
       if (code !== undefined) {
+        // eslint-disable-next-line no-console
+        console.debug('[DownloadComponent] OAuth callback detected');
         const loginState: LoginState = JSON.parse(params['state']);
+        // eslint-disable-next-line no-console
+        console.debug('[DownloadComponent] LoginState:', loginState);
         if (loginState.nonce) {
           const doi = loginState.datasetId?.value
             ? loginState.datasetId?.value
@@ -227,33 +259,22 @@ export class DownloadComponent
           if (loginState.downloadId) {
             this.downloadId = loginState.downloadId;
           }
-          if (loginState.datasetDbId) {
-            this.datasetDbId = loginState.datasetDbId;
-          }
           if (loginState.accessMode) {
             this.accessMode = loginState.accessMode;
           }
-          // If preview mode, use the stored token as API token
-          if (
-            loginState.accessMode === 'preview' &&
-            loginState.previewUrlToken
-          ) {
-            this.dataverseToken = loginState.previewUrlToken;
-          }
 
-          // If we don't have a valid datasetId but have datasetDbId, downloadId and token,
-          // fetch the datasetPid from globusDownloadParameters API
-          if (
-            (!doi || doi === '?' || doi === 'undefined') &&
-            this.datasetDbId &&
-            this.downloadId &&
-            this.dataverseToken
-          ) {
-            this.fetchDatasetPidFromGlobusParams();
-          } else if (doi && doi !== '?' && doi !== 'undefined') {
-            // Only try to load files if we have a valid dataset ID
+          // eslint-disable-next-line no-console
+          console.debug('[DownloadComponent] State after restore:', {
+            doi,
+            downloadId: this.downloadId,
+            accessMode: this.accessMode,
+          });
+
+          // Load files if we have a valid dataset ID (DOI was fetched before OAuth)
+          if (doi && doi !== '?' && doi !== 'undefined') {
             this.onDatasetChange();
           }
+
           const tokenSubscription = this.oauth
             .getToken('globus', code, loginState.nonce)
             .subscribe((x) => {
@@ -339,12 +360,64 @@ export class DownloadComponent
   }
 
   continueWithPreviewUrl(): void {
-    // User chose to continue with preview URL - extract token and redirect to Globus OAuth
-    const token = this.extractPreviewUrlToken(this.previewUrlInput);
-    if (token) {
-      this.dataverseToken = token;
-      this.accessMode = 'preview';
-      this.showGuestLoginPopup = false;
+    // User chose to continue with preview URL - extract token and datasetDbId, then fetch DOI
+    const parsed = this.extractFromPreviewUrl(this.previewUrlInput);
+    if (!parsed?.token) {
+      // eslint-disable-next-line no-console
+      console.error('[DownloadComponent] Could not extract token from input');
+      return;
+    }
+    this.dataverseToken = parsed.token;
+    if (parsed.datasetDbId) {
+      this.datasetDbId = parsed.datasetDbId;
+    }
+    this.accessMode = 'preview';
+    this.showGuestLoginPopup = false;
+
+    // If we have datasetDbId and downloadId, fetch DOI BEFORE going to OAuth
+    if (this.datasetDbId && this.downloadId) {
+      this.loading = true;
+      const dataverseUrl = this.pluginService.getExternalURL();
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[DownloadComponent] Fetching DOI before OAuth. datasetDbId:',
+        this.datasetDbId,
+        'downloadId:',
+        this.downloadId,
+      );
+      this.dataService
+        .getGlobusDownloadParams(
+          dataverseUrl,
+          this.datasetDbId,
+          this.downloadId,
+          this.dataverseToken,
+        )
+        .subscribe({
+          next: (response) => {
+            this.loading = false;
+            const pid = response.data?.queryParameters?.datasetPid;
+            if (pid) {
+              // eslint-disable-next-line no-console
+              console.debug('[DownloadComponent] Got DOI:', pid);
+              this.datasetId = pid;
+              this.doiItems = [{ label: pid, value: pid }];
+            }
+            // Now proceed to OAuth with DOI already known
+            this.getRepoToken();
+          },
+          error: (err) => {
+            this.loading = false;
+            // eslint-disable-next-line no-console
+            console.error(
+              '[DownloadComponent] Failed to fetch DOI, proceeding anyway:',
+              err,
+            );
+            // Proceed anyway - might work without DOI
+            this.getRepoToken();
+          },
+        });
+    } else {
+      // No datasetDbId available, just proceed
       this.getRepoToken();
     }
   }
@@ -357,21 +430,22 @@ export class DownloadComponent
   }
 
   /**
-   * Fetches the datasetPid from Dataverse globusDownloadParameters API.
-   * Used for preview URL users who don't have the datasetPid in their callback.
+   * Fetches the DOI from globusDownloadParameters API using datasetDbId.
+   * Called automatically when we have datasetDbId but no DOI.
+   * Token is optional - API may work without it for signed URLs.
    */
-  private fetchDatasetPidFromGlobusParams(): void {
-    if (!this.datasetDbId || !this.downloadId || !this.dataverseToken) {
-      // eslint-disable-next-line no-console
-      console.error(
-        '[DownloadComponent] Missing required params for globusDownloadParams',
-      );
+  private fetchDoiFromGlobusParams(): void {
+    if (!this.datasetDbId || !this.downloadId) {
       return;
     }
+    this.loading = true;
     const dataverseUrl = this.pluginService.getExternalURL();
     // eslint-disable-next-line no-console
     console.debug(
-      '[DownloadComponent] Fetching datasetPid from globusDownloadParameters',
+      '[DownloadComponent] Fetching DOI. datasetDbId:',
+      this.datasetDbId,
+      'downloadId:',
+      this.downloadId,
     );
     this.dataService
       .getGlobusDownloadParams(
@@ -382,56 +456,72 @@ export class DownloadComponent
       )
       .subscribe({
         next: (response) => {
+          this.loading = false;
           const pid = response.data?.queryParameters?.datasetPid;
           if (pid) {
             // eslint-disable-next-line no-console
-            console.debug(
-              '[DownloadComponent] Got datasetPid from globusDownloadParameters:',
-              pid,
-            );
+            console.debug('[DownloadComponent] Got DOI:', pid);
             this.datasetId = pid;
             this.doiItems = [{ label: pid, value: pid }];
-            this.onDatasetChange();
-          } else {
-            // eslint-disable-next-line no-console
-            console.error(
-              '[DownloadComponent] No datasetPid in globusDownloadParameters response',
-            );
+            // Now that we have DOI, proceed to OAuth if popup not shown
+            if (!this.showGuestLoginPopup) {
+              this.getRepoToken();
+            }
           }
         },
         error: (err) => {
+          this.loading = false;
           // eslint-disable-next-line no-console
-          console.error(
-            '[DownloadComponent] Failed to get globusDownloadParameters:',
-            err,
-          );
+          console.error('[DownloadComponent] Failed to fetch DOI:', err);
         },
       });
   }
 
-  extractPreviewUrlToken(input: string): string | null {
-    if (!input) return null;
+  /**
+   * Extract both token and datasetDbId from user input.
+   * Input can be:
+   * 1. Just a UUID token
+   * 2. A preview URL: https://.../previewurl.xhtml?token=xxx
+   * 3. A full callback URL: https://.../api/v1/datasets/1234/globusDownloadParameters?downloadId=xxx&token=xxx
+   */
+  extractFromPreviewUrl(input: string): {
+    token: string | null;
+    datasetDbId: string | null;
+  } {
+    if (!input) return { token: null, datasetDbId: null };
     const trimmed = input.trim();
+
     // If it's just a UUID-like token, return it directly
     const uuidPattern =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidPattern.test(trimmed)) {
-      return trimmed;
+      return { token: trimmed, datasetDbId: null };
     }
-    // Try to extract token from URL like https://.../previewurl.xhtml?token=...
+
+    let token: string | null = null;
+    let datasetDbId: string | null = null;
+
+    // Try to parse as URL
     try {
       const url = new URL(trimmed);
-      const token = url.searchParams.get('token');
-      if (token) return token;
+      token = url.searchParams.get('token');
+      // Extract datasetDbId from path like /api/v1/datasets/1234/...
+      const datasetMatch = url.pathname.match(/\/datasets\/(\d+)/);
+      if (datasetMatch) {
+        datasetDbId = datasetMatch[1];
+      }
     } catch {
-      // Not a valid URL, ignore
+      // Not a valid URL, try regex fallback
+      const tokenMatch = trimmed.match(
+        /token=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i,
+      );
+      if (tokenMatch) token = tokenMatch[1];
+
+      const datasetMatch = trimmed.match(/\/datasets\/(\d+)/);
+      if (datasetMatch) datasetDbId = datasetMatch[1];
     }
-    // Try regex fallback for token= in any string
-    const tokenMatch = trimmed.match(
-      /token=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i,
-    );
-    if (tokenMatch) return tokenMatch[1];
-    return null;
+
+    return { token, datasetDbId };
   }
 
   onUserChange() {
@@ -843,11 +933,12 @@ export class DownloadComponent
         nonce: nonce,
         download: true,
         downloadId: this.downloadId,
-        datasetDbId: this.datasetDbId, // For preview URL users to call globusDownloadParameters
         accessMode: this.accessMode,
-        previewUrlToken:
-          this.accessMode === 'preview' ? this.dataverseToken : undefined,
       };
+      // eslint-disable-next-line no-console
+      console.debug('[DownloadComponent] getRepoToken loginState:', {
+        ...loginState,
+      });
       let clId = '?client_id=';
       if (url.includes('?')) {
         clId = '&client_id=';

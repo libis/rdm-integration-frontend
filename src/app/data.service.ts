@@ -165,17 +165,19 @@ export class DataService {
 
   /**
    * Call Dataverse globusDownloadParameters API to get dataset info from downloadId.
-   * Uses the preview URL token as API key.
+   * Uses the preview URL token as API key if provided.
    */
   getGlobusDownloadParams(
     dataverseUrl: string,
     datasetDbId: string,
     downloadId: string,
-    previewToken: string,
+    previewToken?: string,
   ): Observable<GlobusDownloadParams> {
     const url = `${dataverseUrl}/api/datasets/${datasetDbId}/globusDownloadParameters?downloadId=${downloadId}`;
-    return this.http.get<GlobusDownloadParams>(url, {
-      headers: { 'X-Dataverse-key': previewToken },
-    });
+    const headers: Record<string, string> = {};
+    if (previewToken) {
+      headers['X-Dataverse-key'] = previewToken;
+    }
+    return this.http.get<GlobusDownloadParams>(url, { headers });
   }
 }
