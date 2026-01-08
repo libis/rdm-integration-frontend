@@ -147,12 +147,16 @@ class MockUtilsService {
 class MockPluginService {
   showDvToken = false;
   oauthClientId = 'client-id';
+  storeDvToken = false;
 
   setConfig() {
     return Promise.resolve();
   }
   showDVToken() {
     return this.showDvToken;
+  }
+  isStoreDvToken() {
+    return this.storeDvToken;
   }
   datasetFieldEditable() {
     return true;

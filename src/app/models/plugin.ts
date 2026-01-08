@@ -42,6 +42,7 @@ export interface Config {
   showDvTokenGetter: boolean;
   showDvToken: boolean;
   redirect_uri: string;
+  storeDvToken?: boolean;
   loginRedirectUrl?: string;
   sendMails: boolean;
   plugins: RepoPlugin[];

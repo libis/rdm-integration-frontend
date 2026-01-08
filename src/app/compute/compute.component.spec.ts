@@ -80,12 +80,16 @@ class MockPluginService {
   showDvToken = false;
   datasetEditable = true;
   mailEnabled = false;
+  storeDvToken = false;
 
   setConfig() {
     return Promise.resolve();
   }
   showDVToken() {
     return this.showDvToken;
+  }
+  isStoreDvToken() {
+    return this.storeDvToken;
   }
   datasetFieldEditable() {
     return this.datasetEditable;

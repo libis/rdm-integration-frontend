@@ -136,6 +136,7 @@ describe('DdiCdiComponent', () => {
     pluginServiceStub = jasmine.createSpyObj('PluginService', [
       'setConfig',
       'showDVToken',
+      'isStoreDvToken',
       'datasetFieldEditable',
       'dataverseHeader',
       'sendMails',
@@ -157,6 +158,7 @@ describe('DdiCdiComponent', () => {
     // Default stub behaviors
     pluginServiceStub.setConfig.and.returnValue(Promise.resolve());
     pluginServiceStub.showDVToken.and.returnValue(false);
+    pluginServiceStub.isStoreDvToken.and.returnValue(false);
     pluginServiceStub.sendMails.and.returnValue(false);
     pluginServiceStub.datasetFieldEditable.and.returnValue(true);
     pluginServiceStub.dataverseHeader.and.returnValue('Dataverse');

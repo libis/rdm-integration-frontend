@@ -27,6 +27,7 @@ describe('ConnectComponent', () => {
       dataverseHeader: () => 'Dataverse',
       showDVTokenGetter: () => false,
       showDVToken: () => false,
+      isStoreDvToken: () => false,
       collectionOptionsHidden: () => false,
       collectionFieldEditable: () => true,
       datasetFieldEditable: () => true,

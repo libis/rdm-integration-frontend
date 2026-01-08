@@ -119,6 +119,15 @@ export class ComputeComponent
 
   async ngOnInit() {
     await this.pluginService.setConfig();
+
+    // Load dataverseToken from localStorage if storeDvToken is enabled
+    if (this.pluginService.isStoreDvToken()) {
+      const dvToken = localStorage.getItem('dataverseToken');
+      if (dvToken !== null) {
+        this.dataverseToken = dvToken;
+      }
+    }
+
     this.route.queryParams.subscribe((params) => {
       const pid = params['datasetPid'];
       if (pid) {
@@ -171,6 +180,13 @@ export class ComputeComponent
   onUserChange() {
     this.doiItems = [];
     this.datasetId = undefined;
+    // Save dataverseToken to localStorage if storeDvToken is enabled
+    if (
+      this.dataverseToken !== undefined &&
+      this.pluginService.isStoreDvToken()
+    ) {
+      localStorage.setItem('dataverseToken', this.dataverseToken);
+    }
   }
 
   // DV OBJECTS: COMMON

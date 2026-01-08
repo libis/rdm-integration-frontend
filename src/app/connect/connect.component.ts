@@ -180,6 +180,15 @@ export class ConnectComponent
   async ngOnInit() {
     this.attemptFullRestore('[ngOnInit]');
     await this.pluginService.setConfig();
+
+    // Load dataverseToken from localStorage if storeDvToken is enabled
+    if (this.pluginService.isStoreDvToken()) {
+      const dvToken = localStorage.getItem('dataverseToken');
+      if (dvToken !== null) {
+        this.dataverseToken = dvToken;
+      }
+    }
+
     this.repoSearchResultsSubscription =
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
@@ -1254,6 +1263,13 @@ export class ConnectComponent
     this.collectionItems = [];
     this.datasetId = undefined;
     this.collectionId = undefined;
+    // Save dataverseToken to localStorage if storeDvToken is enabled
+    if (
+      this.dataverseToken !== undefined &&
+      this.pluginService.isStoreDvToken()
+    ) {
+      localStorage.setItem('dataverseToken', this.dataverseToken);
+    }
   }
 
   // DV OBJECTS: COMMON

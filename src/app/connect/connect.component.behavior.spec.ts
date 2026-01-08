@@ -76,6 +76,9 @@ class PluginServiceStub {
   showDVToken() {
     return false;
   }
+  isStoreDvToken() {
+    return false;
+  }
   collectionOptionsHidden() {
     return false;
   }

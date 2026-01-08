@@ -155,6 +155,14 @@ export class DownloadComponent
     // eslint-disable-next-line no-console
     console.debug('[DownloadComponent] Config loaded');
 
+    // Load dataverseToken from localStorage if storeDvToken is enabled
+    if (this.pluginService.isStoreDvToken()) {
+      const dvToken = localStorage.getItem('dataverseToken');
+      if (dvToken !== null) {
+        this.dataverseToken = dvToken;
+      }
+    }
+
     // Get initial params to check if this is an OAuth callback
     const initialParams = await firstValueFrom(this.route.queryParams);
     const isOAuthCallback = initialParams['code'] !== undefined;
@@ -546,6 +554,13 @@ export class DownloadComponent
   onUserChange() {
     this.doiItems = [];
     this.datasetId = undefined;
+    // Save dataverseToken to localStorage if storeDvToken is enabled
+    if (
+      this.dataverseToken !== undefined &&
+      this.pluginService.isStoreDvToken()
+    ) {
+      localStorage.setItem('dataverseToken', this.dataverseToken);
+    }
   }
 
   // DV OBJECTS: COMMON

@@ -98,6 +98,9 @@ class MockPluginService {
   showDVToken() {
     return this.showDvToken;
   }
+  isStoreDvToken() {
+    return false;
+  }
   collectionOptionsHidden() {
     return false;
   }

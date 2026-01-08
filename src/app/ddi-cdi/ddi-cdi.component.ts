@@ -377,6 +377,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   async ngOnInit() {
     await this.pluginService.setConfig();
+
+    // Load dataverseToken from localStorage if storeDvToken is enabled
+    if (this.pluginService.isStoreDvToken()) {
+      const dvToken = localStorage.getItem('dataverseToken');
+      if (dvToken !== null) {
+        this.dataverseToken = dvToken;
+      }
+    }
+
     await this.loadShaclTemplate();
     this.route.queryParams.subscribe((params) => {
       const apiToken = params['apiToken'];
@@ -436,6 +445,13 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   onUserChange() {
     this.doiItems = [];
     this.datasetId = undefined;
+    // Save dataverseToken to localStorage if storeDvToken is enabled
+    if (
+      this.dataverseToken !== undefined &&
+      this.pluginService.isStoreDvToken()
+    ) {
+      localStorage.setItem('dataverseToken', this.dataverseToken);
+    }
   }
 
   // DV OBJECTS: COMMON
