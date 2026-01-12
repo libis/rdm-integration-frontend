@@ -284,11 +284,6 @@ export class CompareComponent
     }, 0);
   }
 
-  showAll(): void {
-    this.selectedFilterItems = [...this.filterItems];
-    this.filterOff();
-  }
-
   private filterOn(filters: FilterItem[]): void {
     const visible: TreeNode<Datafile>[] = [];
     this.rowNodeMap.forEach((n) => {
