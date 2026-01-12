@@ -76,16 +76,6 @@
 </p-dialog>
 
 <div class="row justify-content-between align-items-center sticky-menu">
-  <div class="col-auto">
-    <button
-      pButton
-      type="button"
-      class="p-button-sm p-button-raised p-button-secondary"
-      (click)="back()"
-    >
-      <i class="pi pi-angle-double-left"></i>&nbsp;Home
-    </button>
-  </div>
   <div class="col-auto" [hidden]="!showDVToken()">
     <div class="input-group">
       <div class="input-group-prepend">

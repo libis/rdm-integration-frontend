@@ -342,10 +342,6 @@ export class DownloadComponent
     this.repoSearchResultsSubscription?.unsubscribe();
   }
 
-  back(): void {
-    this.navigation.assign('connect');
-  }
-
   showDVToken(): boolean {
     return this.pluginService.showDVToken();
   }
