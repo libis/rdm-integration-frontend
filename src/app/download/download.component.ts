@@ -120,6 +120,10 @@ export class DownloadComponent
   previewUrlInput = '';
   // Access mode: 'guest' | 'preview' | 'login' - tracks user's choice for Globus session
   accessMode: 'guest' | 'preview' | 'login' = 'guest';
+  // Track if guest access was denied (e.g., draft dataset or restricted data)
+  accessDeniedForGuest = false;
+  // Track if guest access attempt is pending (waiting for dataset load result)
+  guestAccessPending = false;
 
   // globus
   token?: string;
@@ -352,6 +356,9 @@ export class DownloadComponent
 
   continueAsGuest(): void {
     // User chose to continue as guest - now redirect to Globus OAuth
+    // Mark that we're attempting guest access
+    this.guestAccessPending = true;
+    this.accessDeniedForGuest = false;
     // If still loading DOI, wait for it to complete
     if (this.loading) {
       // eslint-disable-next-line no-console
@@ -665,6 +672,8 @@ export class DownloadComponent
       .subscribe({
         next: (data) => {
           subscription.unsubscribe();
+          // Guest access succeeded, clear pending flag
+          this.guestAccessPending = false;
           data.data = data.data?.sort((o1, o2) =>
             (o1.id === undefined ? '' : o1.id) <
             (o2.id === undefined ? '' : o2.id)
@@ -684,6 +693,12 @@ export class DownloadComponent
                 'Anonymous Preview URLs (for blind peer review) are restricted by Dataverse ' +
                 'and cannot access the Globus file transfer APIs.',
             );
+          } else if (this.guestAccessPending && this.accessMode === 'guest') {
+            // Guest access was denied - show preview URL option
+            this.guestAccessPending = false;
+            this.accessDeniedForGuest = true;
+            this.showGuestLoginPopup = true;
+            this.showPreviewUrlInput = true;
           } else {
             this.notificationService.showError(
               `Getting downloadable files failed: ${err.error}`,

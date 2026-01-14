@@ -6,7 +6,7 @@
   [modal]="true"
   [(visible)]="showGuestLoginPopup"
   [closable]="false"
-  (onHide)="showPreviewUrlInput = false"
+  (onHide)="showPreviewUrlInput = false; accessDeniedForGuest = false"
 >
   <!-- Step 1: Initial choice view -->
   @if (!showPreviewUrlInput) {
@@ -15,14 +15,14 @@
     </p>
   }
 
-  <!-- Step 2: Preview URL input view -->
+  <!-- Step 2: Preview URL input view (shown when guest access was denied) -->
   @if (showPreviewUrlInput) {
     <p class="m-0">
-      <strong>Preview URL Access</strong>
+      <strong>Access Denied</strong>
     </p>
     <p class="mt-2">
-      Paste your preview URL below to access draft files. You can find the
-      preview URL in the email or message you received from the dataset owner.
+      This data is currently not openly available. Either go back and log in,
+      or paste a provided preview URL below.
     </p>
     <div class="p-inputgroup mt-3">
       <input
@@ -36,7 +36,7 @@
   }
 
   <ng-template pTemplate="footer">
-    <!-- Step 1 buttons -->
+    <!-- Step 1 buttons (initial choice: guest or login) -->
     @if (!showPreviewUrlInput) {
       <div>
         <p-button
@@ -45,22 +45,17 @@
           >Continue as guest</p-button
         >
         <p-button
-          (click)="showPreviewUrlInput = true"
-          styleClass="p-button-sm p-button-raised p-button-warning"
-          >Use preview URL</p-button
-        >
-        <p-button
           (click)="continueWithLogin()"
           styleClass="p-button-sm p-button-raised p-button-primary"
           >Log in with KU Leuven</p-button
         >
       </div>
     }
-    <!-- Step 2 buttons -->
+    <!-- Step 2 buttons (preview URL input after guest access denied) -->
     @if (showPreviewUrlInput) {
       <div>
         <p-button
-          (click)="showPreviewUrlInput = false; previewUrlInput = ''"
+          (click)="showPreviewUrlInput = false; previewUrlInput = ''; accessDeniedForGuest = false"
           styleClass="p-button-sm p-button-raised p-button-secondary"
           ><i class="pi pi-arrow-left"></i>&nbsp;Back</p-button
         >
