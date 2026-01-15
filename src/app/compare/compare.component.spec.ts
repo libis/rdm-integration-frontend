@@ -392,7 +392,8 @@ describe('CompareComponent', () => {
       expect(folderUpdateStub.updateFoldersAction).toHaveBeenCalledWith(map);
     }));
 
-    it('showAll resets selected filters and exits filter mode', () => {
+    it('updateFilters with all items selected resets filter mode', fakeAsync(() => {
+      // Start in filtered mode with only one filter selected
       component.selectedFilterItems = [component.filterItems[0]];
       component.isInFilterMode = true;
       const folderUpdateStub = {
@@ -402,11 +403,16 @@ describe('CompareComponent', () => {
       (component as any).rowNodeMap = new Map([
         ['', { data: {}, children: [] } as unknown as TreeNode<Datafile>],
       ]);
-      component.showAll();
+
+      // Now select all filter items (simulating "show all")
+      component.selectedFilterItems = [...component.filterItems];
+      component.updateFilters();
+      tick(0); // flush the setTimeout
+
       expect(component.selectedFilterItems.length).toBe(4);
       expect(component.isInFilterMode).toBeFalse();
       expect(folderUpdateStub.updateFoldersAction).toHaveBeenCalled();
-    });
+    }));
 
     it('hasSelection detects files with non-ignore actions', () => {
       const map = new Map<string, TreeNode<Datafile>>([

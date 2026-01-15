@@ -642,4 +642,57 @@ describe('ConnectComponent additional behavior/validation', () => {
       true,
     );
   });
+
+  it('getOptions auto-selects item when backend returns selected:true on tree node expand', () => {
+    // Configure plugin to use interactive tree options (like Globus)
+    pluginService.pluginConfig.optionFieldInteractive = true;
+
+    // Backend returns items with one marked as selected (e.g., default folder)
+    const itemsWithSelected = [
+      { label: '3DMark', value: '/C/Users/ErykK/Documents/3DMark/' },
+      { label: 'Garmin', value: '/C/Users/ErykK/Documents/Garmin/' },
+      {
+        label: 'globus download',
+        value: '/C/Users/ErykK/Documents/globus download/',
+        selected: true,
+      },
+      { label: 'MAXON', value: '/C/Users/ErykK/Documents/MAXON/' },
+    ];
+    repoLookup.optionsSpy.and.returnValue(of(itemsWithSelected));
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    fixture.detectChanges();
+
+    // Setup required fields
+    comp.plugin = 'globus';
+    comp.pluginId = 'globus';
+    comp.sourceUrl = 'https://transfer.api.globus.org/v0.10';
+    comp.user = 'user';
+    comp.token = 'tok';
+    comp.repoName = 'endpoint-id';
+
+    // Create a parent node to expand (simulating tree node expansion)
+    const parentNode: any = {
+      label: 'Documents',
+      data: '/C/Users/ErykK/Documents/',
+      children: [],
+    };
+
+    // Call getOptions with a node (simulating tree expansion)
+    comp.getOptions(parentNode);
+
+    // After getOptions completes, the node should have children
+    expect(parentNode.children.length).toBe(4);
+    expect(parentNode.children[0].label).toBe('3DMark');
+    expect(parentNode.children[2].label).toBe('globus download');
+
+    // The item with selected:true should be auto-selected
+    expect(comp.selectedOption).toBeDefined();
+    expect(comp.selectedOption.label).toBe('globus download');
+    expect(comp.selectedOption.data).toBe(
+      '/C/Users/ErykK/Documents/globus download/',
+    );
+    expect(comp.option).toBe('/C/Users/ErykK/Documents/globus download/');
+  });
 });

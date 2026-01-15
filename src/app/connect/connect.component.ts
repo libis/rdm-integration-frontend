@@ -1170,16 +1170,27 @@ export class ConnectComponent
       next: (items: SelectItem<string>[]) => {
         if (items && node) {
           const nodes: TreeNode<string>[] = [];
-          items.forEach((i) =>
-            nodes.push({
+          let selectedNode: TreeNode<string> | undefined;
+          items.forEach((i) => {
+            const treeNode: TreeNode<string> = {
               label: i.label,
               data: i.value,
               leaf: false,
               selectable: true,
-            }),
-          );
+            };
+            nodes.push(treeNode);
+            // Check if backend marked this item as selected (e.g., default folder)
+            if ((i as any).selected) {
+              selectedNode = treeNode;
+            }
+          });
           node.children = nodes;
           this.optionsLoading = false;
+          // Auto-select the default folder if specified by backend
+          if (selectedNode) {
+            this.option = selectedNode.data;
+            this.selectedOption = selectedNode;
+          }
         } else if (items && items.length > 0) {
           this.branchItems = items;
         } else {
