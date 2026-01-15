@@ -942,18 +942,34 @@ export class DownloadComponent
 
     const httpSubscription = this.repoLookupService.getOptions(req).subscribe({
       next: (items: SelectItem<string>[]) => {
+        console.log('[DownloadComponent.getOptions] Received items:', items);
         if (items && node) {
           const nodes: TreeNode<string>[] = [];
-          items.forEach((i) =>
-            nodes.push({
+          let selectedNode: TreeNode<string> | undefined;
+          items.forEach((i) => {
+            const treeNode: TreeNode<string> = {
               label: i.label,
               data: i.value,
               leaf: false,
               selectable: true,
-            }),
-          );
+            };
+            nodes.push(treeNode);
+            // Check if backend marked this item as selected (e.g., default folder)
+            if ((i as any).selected) {
+              console.log('[DownloadComponent.getOptions] Found selected item:', i);
+              selectedNode = treeNode;
+            }
+          });
           node.children = nodes;
           this.optionsLoading = false;
+          // Auto-select the default folder if specified by backend
+          if (selectedNode) {
+            console.log('[DownloadComponent.getOptions] Auto-selecting node:', selectedNode);
+            this.option = selectedNode.data;
+            this.selectedOption = selectedNode;
+          } else {
+            console.log('[DownloadComponent.getOptions] No selected item in response');
+          }
         } else if (items && items.length > 0) {
           this.branchItems = items;
         } else {
