@@ -588,34 +588,38 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
 
     // Add the file to the dataset via backend (handles auth and MIME type)
-    this.dataService.addFileToDataset({
-      persistentId: this.datasetId,
-      dataverseKey: this.dataverseToken,
-      fileName: fileName,
-      content: this.generatedDdiCdi
-    }).subscribe({
-      next: (response) => {
-        if (response.fileId) {
-          // Build the viewer URL with standard Dataverse parameters
-          const viewerUrl = new URL(CDI_VIEWER_URL);
-          viewerUrl.searchParams.set('fileid', String(response.fileId));
-          viewerUrl.searchParams.set('siteUrl', baseUrl);
+    this.dataService
+      .addFileToDataset({
+        persistentId: this.datasetId,
+        dataverseKey: this.dataverseToken,
+        fileName: fileName,
+        content: this.generatedDdiCdi,
+      })
+      .subscribe({
+        next: (response) => {
+          if (response.fileId) {
+            // Build the viewer URL with standard Dataverse parameters
+            const viewerUrl = new URL(CDI_VIEWER_URL);
+            viewerUrl.searchParams.set('fileid', String(response.fileId));
+            viewerUrl.searchParams.set('siteUrl', baseUrl);
 
-          // Open in new window
-          window.open(viewerUrl.toString(), '_blank');
+            // Open in new window
+            window.open(viewerUrl.toString(), '_blank');
 
-          this.notificationService.showSuccess(
-            `File "${fileName}" added to dataset. Opening viewer...`
-          );
-        } else {
-          this.notificationService.showError('Failed to get file ID after upload');
-        }
-      },
-      error: (err) => {
-        console.error('Failed to add file to dataset:', err);
-        this.notificationService.showError('Failed to add file to dataset');
-      }
-    });
+            this.notificationService.showSuccess(
+              `File "${fileName}" added to dataset. Opening viewer...`,
+            );
+          } else {
+            this.notificationService.showError(
+              'Failed to get file ID after upload',
+            );
+          }
+        },
+        error: (err) => {
+          console.error('Failed to add file to dataset:', err);
+          this.notificationService.showError('Failed to add file to dataset');
+        },
+      });
   }
 
   sendMails(): boolean {
