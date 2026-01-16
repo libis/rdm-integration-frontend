@@ -6,7 +6,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
@@ -68,6 +68,7 @@ describe('DdiCdiComponent', () => {
       'generateDdiCdi',
       'getCachedDdiCdiData',
       'getCachedDdiCdiOutput',
+      'addFileToDataset',
     ]);
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
       'getItems',
@@ -535,41 +536,45 @@ describe('DdiCdiComponent', () => {
       expect(window.open).not.toHaveBeenCalled();
     });
 
-    it('should store data in localStorage and open viewer in new window', () => {
+    it('should add file to dataset and open viewer with fileId', fakeAsync(() => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi = GENERATED_TURTLE;
       component.datasetId = 'doi:10.5072/test';
       component.dataverseToken = 'test-token';
 
-      spyOn(localStorage, 'setItem');
       spyOn(window, 'open');
       pluginServiceStub.getExternalURL = jasmine
         .createSpy('getExternalURL')
         .and.returnValue('https://demo.dataverse.org');
+      dataServiceStub.addFileToDataset.and.returnValue(
+        of({ fileId: 12345, key: 'test-key' }),
+      );
 
       component.openInViewer();
+      tick();
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        jasmine.stringMatching(/^cdi-viewer-data-\d+$/),
-        GENERATED_TURTLE,
-      );
+      expect(dataServiceStub.addFileToDataset).toHaveBeenCalledWith({
+        persistentId: 'doi:10.5072/test',
+        dataverseKey: 'test-token',
+        fileName: 'ddi-cdi-metadata.jsonld',
+        content: GENERATED_TURTLE,
+      });
       expect(window.open).toHaveBeenCalledWith(
         jasmine.stringMatching(
-          /storageKey=cdi-viewer-data-.*datasetPid=doi.*dataverseUrl=.*apiToken=test-token/,
+          /fileid=12345.*siteUrl=https%3A%2F%2Fdemo\.dataverse\.org/,
         ),
         '_blank',
       );
-    });
+    }));
 
-    it('should work without optional parameters', () => {
+    it('should show error when baseUrl is not configured', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi = GENERATED_TURTLE;
-      component.datasetId = undefined;
-      component.dataverseToken = '';
+      component.datasetId = 'doi:10.5072/test';
+      component.dataverseToken = 'test-token';
 
-      spyOn(localStorage, 'setItem');
       spyOn(window, 'open');
       pluginServiceStub.getExternalURL = jasmine
         .createSpy('getExternalURL')
@@ -577,17 +582,35 @@ describe('DdiCdiComponent', () => {
 
       component.openInViewer();
 
-      expect(localStorage.setItem).toHaveBeenCalled();
-      expect(window.open).toHaveBeenCalledWith(
-        jasmine.stringMatching(/storageKey=cdi-viewer-data-/),
-        '_blank',
+      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+        'Dataverse URL not configured',
       );
-      // Verify optional params are not in URL
-      const url = (window.open as jasmine.Spy).calls.mostRecent().args[0];
-      expect(url).not.toContain('datasetPid=');
-      expect(url).not.toContain('dataverseUrl=');
-      expect(url).not.toContain('apiToken=');
+      expect(window.open).not.toHaveBeenCalled();
     });
+
+    it('should show error when addFileToDataset fails', fakeAsync(() => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      component.generatedDdiCdi = GENERATED_TURTLE;
+      component.datasetId = 'doi:10.5072/test';
+      component.dataverseToken = 'test-token';
+
+      spyOn(window, 'open');
+      pluginServiceStub.getExternalURL = jasmine
+        .createSpy('getExternalURL')
+        .and.returnValue('https://demo.dataverse.org');
+      dataServiceStub.addFileToDataset.and.returnValue(
+        throwError(() => new Error('Network error')),
+      );
+
+      component.openInViewer();
+      tick();
+
+      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+        'Failed to add file to dataset',
+      );
+      expect(window.open).not.toHaveBeenCalled();
+    }));
   });
 
   describe('Additional Coverage Tests', () => {
