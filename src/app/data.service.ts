@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import {
   AccessResponse,
   AddFileRequest,
+  AddFileResponse,
   CachedComputeResponse,
   CachedResponse,
   CompareResult,
@@ -148,8 +149,8 @@ export class DataService {
     );
   }
 
-  addFileToDataset(req: AddFileRequest): Observable<Key> {
-    return this.http.post<Key>(this.common_add_file_url, req);
+  addFileToDataset(req: AddFileRequest): Observable<AddFileResponse> {
+    return this.http.post<AddFileResponse>(this.common_add_file_url, req);
   }
 
   getUserInfo(): Observable<{ loggedIn: boolean }> {

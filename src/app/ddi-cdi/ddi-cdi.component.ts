@@ -570,34 +570,52 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   /**
-   * Open the CDI Viewer in a new window with the generated data
-   * Data is passed via localStorage for cross-origin communication
+   * Open the CDI Viewer in a new window with the generated data.
+   * First adds the file to the dataset via backend, then opens the viewer
+   * with standard Dataverse file parameters.
    */
   openInViewer(): void {
-    if (!this.generatedDdiCdi) {
+    if (!this.generatedDdiCdi || !this.datasetId) {
       return;
     }
 
-    // Store the JSON-LD in localStorage for the viewer to pick up
-    const storageKey = `cdi-viewer-data-${Date.now()}`;
-    localStorage.setItem(storageKey, this.generatedDdiCdi);
-
-    // Build the viewer URL with storage key parameter
-    const viewerUrl = new URL(CDI_VIEWER_URL);
-    viewerUrl.searchParams.set('storageKey', storageKey);
-    if (this.datasetId) {
-      viewerUrl.searchParams.set('datasetPid', this.datasetId);
-    }
+    const fileName = 'ddi-cdi-metadata.jsonld';
     const baseUrl = this.pluginService.getExternalURL();
-    if (baseUrl) {
-      viewerUrl.searchParams.set('dataverseUrl', baseUrl);
-    }
-    if (this.dataverseToken) {
-      viewerUrl.searchParams.set('apiToken', this.dataverseToken);
+
+    if (!baseUrl) {
+      this.notificationService.showError('Dataverse URL not configured');
+      return;
     }
 
-    // Open in new window
-    window.open(viewerUrl.toString(), '_blank');
+    // Add the file to the dataset via backend (handles auth and MIME type)
+    this.dataService.addFileToDataset({
+      persistentId: this.datasetId,
+      dataverseKey: this.dataverseToken,
+      fileName: fileName,
+      content: this.generatedDdiCdi
+    }).subscribe({
+      next: (response) => {
+        if (response.fileId) {
+          // Build the viewer URL with standard Dataverse parameters
+          const viewerUrl = new URL(CDI_VIEWER_URL);
+          viewerUrl.searchParams.set('fileid', String(response.fileId));
+          viewerUrl.searchParams.set('siteUrl', baseUrl);
+
+          // Open in new window
+          window.open(viewerUrl.toString(), '_blank');
+
+          this.notificationService.showSuccess(
+            `File "${fileName}" added to dataset. Opening viewer...`
+          );
+        } else {
+          this.notificationService.showError('Failed to get file ID after upload');
+        }
+      },
+      error: (err) => {
+        console.error('Failed to add file to dataset:', err);
+        this.notificationService.showError('Failed to add file to dataset');
+      }
+    });
   }
 
   sendMails(): boolean {

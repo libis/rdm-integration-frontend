@@ -31,6 +31,11 @@ export interface Key {
   key?: string;
 }
 
+export interface AddFileResponse {
+  fileId: number;
+  key: string;
+}
+
 export interface AccessResponse {
   access: boolean;
   message: string;
