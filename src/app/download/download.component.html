@@ -21,8 +21,8 @@
       <strong>Access Denied</strong>
     </p>
     <p class="mt-2">
-      This data is currently not openly available. Either go back and log in,
-      or paste a provided preview URL below.
+      This data is currently not openly available. Either go back and log in, or
+      paste a provided preview URL below.
     </p>
     <div class="p-inputgroup mt-3">
       <input
@@ -53,9 +53,16 @@
     }
     <!-- Step 2 buttons (preview URL input after guest access denied) -->
     @if (showPreviewUrlInput) {
-      <div class="d-flex justify-content-end align-items-center" style="gap: 0.5rem">
+      <div
+        class="d-flex justify-content-end align-items-center"
+        style="gap: 0.5rem"
+      >
         <p-button
-          (click)="showPreviewUrlInput = false; previewUrlInput = ''; accessDeniedForGuest = false"
+          (click)="
+            showPreviewUrlInput = false;
+            previewUrlInput = '';
+            accessDeniedForGuest = false
+          "
           styleClass="p-button-sm p-button-raised p-button-secondary"
           ><i class="pi pi-arrow-left"></i>&nbsp;Back</p-button
         >

@@ -438,7 +438,9 @@ export class DownloadComponent
               this.doiItems = [{ label: pid, value: pid }];
             }
             // Extract pre-selected file IDs from the files field
-            this.extractPreSelectedFileIds(response.data?.queryParameters?.files);
+            this.extractPreSelectedFileIds(
+              response.data?.queryParameters?.files,
+            );
             // Now proceed to OAuth with DOI already known
             this.getRepoToken();
           },
@@ -501,7 +503,9 @@ export class DownloadComponent
             this.datasetId = pid;
             this.doiItems = [{ label: pid, value: pid }];
             // Extract pre-selected file IDs from the files field
-            this.extractPreSelectedFileIds(response.data?.queryParameters?.files);
+            this.extractPreSelectedFileIds(
+              response.data?.queryParameters?.files,
+            );
             // Now that we have DOI, proceed to OAuth if popup not shown
             if (!this.showGuestLoginPopup) {
               this.getRepoToken();
@@ -758,9 +762,7 @@ export class DownloadComponent
    * Apply pre-selection to files based on preSelectedFileIds.
    * This honors the user's file selection from Dataverse UI.
    */
-  private applyPreSelection(
-    rowDataMap: Map<string, TreeNode<Datafile>>,
-  ): void {
+  private applyPreSelection(rowDataMap: Map<string, TreeNode<Datafile>>): void {
     let preSelectedCount = 0;
     rowDataMap.forEach((node) => {
       const fileId = node.data?.attributes?.destinationFile?.id;
@@ -1044,7 +1046,10 @@ export class DownloadComponent
             nodes.push(treeNode);
             // Check if backend marked this item as selected (e.g., default folder)
             if ((i as any).selected) {
-              console.log('[DownloadComponent.getOptions] Found selected item:', i);
+              console.log(
+                '[DownloadComponent.getOptions] Found selected item:',
+                i,
+              );
               selectedNode = treeNode;
             }
           });
@@ -1052,11 +1057,16 @@ export class DownloadComponent
           this.optionsLoading = false;
           // Auto-select the default folder if specified by backend
           if (selectedNode) {
-            console.log('[DownloadComponent.getOptions] Auto-selecting node:', selectedNode);
+            console.log(
+              '[DownloadComponent.getOptions] Auto-selecting node:',
+              selectedNode,
+            );
             this.option = selectedNode.data;
             this.selectedOption = selectedNode;
           } else {
-            console.log('[DownloadComponent.getOptions] No selected item in response');
+            console.log(
+              '[DownloadComponent.getOptions] No selected item in response',
+            );
           }
         } else if (items && items.length > 0) {
           this.branchItems = items;

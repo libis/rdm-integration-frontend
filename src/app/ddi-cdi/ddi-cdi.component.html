@@ -143,10 +143,10 @@
   [(visible)]="addFilePopup"
 >
   <p class="m-0">
-    This will add the generated DDI-CDI Turtle file to your dataset.
+    This will add the generated DDI-CDI JSON-LD file to your dataset.
   </p>
   <p class="m-0">
-    The file will be named: <strong>ddi-cdi-[timestamp].ttl</strong>
+    The file will be named: <strong>ddi-cdi-[timestamp].jsonld</strong>
   </p>
   <br />
   <p class="m-0">Do you want to continue?</p>
@@ -234,25 +234,28 @@
           [disabled]="loading"
           (onClick)="refreshOutput()"
           styleClass="p-button-raised p-button-secondary header-button"
-          title="Reload the form (this discards unsaved edits)"
+          title="Reload the viewer (this discards unsaved edits)"
         >
-          <i class="pi pi-refresh"></i>&nbsp;Reload form
+          <i class="pi pi-refresh"></i>&nbsp;Reload viewer
         </p-button>
       </div>
-      <!-- SHACL Form for editing DDI-CDI -->
+      <!-- CDI Viewer iframe for viewing/editing DDI-CDI -->
       <div
         [style.width]="'100%'"
         [style.margin]="'0.2rem'"
         [style.height]="'600px'"
-        [style.overflow]="'auto'"
-        [style.padding]="'1rem'"
+        [style.overflow]="'hidden'"
         [style.border]="'1px solid var(--p-surface-border)'"
         [style.border-radius]="'var(--p-border-radius)'"
         [style.background-color]="'var(--p-content-background)'"
       >
-        @if (shaclError) {
-          <div class="shacl-error" [style.white-space]="'pre-line'">
-            {{ shaclError }}
+        @if (cdiViewerError) {
+          <div
+            class="cdi-viewer-error"
+            [style.white-space]="'pre-line'"
+            [style.padding]="'1rem'"
+          >
+            {{ cdiViewerError }}
           </div>
           <textarea
             autosize
@@ -260,20 +263,21 @@
             [maxRows]="15"
             [value]="generatedDdiCdi"
             readonly
-            style="font-family: monospace; margin-top: 1rem"
+            style="
+              font-family: monospace;
+              margin-top: 1rem;
+              width: 100%;
+              padding: 1rem;
+            "
           ></textarea>
-        } @else {
-          <shacl-form
-            #shaclForm
-            [attr.data-shapes]="shaclShapes"
-            [attr.data-shape-subject]="shaclShapeSubject ?? null"
-            [attr.data-values]="generatedDdiCdi"
-            [attr.data-values-format]="'text/turtle'"
-            [attr.data-shapes-format]="'text/turtle'"
-            [attr.data-values-subject]="shaclTargetNode ?? null"
-            data-dense="true"
-            style="display: block; width: 100%"
-          ></shacl-form>
+        } @else if (cdiViewerUrl) {
+          <iframe
+            #cdiViewerFrame
+            [src]="cdiViewerUrl"
+            style="width: 100%; height: 100%; border: none"
+            title="CDI Viewer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          ></iframe>
         }
       </div>
     }

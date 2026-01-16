@@ -6,7 +6,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
@@ -27,8 +27,6 @@ import {
 } from '../models/compare-result';
 import { Datafile } from '../models/datafile';
 import { SelectItem, TreeNode } from 'primeng/api';
-import { ElementRef } from '@angular/core';
-import cachedResponseFixture from '../../../tests/response.json';
 
 describe('DdiCdiComponent', () => {
   let dataServiceStub: jasmine.SpyObj<DataService>;
@@ -63,62 +61,6 @@ describe('DdiCdiComponent', () => {
     'datasetRefreshed',
     'Refreshed dataset',
   );
-  const UPDATED_TITLE_TURTLE = [
-    '@prefix dcterms: <http://purl.org/dc/terms/> .',
-    '@prefix ex: <http://example.com/> .',
-    '',
-    'ex:datasetSimple dcterms:title "Updated dataset" .',
-  ].join('\n');
-  const PREFIX_ONLY_TURTLE = [
-    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
-    '@prefix dcterms: <http://purl.org/dc/terms/> .',
-  ].join('\n');
-  const BLANK_NODE_TURTLE = [
-    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
-    '@prefix dcterms: <http://purl.org/dc/terms/> .',
-    '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .',
-    '',
-    '_:datasetBlank a cdi:DataSet ;',
-    '  dcterms:identifier "datasetBlank" ;',
-    '  dcterms:title "Blank dataset" .',
-  ].join('\n');
-  const MULTI_LOGICAL_DATASETS_BASE = [
-    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
-    '@prefix dcterms: <http://purl.org/dc/terms/> .',
-    '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .',
-    '@prefix ex: <http://example.com/> .',
-    '',
-    'ex:dataset a cdi:DataSet ;',
-    '  dcterms:identifier "ds-multi" ;',
-    '  dcterms:title "Multi dataset" ;',
-    '  cdi:hasLogicalDataSet _:logicOne ;',
-    '  cdi:hasLogicalDataSet _:logicTwo .',
-    '',
-    '_:logicOne a cdi:LogicalDataSet ;',
-    '  dcterms:identifier "logic-one" ;',
-    '  skos:prefLabel "Logic One" .',
-    '',
-    '_:logicTwo a cdi:LogicalDataSet ;',
-    '  dcterms:identifier "logic-two" ;',
-    '  skos:prefLabel "Logic Two" .',
-  ].join('\n');
-  const MULTI_LOGICAL_DATASETS_FORM = [
-    '@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .',
-    '@prefix dcterms: <http://purl.org/dc/terms/> .',
-    '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .',
-    '@prefix ex: <http://example.com/> .',
-    '',
-    'ex:dataset a cdi:DataSet ;',
-    '  dcterms:identifier "ds-multi" ;',
-    '  dcterms:title "Multi dataset updated" ;',
-    '  cdi:hasLogicalDataSet _:logicUpdated .',
-    '',
-    '_:logicUpdated a cdi:LogicalDataSet ;',
-    '  dcterms:identifier "logic-one" ;',
-    '  skos:prefLabel "Logic One Updated" .',
-  ].join('\n');
-  const cachedResponseData = cachedResponseFixture as CachedComputeResponse;
-  const CACHED_TURTLE = cachedResponseData.ddiCdi ?? '';
 
   beforeEach(async () => {
     // Create service stubs
@@ -128,7 +70,6 @@ describe('DdiCdiComponent', () => {
       'getCachedDdiCdiData',
       'getCachedDdiCdiOutput',
       'addFileToDataset',
-      'getShaclTemplate',
     ]);
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
       'getItems',
@@ -168,11 +109,6 @@ describe('DdiCdiComponent', () => {
     );
     dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
       of({ id: '', data: [] } as CompareResult),
-    );
-    dataServiceStub.getShaclTemplate.and.returnValue(
-      of(
-        '@prefix sh: <http://www.w3.org/ns/shacl#>.\n__TARGET_NODE__ a sh:NodeShape .',
-      ),
     );
 
     await TestBed.configureTestingModule({
@@ -502,14 +438,13 @@ describe('DdiCdiComponent', () => {
       expect(utilsServiceStub.sleep).toHaveBeenCalled();
     });
 
-    it('should set generatedDdiCdi and call setupShaclForm on success', (done) => {
+    it('should set generatedDdiCdi on success', (done) => {
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
         of({ ready: true, res: 'output', ddiCdi: GENERATED_TURTLE }),
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      spyOn<any>(component, 'setupShaclForm');
       component['getDdiCdiData'](mockKey);
       setTimeout(() => {
         expect(component.generatedDdiCdi).toBe(GENERATED_TURTLE);
@@ -647,253 +582,6 @@ describe('DdiCdiComponent', () => {
         done();
       }, 50);
     });
-
-    it('should merge serialized form data with original graph', () => {
-      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
-      component.generatedDdiCdi = SIMPLE_TURTLE;
-      component.originalDdiCdi = SIMPLE_TURTLE;
-      // Mock the SHACL form element
-      const mockFormElement = {
-        serialize: jasmine
-          .createSpy('serialize')
-          .and.returnValue(UPDATED_TITLE_TURTLE),
-        setAttribute: jasmine.createSpy('setAttribute'),
-        removeAttribute: jasmine.createSpy('removeAttribute'),
-        addEventListener: jasmine.createSpy('addEventListener'),
-        removeEventListener: jasmine.createSpy('removeEventListener'),
-        dispatchEvent: jasmine.createSpy('dispatchEvent'),
-      };
-      component.shaclForm = {
-        nativeElement: mockFormElement,
-      } as any;
-      const merged = (component as any).mergeTurtleGraphs(
-        SIMPLE_TURTLE,
-        UPDATED_TITLE_TURTLE,
-      );
-      expect(merged).toContain('dcterms:title "Updated dataset"');
-      component.addFileToDataset();
-      const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-      const request: AddFileRequest = call.args[0];
-      expect(request.content).toContain('dcterms:title "Updated dataset"');
-      expect(request.content).toContain('dcterms:identifier "datasetSimple"');
-      expect(request.content).not.toContain('Sample dataset');
-      expect(mockFormElement.serialize).toHaveBeenCalled();
-    });
-
-    it('should retain unedited logical datasets when merging multi-valued triples', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-
-      const merged = (component as any).mergeTurtleGraphs(
-        MULTI_LOGICAL_DATASETS_BASE,
-        MULTI_LOGICAL_DATASETS_FORM,
-      );
-
-      expect(merged).toContain('Multi dataset updated');
-      expect(merged).toContain('Logic One Updated');
-      expect(merged).toContain('logic-two');
-      expect(merged).toContain('Logic Two');
-    });
-
-    it('should fallback to original content if serialization fails', () => {
-      spyOn(console, 'warn');
-      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
-      component.generatedDdiCdi = 'original-content';
-      // Mock the SHACL form element with failing serialize
-      const mockFormElement = {
-        serialize: jasmine
-          .createSpy('serialize')
-          .and.throwError('Serialization error'),
-        setAttribute: jasmine.createSpy('setAttribute'),
-        removeAttribute: jasmine.createSpy('removeAttribute'),
-        addEventListener: jasmine.createSpy('addEventListener'),
-        removeEventListener: jasmine.createSpy('removeEventListener'),
-        dispatchEvent: jasmine.createSpy('dispatchEvent'),
-      };
-      component.shaclForm = {
-        nativeElement: mockFormElement,
-      } as any;
-      component.addFileToDataset();
-      const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-      const request: AddFileRequest = call.args[0];
-      expect(request.content).toBe('original-content');
-      expect(console.warn).toHaveBeenCalled();
-    });
-
-    it('should retain original turtle when serialized output has no triples', () => {
-      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
-      component.generatedDdiCdi = SIMPLE_TURTLE;
-      component.originalDdiCdi = SIMPLE_TURTLE;
-      const mockFormElement = {
-        serialize: jasmine
-          .createSpy('serialize')
-          .and.returnValue(PREFIX_ONLY_TURTLE),
-        setAttribute: jasmine.createSpy('setAttribute'),
-        removeAttribute: jasmine.createSpy('removeAttribute'),
-        addEventListener: jasmine.createSpy('addEventListener'),
-        removeEventListener: jasmine.createSpy('removeEventListener'),
-        dispatchEvent: jasmine.createSpy('dispatchEvent'),
-      };
-      component.shaclForm = {
-        nativeElement: mockFormElement,
-      } as any;
-
-      component.addFileToDataset();
-
-      const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-      const request: AddFileRequest = call.args[0];
-      expect(request.content).toContain('dcterms:identifier "datasetSimple"');
-      expect(request.content).toContain('Sample dataset');
-      expect(mockFormElement.serialize).toHaveBeenCalled();
-    });
-  });
-
-  describe('cached CDI response integration', () => {
-    it('should build SHACL shapes with dataset root from cached TTL', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      const shapes = (component as any).buildShaclShapes(CACHED_TURTLE);
-      expect(shapes).toBeTruthy();
-      expect(shapes as string).toContain(
-        'sh:targetNode <http://localhost:8080/dataset/doi:10.5072/FK2/HWBVZM>',
-      );
-      expect(shapes as string).toContain('sh:targetClass cdi:DataSet;');
-    });
-
-    it('should set SHACL form attributes with cached dataset focus node', fakeAsync(() => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-
-      const mockElement = {
-        setAttribute: jasmine.createSpy('setAttribute'),
-        removeAttribute: jasmine.createSpy('removeAttribute'),
-        addEventListener: jasmine.createSpy('addEventListener'),
-        removeEventListener: jasmine.createSpy('removeEventListener'),
-        serialize: jasmine.createSpy('serialize'),
-      };
-
-      component.shaclForm = {
-        nativeElement: mockElement,
-      } as unknown as ElementRef;
-
-      (component as any).setGeneratedOutput(CACHED_TURTLE);
-      tick(150);
-
-      expect(component.shaclError).toBeUndefined();
-      expect(mockElement.setAttribute).toHaveBeenCalledWith(
-        'data-values',
-        CACHED_TURTLE,
-      );
-      expect(mockElement.setAttribute).toHaveBeenCalledWith(
-        'data-values-format',
-        'text/turtle',
-      );
-      expect(mockElement.setAttribute).toHaveBeenCalledWith(
-        'data-values-subject',
-        'http://localhost:8080/dataset/doi:10.5072/FK2/HWBVZM',
-      );
-      expect(mockElement.setAttribute).toHaveBeenCalledWith(
-        'data-shape-subject',
-        jasmine.stringMatching(/^urn:ddi-cdi:DatasetShape/),
-      );
-    }));
-
-    it('should upload cached TTL unchanged when SHACL editor is unavailable', fakeAsync(() => {
-      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      fixture.detectChanges();
-
-      component.datasetId = 'doi:10.5072/FK2/HWBVZM';
-      component.dataverseToken = 'token-123';
-      component.originalDdiCdi = CACHED_TURTLE;
-      component.generatedDdiCdi = CACHED_TURTLE;
-      component.shaclError = 'SHACL editor failed to render';
-      component.shaclForm = undefined;
-
-      component.addFileToDataset();
-      tick();
-
-      const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-      const request: AddFileRequest = call.args[0];
-      expect(request.content).toBe(CACHED_TURTLE);
-    }));
-
-    it('should build SHACL shapes when dataset subject is a blank node', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-
-      const shapes = (component as any).buildShaclShapes(BLANK_NODE_TURTLE);
-
-      expect(shapes).toBeTruthy();
-      expect(shapes as string).toMatch(/sh:targetNode _:[^;]+;/);
-      expect((component as any).shaclTargetNode).toBeUndefined();
-    });
-
-    it('should skip binding data-values-subject when focus node is a blank node', fakeAsync(() => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-
-      const mockElement = {
-        setAttribute: jasmine.createSpy('setAttribute'),
-        removeAttribute: jasmine.createSpy('removeAttribute'),
-        addEventListener: jasmine.createSpy('addEventListener'),
-        removeEventListener: jasmine.createSpy('removeEventListener'),
-        serialize: jasmine.createSpy('serialize'),
-      };
-
-      component.shaclForm = {
-        nativeElement: mockElement,
-      } as unknown as ElementRef;
-
-      (component as any).setGeneratedOutput(BLANK_NODE_TURTLE);
-      tick(150);
-
-      expect(mockElement.removeAttribute).toHaveBeenCalledWith(
-        'data-values-subject',
-      );
-      expect(mockElement.setAttribute).not.toHaveBeenCalledWith(
-        'data-values-subject',
-        jasmine.any(String),
-      );
-      expect(component.shaclError).toBeUndefined();
-    }));
-
-    it('should expose SHACL fallback message when Turtle parsing fails', fakeAsync(() => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-
-      const mockElement = {
-        setAttribute: jasmine.createSpy('setAttribute'),
-        removeAttribute: jasmine.createSpy('removeAttribute'),
-        addEventListener: jasmine.createSpy('addEventListener'),
-        removeEventListener: jasmine.createSpy('removeEventListener'),
-        serialize: jasmine.createSpy('serialize'),
-      };
-
-      component.shaclForm = {
-        nativeElement: mockElement,
-      } as unknown as ElementRef;
-
-      const fallbackMessage = (component as any).shaclUnavailableMessage;
-
-      (component as any).setGeneratedOutput('plain text content');
-      tick(150);
-
-      expect(component.generatedDdiCdi).toBe('plain text content');
-      expect(component.shaclError).toBe(fallbackMessage);
-      expect(component.shaclShapes).toBeUndefined();
-      expect(mockElement.setAttribute).not.toHaveBeenCalled();
-    }));
   });
 
   describe('Additional Coverage Tests', () => {
@@ -1206,139 +894,6 @@ describe('DdiCdiComponent', () => {
       });
     });
 
-    describe('setupShaclForm event handling', () => {
-      it('should setup change event listener', (done) => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        const mockElement = {
-          addEventListener: jasmine.createSpy('addEventListener'),
-          removeEventListener: jasmine.createSpy('removeEventListener'),
-          setAttribute: jasmine.createSpy('setAttribute'),
-          removeAttribute: jasmine.createSpy('removeAttribute'),
-          serialize: jasmine
-            .createSpy('serialize')
-            .and.returnValue(SIMPLE_TURTLE),
-        } as any;
-
-        component.generatedDdiCdi = SIMPLE_TURTLE;
-        component.shaclShapes = component['buildShaclShapes'](SIMPLE_TURTLE);
-
-        component.shaclForm = {
-          nativeElement: mockElement,
-        } as ElementRef;
-
-        component['setupShaclForm']();
-
-        setTimeout(() => {
-          expect(mockElement.addEventListener).toHaveBeenCalledWith(
-            'change',
-            jasmine.any(Function),
-          );
-          done();
-        }, 150);
-      });
-
-      it('should update data when form changes with valid input', (done) => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        let changeHandler: (event: CustomEvent) => void;
-        const mockElement = {
-          addEventListener: jasmine
-            .createSpy('addEventListener')
-            .and.callFake((event: string, handler: any) => {
-              if (event === 'change') {
-                changeHandler = handler;
-              }
-            }),
-          removeEventListener: jasmine.createSpy('removeEventListener'),
-          setAttribute: jasmine.createSpy('setAttribute'),
-          removeAttribute: jasmine.createSpy('removeAttribute'),
-          serialize: jasmine
-            .createSpy('serialize')
-            .and.returnValue(SIMPLE_TURTLE),
-        } as any;
-
-        component.shaclForm = {
-          nativeElement: mockElement,
-        } as ElementRef;
-
-        component.generatedDdiCdi = SIMPLE_TURTLE;
-        component.shaclShapes = component['buildShaclShapes'](SIMPLE_TURTLE);
-
-        component['setupShaclForm']();
-
-        setTimeout(() => {
-          expect(changeHandler!).toBeDefined();
-
-          changeHandler!({ detail: { valid: true } } as CustomEvent);
-
-          expect(component.shaclFormValid).toBe(true);
-          expect(component.generatedDdiCdi).toBe(SIMPLE_TURTLE);
-          done();
-        }, 150);
-      });
-
-      it('should set invalid flag when form has validation errors', (done) => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        let changeHandler: (event: CustomEvent) => void;
-        const mockElement = {
-          addEventListener: jasmine
-            .createSpy('addEventListener')
-            .and.callFake((event: string, handler: any) => {
-              if (event === 'change') {
-                changeHandler = handler;
-              }
-            }),
-          removeEventListener: jasmine.createSpy('removeEventListener'),
-          setAttribute: jasmine.createSpy('setAttribute'),
-          removeAttribute: jasmine.createSpy('removeAttribute'),
-          serialize: jasmine.createSpy('serialize'),
-        } as any;
-
-        component.shaclForm = {
-          nativeElement: mockElement,
-        } as ElementRef;
-
-        component.generatedDdiCdi = SIMPLE_TURTLE;
-        component.shaclShapes = component['buildShaclShapes'](SIMPLE_TURTLE);
-
-        component['setupShaclForm']();
-
-        setTimeout(() => {
-          const mockEvent = {
-            detail: { valid: false },
-          } as CustomEvent;
-
-          changeHandler!(mockEvent);
-
-          expect(component.shaclFormValid).toBe(false);
-          expect(mockElement.serialize).not.toHaveBeenCalled();
-          done();
-        }, 150);
-      });
-
-      it('should handle missing form element gracefully', (done) => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        component.shaclForm = undefined;
-        expect(() => component['setupShaclForm']()).not.toThrow();
-
-        setTimeout(() => {
-          expect(component.shaclFormValid).toBe(false);
-          done();
-        }, 150);
-      });
-    });
-
     describe('openAddFileDialog', () => {
       it('should set popup flag to true', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
@@ -1607,8 +1162,8 @@ describe('DdiCdiComponent', () => {
       });
     });
 
-    describe('addFileToDataset without SHACL form', () => {
-      it('should use original content when no SHACL form', (done) => {
+    describe('addFileToDataset content handling', () => {
+      it('should use generated content when adding file', (done) => {
         dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
@@ -1616,7 +1171,6 @@ describe('DdiCdiComponent', () => {
         component.datasetId = 'doi:123';
         component.dataverseToken = 'token';
         component.generatedDdiCdi = 'original-content';
-        component.shaclForm = undefined;
 
         component.addFileToDataset();
 
@@ -1644,11 +1198,11 @@ describe('DdiCdiComponent', () => {
         setTimeout(() => {
           const call = dataServiceStub.addFileToDataset.calls.mostRecent();
           const request: AddFileRequest = call.args[0];
-          expect(request.fileName).toMatch(/^ddi-cdi-\d+\.ttl$/);
+          expect(request.fileName).toMatch(/^ddi-cdi-\d+\.jsonld$/);
 
           // Extract timestamp from filename
           const timestamp = parseInt(
-            request.fileName.match(/ddi-cdi-(\d+)\.ttl/)![1],
+            request.fileName.match(/ddi-cdi-(\d+)\.jsonld/)![1],
           );
           expect(timestamp).toBeGreaterThanOrEqual(beforeTime);
           expect(timestamp).toBeLessThanOrEqual(afterTime);
@@ -1850,198 +1404,6 @@ describe('DdiCdiComponent', () => {
         expect(component.submitPopup).toBe(true);
         expect(dataServiceStub.generateDdiCdi).not.toHaveBeenCalled();
       });
-    });
-
-    describe('Logical dataset form rendering', () => {
-      it('should populate logical dataset with variables from real response', fakeAsync(() => {
-        // Use the real cached response that has logical datasets with variables
-        dataServiceStub.getShaclTemplate.and.returnValue(of(''));
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        // Create mock form element with methods and properties
-        const mockFormElement = document.createElement('div');
-        const mockShaclForm = {
-          nativeElement: mockFormElement,
-        } as ElementRef;
-        component['shaclForm'] = mockShaclForm;
-
-        // Track what gets set on the form element
-        const setAttributes: Record<string, string> = {};
-        const setProperties: Record<string, unknown> = {};
-
-        spyOn(mockFormElement, 'setAttribute').and.callFake(
-          (name: string, value: string) => {
-            setAttributes[name] = value;
-          },
-        );
-        spyOn(mockFormElement, 'removeAttribute');
-        spyOn(mockFormElement, 'addEventListener');
-
-        // Define property setters
-        Object.defineProperties(mockFormElement, {
-          dataShapes: {
-            set(value: string) {
-              setProperties['dataShapes'] = value;
-            },
-            configurable: true,
-          },
-          dataShapesFormat: {
-            set(value: string) {
-              setProperties['dataShapesFormat'] = value;
-            },
-            configurable: true,
-          },
-          dataShapeSubject: {
-            set(value: string) {
-              setProperties['dataShapeSubject'] = value;
-            },
-            configurable: true,
-          },
-          dataValues: {
-            set(value: string) {
-              setProperties['dataValues'] = value;
-            },
-            configurable: true,
-          },
-          dataValuesFormat: {
-            set(value: string) {
-              setProperties['dataValuesFormat'] = value;
-            },
-            configurable: true,
-          },
-          dataValuesSubject: {
-            set(value: string) {
-              setProperties['dataValuesSubject'] = value;
-            },
-            configurable: true,
-          },
-        });
-
-        // Set the generated DDI-CDI data with logical datasets
-        component['setGeneratedOutput'](CACHED_TURTLE);
-        tick(200); // Wait for setTimeout in setupShaclForm
-
-        // Verify that data-values was set with the turtle containing logical datasets
-        expect(setAttributes['data-values']).toBe(CACHED_TURTLE);
-        expect(setAttributes['data-values-format']).toBe('text/turtle');
-
-        // Verify the turtle contains logical datasets with variables
-        expect(CACHED_TURTLE).toContain('cdi:LogicalDataSet');
-        expect(CACHED_TURTLE).toContain('cdi:containsVariable');
-
-        // Verify that properties were also set
-        expect(setProperties['dataValues']).toBe(CACHED_TURTLE);
-        expect(setProperties['dataValuesFormat']).toBe('text/turtle');
-
-        // Verify the form was configured with SHACL shapes
-        expect(setAttributes['data-shapes']).toBeDefined();
-        expect(setAttributes['data-shapes']).toContain('LogicalDataSetShape');
-        expect(setAttributes['data-shapes']).toContain('cdi:containsVariable');
-      }));
-
-      it('should set both attributes and properties for web component compatibility', fakeAsync(() => {
-        dataServiceStub.getShaclTemplate.and.returnValue(of(''));
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        const mockFormElement = document.createElement('div');
-        const mockShaclForm = {
-          nativeElement: mockFormElement,
-        } as ElementRef;
-        component['shaclForm'] = mockShaclForm;
-
-        let dataValuesAttribute: string | undefined;
-        let dataValuesProperty: string | undefined;
-
-        spyOn(mockFormElement, 'setAttribute').and.callFake(
-          (name: string, value: string) => {
-            if (name === 'data-values') {
-              dataValuesAttribute = value;
-            }
-          },
-        );
-        spyOn(mockFormElement, 'removeAttribute');
-        spyOn(mockFormElement, 'addEventListener');
-
-        Object.defineProperty(mockFormElement, 'dataValues', {
-          set(value: string) {
-            dataValuesProperty = value;
-          },
-          configurable: true,
-        });
-
-        Object.defineProperty(mockFormElement, 'dataValuesFormat', {
-          set() {
-            /* no-op */
-          },
-          configurable: true,
-        });
-
-        Object.defineProperty(mockFormElement, 'dataValuesSubject', {
-          set() {
-            /* no-op */
-          },
-          configurable: true,
-        });
-
-        // Set turtle with logical datasets
-        const turtleWithLogical = `
-@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/> .
-@prefix ex: <http://example.com/> .
-
-ex:dataset a cdi:DataSet ;
-  cdi:hasLogicalDataSet [
-    a cdi:LogicalDataSet ;
-    cdi:containsVariable <http://example.com/var1>, <http://example.com/var2>
-  ] .
-`;
-
-        component['setGeneratedOutput'](turtleWithLogical);
-        tick(200);
-
-        // Both attribute and property should be set with the same data
-        expect(dataValuesAttribute).toBe(turtleWithLogical);
-        expect(dataValuesProperty).toBe(turtleWithLogical);
-      }));
-
-      it('should dispatch load event after setting form data', fakeAsync(() => {
-        dataServiceStub.getShaclTemplate.and.returnValue(of(''));
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-
-        const mockFormElement = document.createElement('div');
-        const mockShaclForm = {
-          nativeElement: mockFormElement,
-        } as ElementRef;
-        component['shaclForm'] = mockShaclForm;
-
-        let loadEventDispatched = false;
-        spyOn(mockFormElement, 'setAttribute');
-        spyOn(mockFormElement, 'removeAttribute');
-        spyOn(mockFormElement, 'addEventListener');
-        spyOn(mockFormElement, 'dispatchEvent').and.callFake((event: Event) => {
-          if (event.type === 'load') {
-            loadEventDispatched = true;
-          }
-          return true;
-        });
-
-        Object.defineProperties(mockFormElement, {
-          dataValues: { set() {}, configurable: true },
-          dataValuesFormat: { set() {}, configurable: true },
-          dataValuesSubject: { set() {}, configurable: true },
-        });
-
-        component['setGeneratedOutput'](CACHED_TURTLE);
-        tick(200);
-
-        // Verify load event was dispatched to notify the web component
-        expect(loadEventDispatched).toBe(true);
-      }));
     });
   });
 });

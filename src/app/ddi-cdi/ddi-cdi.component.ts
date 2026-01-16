@@ -1,7 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import {
-  CUSTOM_ELEMENTS_SCHEMA,
   Component,
   ElementRef,
   inject,
@@ -10,6 +9,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 // Services
 import { ActivatedRoute } from '@angular/router';
@@ -44,13 +44,9 @@ import { TabsModule } from 'primeng/tabs';
 
 // Third-party
 import { AutosizeModule } from 'ngx-autosize';
-import '../shacl-form-patch';
 
 // RxJS
 import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
-
-// RDF parsing utilities
-import { Parser, Quad, Store, Writer } from 'n3';
 
 // Constants and types
 import {
@@ -60,11 +56,13 @@ import {
 } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
 
+// CDI Viewer URL - can be configured for different environments
+const CDI_VIEWER_URL = 'https://libis.github.io/cdi-viewer/';
+
 @Component({
   selector: 'app-ddi-cdi',
   templateUrl: './ddi-cdi.component.html',
   styleUrl: './ddi-cdi.component.scss',
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
     CommonModule,
     ButtonDirective,
@@ -88,29 +86,17 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
   private readonly navigation = inject(NavigationService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
 
-  // ViewChild for SHACL form element
-  @ViewChild('shaclForm', { static: false }) shaclForm?: ElementRef;
+  // ViewChild for cdi-viewer iframe
+  @ViewChild('cdiViewerFrame', { static: false })
+  cdiViewerFrame?: ElementRef<HTMLIFrameElement>;
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
-  private readonly RDF_TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
-  private readonly CDI_DATASET_TYPE =
-    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/DataSet';
-  // Predicates where multiple values are expected and must be preserved during merge
-  private readonly multiValuePredicates = new Set<string>([
-    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/hasLogicalDataSet',
-    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/hasPhysicalDataSet',
-    'http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/containsVariable',
-  ]);
-  private readonly preserveBasePredicates = new Set<string>([
-    'http://purl.org/dc/terms/source',
-  ]);
-  private readonly shaclUnavailableMessage =
-    'Unable to render the SHACL editor for this output. The raw Turtle will still be uploaded.';
 
   // NG MODEL FIELDS
   dataverseToken?: string;
@@ -128,234 +114,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   outputDisabled = true;
   selectedFiles: Set<string> = new Set<string>();
   generatedDdiCdi?: string;
-  shaclFormValid = false;
   cachedOutputLoaded = false;
   sendEmailOnSuccess = false;
-  shaclShapes?: string;
-  shaclError?: string;
+  cdiViewerError?: string;
   originalDdiCdi?: string;
   activeTab: string = 'files';
   private totalSelectableFiles = 0;
-  private shaclChangeListener?: EventListener;
-  shaclTargetNode?: string;
-  shaclShapeSubject?: string;
-  private shaclTemplate?: string;
-  private readonly shaclTemplatePlaceholder = '__TARGET_NODE__';
-  private readonly SHACL_NODE_SHAPE = 'http://www.w3.org/ns/shacl#NodeShape';
-  private readonly fallbackShaclTemplate = `@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix dash: <http://datashapes.org/dash#>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix dcterms: <http://purl.org/dc/terms/>.
-@prefix cdi: <http://www.ddialliance.org/Specification/DDI-CDI/1.0/RDF/>.
-@prefix prov: <http://www.w3.org/ns/prov#>.
-@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
 
-<urn:ddi-cdi:DatasetShape> a sh:NodeShape;
-   sh:targetNode __TARGET_NODE__;
-  sh:targetClass cdi:DataSet;
-   sh:class cdi:DataSet;
-   sh:property [
-     sh:path dcterms:identifier;
-     sh:name "Dataset identifier";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path dcterms:title;
-     sh:name "Dataset title";
-     sh:datatype xsd:string;
-     dash:singleLine false;
-     sh:minCount 0;
-     sh:minLength 1;
-   ];
-   sh:property [
-     sh:path dcterms:description;
-     sh:name "Dataset description";
-     sh:datatype xsd:string;
-     dash:singleLine false;
-     sh:minCount 0;
-     sh:minLength 1;
-   ];
-   sh:property [
-     sh:path cdi:hasLogicalDataSet;
-     sh:name "Logical data sets";
-     sh:minCount 1;
-     sh:nodeKind sh:BlankNode;
-     sh:class cdi:LogicalDataSet;
-     sh:node <urn:ddi-cdi:LogicalDataSetShape>;
-   ];
-   sh:property [
-     sh:path cdi:hasPhysicalDataSet;
-     sh:name "Physical data sets";
-     sh:minCount 1;
-     sh:nodeKind sh:BlankNode;
-     sh:node <urn:ddi-cdi:PhysicalDataSetShape>;
-   ];
-   sh:property [
-     sh:path prov:wasGeneratedBy;
-     sh:name "Generation process";
-     sh:minCount 1;
-     sh:nodeKind sh:BlankNode;
-     sh:node <urn:ddi-cdi:ProcessStepShape>;
-   ].
-
-<urn:ddi-cdi:PhysicalDataSetShape> a sh:NodeShape;
-   sh:targetClass cdi:PhysicalDataSet;
-   sh:property [
-     sh:path dcterms:format;
-     sh:name "File format";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path dcterms:identifier;
-     sh:name "File access URI";
-     sh:nodeKind sh:IRI;
-     sh:minCount 0;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path dcterms:provenance;
-     sh:name "File checksum";
-     sh:datatype xsd:string;
-     sh:pattern "^md5:[0-9a-f]{32}$";
-     sh:minCount 0;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path dcterms:source;
-     sh:name "Source DDI";
-     sh:nodeKind sh:Literal;
-     dash:singleLine false;
-     sh:minCount 0;
-   ].
-
-<urn:ddi-cdi:LogicalDataSetShape> a sh:NodeShape;
-   sh:targetClass cdi:LogicalDataSet;
-   sh:property [
-     sh:path dcterms:identifier;
-     sh:name "Logical dataset identifier";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path skos:prefLabel;
-     sh:name "Logical dataset label";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path dcterms:description;
-     sh:name "Logical dataset description";
-     sh:datatype xsd:string;
-     dash:singleLine false;
-     sh:minCount 0;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path cdi:containsVariable;
-     sh:name "Variables";
-     sh:minCount 1;
-     sh:nodeKind sh:IRI;
-     sh:class cdi:Variable;
-     sh:node <urn:ddi-cdi:VariableShape>;
-   ].
-
-<urn:ddi-cdi:VariableShape> a sh:NodeShape;
-   sh:targetClass cdi:Variable;
-   sh:property [
-     sh:path skos:prefLabel;
-     sh:name "Primary label";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path skos:altLabel;
-     sh:name "Alternative label";
-     sh:datatype xsd:string;
-     sh:minCount 0;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path dcterms:identifier;
-     sh:name "Variable identifier";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ];
-   sh:property [
-     sh:path cdi:hasRepresentation;
-     sh:name "Variable datatype";
-     sh:minCount 1;
-     sh:maxCount 1;
-     sh:nodeKind sh:IRI;
-     sh:in (
-       xsd:boolean
-       xsd:dateTime
-       xsd:decimal
-       xsd:integer
-       xsd:string
-     );
-   ];
-   sh:property [
-     sh:path cdi:hasRole;
-     sh:name "Variable role";
-     sh:minCount 1;
-     sh:maxCount 1;
-     sh:nodeKind sh:IRI;
-     sh:node <urn:ddi-cdi:RoleShape>;
-   ];
-   sh:property [
-     sh:path skos:note;
-     sh:name "Variable note";
-     sh:datatype xsd:string;
-     dash:singleLine false;
-     sh:minCount 0;
-     sh:minLength 1;
-   ].
-
-<urn:ddi-cdi:RoleShape> a sh:NodeShape;
-   sh:targetClass cdi:Role;
-   sh:property [
-     sh:path skos:prefLabel;
-     sh:name "Role label";
-     sh:datatype xsd:string;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-     sh:in (
-       "identifier"
-       "measure"
-       "dimension"
-       "attribute"
-     );
-   ].
-
-<urn:ddi-cdi:ProcessStepShape> a sh:NodeShape;
-   sh:targetClass cdi:ProcessStep;
-   sh:property [
-     sh:path dcterms:description;
-     sh:name "Generation description";
-     sh:datatype xsd:string;
-     dash:singleLine false;
-     sh:minCount 1;
-     sh:minLength 1;
-     sh:maxCount 1;
-   ].
-`;
+  // CDI Viewer iframe state
+  cdiViewerUrl?: SafeResourceUrl;
+  private cdiViewerReady = false;
+  private pendingJsonLd?: string;
+  private messageListener?: (event: MessageEvent) => void;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -386,7 +156,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     }
 
-    await this.loadShaclTemplate();
+    // Setup message listener for cdi-viewer iframe communication
+    this.setupCdiViewerMessageListener();
+
     this.route.queryParams.subscribe((params) => {
       const apiToken = params['apiToken'];
       if (apiToken) {
@@ -434,8 +206,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     // Clean up existing observable subscriptions
     this.datasetSearchResultsSubscription?.unsubscribe();
 
-    // Detach SHACL form listeners before the component is destroyed
-    this.detachShaclListener();
+    // Remove cdi-viewer message listener
+    this.removeCdiViewerMessageListener();
   }
 
   showDVToken(): boolean {
@@ -582,7 +354,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           this.dataverseToken,
         ),
       );
-      const match = items.find((item) => item.value === pid);
+      const match = items.find((item: SelectItem<string>) => item.value === pid);
       if (match) {
         this.ensureSelectedDatasetOption(pid, match.label);
       }
@@ -599,7 +371,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loading = true;
     this.output = '';
     this.outputDisabled = true;
-    this.resetShaclState();
+    this.resetCdiViewerState();
     this.selectedFiles.clear();
     this.totalSelectableFiles = 0;
     this.activeTab = 'files';
@@ -733,7 +505,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       sendEmailOnSuccess: this.sendEmailOnSuccess,
     };
     this.loading = true;
-    this.resetShaclState();
+    this.resetCdiViewerState();
     const emailMsg = this.sendEmailOnSuccess
       ? 'You will receive an email when it completes.'
       : 'You will receive an email if it fails.';
@@ -791,477 +563,162 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     });
   }
 
-  private resetShaclState(): void {
-    this.detachShaclListener();
+  private resetCdiViewerState(): void {
+    this.removeCdiViewerMessageListener();
     this.generatedDdiCdi = undefined;
     this.originalDdiCdi = undefined;
-    this.shaclShapes = undefined;
-    this.shaclError = undefined;
-    this.shaclFormValid = false;
-    this.shaclTargetNode = undefined;
-    this.shaclShapeSubject = undefined;
+    this.cdiViewerError = undefined;
+    this.cdiViewerUrl = undefined;
+    this.cdiViewerReady = false;
+    this.pendingJsonLd = undefined;
   }
 
-  private setGeneratedOutput(turtle: string): void {
-    this.resetShaclState();
-    this.originalDdiCdi = turtle;
-    this.generatedDdiCdi = turtle;
-    if (!this.isValidTurtleDocument(turtle)) {
-      this.shaclError = this.shaclUnavailableMessage;
-      return;
-    }
+  private setGeneratedOutput(jsonld: string): void {
+    this.resetCdiViewerState();
+    this.originalDdiCdi = jsonld;
+    this.generatedDdiCdi = jsonld;
 
-    this.shaclShapes = this.buildShaclShapes(turtle);
-    if (!this.shaclShapes) {
-      this.shaclError = this.shaclUnavailableMessage;
-      return;
-    }
-
-    this.shaclError = undefined;
-    this.setupShaclForm();
-  }
-
-  private detachShaclListener(): void {
-    if (this.shaclForm?.nativeElement && this.shaclChangeListener) {
-      this.shaclForm.nativeElement.removeEventListener(
-        'change',
-        this.shaclChangeListener,
-      );
-    }
-    this.shaclChangeListener = undefined;
-  }
-
-  private buildShaclShapes(turtle: string): string | undefined {
-    this.shaclTargetNode = undefined;
-    this.shaclShapeSubject = undefined;
+    // Validate JSON-LD
     try {
-      const parser = new Parser();
-      const quads = parser.parse(turtle);
-      if (!quads.length) {
-        return undefined;
-      }
-
-      type SubjectSelection = {
-        shapesNode: string;
-        attributeValue?: string;
-      };
-
-      const toSubjectSelection = (subject: {
-        termType: string;
-        value: string;
-      }): SubjectSelection | undefined => {
-        if (subject.termType === 'NamedNode') {
-          return {
-            shapesNode: `<${subject.value}>`,
-            attributeValue: subject.value,
-          };
-        }
-        if (subject.termType === 'BlankNode') {
-          return {
-            shapesNode: `_:${subject.value}`,
-          };
-        }
-        return undefined;
-      };
-
-      const datasetSubjects: SubjectSelection[] = [];
-      let fallbackSubject: SubjectSelection | undefined;
-
-      for (const quad of quads) {
-        const selection = toSubjectSelection(quad.subject);
-        if (!selection) {
-          continue;
-        }
-        if (!fallbackSubject) {
-          fallbackSubject = selection;
-        }
-        if (
-          quad.predicate.value === this.RDF_TYPE &&
-          quad.object.termType === 'NamedNode' &&
-          quad.object.value === this.CDI_DATASET_TYPE
-        ) {
-          datasetSubjects.push(selection);
-        }
-      }
-
-      const targetSelection = datasetSubjects[0] ?? fallbackSubject;
-      if (!targetSelection) {
-        return undefined;
-      }
-
-      this.shaclTargetNode = targetSelection.attributeValue;
-      const template = this.getShaclTemplateContent();
-      const substituted = template
-        .split(this.shaclTemplatePlaceholder)
-        .join(targetSelection.shapesNode);
-
-      try {
-        const shapesParser = new Parser();
-        const shapeQuads = shapesParser.parse(substituted);
-
-        // Helper: find a NodeShape subject by exact subject IRI match
-        const findNodeShapeBySubject = (subjectIri: string) =>
-          shapeQuads.find(
-            (q) =>
-              q.subject.termType === 'NamedNode' &&
-              q.subject.value === subjectIri &&
-              q.predicate.value === this.RDF_TYPE &&
-              q.object.termType === 'NamedNode' &&
-              q.object.value === this.SHACL_NODE_SHAPE,
-          );
-
-        // 1) Prefer the well-known dataset root node shape if present
-        const preferredDatasetShapeIri = 'urn:ddi-cdi:DatasetShape';
-        let nodeShapeQuad = findNodeShapeBySubject(preferredDatasetShapeIri);
-
-        // 2) Otherwise, prefer any NodeShape with targetClass cdi:DataSet
-        if (!nodeShapeQuad) {
-          const TARGET_CLASS = 'http://www.w3.org/ns/shacl#targetClass';
-          const CDI_DATASET_TYPE = this.CDI_DATASET_TYPE;
-
-          // Collect all NodeShape subjects
-          const nodeShapeSubjects = new Set(
-            shapeQuads
-              .filter(
-                (q) =>
-                  q.predicate.value === this.RDF_TYPE &&
-                  q.object.termType === 'NamedNode' &&
-                  q.object.value === this.SHACL_NODE_SHAPE,
-              )
-              .map((q) => q.subject.value),
-          );
-
-          // Find a NodeShape subject that has targetClass cdi:DataSet
-          const datasetNodeSubject = Array.from(nodeShapeSubjects).find(
-            (subj) =>
-              shapeQuads.some(
-                (q) =>
-                  q.subject.value === subj &&
-                  q.predicate.value === TARGET_CLASS &&
-                  q.object.termType === 'NamedNode' &&
-                  q.object.value === CDI_DATASET_TYPE,
-              ),
-          );
-
-          if (datasetNodeSubject) {
-            nodeShapeQuad = shapeQuads.find(
-              (q) =>
-                q.subject.value === datasetNodeSubject &&
-                q.predicate.value === this.RDF_TYPE &&
-                q.object.termType === 'NamedNode' &&
-                q.object.value === this.SHACL_NODE_SHAPE,
-            );
-          }
-        }
-
-        // 3) Fallback: pick the first NodeShape found
-        if (!nodeShapeQuad) {
-          nodeShapeQuad = shapeQuads.find(
-            (quad) =>
-              quad.predicate.value === this.RDF_TYPE &&
-              quad.object.termType === 'NamedNode' &&
-              quad.object.value === this.SHACL_NODE_SHAPE,
-          );
-        }
-
-        if (nodeShapeQuad) {
-          const subjectSelection = toSubjectSelection(nodeShapeQuad.subject);
-          this.shaclShapeSubject =
-            subjectSelection?.attributeValue ?? undefined;
-        } else {
-          this.shaclShapeSubject = undefined;
-        }
-      } catch (shapeError) {
-        console.warn('Failed to parse SHACL template', shapeError);
-        this.shaclShapeSubject = undefined;
-      }
-
-      return substituted;
-    } catch (error) {
-      console.warn(
-        'Failed to build SHACL shapes for generated CDI output',
-        error,
-      );
-      this.shaclTargetNode = undefined;
-      this.shaclShapeSubject = undefined;
-      return undefined;
-    }
-  }
-
-  private async loadShaclTemplate(): Promise<void> {
-    try {
-      this.shaclTemplate = await firstValueFrom(
-        this.dataService.getShaclTemplate(),
-      );
-    } catch (error) {
-      console.warn('Failed to load SHACL template from backend', error);
-      this.shaclTemplate = undefined;
-    }
-  }
-
-  private getShaclTemplateContent(): string {
-    return this.shaclTemplate ?? this.fallbackShaclTemplate;
-  }
-
-  private parseTurtleGraph(turtle: string): {
-    quads: Quad[];
-    prefixes: Record<string, string>;
-  } {
-    const parser = new Parser();
-    const quads = parser.parse(turtle);
-    const parserWithPrefixes = parser as Parser & {
-      _prefixes?: Record<string, unknown>;
-    };
-    const prefixes: Record<string, string> = {};
-
-    Object.entries(parserWithPrefixes._prefixes ?? {}).forEach(
-      ([key, value]) => {
-        if (key === '_') {
-          return;
-        }
-        if (typeof value === 'string') {
-          prefixes[key] = value;
-        } else if (value && typeof value === 'object' && 'value' in value) {
-          prefixes[key] = (value as { value: string }).value;
-        }
-      },
-    );
-
-    return { quads, prefixes };
-  }
-
-  private isValidTurtleDocument(turtle: string): boolean {
-    if (!turtle || !turtle.trim()) {
-      return false;
-    }
-    try {
-      this.parseTurtleGraph(turtle);
-      return true;
+      JSON.parse(jsonld);
     } catch {
-      return false;
-    }
-  }
-
-  private isMultiValuePredicate(predicateIri: string | undefined): boolean {
-    if (!predicateIri) {
-      return false;
-    }
-    return this.multiValuePredicates.has(predicateIri);
-  }
-
-  private mergeTurtleGraphs(baseTurtle: string, formTurtle: string): string {
-    const normalizedBase = baseTurtle.trim();
-    const normalizedForm = formTurtle.trim();
-    if (normalizedBase === normalizedForm) {
-      return baseTurtle;
-    }
-
-    let merged = formTurtle;
-    try {
-      const base = this.parseTurtleGraph(baseTurtle);
-      const updates = this.parseTurtleGraph(formTurtle);
-
-      if (!updates.quads.length) {
-        return baseTurtle;
-      }
-
-      const filteredUpdateQuads = updates.quads.filter((quad) => {
-        if (quad.predicate.termType !== 'NamedNode') {
-          return true;
-        }
-        return !this.preserveBasePredicates.has(quad.predicate.value);
-      });
-
-      const baseStore = new Store(base.quads);
-
-      for (const quad of filteredUpdateQuads) {
-        const predicateIri =
-          quad.predicate.termType === 'NamedNode'
-            ? quad.predicate.value
-            : undefined;
-
-        if (predicateIri && this.preserveBasePredicates.has(predicateIri)) {
-          continue;
-        }
-
-        if (predicateIri && this.isMultiValuePredicate(predicateIri)) {
-          baseStore.removeQuad(quad);
-        } else if (predicateIri) {
-          const matches = baseStore.getQuads(
-            quad.subject,
-            quad.predicate,
-            null,
-            quad.graph,
-          );
-          // n3 removeMatches does not reliably clear existing quads for default graph
-          // entries, so remove matches explicitly to avoid duplicate single-valued fields.
-          for (const match of matches) {
-            baseStore.removeQuad(match);
-          }
-        }
-
-        baseStore.addQuad(quad);
-      }
-
-      const writer = new Writer({
-        prefixes: { ...base.prefixes, ...updates.prefixes },
-      });
-      writer.addQuads(baseStore.getQuads(null, null, null, null));
-      writer.end((error, result) => {
-        if (!error && result) {
-          try {
-            this.parseTurtleGraph(result);
-            merged = result;
-          } catch (validationError) {
-            console.warn(
-              'Merged Turtle from SHACL form was invalid; reverting to base content',
-              validationError,
-            );
-            merged = baseTurtle;
-          }
-        }
-      });
-    } catch (error) {
-      console.warn(
-        'Failed to merge SHACL form data with original Turtle',
-        error,
-      );
-      merged = baseTurtle;
-    }
-
-    return merged;
-  }
-
-  private buildMergedFormContent(): string {
-    const baseContent = this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
-    const formElement = this.shaclForm?.nativeElement;
-
-    if (!formElement || this.shaclError) {
-      return baseContent;
-    }
-
-    try {
-      const serialized = formElement.serialize();
-      if (!serialized) {
-        return baseContent;
-      }
-      return this.mergeTurtleGraphs(baseContent, serialized);
-    } catch (error) {
-      console.warn(
-        'Could not serialize SHACL form data, using base content',
-        error,
-      );
-      return baseContent;
-    }
-  }
-
-  private setupShaclForm(): void {
-    if (this.shaclError) {
+      this.cdiViewerError = 'Invalid JSON-LD output. Cannot display in viewer.';
       return;
     }
 
-    if (!this.generatedDdiCdi || !this.shaclForm?.nativeElement) {
-      return;
-    }
+    this.cdiViewerError = undefined;
+    this.setupCdiViewer(jsonld);
+  }
 
-    // Wait until the form element is present before wiring listeners and data
-    setTimeout(() => {
-      const formElement = this.shaclForm?.nativeElement as
-        | HTMLElement
-        | undefined;
-      if (!formElement) {
+  /**
+   * Setup message listener for communication with cdi-viewer iframe
+   */
+  private setupCdiViewerMessageListener(): void {
+    this.messageListener = (event: MessageEvent) => {
+      // Only handle messages from the cdi-viewer
+      if (!event.data || typeof event.data !== 'object') {
         return;
       }
 
-      this.detachShaclListener();
+      const { type, data } = event.data;
 
-      // Set SHACL shapes using both attributes and properties for maximum compatibility
-      if (this.shaclShapes) {
-        formElement.setAttribute('data-shapes', this.shaclShapes);
-        formElement.setAttribute('data-shapes-format', 'text/turtle');
-        if (this.shaclShapeSubject) {
-          formElement.setAttribute(
-            'data-shape-subject',
-            this.shaclShapeSubject,
-          );
-        } else {
-          formElement.removeAttribute('data-shape-subject');
-        }
-
-        // Also set as properties
-        const formWithProps = formElement as HTMLElement & {
-          dataShapes?: string;
-          dataShapesFormat?: string;
-          dataShapeSubject?: string;
-        };
-        if (formWithProps.dataShapes !== undefined) {
-          formWithProps.dataShapes = this.shaclShapes;
-          formWithProps.dataShapesFormat = 'text/turtle';
-          if (this.shaclShapeSubject) {
-            formWithProps.dataShapeSubject = this.shaclShapeSubject;
+      switch (type) {
+        case 'cdiViewerReady':
+          this.cdiViewerReady = true;
+          // Complete handshake
+          this.sendMessageToCdiViewer({
+            type: 'cdiViewerHandshake',
+          });
+          // Send pending data if any
+          if (this.pendingJsonLd) {
+            this.loadJsonLdIntoCdiViewer(this.pendingJsonLd);
+            this.pendingJsonLd = undefined;
           }
-        }
-      } else {
-        formElement.removeAttribute('data-shapes');
-        formElement.removeAttribute('data-shapes-format');
-        formElement.removeAttribute('data-shape-subject');
-      }
+          break;
 
-      // Set data values using both attributes and properties
-      formElement.setAttribute('data-values', this.generatedDdiCdi ?? '');
-      formElement.setAttribute('data-values-format', 'text/turtle');
-      // CRITICAL: Explicitly set the graph to load values into
-      // Without this, values may be loaded into the shapes graph instead
-      formElement.setAttribute('data-values-graph', 'loaded-data');
-      if (this.shaclTargetNode) {
-        formElement.setAttribute('data-values-subject', this.shaclTargetNode);
-      } else {
-        formElement.removeAttribute('data-values-subject');
-      }
+        case 'handshakeComplete':
+          // Handshake completed, now send the data
+          if (this.pendingJsonLd) {
+            this.loadJsonLdIntoCdiViewer(this.pendingJsonLd);
+            this.pendingJsonLd = undefined;
+          }
+          break;
 
-      // Also set as properties (web components often need both attributes and properties)
-      const formWithProps = formElement as HTMLElement & {
-        dataValues?: string;
-        dataValuesFormat?: string;
-        dataValuesSubject?: string;
-        dataValuesGraph?: string;
-      };
-      formWithProps.dataValues = this.generatedDdiCdi ?? '';
-      formWithProps.dataValuesFormat = 'text/turtle';
-      formWithProps.dataValuesGraph = 'loaded-data';
-      if (this.shaclTargetNode) {
-        formWithProps.dataValuesSubject = this.shaclTargetNode;
-      }
+        case 'jsonLdLoaded':
+          // Data loaded successfully
+          console.log('CDI Viewer: Data loaded successfully');
+          break;
 
-      // Dispatch a load event to notify the component that data has been set
-      if (typeof formElement.dispatchEvent === 'function') {
-        formElement.dispatchEvent(new CustomEvent('load', { bubbles: true }));
-      }
-
-      this.shaclChangeListener = (event: Event) => {
-        const customEvent = event as CustomEvent;
-        if (!this.shaclForm?.nativeElement) {
-          return;
-        }
-
-        if (customEvent.detail?.valid) {
-          try {
-            const mergedContent = this.buildMergedFormContent();
-            if (mergedContent) {
-              this.generatedDdiCdi = mergedContent;
+        case 'jsonLdData':
+          // Received data from viewer (for save operations)
+          if (data) {
+            try {
+              this.generatedDdiCdi = JSON.stringify(data, null, 2);
+            } catch {
+              console.warn('Failed to stringify JSON-LD data from viewer');
             }
-            this.shaclFormValid = true;
-          } catch (error) {
-            console.warn('Could not serialize form data', error);
-            this.shaclFormValid = false;
           }
-        } else {
-          this.shaclFormValid = false;
-        }
-      };
+          break;
 
-      formElement.addEventListener('change', this.shaclChangeListener);
-    }, 100);
+        case 'error':
+          console.warn('CDI Viewer error:', event.data.error);
+          break;
+      }
+    };
+
+    window.addEventListener('message', this.messageListener);
+  }
+
+  private removeCdiViewerMessageListener(): void {
+    if (this.messageListener) {
+      window.removeEventListener('message', this.messageListener);
+      this.messageListener = undefined;
+    }
+  }
+
+  /**
+   * Send a message to the cdi-viewer iframe
+   */
+  private sendMessageToCdiViewer(message: object): void {
+    const iframe = this.cdiViewerFrame?.nativeElement;
+    if (!iframe?.contentWindow) {
+      return;
+    }
+    iframe.contentWindow.postMessage(message, CDI_VIEWER_URL);
+  }
+
+  /**
+   * Load JSON-LD data into the cdi-viewer
+   */
+  private loadJsonLdIntoCdiViewer(jsonld: string): void {
+    try {
+      const data = JSON.parse(jsonld);
+      this.sendMessageToCdiViewer({
+        type: 'loadJsonLd',
+        data: data,
+        filename: 'ddi-cdi-metadata.jsonld',
+      });
+    } catch {
+      console.warn('Failed to parse JSON-LD for cdi-viewer');
+    }
+  }
+
+  /**
+   * Request current JSON-LD data from the cdi-viewer
+   */
+  private requestJsonLdFromCdiViewer(): void {
+    this.sendMessageToCdiViewer({
+      type: 'getJsonLd',
+      requestId: Date.now().toString(),
+    });
+  }
+
+  /**
+   * Setup the cdi-viewer iframe with the generated JSON-LD
+   */
+  private setupCdiViewer(jsonld: string): void {
+    // Create the cdi-viewer URL
+    this.cdiViewerUrl =
+      this.sanitizer.bypassSecurityTrustResourceUrl(CDI_VIEWER_URL);
+
+    // Store the JSON-LD to send after iframe loads
+    this.pendingJsonLd = jsonld;
+
+    // If the viewer is already ready (iframe reused), send immediately
+    if (this.cdiViewerReady) {
+      this.loadJsonLdIntoCdiViewer(jsonld);
+      this.pendingJsonLd = undefined;
+    }
+  }
+
+  /**
+   * Get the current content from cdi-viewer for saving
+   */
+  private getCdiViewerContent(): string {
+    // Request fresh data from the viewer
+    this.requestJsonLdFromCdiViewer();
+    // Return the current generatedDdiCdi (will be updated async)
+    return this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
   }
 
   showAddFileButton(): boolean {
@@ -1276,9 +733,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.addFilePopup = false;
     this.loading = true;
 
-    // Get current data from SHACL form if available
-    const content = this.buildMergedFormContent();
-    const fileName = `ddi-cdi-${Date.now()}.ttl`;
+    // Get current data from cdi-viewer
+    const content = this.getCdiViewerContent();
+    const fileName = `ddi-cdi-${Date.now()}.jsonld`;
     const addFileRequest: AddFileRequest = {
       persistentId: this.datasetId!,
       dataverseKey: this.dataverseToken,
@@ -1337,7 +794,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   refreshOutput(): void {
     this.loading = true;
-    this.resetShaclState();
+    this.resetCdiViewerState();
     this.output = '';
     this.cachedOutputLoaded = false;
     this.loadCachedOutput();
