@@ -314,6 +314,8 @@ export class ComputeComponent
       },
       error: (err) => {
         httpSubscription.unsubscribe();
+        this.loading = false;
+        this.cdr.detectChanges();
         this.notificationService.showError(err);
       },
     });
@@ -337,10 +339,12 @@ export class ComputeComponent
           } else {
             this.outputDisabled = false;
           }
+          this.cdr.detectChanges();
         } else {
           if (res.res) {
             this.output = res.res;
           }
+          this.cdr.detectChanges();
           await this.utils.sleep(1000);
           this.getComputeData(key);
         }
@@ -348,6 +352,7 @@ export class ComputeComponent
       error: (err) => {
         subscription.unsubscribe();
         this.loading = false;
+        this.cdr.detectChanges();
         this.notificationService.showError(
           `Getting computation results failed: ${err.error}`,
         );

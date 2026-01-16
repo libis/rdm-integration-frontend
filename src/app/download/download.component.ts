@@ -448,6 +448,7 @@ export class DownloadComponent
             this.extractPreSelectedFileIds(
               response.data?.queryParameters?.files,
             );
+            this.cdr.detectChanges();
             // Now proceed to OAuth with DOI already known
             this.getRepoToken();
           },
@@ -458,6 +459,7 @@ export class DownloadComponent
               '[DownloadComponent] Failed to fetch DOI, proceeding anyway:',
               err,
             );
+            this.cdr.detectChanges();
             // Proceed anyway - might work without DOI
             this.getRepoToken();
           },
@@ -513,6 +515,7 @@ export class DownloadComponent
             this.extractPreSelectedFileIds(
               response.data?.queryParameters?.files,
             );
+            this.cdr.detectChanges();
             // Now that we have DOI, proceed to OAuth if popup not shown
             if (!this.showGuestLoginPopup) {
               this.getRepoToken();
@@ -523,6 +526,7 @@ export class DownloadComponent
           this.loading = false;
           // eslint-disable-next-line no-console
           console.error('[DownloadComponent] Failed to fetch DOI:', err);
+          this.cdr.detectChanges();
         },
       });
   }
@@ -696,6 +700,7 @@ export class DownloadComponent
               : 1,
           );
           this.setData(data);
+          this.cdr.detectChanges();
         },
         error: (err) => {
           subscription.unsubscribe();
@@ -718,6 +723,7 @@ export class DownloadComponent
               `Getting downloadable files failed: ${err.error}`,
             );
           }
+          this.cdr.detectChanges();
         },
       });
   }
@@ -881,6 +887,7 @@ export class DownloadComponent
           const taskId = response?.taskId ?? '';
           if (!taskId) {
             this.notificationService.showSuccess('Download request submitted.');
+            this.cdr.detectChanges();
             return;
           }
 
@@ -890,6 +897,7 @@ export class DownloadComponent
           this.notificationService.showSuccess(
             `Download request started. Globus task ID: ${taskId}`,
           );
+          this.cdr.detectChanges();
         },
         error: (err: unknown) => {
           this.downloadRequested = false;
@@ -906,6 +914,7 @@ export class DownloadComponent
           this.notificationService.showError(
             `Download request failed: ${message}`,
           );
+          this.cdr.detectChanges();
         },
       });
   }
@@ -1068,6 +1077,7 @@ export class DownloadComponent
           this.branchItems = [];
         }
         httpSubscription.unsubscribe();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.notificationService.showError(
@@ -1076,6 +1086,8 @@ export class DownloadComponent
         this.branchItems = [];
         this.option = undefined;
         this.optionsLoading = false;
+        httpSubscription.unsubscribe();
+        this.cdr.detectChanges();
       },
     });
   }

@@ -499,6 +499,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       error: (err) => {
         this.notificationService.showError(`Generation failed: ${err.error}`);
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -524,16 +525,19 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
               );
             }
           }
+          this.cdr.detectChanges();
         } else {
           if (res.res) {
             this.output = res.res;
           }
+          this.cdr.detectChanges();
           await this.utils.sleep(1000);
           this.getDdiCdiData(key);
         }
       },
       error: (err) => {
         this.loading = false;
+        this.cdr.detectChanges();
         this.notificationService.showError(
           `Getting DDI-CDI results failed: ${err.error}`,
         );
