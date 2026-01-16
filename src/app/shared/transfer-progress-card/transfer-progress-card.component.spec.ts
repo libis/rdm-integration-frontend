@@ -3,6 +3,7 @@ import {
   ComponentFixture,
   TestBed,
   fakeAsync,
+  flush,
   tick,
 } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
@@ -1307,22 +1308,21 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('scrolls the card into view when first displayed', fakeAsync(() => {
-    fixture.detectChanges();
+    // Set up prototype spy before component renders
+    const scrollSpy = spyOn(Element.prototype, 'scrollIntoView');
 
+    // Set submitting BEFORE first detectChanges to avoid ExpressionChangedAfterItHasBeenCheckedError
     component.submitting = true;
+
+    // First detectChanges will initialize the view with the card visible
+    fixture.detectChanges();
+    flush(); // flush any pending timers from ngAfterViewInit
+
+    // Now trigger the ngOnChanges which should call maybeScrollCardIntoView
     component.ngOnChanges({
       submitting: new SimpleChange(false, true, false),
     });
-
-    fixture.detectChanges();
-
-    const cardElement = component['cardRoot']?.nativeElement as HTMLElement;
-    expect(cardElement).toBeTruthy();
-
-    const scrollSpy = jasmine.createSpy('scrollIntoView');
-    (cardElement as any).scrollIntoView = scrollSpy;
-
-    tick();
+    flush(); // flush the setTimeout in maybeScrollCardIntoView
 
     expect(scrollSpy).toHaveBeenCalled();
   }));

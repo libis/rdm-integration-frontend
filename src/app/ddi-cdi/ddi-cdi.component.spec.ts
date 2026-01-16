@@ -109,6 +109,7 @@ describe('DdiCdiComponent', () => {
     dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
       of({ id: '', data: [] } as CompareResult),
     );
+    dvObjectLookupServiceStub.getItems.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       imports: [DdiCdiComponent],

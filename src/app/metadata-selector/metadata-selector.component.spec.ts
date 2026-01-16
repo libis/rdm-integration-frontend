@@ -7,6 +7,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   ComponentFixture,
   fakeAsync,
+  flush,
   flushMicrotasks,
   TestBed,
 } from '@angular/core/testing';
@@ -116,15 +117,23 @@ describe('MetadataSelectorComponent', () => {
     component = fixture.componentInstance;
     routerNavigateSpy = TestBed.inject(Router).navigate as jasmine.Spy;
     // Accessing Location back spy not needed for current expectations
+    // Note: We don't call detectChanges() here since the component has async initialization.
+    // Each test that needs the async data must use fakeAsync + flushMicrotasks + detectChanges.
+  });
+
+  it('should create', fakeAsync(() => {
+    // Trigger ngOnInit and wait for async loadData to complete before first detectChanges
+    component.ngOnInit();
+    flushMicrotasks();
     fixture.detectChanges();
-  });
-
-  it('should create', () => {
     expect(component).toBeTruthy();
-  });
+  }));
 
-  it('should navigate to submit with metadata in state when submitting', async () => {
-    await component.submit();
+  it('should navigate to submit with metadata in state when submitting', fakeAsync(() => {
+    component.ngOnInit();
+    flushMicrotasks();
+    fixture.detectChanges();
+    component.submit();
     expect(routerNavigateSpy).toHaveBeenCalled();
     const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
     expect(args[0]).toEqual(['/submit']);
@@ -134,10 +143,10 @@ describe('MetadataSelectorComponent', () => {
     expect(
       Object.prototype.hasOwnProperty.call(args[1].state, 'metadata'),
     ).toBeTrue();
-  });
+  }));
 
   it('should load metadata and build tree map', fakeAsync(() => {
-    // ngOnInit already called; wait for async loadData to complete
+    component.ngOnInit();
     flushMicrotasks();
     fixture.detectChanges();
     expect(component.metadata).toBeTruthy();
@@ -153,6 +162,7 @@ describe('MetadataSelectorComponent', () => {
   }));
 
   it('should render rows with metadata fields', fakeAsync(() => {
+    component.ngOnInit();
     flushMicrotasks();
     fixture.detectChanges();
     // Verify that table rows are rendered
@@ -178,6 +188,7 @@ describe('MetadataSelectorComponent', () => {
   });
 
   it('filteredMetadata should return all fields by default', fakeAsync(() => {
+    component.ngOnInit();
     flushMicrotasks();
     fixture.detectChanges();
     const fm = component.filteredMetadata();
@@ -195,6 +206,7 @@ describe('MetadataSelectorComponent', () => {
   }));
 
   it('filteredMetadata should prune ignored primitive and nested values', fakeAsync(() => {
+    component.ngOnInit();
     flushMicrotasks();
     fixture.detectChanges();
     // Ignore the title node
@@ -227,6 +239,7 @@ describe('MetadataSelectorComponent', () => {
   }));
 
   it('submit should navigate with populated metadata once loaded', fakeAsync(() => {
+    component.ngOnInit();
     flushMicrotasks();
     fixture.detectChanges();
     component.submit();
