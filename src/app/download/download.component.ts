@@ -141,6 +141,8 @@ export class DownloadComponent
   globusPlugin?: RepoPlugin;
   downloadId?: string;
   datasetDbId?: string; // Database ID for preview URL users
+  // Pre-selected file IDs from Dataverse UI (via downloadId/globusDownloadParameters)
+  preSelectedFileIds: Set<string> = new Set();
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
@@ -266,12 +268,16 @@ export class DownloadComponent
           if (loginState.dataverseToken) {
             this.dataverseToken = loginState.dataverseToken;
           }
+          if (loginState.preSelectedFileIds) {
+            this.preSelectedFileIds = new Set(loginState.preSelectedFileIds);
+          }
 
           // eslint-disable-next-line no-console
           console.debug('[DownloadComponent] State after restore:', {
             doi,
             downloadId: this.downloadId,
             accessMode: this.accessMode,
+            preSelectedFileIds: this.preSelectedFileIds.size,
           });
 
           // Load files if we have a valid dataset ID (DOI was fetched before OAuth)
@@ -431,6 +437,8 @@ export class DownloadComponent
               this.datasetId = pid;
               this.doiItems = [{ label: pid, value: pid }];
             }
+            // Extract pre-selected file IDs from the files field
+            this.extractPreSelectedFileIds(response.data?.queryParameters?.files);
             // Now proceed to OAuth with DOI already known
             this.getRepoToken();
           },
@@ -492,6 +500,8 @@ export class DownloadComponent
             console.debug('[DownloadComponent] Got DOI:', pid);
             this.datasetId = pid;
             this.doiItems = [{ label: pid, value: pid }];
+            // Extract pre-selected file IDs from the files field
+            this.extractPreSelectedFileIds(response.data?.queryParameters?.files);
             // Now that we have DOI, proceed to OAuth if popup not shown
             if (!this.showGuestLoginPopup) {
               this.getRepoToken();
@@ -715,7 +725,85 @@ export class DownloadComponent
     if (rootNode?.children) {
       this.rootNodeChildren = rootNode.children;
     }
+
+    // Apply pre-selection from downloadId if available
+    if (this.preSelectedFileIds.size > 0) {
+      this.applyPreSelection(rowDataMap);
+    }
+
     this.loading = false;
+  }
+
+  /**
+   * Extract pre-selected file IDs from the files field of globusDownloadParameters response.
+   * The files field is a Record<string, string> where keys are file IDs.
+   */
+  private extractPreSelectedFileIds(
+    files: Record<string, string> | undefined,
+  ): void {
+    if (files && typeof files === 'object') {
+      const fileIds = Object.keys(files);
+      if (fileIds.length > 0) {
+        this.preSelectedFileIds = new Set(fileIds);
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[DownloadComponent] Extracted ${fileIds.length} pre-selected file ID(s) from Dataverse:`,
+          fileIds,
+        );
+      }
+    }
+  }
+
+  /**
+   * Apply pre-selection to files based on preSelectedFileIds.
+   * This honors the user's file selection from Dataverse UI.
+   */
+  private applyPreSelection(
+    rowDataMap: Map<string, TreeNode<Datafile>>,
+  ): void {
+    let preSelectedCount = 0;
+    rowDataMap.forEach((node) => {
+      const fileId = node.data?.attributes?.destinationFile?.id;
+      if (fileId !== undefined && this.preSelectedFileIds.has(String(fileId))) {
+        node.data!.action = Fileaction.Download;
+        preSelectedCount++;
+      }
+    });
+
+    // Update folder actions to reflect child selections
+    if (preSelectedCount > 0) {
+      const rootNode = rowDataMap.get('');
+      if (rootNode) {
+        this.updateFolderActionsRecursive(rootNode);
+      }
+      // eslint-disable-next-line no-console
+      console.debug(
+        `[DownloadComponent] Pre-selected ${preSelectedCount} file(s) from Dataverse UI`,
+      );
+    }
+  }
+
+  /**
+   * Recursively update folder actions based on child file actions.
+   */
+  private updateFolderActionsRecursive(node: TreeNode<Datafile>): Fileaction {
+    if (node.children && node.children.length > 0) {
+      let result: Fileaction | undefined = undefined;
+      for (const child of node.children) {
+        const childAction = this.updateFolderActionsRecursive(child);
+        if (result !== undefined && result !== childAction) {
+          result = Fileaction.Custom;
+        } else if (result === undefined) {
+          result = childAction;
+        }
+      }
+      if (node.data) {
+        node.data.action = result;
+      }
+      return result ?? Fileaction.Ignore;
+    } else {
+      return node.data?.action ?? Fileaction.Ignore;
+    }
   }
 
   action(): string {
@@ -1039,6 +1127,10 @@ export class DownloadComponent
         downloadId: this.downloadId,
         accessMode: this.accessMode,
         dataverseToken: this.dataverseToken,
+        preSelectedFileIds:
+          this.preSelectedFileIds.size > 0
+            ? Array.from(this.preSelectedFileIds)
+            : undefined,
       };
       // eslint-disable-next-line no-console
       console.debug('[DownloadComponent] getRepoToken loginState:', {

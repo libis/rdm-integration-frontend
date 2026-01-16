@@ -16,6 +16,8 @@ export interface LoginState {
   downloadId?: string;
   accessMode?: 'guest' | 'preview' | 'login';
   dataverseToken?: string;
+  // Pre-selected file IDs from Dataverse UI (via downloadId/globusDownloadParameters)
+  preSelectedFileIds?: string[];
 }
 
 export interface Item {
