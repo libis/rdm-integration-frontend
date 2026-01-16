@@ -1172,7 +1172,6 @@ export class ConnectComponent
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
-          console.log('[getOptions] Received items:', items);
           if (items && node) {
             const nodes: TreeNode<string>[] = [];
             let selectedNode: TreeNode<string> | undefined;
@@ -1185,8 +1184,7 @@ export class ConnectComponent
               };
               nodes.push(treeNode);
               // Check if backend marked this item as selected (e.g., default folder)
-              if ((i as any).selected) {
-                console.log('[getOptions] Found selected item:', i);
+              if ('selected' in i && i.selected) {
                 selectedNode = treeNode;
               }
             });
@@ -1194,11 +1192,8 @@ export class ConnectComponent
             this.optionsLoading = false;
             // Auto-select the default folder if specified by backend
             if (selectedNode) {
-              console.log('[getOptions] Auto-selecting node:', selectedNode);
               this.option = selectedNode.data;
               this.selectedOption = selectedNode;
-            } else {
-              console.log('[getOptions] No selected item found in response');
             }
           } else if (items && items.length > 0) {
             this.branchItems = items;

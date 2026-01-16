@@ -628,7 +628,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
         case 'jsonLdLoaded':
           // Data loaded successfully
-          console.log('CDI Viewer: Data loaded successfully');
           break;
 
         case 'jsonLdData':
