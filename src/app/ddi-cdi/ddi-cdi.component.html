@@ -34,15 +34,26 @@
     <h2 class="page-title m-0">Generate DDI-CDI Metadata</h2>
   </div>
   <div class="col-auto d-flex" style="gap: 0.5rem">
-    @if (showAddFileButton()) {
+    @if (generatedDdiCdi) {
+      <button
+        pButton
+        type="button"
+        class="p-button-sm p-button-raised p-button-secondary header-button"
+        [disabled]="loading"
+        (click)="downloadDdiCdi()"
+        title="Download the generated DDI-CDI JSON-LD file"
+      >
+        <i class="pi pi-download"></i>&nbsp;Download
+      </button>
       <button
         pButton
         type="button"
         class="p-button-sm p-button-raised p-button-primary header-button"
         [disabled]="loading"
-        (click)="openAddFileDialog()"
+        (click)="openInViewer()"
+        title="Open in CDI Viewer to edit and save to Dataverse"
       >
-        Add to Dataset&nbsp;<i class="pi pi-angle-double-right"></i>
+        Open in Viewer&nbsp;<i class="pi pi-external-link"></i>
       </button>
     } @else {
       <button
@@ -135,35 +146,6 @@
   </ng-template>
 </p-dialog>
 
-<!-- Add File to Dataset Dialog -->
-<p-dialog
-  header="Add DDI-CDI File to Dataset"
-  position="topright"
-  [modal]="true"
-  [(visible)]="addFilePopup"
->
-  <p class="m-0">
-    This will add the generated DDI-CDI JSON-LD file to your dataset.
-  </p>
-  <p class="m-0">
-    The file will be named: <strong>ddi-cdi-[timestamp].jsonld</strong>
-  </p>
-  <br />
-  <p class="m-0">Do you want to continue?</p>
-  <ng-template pTemplate="footer">
-    <p-button
-      (onClick)="addFilePopup = false"
-      styleClass="p-button-sm p-button-raised p-button-secondary"
-      >Cancel</p-button
-    >
-    <p-button
-      (onClick)="addFileToDataset()"
-      styleClass="p-button-sm p-button-raised p-button-primary"
-      >Add File</p-button
-    >
-  </ng-template>
-</p-dialog>
-
 <div style="height: 100% - 2rem; overflow: hidden">
   <div style="float: left; width: 50%">
     <p-tabs [(value)]="activeTab">
@@ -230,55 +212,33 @@
   <div style="float: right; width: 50%">
     @if (generatedDdiCdi) {
       <div style="text-align: left; margin-bottom: 0.5rem">
-        <p-button
-          [disabled]="loading"
-          (onClick)="refreshOutput()"
-          styleClass="p-button-raised p-button-secondary header-button"
-          title="Reload the viewer (this discards unsaved edits)"
-        >
-          <i class="pi pi-refresh"></i>&nbsp;Reload viewer
-        </p-button>
+        <strong>Generated DDI-CDI Output</strong>
+        <span style="color: var(--p-text-muted-color); margin-left: 1rem">
+          Use "Download" to save locally, or "Open in Viewer" to edit and save
+          to Dataverse.
+        </span>
       </div>
-      <!-- CDI Viewer iframe for viewing/editing DDI-CDI -->
+      <!-- DDI-CDI JSON-LD Preview -->
       <div
         [style.width]="'100%'"
         [style.margin]="'0.2rem'"
         [style.height]="'600px'"
-        [style.overflow]="'hidden'"
+        [style.overflow]="'auto'"
         [style.border]="'1px solid var(--p-surface-border)'"
         [style.border-radius]="'var(--p-border-radius)'"
         [style.background-color]="'var(--p-content-background)'"
       >
-        @if (cdiViewerError) {
-          <div
-            class="cdi-viewer-error"
-            [style.white-space]="'pre-line'"
-            [style.padding]="'1rem'"
-          >
-            {{ cdiViewerError }}
-          </div>
-          <textarea
-            autosize
-            [minRows]="15"
-            [maxRows]="15"
-            [value]="generatedDdiCdi"
-            readonly
-            style="
-              font-family: monospace;
-              margin-top: 1rem;
-              width: 100%;
-              padding: 1rem;
-            "
-          ></textarea>
-        } @else if (cdiViewerUrl) {
-          <iframe
-            #cdiViewerFrame
-            [src]="cdiViewerUrl"
-            style="width: 100%; height: 100%; border: none"
-            title="CDI Viewer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          ></iframe>
-        }
+        <pre
+          style="
+            font-family: monospace;
+            font-size: 0.85rem;
+            padding: 1rem;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+          "
+          >{{ generatedDdiCdi }}</pre
+        >
       </div>
     }
   </div>

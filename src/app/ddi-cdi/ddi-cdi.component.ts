@@ -1,15 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import {
-  Component,
-  ElementRef,
-  inject,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 // Services
 import { ActivatedRoute } from '@angular/router';
@@ -22,7 +14,6 @@ import { UtilsService } from '../utils.service';
 
 // Models
 import {
-  AddFileRequest,
   CachedComputeResponse,
   CompareResult,
   DdiCdiRequest,
@@ -86,14 +77,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
   private readonly navigation = inject(NavigationService);
-  private readonly sanitizer = inject(DomSanitizer);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
-
-  // ViewChild for cdi-viewer iframe
-  @ViewChild('cdiViewerFrame', { static: false })
-  cdiViewerFrame?: ElementRef<HTMLIFrameElement>;
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
@@ -109,23 +95,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     TreeNode<Datafile>
   >();
   loading = false;
-  addFilePopup = false;
   submitPopup = false;
   outputDisabled = true;
   selectedFiles: Set<string> = new Set<string>();
   generatedDdiCdi?: string;
   cachedOutputLoaded = false;
   sendEmailOnSuccess = false;
-  cdiViewerError?: string;
   originalDdiCdi?: string;
   activeTab: string = 'files';
   private totalSelectableFiles = 0;
-
-  // CDI Viewer iframe state
-  cdiViewerUrl?: SafeResourceUrl;
-  private cdiViewerReady = false;
-  private pendingJsonLd?: string;
-  private messageListener?: (event: MessageEvent) => void;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -155,9 +133,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         this.dataverseToken = dvToken;
       }
     }
-
-    // Setup message listener for cdi-viewer iframe communication
-    this.setupCdiViewerMessageListener();
 
     this.route.queryParams.subscribe((params) => {
       const apiToken = params['apiToken'];
@@ -205,9 +180,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // Clean up existing observable subscriptions
     this.datasetSearchResultsSubscription?.unsubscribe();
-
-    // Remove cdi-viewer message listener
-    this.removeCdiViewerMessageListener();
   }
 
   showDVToken(): boolean {
@@ -373,7 +345,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loading = true;
     this.output = '';
     this.outputDisabled = true;
-    this.resetCdiViewerState();
+    this.resetOutputState();
     this.selectedFiles.clear();
     this.totalSelectableFiles = 0;
     this.activeTab = 'files';
@@ -507,7 +479,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       sendEmailOnSuccess: this.sendEmailOnSuccess,
     };
     this.loading = true;
-    this.resetCdiViewerState();
+    this.resetOutputState();
     const emailMsg = this.sendEmailOnSuccess
       ? 'You will receive an email when it completes.'
       : 'You will receive an email if it fails.';
@@ -565,201 +537,67 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     });
   }
 
-  private resetCdiViewerState(): void {
-    this.removeCdiViewerMessageListener();
+  private resetOutputState(): void {
     this.generatedDdiCdi = undefined;
     this.originalDdiCdi = undefined;
-    this.cdiViewerError = undefined;
-    this.cdiViewerUrl = undefined;
-    this.cdiViewerReady = false;
-    this.pendingJsonLd = undefined;
   }
 
   private setGeneratedOutput(jsonld: string): void {
-    this.resetCdiViewerState();
+    this.resetOutputState();
     this.originalDdiCdi = jsonld;
     this.generatedDdiCdi = jsonld;
+  }
 
-    // Validate JSON-LD
-    try {
-      JSON.parse(jsonld);
-    } catch {
-      this.cdiViewerError = 'Invalid JSON-LD output. Cannot display in viewer.';
+  /**
+   * Download the generated DDI-CDI as a file
+   */
+  downloadDdiCdi(): void {
+    if (!this.generatedDdiCdi) {
       return;
     }
 
-    this.cdiViewerError = undefined;
-    this.setupCdiViewer(jsonld);
+    const blob = new Blob([this.generatedDdiCdi], {
+      type: 'application/ld+json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ddi-cdi-${Date.now()}.jsonld`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   /**
-   * Setup message listener for communication with cdi-viewer iframe
+   * Open the CDI Viewer in a new window with the generated data
+   * Data is passed via localStorage for cross-origin communication
    */
-  private setupCdiViewerMessageListener(): void {
-    this.messageListener = (event: MessageEvent) => {
-      // Only handle messages from the cdi-viewer
-      if (!event.data || typeof event.data !== 'object') {
-        return;
-      }
-
-      const { type, data } = event.data;
-
-      switch (type) {
-        case 'cdiViewerReady':
-          this.cdiViewerReady = true;
-          // Complete handshake
-          this.sendMessageToCdiViewer({
-            type: 'cdiViewerHandshake',
-          });
-          // Send pending data if any
-          if (this.pendingJsonLd) {
-            this.loadJsonLdIntoCdiViewer(this.pendingJsonLd);
-            this.pendingJsonLd = undefined;
-          }
-          break;
-
-        case 'handshakeComplete':
-          // Handshake completed, now send the data
-          if (this.pendingJsonLd) {
-            this.loadJsonLdIntoCdiViewer(this.pendingJsonLd);
-            this.pendingJsonLd = undefined;
-          }
-          break;
-
-        case 'jsonLdLoaded':
-          // Data loaded successfully
-          break;
-
-        case 'jsonLdData':
-          // Received data from viewer (for save operations)
-          if (data) {
-            try {
-              this.generatedDdiCdi = JSON.stringify(data, null, 2);
-            } catch {
-              console.warn('Failed to stringify JSON-LD data from viewer');
-            }
-          }
-          break;
-
-        case 'error':
-          console.warn('CDI Viewer error:', event.data.error);
-          break;
-      }
-    };
-
-    window.addEventListener('message', this.messageListener);
-  }
-
-  private removeCdiViewerMessageListener(): void {
-    if (this.messageListener) {
-      window.removeEventListener('message', this.messageListener);
-      this.messageListener = undefined;
-    }
-  }
-
-  /**
-   * Send a message to the cdi-viewer iframe
-   */
-  private sendMessageToCdiViewer(message: object): void {
-    const iframe = this.cdiViewerFrame?.nativeElement;
-    if (!iframe?.contentWindow) {
+  openInViewer(): void {
+    if (!this.generatedDdiCdi) {
       return;
     }
-    iframe.contentWindow.postMessage(message, CDI_VIEWER_URL);
-  }
 
-  /**
-   * Load JSON-LD data into the cdi-viewer
-   */
-  private loadJsonLdIntoCdiViewer(jsonld: string): void {
-    try {
-      const data = JSON.parse(jsonld);
-      this.sendMessageToCdiViewer({
-        type: 'loadJsonLd',
-        data: data,
-        filename: 'ddi-cdi-metadata.jsonld',
-      });
-    } catch {
-      console.warn('Failed to parse JSON-LD for cdi-viewer');
+    // Store the JSON-LD in localStorage for the viewer to pick up
+    const storageKey = `cdi-viewer-data-${Date.now()}`;
+    localStorage.setItem(storageKey, this.generatedDdiCdi);
+
+    // Build the viewer URL with storage key parameter
+    const viewerUrl = new URL(CDI_VIEWER_URL);
+    viewerUrl.searchParams.set('storageKey', storageKey);
+    if (this.datasetId) {
+      viewerUrl.searchParams.set('datasetPid', this.datasetId);
     }
-  }
-
-  /**
-   * Request current JSON-LD data from the cdi-viewer
-   */
-  private requestJsonLdFromCdiViewer(): void {
-    this.sendMessageToCdiViewer({
-      type: 'getJsonLd',
-      requestId: Date.now().toString(),
-    });
-  }
-
-  /**
-   * Setup the cdi-viewer iframe with the generated JSON-LD
-   */
-  private setupCdiViewer(jsonld: string): void {
-    // Create the cdi-viewer URL with embedded mode parameter
-    this.cdiViewerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `${CDI_VIEWER_URL}?mode=embedded`,
-    );
-
-    // Store the JSON-LD to send after iframe loads
-    this.pendingJsonLd = jsonld;
-
-    // If the viewer is already ready (iframe reused), send immediately
-    if (this.cdiViewerReady) {
-      this.loadJsonLdIntoCdiViewer(jsonld);
-      this.pendingJsonLd = undefined;
+    const baseUrl = this.pluginService.getExternalURL();
+    if (baseUrl) {
+      viewerUrl.searchParams.set('dataverseUrl', baseUrl);
     }
-  }
+    if (this.dataverseToken) {
+      viewerUrl.searchParams.set('apiToken', this.dataverseToken);
+    }
 
-  /**
-   * Get the current content from cdi-viewer for saving
-   */
-  private getCdiViewerContent(): string {
-    // Request fresh data from the viewer
-    this.requestJsonLdFromCdiViewer();
-    // Return the current generatedDdiCdi (will be updated async)
-    return this.generatedDdiCdi ?? this.originalDdiCdi ?? '';
-  }
-
-  showAddFileButton(): boolean {
-    return this.generatedDdiCdi !== undefined && this.generatedDdiCdi !== '';
-  }
-
-  openAddFileDialog(): void {
-    this.addFilePopup = true;
-  }
-
-  addFileToDataset(): void {
-    this.addFilePopup = false;
-    this.loading = true;
-
-    // Get current data from cdi-viewer
-    const content = this.getCdiViewerContent();
-    const fileName = `ddi-cdi-${Date.now()}.jsonld`;
-    const addFileRequest: AddFileRequest = {
-      persistentId: this.datasetId!,
-      dataverseKey: this.dataverseToken,
-      fileName: fileName,
-      content: content,
-    };
-
-    this.dataService.addFileToDataset(addFileRequest).subscribe({
-      next: () => {
-        this.loading = false;
-        this.notificationService.showSuccess(
-          `File "${fileName}" added to dataset successfully!`,
-        );
-        this.setGeneratedOutput(content);
-      },
-      error: (err) => {
-        this.loading = false;
-        this.notificationService.showError(
-          `Failed to add file to dataset: ${err.error}`,
-        );
-      },
-    });
+    // Open in new window
+    window.open(viewerUrl.toString(), '_blank');
   }
 
   sendMails(): boolean {
@@ -796,7 +634,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   refreshOutput(): void {
     this.loading = true;
-    this.resetCdiViewerState();
+    this.resetOutputState();
     this.output = '';
     this.cachedOutputLoaded = false;
     this.loadCachedOutput();
