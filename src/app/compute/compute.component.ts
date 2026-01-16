@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 
 // Services
@@ -74,6 +74,7 @@ export class ComputeComponent
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
   private readonly navigation = inject(NavigationService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -143,7 +144,10 @@ export class ComputeComponent
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.doiItems = v))
+            .then((v) => {
+              this.doiItems = v;
+              this.cdr.detectChanges();
+            })
             .catch(
               (err) =>
                 (this.doiItems = [

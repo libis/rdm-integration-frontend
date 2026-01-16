@@ -157,6 +157,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
                 const match = v.find((item) => item.value === this.datasetId);
                 this.ensureSelectedDatasetOption(this.datasetId, match?.label);
               }
+              this.cdr.detectChanges();
             })
             .catch(
               (err) =>

@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
 
 // Services
 import { ActivatedRoute } from '@angular/router';
@@ -84,6 +84,7 @@ export class DownloadComponent
   private readonly oauth = inject(OauthService);
   private readonly notificationService = inject(NotificationService);
   private readonly navigation = inject(NavigationService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
@@ -306,7 +307,10 @@ export class DownloadComponent
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.doiItems = v))
+            .then((v) => {
+              this.doiItems = v;
+              this.cdr.detectChanges();
+            })
             .catch(
               (err) =>
                 (this.doiItems = [
@@ -325,7 +329,10 @@ export class DownloadComponent
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.repoNames = v))
+            .then((v) => {
+              this.repoNames = v;
+              this.cdr.detectChanges();
+            })
             .catch(
               (err) =>
                 (this.repoNames = [

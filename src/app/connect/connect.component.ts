@@ -1,7 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -97,6 +97,7 @@ export class ConnectComponent
   private readonly navigation = inject(NavigationService);
   private readonly credentialsService = inject(CredentialsService);
   private readonly dataStateService = inject(DataStateService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -194,7 +195,10 @@ export class ConnectComponent
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.repoNames = v))
+            .then((v) => {
+              this.repoNames = v;
+              this.cdr.detectChanges();
+            })
             .catch(
               (err) =>
                 (this.repoNames = [
@@ -213,7 +217,10 @@ export class ConnectComponent
       this.collectionSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.collectionItems = v))
+            .then((v) => {
+              this.collectionItems = v;
+              this.cdr.detectChanges();
+            })
             .catch(
               (err) =>
                 (this.collectionItems = [
