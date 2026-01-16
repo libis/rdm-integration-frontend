@@ -698,9 +698,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
    * Setup the cdi-viewer iframe with the generated JSON-LD
    */
   private setupCdiViewer(jsonld: string): void {
-    // Create the cdi-viewer URL
-    this.cdiViewerUrl =
-      this.sanitizer.bypassSecurityTrustResourceUrl(CDI_VIEWER_URL);
+    // Create the cdi-viewer URL with embedded mode parameter
+    this.cdiViewerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `${CDI_VIEWER_URL}?mode=embedded`,
+    );
 
     // Store the JSON-LD to send after iframe loads
     this.pendingJsonLd = jsonld;
