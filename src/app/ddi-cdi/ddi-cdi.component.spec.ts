@@ -20,7 +20,6 @@ import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
 import {
-  AddFileRequest,
   CachedComputeResponse,
   CompareResult,
   Key,
@@ -69,7 +68,6 @@ describe('DdiCdiComponent', () => {
       'generateDdiCdi',
       'getCachedDdiCdiData',
       'getCachedDdiCdiOutput',
-      'addFileToDataset',
     ]);
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
       'getItems',
@@ -491,96 +489,104 @@ describe('DdiCdiComponent', () => {
     });
   });
 
-  describe('showAddFileButton', () => {
-    it('should return false when generatedDdiCdi is undefined', () => {
+  describe('downloadDdiCdi', () => {
+    it('should not do anything when generatedDdiCdi is undefined', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      expect(component.showAddFileButton()).toBe(false);
+      component.generatedDdiCdi = undefined;
+      spyOn(URL, 'createObjectURL');
+      component.downloadDdiCdi();
+      expect(URL.createObjectURL).not.toHaveBeenCalled();
     });
 
-    it('should return false when generatedDdiCdi is empty', () => {
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.generatedDdiCdi = '';
-      expect(component.showAddFileButton()).toBe(false);
-    });
-
-    it('should return true when generatedDdiCdi has content', () => {
+    it('should create blob and trigger download when generatedDdiCdi has content', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi = GENERATED_TURTLE;
-      expect(component.showAddFileButton()).toBe(true);
+
+      const mockUrl = 'blob:mock-url';
+      spyOn(URL, 'createObjectURL').and.returnValue(mockUrl);
+      spyOn(URL, 'revokeObjectURL');
+      const mockLink = document.createElement('a');
+      spyOn(mockLink, 'click');
+      spyOn(document, 'createElement').and.returnValue(mockLink);
+      spyOn(document.body, 'appendChild');
+      spyOn(document.body, 'removeChild');
+
+      component.downloadDdiCdi();
+
+      expect(URL.createObjectURL).toHaveBeenCalledWith(jasmine.any(Blob));
+      expect(mockLink.href).toBe(mockUrl);
+      expect(mockLink.download).toMatch(/^ddi-cdi-\d+\.jsonld$/);
+      expect(document.body.appendChild).toHaveBeenCalledWith(mockLink);
+      expect(mockLink.click).toHaveBeenCalled();
+      expect(document.body.removeChild).toHaveBeenCalledWith(mockLink);
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith(mockUrl);
     });
   });
 
-  describe('openAddFileDialog', () => {
-    it('should set addFilePopup to true', () => {
+  describe('openInViewer', () => {
+    it('should not do anything when generatedDdiCdi is undefined', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.addFilePopup = false;
-      component.openAddFileDialog();
-      expect(component.addFilePopup).toBe(true);
+      component.generatedDdiCdi = undefined;
+      spyOn(window, 'open');
+      component.openInViewer();
+      expect(window.open).not.toHaveBeenCalled();
     });
-  });
 
-  describe('addFileToDataset', () => {
-    it('should call addFileToDataset with correct request', (done) => {
-      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
+    it('should store data in localStorage and open viewer in new window', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      fixture.detectChanges();
-      component.datasetId = 'doi:123';
-      component.dataverseToken = 'token';
       component.generatedDdiCdi = GENERATED_TURTLE;
-      component.addFileToDataset();
-      expect(component.addFilePopup).toBe(false);
-      // loading is set to false after synchronous observable completion
-      setTimeout(() => {
-        const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-        const request: AddFileRequest = call.args[0];
-        expect(request.persistentId).toBe('doi:123');
-        expect(request.dataverseKey).toBe('token');
-        expect(request.content).toBe(GENERATED_TURTLE);
-        expect(request.fileName).toMatch(/^ddi-cdi-\d+\.jsonld$/);
-        expect(component.loading).toBe(false); // loading should be false after completion
-        done();
-      }, 10);
-    });
+      component.datasetId = 'doi:10.5072/test';
+      component.dataverseToken = 'test-token';
 
-    it('should show success message on completion', (done) => {
-      dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-      const fixture = TestBed.createComponent(DdiCdiComponent);
-      const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
-      component.generatedDdiCdi = GENERATED_TURTLE;
-      component.addFileToDataset();
-      setTimeout(() => {
-        expect(component.loading).toBe(false);
-        expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
-          jasmine.stringMatching(
-            /File "ddi-cdi-\d+\.jsonld" added to dataset successfully!/,
-          ),
-        );
-        done();
-      }, 50);
-    });
+      spyOn(localStorage, 'setItem');
+      spyOn(window, 'open');
+      pluginServiceStub.getExternalURL = jasmine
+        .createSpy('getExternalURL')
+        .and.returnValue('https://demo.dataverse.org');
 
-    it('should handle error from addFileToDataset', (done) => {
-      dataServiceStub.addFileToDataset.and.returnValue(
-        throwError(() => ({ error: 'Upload failed' })),
+      component.openInViewer();
+
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        jasmine.stringMatching(/^cdi-viewer-data-\d+$/),
+        GENERATED_TURTLE,
       );
+      expect(window.open).toHaveBeenCalledWith(
+        jasmine.stringMatching(
+          /storageKey=cdi-viewer-data-.*datasetPid=doi.*dataverseUrl=.*apiToken=test-token/,
+        ),
+        '_blank',
+      );
+    });
+
+    it('should work without optional parameters', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
       component.generatedDdiCdi = GENERATED_TURTLE;
-      component.addFileToDataset();
-      setTimeout(() => {
-        expect(component.loading).toBe(false);
-        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
-          'Failed to add file to dataset: Upload failed',
-        );
-        done();
-      }, 50);
+      component.datasetId = undefined;
+      component.dataverseToken = '';
+
+      spyOn(localStorage, 'setItem');
+      spyOn(window, 'open');
+      pluginServiceStub.getExternalURL = jasmine
+        .createSpy('getExternalURL')
+        .and.returnValue(null);
+
+      component.openInViewer();
+
+      expect(localStorage.setItem).toHaveBeenCalled();
+      expect(window.open).toHaveBeenCalledWith(
+        jasmine.stringMatching(/storageKey=cdi-viewer-data-/),
+        '_blank',
+      );
+      // Verify optional params are not in URL
+      const url = (window.open as jasmine.Spy).calls.mostRecent().args[0];
+      expect(url).not.toContain('datasetPid=');
+      expect(url).not.toContain('dataverseUrl=');
+      expect(url).not.toContain('apiToken=');
     });
   });
 
@@ -894,39 +900,6 @@ describe('DdiCdiComponent', () => {
       });
     });
 
-    describe('openAddFileDialog', () => {
-      it('should set popup flag to true', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.addFilePopup = false;
-        component.openAddFileDialog();
-        expect(component.addFilePopup).toBe(true);
-      });
-    });
-
-    describe('showAddFileButton edge cases', () => {
-      it('should return true for non-empty ddiCdi', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.generatedDdiCdi = 'content';
-        expect(component.showAddFileButton()).toBe(true);
-      });
-
-      it('should return false for empty string', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.generatedDdiCdi = '';
-        expect(component.showAddFileButton()).toBe(false);
-      });
-
-      it('should return false for undefined', () => {
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        component.generatedDdiCdi = undefined;
-        expect(component.showAddFileButton()).toBe(false);
-      });
-    });
-
     describe('ngOnInit query parameters', () => {
       it('should load dataset and token from query params', async () => {
         const mockParams = {
@@ -1159,55 +1132,6 @@ describe('DdiCdiComponent', () => {
 
         expect(component.rootNodeChildren).toEqual([]);
         expect(component.loading).toBe(false);
-      });
-    });
-
-    describe('addFileToDataset content handling', () => {
-      it('should use generated content when adding file', (done) => {
-        dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-        component.datasetId = 'doi:123';
-        component.dataverseToken = 'token';
-        component.generatedDdiCdi = 'original-content';
-
-        component.addFileToDataset();
-
-        setTimeout(() => {
-          const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-          const request: AddFileRequest = call.args[0];
-          expect(request.content).toBe('original-content');
-          done();
-        }, 10);
-      });
-
-      it('should generate filename with timestamp', (done) => {
-        dataServiceStub.addFileToDataset.and.returnValue(of({} as Key));
-        const fixture = TestBed.createComponent(DdiCdiComponent);
-        const component = fixture.componentInstance;
-        fixture.detectChanges();
-        component.datasetId = 'doi:123';
-        component.dataverseToken = 'token';
-        component.generatedDdiCdi = 'content';
-
-        const beforeTime = Date.now();
-        component.addFileToDataset();
-        const afterTime = Date.now();
-
-        setTimeout(() => {
-          const call = dataServiceStub.addFileToDataset.calls.mostRecent();
-          const request: AddFileRequest = call.args[0];
-          expect(request.fileName).toMatch(/^ddi-cdi-\d+\.jsonld$/);
-
-          // Extract timestamp from filename
-          const timestamp = parseInt(
-            request.fileName.match(/ddi-cdi-(\d+)\.jsonld/)![1],
-          );
-          expect(timestamp).toBeGreaterThanOrEqual(beforeTime);
-          expect(timestamp).toBeLessThanOrEqual(afterTime);
-          done();
-        }, 10);
       });
     });
 
