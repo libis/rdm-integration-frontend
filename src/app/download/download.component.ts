@@ -1,7 +1,13 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 
 // Services
 import { ActivatedRoute } from '@angular/router';
