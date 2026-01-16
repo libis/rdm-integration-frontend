@@ -51,9 +51,9 @@
         class="p-button-sm p-button-raised p-button-primary header-button"
         [disabled]="loading"
         (click)="openInViewer()"
-        title="Open in CDI Viewer to edit and save to Dataverse"
+        title="Saves the DDI-CDI file to your dataset and opens it in the CDI Viewer for editing"
       >
-        Open in Viewer&nbsp;<i class="pi pi-external-link"></i>
+        Save &amp; Edit&nbsp;<i class="pi pi-external-link"></i>
       </button>
     } @else {
       <button
@@ -214,8 +214,8 @@
       <div style="text-align: left; margin-bottom: 0.5rem">
         <strong>Generated DDI-CDI Output</strong>
         <span style="color: var(--p-text-muted-color); margin-left: 1rem">
-          Use "Download" to save locally, or "Open in Viewer" to edit and save
-          to Dataverse.
+          Use "Download" to save locally, or "Save &amp; Edit" to add to your
+          dataset and open in the CDI Viewer.
         </span>
       </div>
       <!-- DDI-CDI JSON-LD Preview -->
