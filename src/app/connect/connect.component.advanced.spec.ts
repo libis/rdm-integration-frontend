@@ -4,7 +4,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
@@ -283,7 +283,6 @@ describe('ConnectComponent advanced behaviors', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: PluginService, useValue: pluginService },
         { provide: RepoLookupService, useValue: repoLookup },
         { provide: DvObjectLookupService, useValue: dvLookup },

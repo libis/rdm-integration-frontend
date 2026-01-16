@@ -12,7 +12,7 @@ import {
   flushMicrotasks,
   tick,
 } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -187,7 +187,6 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         {
@@ -402,7 +401,6 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         {
@@ -456,7 +454,6 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         {

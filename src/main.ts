@@ -8,7 +8,6 @@ import {
 } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { definePreset } from '@primeng/themes';
@@ -59,7 +58,6 @@ bootstrapApplication(AppComponent, {
       ProgressSpinnerModule,
     ),
     provideHttpClient(withInterceptorsFromDi()),
-    provideAnimationsAsync(),
     providePrimeNG({
       ripple: false, // disable ripple effects globally
       theme: {

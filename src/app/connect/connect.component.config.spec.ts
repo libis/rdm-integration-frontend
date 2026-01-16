@@ -7,7 +7,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -327,7 +327,6 @@ describe('ConnectComponent pilot plugin configuration', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: DataStateService, useClass: DataStateServiceStub },
         { provide: DatasetService, useClass: DatasetServiceStub },
         { provide: RepoLookupService, useClass: RepoLookupServiceStub },

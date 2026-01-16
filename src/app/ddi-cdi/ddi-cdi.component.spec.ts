@@ -7,7 +7,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -118,7 +118,6 @@ describe('DdiCdiComponent', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: DataService, useValue: dataServiceStub },
         { provide: DvObjectLookupService, useValue: dvObjectLookupServiceStub },
         { provide: PluginService, useValue: pluginServiceStub },

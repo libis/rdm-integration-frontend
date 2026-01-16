@@ -4,7 +4,7 @@ import {
 } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+
 import { provideRouter, Router, RouterOutlet, Routes } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
@@ -134,7 +134,6 @@ describe('Integration: Compare back -> Connect restoration', () => {
       imports: [HostComponent],
       providers: [
         provideRouter(routes),
-        provideNoopAnimations(),
         provideHttpClient(withInterceptorsFromDi()),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: DataStateService, useClass: DataStateServiceStub },
