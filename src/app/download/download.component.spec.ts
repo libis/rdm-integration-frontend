@@ -702,8 +702,10 @@ describe('DownloadComponent', () => {
     initComponent();
     dataService.error = 'service-down';
     component.datasetId = 'doi:test';
+    component.accessMode = 'login';
     component.onDatasetChange();
     tick();
+    flush();
     expect(
       notification.errors.some((msg) =>
         msg.includes('Getting downloadable files failed'),

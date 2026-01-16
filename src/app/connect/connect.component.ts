@@ -47,6 +47,7 @@ import {
   filter,
   firstValueFrom,
   map,
+  take,
 } from 'rxjs';
 
 // Constants and types
@@ -1166,62 +1167,64 @@ export class ConnectComponent
       this.optionsLoading = true;
     }
 
-    const httpSubscription = this.repoLookupService.getOptions(req).subscribe({
-      next: (items: SelectItem<string>[]) => {
-        console.log('[getOptions] Received items:', items);
-        if (items && node) {
-          const nodes: TreeNode<string>[] = [];
-          let selectedNode: TreeNode<string> | undefined;
-          items.forEach((i) => {
-            const treeNode: TreeNode<string> = {
-              label: i.label,
-              data: i.value,
-              leaf: false,
-              selectable: true,
-            };
-            nodes.push(treeNode);
-            // Check if backend marked this item as selected (e.g., default folder)
-            if ((i as any).selected) {
-              console.log('[getOptions] Found selected item:', i);
-              selectedNode = treeNode;
+    this.repoLookupService
+      .getOptions(req)
+      .pipe(take(1))
+      .subscribe({
+        next: (items: SelectItem<string>[]) => {
+          console.log('[getOptions] Received items:', items);
+          if (items && node) {
+            const nodes: TreeNode<string>[] = [];
+            let selectedNode: TreeNode<string> | undefined;
+            items.forEach((i) => {
+              const treeNode: TreeNode<string> = {
+                label: i.label,
+                data: i.value,
+                leaf: false,
+                selectable: true,
+              };
+              nodes.push(treeNode);
+              // Check if backend marked this item as selected (e.g., default folder)
+              if ((i as any).selected) {
+                console.log('[getOptions] Found selected item:', i);
+                selectedNode = treeNode;
+              }
+            });
+            node.children = nodes;
+            this.optionsLoading = false;
+            // Auto-select the default folder if specified by backend
+            if (selectedNode) {
+              console.log('[getOptions] Auto-selecting node:', selectedNode);
+              this.option = selectedNode.data;
+              this.selectedOption = selectedNode;
+            } else {
+              console.log('[getOptions] No selected item found in response');
             }
-          });
-          node.children = nodes;
-          this.optionsLoading = false;
-          // Auto-select the default folder if specified by backend
-          if (selectedNode) {
-            console.log('[getOptions] Auto-selecting node:', selectedNode);
-            this.option = selectedNode.data;
-            this.selectedOption = selectedNode;
+          } else if (items && items.length > 0) {
+            this.branchItems = items;
           } else {
-            console.log('[getOptions] No selected item found in response');
+            this.branchItems = [];
           }
-        } else if (items && items.length > 0) {
-          this.branchItems = items;
-        } else {
-          this.branchItems = [];
-        }
-        httpSubscription.unsubscribe();
-      },
-      error: (err) => {
-        const errStr: string = err.error;
-        const scopesStr = '*scopes*';
-        if (errStr.includes(scopesStr)) {
-          const scopes = errStr.substring(
-            errStr.indexOf(scopesStr) + scopesStr.length,
-            errStr.lastIndexOf(scopesStr),
-          );
-          this.getRepoToken(scopes);
-        } else {
-          this.notificationService.showError(
-            `Branch lookup failed: ${err.error}`,
-          );
-          this.branchItems = [];
-          this.option = undefined;
-          this.optionsLoading = false;
-        }
-      },
-    });
+        },
+        error: (err) => {
+          const errStr: string = err.error;
+          const scopesStr = '*scopes*';
+          if (errStr.includes(scopesStr)) {
+            const scopes = errStr.substring(
+              errStr.indexOf(scopesStr) + scopesStr.length,
+              errStr.lastIndexOf(scopesStr),
+            );
+            this.getRepoToken(scopes);
+          } else {
+            this.notificationService.showError(
+              `Branch lookup failed: ${err.error}`,
+            );
+            this.branchItems = [];
+            this.option = undefined;
+            this.optionsLoading = false;
+          }
+        },
+      });
   }
 
   isOptionFieldInteractive(): boolean {

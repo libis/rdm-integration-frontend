@@ -541,7 +541,7 @@ describe('DdiCdiComponent', () => {
         expect(request.persistentId).toBe('doi:123');
         expect(request.dataverseKey).toBe('token');
         expect(request.content).toBe(GENERATED_TURTLE);
-        expect(request.fileName).toMatch(/^ddi-cdi-\d+\.ttl$/);
+        expect(request.fileName).toMatch(/^ddi-cdi-\d+\.jsonld$/);
         expect(component.loading).toBe(false); // loading should be false after completion
         done();
       }, 10);
@@ -558,7 +558,7 @@ describe('DdiCdiComponent', () => {
         expect(component.loading).toBe(false);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
           jasmine.stringMatching(
-            /File "ddi-cdi-\d+\.ttl" added to dataset successfully!/,
+            /File "ddi-cdi-\d+\.jsonld" added to dataset successfully!/,
           ),
         );
         done();

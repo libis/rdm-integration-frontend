@@ -646,6 +646,9 @@ describe('ConnectComponent additional behavior/validation', () => {
   it('getOptions auto-selects item when backend returns selected:true on tree node expand', () => {
     // Configure plugin to use interactive tree options (like Globus)
     pluginService.pluginConfig.optionFieldInteractive = true;
+    pluginService.pluginConfig.parseSourceUrlField = false;
+    pluginService.pluginConfig.sourceUrlFieldValue =
+      'https://transfer.api.globus.org/v0.10';
 
     // Backend returns items with one marked as selected (e.g., default folder)
     const itemsWithSelected = [
