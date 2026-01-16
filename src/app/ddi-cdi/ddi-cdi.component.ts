@@ -354,7 +354,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           this.dataverseToken,
         ),
       );
-      const match = items.find((item: SelectItem<string>) => item.value === pid);
+      const match = items.find(
+        (item: SelectItem<string>) => item.value === pid,
+      );
       if (match) {
         this.ensureSelectedDatasetOption(pid, match.label);
       }
