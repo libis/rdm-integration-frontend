@@ -47,9 +47,6 @@ import {
 } from '../shared/constants';
 import { SubscriptionManager } from '../shared/types';
 
-// CDI Viewer URL - can be configured for different environments
-const CDI_VIEWER_URL = 'https://libis.github.io/cdi-viewer/';
-
 @Component({
   selector: 'app-ddi-cdi',
   templateUrl: './ddi-cdi.component.html',
@@ -598,16 +595,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       .subscribe({
         next: (response) => {
           if (response.fileId) {
-            // Build the viewer URL with standard Dataverse parameters
-            const viewerUrl = new URL(CDI_VIEWER_URL);
-            viewerUrl.searchParams.set('fileid', String(response.fileId));
-            viewerUrl.searchParams.set('siteUrl', baseUrl);
+            // Build the Dataverse file page URL
+            // Version is always DRAFT because we just added a file to the dataset
+            const filePageUrl = `${baseUrl}/file.xhtml?fileId=${response.fileId}&version=DRAFT`;
 
             // Open in new window
-            window.open(viewerUrl.toString(), '_blank');
+            window.open(filePageUrl, '_blank');
 
             this.notificationService.showSuccess(
-              `File "${fileName}" added to dataset. Opening viewer...`,
+              `File "${fileName}" added to dataset. Opening file page...`,
             );
           } else {
             this.notificationService.showError(
