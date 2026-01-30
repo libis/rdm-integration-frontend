@@ -561,9 +561,7 @@ describe('DdiCdiComponent', () => {
         content: GENERATED_TURTLE,
       });
       expect(window.open).toHaveBeenCalledWith(
-        jasmine.stringMatching(
-          /fileid=12345.*siteUrl=https%3A%2F%2Fdemo\.dataverse\.org/,
-        ),
+        'https://demo.dataverse.org/file.xhtml?fileId=12345&version=DRAFT',
         '_blank',
       );
     }));
