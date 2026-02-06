@@ -42,19 +42,18 @@ export class SubmitService {
     selected: Datafile[],
     sendEmailOnSuccess: boolean,
   ): Observable<StoreResult> {
-    const credentials = this.credentialsService.credentials;
     const req = {
-      plugin: credentials.plugin,
+      plugin: this.credentialsService.plugin$(),
       streamParams: {
-        pluginId: credentials.pluginId,
-        repoName: credentials.repo_name,
-        url: credentials.url,
-        option: credentials.option,
-        user: credentials.user,
-        token: credentials.token,
+        pluginId: this.credentialsService.pluginId$(),
+        repoName: this.credentialsService.repoName$(),
+        url: this.credentialsService.url$(),
+        option: this.credentialsService.option$(),
+        user: this.credentialsService.user$(),
+        token: this.credentialsService.token$(),
       },
-      persistentId: credentials.dataset_id,
-      dataverseKey: credentials.dataverse_token,
+      persistentId: this.credentialsService.datasetId$(),
+      dataverseKey: this.credentialsService.dataverseToken$(),
       selectedNodes: selected,
       sendEmailOnSuccess: sendEmailOnSuccess,
     };

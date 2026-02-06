@@ -25,7 +25,7 @@ describe('DataUpdatesService', () => {
     service = TestBed.inject(DataUpdatesService);
     http = TestBed.inject(HttpTestingController);
     creds = TestBed.inject(CredentialsService);
-    creds.credentials = { dataverse_token: 'tok' };
+    creds.setCredentials({ dataverse_token: 'tok' });
   });
 
   it('updateData sorts result data by id', (done) => {

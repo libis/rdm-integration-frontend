@@ -1,7 +1,15 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { CommonModule, Location } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
 
@@ -9,13 +17,11 @@ import { Subscription, firstValueFrom } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
 import { DataStateService } from '../data.state.service';
-import { DataUpdatesService } from '../data.updates.service';
 import { DatasetService } from '../dataset.service';
 import { PluginService } from '../plugin.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { SubmitService } from '../submit.service';
-import { UtilsService } from '../utils.service';
 
 // Models
 import { CompareResult } from '../models/compare-result';
@@ -53,16 +59,14 @@ import { SubscriptionManager } from '../shared/types';
     SubmittedFileComponent,
     TransferProgressCardComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly dataStateService = inject(DataStateService);
-  private readonly dataUpdatesService = inject(DataUpdatesService);
   private readonly submitService = inject(SubmitService);
-  private readonly location = inject(Location);
   private readonly pluginService = inject(PluginService);
   private readonly router = inject(Router);
-  private readonly utils = inject(UtilsService);
-  dataService = inject(DataService);
+  private readonly dataService = inject(DataService);
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
   private readonly notificationService = inject(NotificationService);
@@ -77,52 +81,57 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly icon_update = 'pi pi-clone';
   readonly icon_delete = 'pi pi-trash';
 
-  data: Datafile[] = []; // local state for progress display
-  pid = '';
-  datasetUrl = '';
+  // Signals
+  readonly data = signal<Datafile[]>([]);
+  readonly pid = signal('');
+  readonly datasetUrl = signal('');
 
-  // local state derived from this.data:
-  created: Datafile[] = [];
-  updated: Datafile[] = [];
-  deleted: Datafile[] = [];
+  readonly created = computed(() =>
+    this.data().filter((f) => f.action === Fileaction.Copy),
+  );
+  readonly updated = computed(() =>
+    this.data().filter((f) => f.action === Fileaction.Update),
+  );
+  readonly deleted = computed(() =>
+    this.data().filter((f) => f.action === Fileaction.Delete),
+  );
 
-  disabled = false;
-  submitted = false;
-  done = false;
-  sendEmailOnSuccess = false;
-  popup = false;
-  hasAccessToCompute = false;
+  readonly disabled = signal(false);
+  readonly submitted = signal(false);
+  readonly done = signal(false);
+  readonly sendEmailOnSuccess = signal(false); // Model binding needs handling
+  readonly popup = signal(false);
+  readonly hasAccessToCompute = signal(false);
+
   private incomingMetadata?: Metadata;
-  transferStarted = false; // after successful submit ack
 
-  // Transfer tracking (works for all plugins)
-  transferTaskId?: string | null; // For Globus: task ID; for others: dataset ID
-  transferMonitorUrl?: string | null; // External monitor URL (Globus only)
-  transferInProgress = false;
+  readonly transferStarted = signal(false);
 
-  isGlobus(): boolean {
-    return this.credentialsService.credentials.plugin === 'globus';
-  }
+  // Transfer tracking
+  readonly transferTaskId = signal<string | null | undefined>(undefined);
+  readonly transferMonitorUrl = signal<string | null | undefined>(undefined);
+  readonly transferInProgress = signal(false);
+
+  readonly isGlobus = computed(
+    () => this.credentialsService.plugin$() === 'globus',
+  );
+
+  // Method bound to component instance for TransferProgressCard
+  readonly onDataUpdateCallback = (result: CompareResult) => {
+    if (result.data) {
+      this.updateData(result.data);
+    }
+  };
 
   onStatusPollingChange(isPolling: boolean): void {
-    this.transferInProgress = isPolling;
-  }
-
-  /**
-   * Callback for transfer-progress-card to update our local data state.
-   * This keeps the file list UI in sync with backend status for non-Globus transfers.
-   */
-  onDataUpdate(result: CompareResult): void {
-    if (result.data) {
-      this.setData(result.data);
-    }
+    this.transferInProgress.set(isPolling);
   }
 
   constructor() {}
 
   ngOnInit(): void {
     this.loadData();
-    // Capture metadata from navigation state (metadata-selector -> submit)
+    // Capture metadata from navigation state
     let state: { metadata?: Metadata } | undefined;
     const maybeGetNav: unknown = (
       this.router as unknown as { getCurrentNavigation?: () => unknown }
@@ -145,13 +154,9 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.incomingMetadata = state.metadata;
     }
     const accessCheckSub = this.dataService
-      .checkAccessToQueue(
-        '',
-        this.credentialsService.credentials.dataverse_token,
-        '',
-      )
+      .checkAccessToQueue('', this.credentialsService.dataverseToken$(), '')
       .subscribe({
-        next: (access) => (this.hasAccessToCompute = access.access),
+        next: (access) => this.hasAccessToCompute.set(access.access),
         error: () => {}, // silent
       });
     this.subscriptions.add(accessCheckSub);
@@ -163,59 +168,47 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   loadData(): void {
-    const value = this.dataStateService.getCurrentValue();
-    this.pid = value && value.id ? value.id : '';
+    const value = this.dataStateService.state$();
+    this.pid.set(value && value.id ? value.id : '');
     const data = value?.data;
-    if (data) this.setData(data);
+    if (data) this.updateData(data);
   }
 
-  async setData(data: Datafile[]) {
-    this.data = data;
-    const created: Datafile[] = [];
-    const updated: Datafile[] = [];
-    const deleted: Datafile[] = [];
-    for (const f of data) {
-      switch (f.action) {
-        case Fileaction.Copy:
-          created.push(f);
-          break;
-        case Fileaction.Update:
-          updated.push(f);
-          break;
-        case Fileaction.Delete:
-          if (
-            !f.attributes?.remoteHashType ||
-            f.attributes?.remoteHashType === ''
-          ) {
-            f.attributes = {
-              ...(f.attributes || {}),
-              remoteHashType: 'unknown',
-              remoteHash: 'unknown',
-            } as Attributes;
-          }
-          deleted.push(f);
-          break;
+  // Helper to process and set data
+  private updateData(data: Datafile[]) {
+    // Process delete actions (logic from original setData)
+    const processed = data.map((f) => {
+      if (f.action === Fileaction.Delete) {
+        if (
+          !f.attributes?.remoteHashType ||
+          f.attributes?.remoteHashType === ''
+        ) {
+          // Mutate or create copy? Better copy if possible, but for now specific mutation
+          f.attributes = {
+            ...(f.attributes || {}),
+            remoteHashType: 'unknown',
+            remoteHash: 'unknown',
+          } as Attributes;
+        }
       }
-    }
-    this.created = created;
-    this.updated = updated;
-    this.deleted = deleted;
-    this.data = [...created, ...updated, ...deleted];
+      return f;
+    });
+    this.data.set(processed);
   }
 
   submit() {
-    if (this.credentialsService.credentials.plugin === 'globus') {
+    if (this.credentialsService.plugin$() === 'globus') {
       this.continueSubmit();
     } else {
-      this.popup = true;
+      this.popup.set(true);
     }
   }
 
   async continueSubmit() {
-    this.popup = false;
-    this.disabled = true;
+    this.popup.set(false);
+    this.disabled.set(true);
     const selected: Datafile[] = [];
-    this.data.forEach((datafile) => {
+    this.data().forEach((datafile) => {
       const action =
         datafile.action === undefined ? Fileaction.Ignore : datafile.action;
       if (action != Fileaction.Ignore) selected.push(datafile);
@@ -225,18 +218,19 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
       return;
     }
 
-    if (this.pid.endsWith(':New Dataset')) {
-      const ids = this.pid.split(':');
+    const pidVal = this.pid();
+    if (pidVal.endsWith(':New Dataset')) {
+      const ids = pidVal.split(':');
       const ok = await this.newDataset(ids[0]);
       if (!ok) {
-        this.disabled = false;
-        this.transferStarted = false;
+        this.disabled.set(false);
+        this.transferStarted.set(false);
         return;
       }
     }
 
     const submitSub = this.submitService
-      .submit(selected, this.sendEmailOnSuccess)
+      .submit(selected, this.sendEmailOnSuccess())
       .subscribe({
         next: (data: StoreResult) => {
           if (data.status !== 'OK') {
@@ -245,19 +239,21 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             );
             this.router.navigate(['/connect']);
           } else {
-            this.transferStarted = true;
-            this.submitted = true;
-            this.datasetUrl = data.datasetUrl!;
+            this.transferStarted.set(true);
+            this.submitted.set(true);
+            this.datasetUrl.set(data.datasetUrl!);
 
             // For Globus: use task ID; for others: use dataset ID for polling
             if (this.isGlobus()) {
-              this.transferTaskId = data.globusTransferTaskId ?? null;
-              this.transferMonitorUrl = data.globusTransferMonitorUrl ?? null;
+              this.transferTaskId.set(data.globusTransferTaskId ?? null);
+              this.transferMonitorUrl.set(
+                data.globusTransferMonitorUrl ?? null,
+              );
             } else {
-              this.transferTaskId = this.pid;
+              this.transferTaskId.set(this.pid());
             }
 
-            this.transferInProgress = true;
+            this.transferInProgress.set(true);
           }
         },
         error: (err) => {
@@ -269,12 +265,10 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   back(): void {
-    const value = this.dataStateService.getCurrentValue();
-    const datasetId = value?.id || this.pid;
+    const value = this.dataStateService.state$();
+    const datasetId = value?.id || this.pid();
     if (datasetId) this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
-    // Determine navigation origin: if we received incomingMetadata it means we passed through metadata-selector.
     if (this.incomingMetadata) {
-      // Return to metadata selector (one logical step back)
       this.router.navigate(['/metadata-selector'], {
         state: { fromSubmit: true },
       });
@@ -286,28 +280,28 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   goToDataset() {
-    window.open(this.datasetUrl, '_blank');
+    window.open(this.datasetUrl(), '_blank');
   }
 
   goToCompute() {
-    this.router.navigate(['/compute'], { queryParams: { pid: this.pid } });
+    this.router.navigate(['/compute'], { queryParams: { pid: this.pid() } });
   }
 
-  sendMails(): boolean {
-    return this.pluginService.sendMails();
-  }
+  readonly sendMails = computed(() => this.pluginService.sendMails$());
 
   async newDataset(collectionId: string): Promise<boolean> {
     const data = await firstValueFrom(
       this.datasetService.newDataset(
         collectionId,
-        this.credentialsService.credentials.dataverse_token,
+        this.credentialsService.dataverseToken$(),
         this.incomingMetadata,
       ),
     );
     if (data.persistentId !== undefined && data.persistentId !== '') {
-      this.pid = data.persistentId;
-      this.credentialsService.credentials.dataset_id = data.persistentId;
+      this.pid.set(data.persistentId);
+      this.credentialsService.updateCredentials({
+        dataset_id: data.persistentId,
+      });
       return true;
     } else {
       this.notificationService.showError('Creating new dataset failed');

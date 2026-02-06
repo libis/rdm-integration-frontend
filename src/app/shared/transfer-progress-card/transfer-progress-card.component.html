@@ -1,19 +1,19 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2025). Apache 2.0 License -->
-@if (hasStatus) {
+@if (hasStatus()) {
   <div #cardRoot class="transfer-status">
-    <div class="status-row" [ngClass]="statusTone">
-      <i class="status-icon" [ngClass]="statusIcon" aria-hidden="true"></i>
+    <div class="status-row" [ngClass]="statusTone()">
+      <i class="status-icon" [ngClass]="statusIcon()" aria-hidden="true"></i>
       <div class="status-body">
-        <div class="status-message">{{ statusMessage }}</div>
+        <div class="status-message">{{ statusMessage() }}</div>
 
-        @if (filesSummary.total || filesSummary.failed) {
+        @if (filesSummary().total || filesSummary().failed) {
           <div class="status-files">
             <div class="status-files-header">
               <span class="status-files-label">Files processed</span>
-              @if (filesSummary.total) {
+              @if (filesSummary().total) {
                 <span class="status-files-count">
-                  {{ filesSummary.processed | number }}/{{
-                    filesSummary.total | number
+                  {{ filesSummary().processed | number }}/{{
+                    filesSummary().total | number
                   }}
                 </span>
               } @else {
@@ -21,45 +21,45 @@
               }
             </div>
 
-            @if (filesSummary.total) {
+            @if (filesSummary().total) {
               <p-progressbar
-                [value]="filesProgressPercent"
+                [value]="filesProgressPercent()"
                 [showValue]="false"
               ></p-progressbar>
             }
 
-            @if (filesSummary.failed) {
+            @if (filesSummary().failed) {
               <div class="status-files-failed">
-                Failed: {{ filesSummary.failed }}
+                Failed: {{ filesSummary().failed }}
               </div>
             }
           </div>
         }
 
-        @if (status?.completion_time) {
+        @if (status()?.completion_time) {
           <div class="status-timestamp">
-            Completed at: {{ status?.completion_time }}
+            Completed at: {{ status()?.completion_time }}
           </div>
-        } @else if (status?.request_time) {
+        } @else if (status()?.request_time) {
           <div class="status-timestamp">
-            Started at: {{ status?.request_time }}
+            Started at: {{ status()?.request_time }}
           </div>
         }
 
-        @if (taskId) {
+        @if (taskId()) {
           <div class="status-task">
-            Task ID: <code>{{ taskId }}</code>
+            Task ID: <code>{{ taskId() }}</code>
           </div>
         }
       </div>
     </div>
 
-    @if (taskId || formattedMonitorUrl) {
+    @if (taskId() || formattedMonitorUrl()) {
       <div class="status-actions">
         @if (
-          taskId &&
-          !statusPollingActive &&
-          (status?.status || "").toUpperCase() !== "SUCCEEDED"
+          taskId() &&
+          !statusPollingActive() &&
+          (status()?.status || "").toUpperCase() !== "SUCCEEDED"
         ) {
           <button
             pButton
@@ -72,7 +72,7 @@
           </button>
         }
 
-        @if (formattedMonitorUrl) {
+        @if (formattedMonitorUrl()) {
           <button
             pButton
             type="button"

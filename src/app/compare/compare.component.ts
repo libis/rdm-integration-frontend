@@ -1,7 +1,16 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -31,7 +40,6 @@ import { TreeTableModule } from 'primeng/treetable';
 import { DatafileComponent } from '../datafile/datafile.component';
 
 // Constants and types
-import { Credentials } from '../models/credentials';
 import { APP_CONSTANTS } from '../shared/constants';
 import { FilterItem, SubscriptionManager } from '../shared/types';
 
@@ -49,6 +57,7 @@ import { FilterItem, SubscriptionManager } from '../shared/types';
     ProgressSpinnerModule,
     DatafileComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompareComponent
   implements OnInit, OnDestroy, SubscriptionManager
@@ -76,25 +85,14 @@ export class CompareComponent
   readonly icon_compare = APP_CONSTANTS.ICONS.COMPARE;
   readonly icon_action = APP_CONSTANTS.ICONS.ACTION;
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
-  // nicer action header icon in table than lightning
   readonly icon_status = APP_CONSTANTS.ICONS.FILTER;
 
-  disabled = true;
-  loading = true;
-  refreshHidden = true;
-  isInFilterMode = false;
-  maxFileSize?: number;
-  rejectedSize?: string[];
-  rejectedName?: string[];
-  allowedFileNamePattern?: string;
-  allowedFolderPathPattern?: string;
-
-  data: CompareResult = {};
-  rootNodeChildren: TreeNode<Datafile>[] = [];
-  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
-    string,
-    TreeNode<Datafile>
-  >();
+  // Signals for state
+  readonly data = signal<CompareResult>({});
+  readonly loading = signal(true);
+  readonly disabled = signal(true);
+  readonly refreshHidden = signal(true);
+  readonly refreshTrigger = signal(0); // Used to trigger updates in children when actions mirror/copy occur
 
   // Filter configuration
   readonly filterItems: FilterItem[] = [
@@ -131,251 +129,87 @@ export class CompareComponent
     },
   ];
 
-  selectedFilterItems: FilterItem[] = [...this.filterItems];
+  readonly selectedFilterItems = signal<FilterItem[]>([...this.filterItems]);
 
-  constructor() {}
+  // DERIVED STATE
 
-  ngOnInit(): void {
-    // Only initialize (which triggers a fresh compare fetch) if we have no existing state.
-    // This preserves prior file action selections when navigating back from
-    // metadata-selector or submit components.
-    if (this.dataStateService.getCurrentValue() == null) {
-      this.dataStateService.initializeState();
+  // Main Tree Structure
+  readonly rowNodeMap = computed(() => {
+    const d = this.data();
+    if (!d.data || d.data.length === 0) {
+      return new Map<string, TreeNode<Datafile>>();
     }
-    this.setUpdatedDataSubscription();
-  }
+    const rowDataMap = this.utils.mapDatafiles(d.data);
+    rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
+    return rowDataMap;
+  });
 
-  ngOnDestroy(): void {
-    // Clean up all subscriptions
-    this.subscriptions.forEach((sub) => sub.unsubscribe());
-    this.subscriptions.clear();
-    const shouldReset = this.loading;
-    this.dataStateService.cancelInitialization(shouldReset);
-  }
+  // Filtered/Visible Nodes
+  readonly rootNodeChildrenView = computed(() => {
+    this.refreshTrigger(); // Add dependency to trigger re-evaluation on refresh
+    const map = this.rowNodeMap();
+    const root = map.get('');
+    if (!root) return [];
 
-  private setUpdatedDataSubscription(): void {
-    const sub = this.dataStateService.getObservableState().subscribe((data) => {
-      if (data !== null) {
-        this.setData(data);
-        if (data.data && data.id) {
-          this.maxFileSize = data.maxFileSize;
-          this.rejectedSize = data.rejectedSize;
-          this.rejectedName = data.rejectedName;
-          this.allowedFileNamePattern = data.allowedFileNamePattern;
-          this.allowedFolderPathPattern = data.allowedFolderPathPattern;
-          if (this.data.status !== ResultStatus.Updating) {
-            this.disabled = false;
-            this.loading = false;
-          } else {
-            this.getUpdatedData(0);
-          }
-        }
-      }
-    });
-    this.subscriptions.add(sub);
-  }
+    // Update folder statuses on the full tree
+    if (root.children) {
+      this.folderStatusService.updateTreeRoot(root);
+      this.folderActionUpdateService.updateFoldersAction(map);
+    }
 
-  private getUpdatedData(cnt: number): void {
-    const subscription = this.dataUpdatesService
-      .updateData(this.data.data!, this.data.id!)
-      .subscribe(async (data: CompareResult) => {
-        cnt++;
-        this.subscriptions.delete(subscription);
-        subscription.unsubscribe();
-        if (data.data && data.id) {
-          this.setData(data);
-        }
-        if (this.data.status !== ResultStatus.Updating) {
-          this.disabled = false;
-          this.loading = false;
-        } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
-          this.loading = false;
-          this.refreshHidden = false;
-        } else {
-          await this.utils.sleep(APP_CONSTANTS.RETRY_SLEEP_DURATION);
-          this.getUpdatedData(cnt);
-        }
-      });
-    this.subscriptions.add(subscription);
-  }
+    const filters = this.selectedFilterItems();
+    const isFiltering = filters.length < 4;
 
-  refresh(): void {
-    const subscription = this.dataUpdatesService
-      .updateData(this.data.data!, this.data.id!)
-      .subscribe((data) => {
-        this.subscriptions.delete(subscription);
-        subscription.unsubscribe();
-        if (data.data && data.id) {
-          this.setData(data);
-        }
-        if (this.data.status !== ResultStatus.Updating) {
-          this.disabled = false;
-        } else {
-          this.refreshHidden = true;
-        }
-      });
-    this.subscriptions.add(subscription);
-  }
-
-  noActionSelection(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) {
-        return;
-      }
-      datafile.action = Fileaction.Ignore;
-    });
-  }
-
-  updateSelection(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) {
-        return;
-      }
-      switch (datafile.status) {
-        case Filestatus.New:
-          datafile.action = Fileaction.Copy;
-          break;
-        case Filestatus.Equal:
-          datafile.action = Fileaction.Ignore;
-          break;
-        case Filestatus.Updated:
-          datafile.action = Fileaction.Update;
-          break;
-        case Filestatus.Deleted:
-          datafile.action = Fileaction.Ignore;
-          break;
-      }
-    });
-  }
-
-  mirrorSelection(): void {
-    this.rowNodeMap.forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) {
-        return;
-      }
-      switch (datafile.status) {
-        case Filestatus.New:
-          datafile.action = Fileaction.Copy;
-          break;
-        case Filestatus.Equal:
-          datafile.action = Fileaction.Ignore;
-          break;
-        case Filestatus.Updated:
-          datafile.action = Fileaction.Update;
-          break;
-        case Filestatus.Deleted:
-          datafile.action = Fileaction.Delete;
-          break;
-      }
-    });
-  }
-
-  updateFilters(): void {
-    // Use setTimeout to ensure the selection model has updated before we filter
-    setTimeout(() => {
-      if (this.selectedFilterItems.length < 4) {
-        this.filterOn(this.selectedFilterItems);
-      } else {
-        this.filterOff();
-      }
-    }, 0);
-  }
-
-  private filterOn(filters: FilterItem[]): void {
+    // Apply Filtering
     const visible: TreeNode<Datafile>[] = [];
-    this.rowNodeMap.forEach((n) => {
+    map.forEach((n) => {
       const f = n.data!;
       f.hidden =
         !f.attributes?.isFile ||
         !filters.some((i) => f.status === i.fileStatus);
       if (!f.hidden) visible.push(n);
     });
-    this.rootNodeChildren = visible;
-    this.isInFilterMode = true;
-  }
 
-  private filterOff(): void {
-    this.rowNodeMap.forEach((n) => (n.data!.hidden = false));
-    this.rootNodeChildren = this.rowNodeMap.get('')!.children!;
-    this.isInFilterMode = false;
-    this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
-  }
+    // If filtering, return flattened visible nodes?
+    // Original logic:
+    // filterOn -> this.rootNodeChildren = visible;
+    // filterOff -> this.rootNodeChildren = this.rowNodeMap.get('')!.children!;
 
-  submit(): void {
-    this.dataStateService.updateState(this.data);
-    if (this.isNewDataset()) {
-      this.router.navigate(['/metadata-selector']);
+    if (isFiltering) {
+      return visible;
     } else {
-      this.router.navigate(['/submit']);
+      // Ensure all unhidden
+      map.forEach((n) => (n.data!.hidden = false));
+      // Re-update actions? Already done above.
+      return root.children || [];
     }
-  }
+  });
 
-  canProceed(): boolean {
-    const newDs = this.isNewDataset();
-    const creds: Credentials = this.credentialsService.credentials;
-    // If metadata_available is undefined we assume metadata creation is possible
-    const hasMetadata = creds.metadata_available !== false;
-    if (!newDs) {
-      return this.hasSelection();
-    }
-    // New dataset: allow if metadata present OR there is a file selection
-    return hasMetadata || this.hasSelection();
-  }
+  readonly isInFilterMode = computed(
+    () => this.selectedFilterItems().length < 4,
+  );
 
-  proceedTitle(): string {
-    const newDs = this.isNewDataset();
-    const creds: Credentials = this.credentialsService.credentials;
-    const hasMetadata = creds.metadata_available !== false;
-    const can = this.canProceed();
-    if (newDs && !this.hasSelection()) {
-      // Metadata-only state messages
-      if (hasMetadata) return 'Proceed with metadata-only submission';
-      if (!can)
-        return 'Select at least one file to proceed (no metadata available).';
-    }
-    if (!can) return 'Action not available yet';
-    return 'Go to next step';
-  }
+  readonly maxFileSize = computed(() => this.data().maxFileSize);
+  readonly rejectedSize = computed(() => this.data().rejectedSize);
+  readonly rejectedName = computed(() => this.data().rejectedName);
+  readonly allowedFileNamePattern = computed(
+    () => this.data().allowedFileNamePattern,
+  );
+  readonly allowedFolderPathPattern = computed(
+    () => this.data().allowedFolderPathPattern,
+  );
 
-  // UI helpers
-  hasSelection(): boolean {
-    // At least one file with an action other than Ignore
-    for (const [, node] of this.rowNodeMap) {
-      const d = node.data;
-      if (d?.attributes?.isFile && d.action !== undefined) {
-        // If any action except Ignore
-        if (d.action !== Fileaction.Ignore) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
+  // UI Computeds
+  readonly repoName = computed(() => this.credentialsService.repoName$());
+  readonly newlyCreated = computed(
+    () => this.credentialsService.newlyCreated$() === true,
+  );
 
-  repoName(): string | undefined {
-    return this.credentialsService.credentials.repo_name;
-  }
-
-  /**
-   * Derives a short folder / collection indicator depending on the current plugin.
-   * This is used purely for UI context next to the plugin name.
-   *
-   * Conventions per plugin (based on backend implementations):
-   * - github / gitlab : repoName can be owner/repo[/sub/path]; show last segment only when depth > 2
-   * - onedrive        : repoName holds drive id; folder path comes from option (driveId/path/to/folder). We show the final folder segment from option if present.
-   * - globus          : repoName is endpoint id; option is folder path; show last segment of option (fallback '/' => undefined)
-   * - irods           : repoName is zone; option is collection path; show last collection segment (if not root '/').
-   * - sftp            : repoName unused for path; option is absolute/relative path; show last non-empty segment.
-   * - local           : repoName not used for path (local root from url); option is starting folder; show last segment.
-   * - osf / redcap / dataverse : no hierarchical folder context worth displaying (single dataset/container) => undefined.
-   */
-  folderName(): string | undefined {
-    const pluginId = this.credentialsService.credentials.pluginId;
+  readonly folderName = computed(() => {
+    // Logic from original method
+    const pluginId = this.credentialsService.pluginId$();
     const repoName = this.repoName();
-    const option = this.credentialsService.credentials.option || '';
+    const option = this.credentialsService.option$() || '';
     if (!pluginId) return undefined;
 
     const lastSegment = (path: string): string | undefined => {
@@ -395,82 +229,222 @@ export class CompareComponent
         return parts.length > 2 ? parts[parts.length - 1] : undefined;
       }
       case 'onedrive': {
-        // option: driveId/path/inside/drive ; first segment is driveId
         if (!option) return undefined;
         const segs = option.split('/');
         return segs.length > 1 ? segs[segs.length - 1] : undefined;
       }
-      case 'globus': {
-        // option: /path/in/endpoint
+      case 'globus':
         return lastSegment(option);
-      }
-      case 'irods': {
-        // option is the collection absolute path, e.g. /zone/home/user/collection
+      case 'irods':
         return lastSegment(option);
-      }
-      case 'sftp': {
+      case 'sftp':
         return lastSegment(option);
-      }
-      case 'local': {
+      case 'local':
         return lastSegment(option);
-      }
-      case 'osf':
-      case 'redcap':
-      case 'dataverse':
       default:
         return undefined;
     }
-  }
+  });
 
-  newlyCreated(): boolean {
-    return this.credentialsService.credentials.newly_created === true;
-  }
-
-  dataverseHeaderNoColon(): string {
-    const h = this.dataverseHeader();
-    return h.endsWith(':') ? h.substring(0, h.length - 1) : h;
-  }
-
-  // Safeguard for detecting a new dataset when credentials flag is missing
-  isNewDataset(): boolean {
+  readonly isNewDataset = computed(() => {
     if (this.newlyCreated()) return true;
-    const id = this.data?.id?.toLowerCase() || '';
+    const id = this.data().id?.toLowerCase() || '';
     return id.includes('new dataset') || id === '';
-  }
+  });
 
-  displayDatasetId(): string {
-    // When new, show a friendly text and avoid colon/link
-    if (!this.data?.id || this.data.id.trim() === '') {
+  readonly displayDatasetId = computed(() => {
+    if (!this.data().id || this.data().id!.trim() === '') {
       return 'New Dataset';
     }
-    // If backend sends something like ':New Dataset' keep only the label
-    const id = this.data.id.trim();
-    const clean = id.startsWith(':') ? id.substring(1).trim() : id;
-    return clean;
+    const id = this.data().id!.trim();
+    return id.startsWith(':') ? id.substring(1).trim() : id;
+  });
+
+  readonly canProceed = computed(() => {
+    const newDs = this.isNewDataset();
+    const hasMetadata = this.credentialsService.metadataAvailable$() !== false;
+
+    // We need to re-evaluate this when refreshTrigger changes (actions mutated)
+    this.refreshTrigger();
+
+    if (!newDs) {
+      return this.hasSelection();
+    }
+    return hasMetadata || this.hasSelection();
+  });
+
+  readonly proceedTitle = computed(() => {
+    const newDs = this.isNewDataset();
+    const hasMetadata = this.credentialsService.metadataAvailable$() !== false;
+    const can = this.canProceed();
+    if (newDs && !this.hasSelection()) {
+      if (hasMetadata) return 'Proceed with metadata-only submission';
+      if (!can)
+        return 'Select at least one file to proceed (no metadata available).';
+    }
+    if (!can) return 'Action not available yet';
+    return 'Go to next step';
+  });
+
+  constructor() {
+    // Effect to react to state changes
+    effect(() => {
+      const data = this.dataStateService.state$();
+      if (data !== null) {
+        this.data.set(data);
+        if (data.data && data.id) {
+          if (data.status !== ResultStatus.Updating) {
+            this.disabled.set(false);
+            this.loading.set(false);
+          } else {
+            this.getUpdatedData(0);
+          }
+        }
+      }
+    });
   }
 
-  private setData(data: CompareResult): void {
-    this.data = data;
-    if (!data.data || data.data.length === 0) {
-      return;
-    }
-    const rowDataMap = this.utils.mapDatafiles(data.data);
-    rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
-    const rootNode = rowDataMap.get('');
-    this.rowNodeMap = rowDataMap;
-    if (rootNode?.children) {
-      // Delegate folder aggregation logic to service
-      this.folderStatusService.updateTreeRoot(rootNode);
-      this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap);
-      this.rootNodeChildren = rootNode.children;
+  ngOnInit(): void {
+    if (this.dataStateService.state$() == null) {
+      this.dataStateService.initializeState();
     }
   }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.clear();
+    const shouldReset = this.loading();
+    this.dataStateService.cancelInitialization(shouldReset);
+  }
+
+  private getUpdatedData(cnt: number): void {
+    const id = this.data().id!;
+    const dataItems = this.data().data!;
+
+    const subscription = this.dataUpdatesService
+      .updateData(dataItems, id)
+      .subscribe(async (data: CompareResult) => {
+        cnt++;
+        this.subscriptions.delete(subscription);
+        subscription.unsubscribe();
+        if (data.data && data.id) {
+          this.data.set(data);
+        }
+        if (this.data().status !== ResultStatus.Updating) {
+          this.disabled.set(false);
+          this.loading.set(false);
+        } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
+          this.loading.set(false);
+          this.refreshHidden.set(false);
+        } else {
+          await this.utils.sleep(APP_CONSTANTS.RETRY_SLEEP_DURATION);
+          this.getUpdatedData(cnt);
+        }
+      });
+    this.subscriptions.add(subscription);
+  }
+
+  refresh(): void {
+    // Reset state as if just arrived on the page
+    this.refreshHidden.set(true);
+    this.loading.set(true);
+    this.disabled.set(true);
+    // Restart the polling loop from count 0
+    this.getUpdatedData(0);
+  }
+
+  noActionSelection(): void {
+    this.rowNodeMap().forEach((rowNode) => {
+      const datafile = rowNode.data!;
+      if (datafile.hidden) return;
+      datafile.action = Fileaction.Ignore;
+    });
+    this.refreshTrigger.update((n) => n + 1);
+  }
+
+  updateSelection(): void {
+    this.rowNodeMap().forEach((rowNode) => {
+      const datafile = rowNode.data!;
+      if (datafile.hidden) return;
+      switch (datafile.status) {
+        case Filestatus.New:
+          datafile.action = Fileaction.Copy;
+          break;
+        case Filestatus.Equal:
+          datafile.action = Fileaction.Ignore;
+          break;
+        case Filestatus.Updated:
+          datafile.action = Fileaction.Update;
+          break;
+        case Filestatus.Deleted:
+          datafile.action = Fileaction.Ignore;
+          break;
+      }
+    });
+    this.refreshTrigger.update((n) => n + 1);
+  }
+
+  mirrorSelection(): void {
+    this.rowNodeMap().forEach((rowNode) => {
+      const datafile = rowNode.data!;
+      if (datafile.hidden) return;
+      switch (datafile.status) {
+        case Filestatus.New:
+          datafile.action = Fileaction.Copy;
+          break;
+        case Filestatus.Equal:
+          datafile.action = Fileaction.Ignore;
+          break;
+        case Filestatus.Updated:
+          datafile.action = Fileaction.Update;
+          break;
+        case Filestatus.Deleted:
+          datafile.action = Fileaction.Delete;
+          break;
+      }
+    });
+    this.refreshTrigger.update((n) => n + 1);
+  }
+
+  submit(): void {
+    this.dataStateService.updateState(this.data());
+    if (this.isNewDataset()) {
+      this.router.navigate(['/metadata-selector']);
+    } else {
+      this.router.navigate(['/submit']);
+    }
+  }
+
+  hasSelection(): boolean {
+    for (const [, node] of this.rowNodeMap()) {
+      const d = node.data;
+      if (d?.attributes?.isFile && d.action !== undefined) {
+        if (d.action !== Fileaction.Ignore) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Computed signals for service-derived values
+  readonly repo = computed(() => {
+    const id = this.credentialsService.pluginId$();
+    return id ? this.pluginService.getPlugin(id).name : '';
+  });
+
+  readonly dataverseHeader = computed(() =>
+    this.pluginService.dataverseHeader$(),
+  );
+
+  readonly dataverseHeaderNoColon = computed(() => {
+    const h = this.dataverseHeader();
+    return h.endsWith(':') ? h.substring(0, h.length - 1) : h;
+  });
 
   back(): void {
-    // Persist any updated dataset/collection identifiers before navigating back.
-    const datasetId =
-      this.credentialsService.credentials.dataset_id || this.data?.id;
-    const credsExtra = this.credentialsService.credentials as unknown as {
+    const datasetId = this.credentialsService.datasetId$() || this.data().id;
+    const credsExtra = this.credentialsService.credentials$() as unknown as {
       collectionId?: string;
     };
     const collectionId = credsExtra.collectionId;
@@ -479,15 +453,5 @@ export class CompareComponent
       collectionId,
     });
     this.router.navigate(['/connect']);
-  }
-
-  repo(): string {
-    return this.pluginService.getPlugin(
-      this.credentialsService.credentials.pluginId,
-    ).name;
-  }
-
-  dataverseHeader(): string {
-    return this.pluginService.dataverseHeader();
   }
 }

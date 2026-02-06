@@ -70,9 +70,9 @@ describe('DownladablefileComponent', () => {
     fixture.componentRef.setInput('rowNode', child);
     fixture.detectChanges();
 
-    expect(component.node).toBe(child);
-    expect(component.action()).toBe(DownladablefileComponent.icon_download);
-    expect(component.sourceFile()).toBe('README.md');
+    expect(component.node()).toBe(child);
+    expect(component.actionIcon()).toBe(DownladablefileComponent.icon_download);
+    expect(component.fileName()).toBe('README.md');
   });
 
   it('toggleAction cycles file actions and updates parent folder', () => {
@@ -159,8 +159,8 @@ describe('DownladablefileComponent', () => {
     fixture.componentRef.setInput('rowNode', child);
     fixture.detectChanges();
 
-    expect(component.action()).toBe(DownladablefileComponent.icon_custom);
-    const style = component.getStyle();
+    expect(component.actionIcon()).toBe(DownladablefileComponent.icon_custom);
+    const style = component.hostStyle();
     expect(style).toContain(
       'background-color: var(--app-file-action-custom-bg)',
     );
@@ -184,8 +184,8 @@ describe('DownladablefileComponent', () => {
     fixture.componentRef.setInput('rowNode', child);
     fixture.detectChanges();
 
-    expect(component.getStyle()).toBe('');
-    expect(DownladablefileComponent.actionIcon({ data: {} })).toBe(
+    expect(component.hostStyle()).toBe('');
+    expect(DownladablefileComponent.actionIconFromNode({ data: {} })).toBe(
       DownladablefileComponent.icon_ignore,
     );
   });
@@ -207,5 +207,17 @@ describe('DownladablefileComponent', () => {
     const result = component.updateFolderActions(leaf);
     expect(result).toBe(Fileaction.Download);
     expect(leaf.data?.action).toBe(Fileaction.Download);
+  });
+
+  it('emits changed event when toggleAction is called', () => {
+    const { child, map } = buildTree();
+    fixture.componentRef.setInput('datafile', child.data);
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput('rowNode', child);
+    fixture.detectChanges();
+
+    const emitSpy = spyOn(component.changed, 'emit');
+    component.toggleAction();
+    expect(emitSpy).toHaveBeenCalledTimes(1);
   });
 });

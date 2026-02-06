@@ -11,9 +11,8 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
     const { TestBed } = await import('@angular/core/testing');
     const { Component } = await import('@angular/core');
     const { TreeTableModule } = await import('primeng/treetable');
-    const { MetadatafieldComponent } = await import(
-      '../metadatafield/metadatafield.component'
-    );
+    const { MetadatafieldComponent } =
+      await import('../metadatafield/metadatafield.component');
 
     document.documentElement.style.setProperty(
       '--p-content-background',
@@ -45,7 +44,7 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
                 [field]="rowData"
                 [rowNodeMap]="rowNodeMap"
                 [rowNode]="rowNode"
-                [style]="fieldRow.getStyle()"
+                [style]="fieldRow.hostStyle()"
               ></tr>
             </ng-template>
           </p-treeTable>

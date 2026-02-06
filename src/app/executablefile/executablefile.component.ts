@@ -1,6 +1,14 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnInit, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
@@ -24,8 +32,9 @@ import { ButtonDirective } from 'primeng/button';
     FormsModule,
     ButtonDirective,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ExecutablefileComponent implements OnInit {
+export class ExecutablefileComponent {
   private pluginService = inject(PluginService);
   dataService = inject(DataService);
   private notificationService = inject(NotificationService);
@@ -43,51 +52,52 @@ export class ExecutablefileComponent implements OnInit {
 
   icon_play = 'pi pi-play';
 
-  node: TreeNode<Datafile> = {};
-  queue?: string;
-  queues: SelectItem<string>[] = [];
-  spinning = false;
-  computeEnabled = false;
+  readonly node = computed<TreeNode<Datafile>>(() => {
+    const map = this.rowNodeMap();
+    const df = this.datafile();
+    const key = df.id! + (df.attributes?.isFile ? ':file' : '');
+    return map.get(key) ?? {};
+  });
 
-  constructor() {}
-
-  ngOnInit(): void {
-    this.node = this.rowNodeMap().get(
-      this.datafile().id! + (this.datafile().attributes?.isFile ? ':file' : ''),
-    )!; // avoid collisions between folders and files having the same path and name
+  readonly queues = computed<SelectItem<string>[]>(() => {
     const datafile = this.datafile();
     const splitted = datafile.name?.split('.');
     if (datafile.attributes?.isFile && splitted && splitted?.length > 0) {
-      this.queues = this.pluginService.getQueues(splitted[splitted.length - 1]);
+      return this.pluginService.getQueues(splitted[splitted.length - 1]);
     }
-  }
+    return [];
+  });
+
+  readonly queue = signal<string | undefined>(undefined);
+  readonly spinning = signal(false);
+  readonly computeEnabled = signal(false);
 
   onSelectQueue() {
-    if (!this.queue) {
+    if (!this.queue()) {
       return;
     }
-    this.spinning = true;
-    this.computeEnabled = false;
+    this.spinning.set(true);
+    this.computeEnabled.set(false);
     const subscription = this.dataService
-      .checkAccessToQueue(this.pid(), this.dv_token(), this.queue)
+      .checkAccessToQueue(this.pid(), this.dv_token(), this.queue())
       .subscribe({
         next: (access) => {
           subscription.unsubscribe();
           if (access.access) {
-            this.computeEnabled = true;
+            this.computeEnabled.set(true);
           } else {
-            this.queue = undefined;
+            this.queue.set(undefined);
             this.notificationService.showError(access.message);
           }
-          this.spinning = false;
+          this.spinning.set(false);
         },
         error: (err) => {
           subscription.unsubscribe();
           this.notificationService.showError(
             `Checking access to queue failed: ${err.error}`,
           );
-          this.spinning = false;
-          this.queue = undefined;
+          this.spinning.set(false);
+          this.queue.set(undefined);
         },
       });
   }
@@ -96,7 +106,7 @@ export class ExecutablefileComponent implements OnInit {
     this.computeClicked.emit({
       persistentId: this.pid()!,
       dataverseKey: this.dv_token(),
-      queue: this.queue!,
+      queue: this.queue()!,
       executable: this.datafile().id!,
       sendEmailOnSuccess: false,
     });

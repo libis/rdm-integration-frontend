@@ -1,6 +1,10 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { enableProdMode, importProvidersFrom } from '@angular/core';
+import {
+  enableProdMode,
+  importProvidersFrom,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 
 import {
   provideHttpClient,
@@ -8,11 +12,10 @@ import {
 } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { definePreset } from '@primeng/themes';
-import Lara from '@primeng/themes/lara';
+import { definePreset } from '@primeuix/themes';
+import Lara from '@primeuix/themes/lara';
 import { AutosizeModule } from 'ngx-autosize';
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
@@ -59,7 +62,7 @@ bootstrapApplication(AppComponent, {
       ProgressSpinnerModule,
     ),
     provideHttpClient(withInterceptorsFromDi()),
-    provideAnimationsAsync(),
+    provideZonelessChangeDetection(),
     providePrimeNG({
       ripple: false, // disable ripple effects globally
       theme: {

@@ -32,13 +32,13 @@
   <tbody>
     <tr class="file-list-header">
       <!-- Ensure tableColumnCount is defined in the component TypeScript and matches the number of columns -->
-      <th [attr.colspan]="treeTableColumnCount">
+      <th [attr.colspan]="treeTableColumnCount()">
         <i [class]="icon_copy"></i> Metadata that will be copied
       </th>
     </tr>
     <tr>
-      <td class="treetable-cell" [attr.colspan]="treeTableColumnCount">
-        <p-treeTable [value]="rootNodeChildren">
+      <td class="treetable-cell" [attr.colspan]="treeTableColumnCount()">
+        <p-treeTable [value]="rootNodeChildren()">
           <ng-template pTemplate="header">
             <tr>
               <th style="width: 16rem; text-align: left">Metadata field</th>
@@ -62,9 +62,11 @@
               app-metadatafield
               #metadataRow="appMetadatafield"
               [field]="rowData"
-              [rowNodeMap]="rowNodeMap"
+              [rowNodeMap]="rowNodeMap()"
               [rowNode]="rowNode"
-              [style]="metadataRow.getStyle()"
+              [refreshTrigger]="refreshTrigger()"
+              [style]="metadataRow.hostStyle()"
+              (changed)="onRowActionChanged()"
             ></tr
           ></ng-template>
         </p-treeTable>

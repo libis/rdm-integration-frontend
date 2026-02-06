@@ -22,7 +22,7 @@ export class DataUpdatesService {
     const req = {
       data: data,
       persistentId: pid,
-      dataverseKey: this.credentialsService.credentials.dataverse_token,
+      dataverseKey: this.credentialsService.dataverseToken$(),
     };
 
     return this.http.post<CompareResult>(this.common_compare_url, req).pipe(

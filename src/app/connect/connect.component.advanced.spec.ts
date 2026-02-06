@@ -3,14 +3,15 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
+import { CompareResult } from '../models/compare-result';
 import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
@@ -21,15 +22,10 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { ConnectComponent } from './connect.component';
 
 class MockDataStateService {
+  readonly state$ = signal<CompareResult | null>(null);
   initializeStateCalls: unknown[] = [];
   initializeState(creds: unknown) {
     this.initializeStateCalls.push(creds);
-  }
-  getObservableState() {
-    return of(null);
-  }
-  getCurrentValue() {
-    return null;
   }
   resetState() {}
 }
@@ -137,6 +133,16 @@ class MockPluginService {
   sendMails() {
     return false;
   }
+
+  // Signal properties for computed signal consumers
+  dataverseHeader$ = signal('Dataverse:').asReadonly();
+  showDVTokenGetter$ = signal(true).asReadonly();
+  showDVToken$ = signal(true).asReadonly();
+  collectionOptionsHidden$ = signal(false).asReadonly();
+  collectionFieldEditable$ = signal(true).asReadonly();
+  datasetFieldEditable$ = signal(true).asReadonly();
+  createNewDatasetEnabled$ = signal(true).asReadonly();
+  externalURL$ = signal('https://dataverse.example').asReadonly();
 }
 
 class MockRepoLookupService {
@@ -283,7 +289,6 @@ describe('ConnectComponent advanced behaviors', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: PluginService, useValue: pluginService },
         { provide: RepoLookupService, useValue: repoLookup },
         { provide: DvObjectLookupService, useValue: dvLookup },
@@ -312,7 +317,7 @@ describe('ConnectComponent advanced behaviors', () => {
 
   it('getRepoToken warns when pluginId missing', () => {
     const { comp } = createComponent();
-    comp.pluginId = undefined;
+    comp.pluginId.set(undefined);
     comp.getRepoToken();
     expect(
       notification.errors.some((e) => e.includes('Repository type is missing')),
@@ -321,14 +326,14 @@ describe('ConnectComponent advanced behaviors', () => {
 
   it('getRepoToken builds redirect url including dataset', () => {
     const { comp } = createComponent();
-    comp.plugin = 'github';
-    comp.pluginId = 'github';
-    comp.repoName = 'owner/repo';
-    comp.url = 'https://host';
-    comp.datasetId = 'doi:10.123/XYZ';
-    comp.dataverseToken = 'tok';
-    comp.pluginIds = [{ label: 'GitHub', value: 'github', hidden: true }];
-    comp.plugins = [{ label: 'GitHub', value: 'github' }];
+    comp.plugin.set('github');
+    comp.pluginId.set('github');
+    comp.repoName.set('owner/repo');
+    comp.url.set('https://host');
+    comp.datasetId.set('doi:10.123/XYZ');
+    comp.dataverseToken.set('tok');
+    comp.pluginIds.set([{ label: 'GitHub', value: 'github', hidden: true }]);
+    comp.plugins.set([{ label: 'GitHub', value: 'github' }]);
 
     comp.getRepoToken();
 
@@ -345,9 +350,10 @@ describe('ConnectComponent advanced behaviors', () => {
   it('getRepoToken opens new window when oauth client id missing', () => {
     pluginService.oauthClientId = '';
     const { comp } = createComponent();
-    comp.plugin = 'github';
-    comp.pluginId = 'github';
-    comp.pluginIds = [{ label: 'GitHub', value: 'github' }];
+    comp.plugin.set('github');
+    comp.pluginId.set('github');
+    comp.pluginIds.set([{ label: 'GitHub', value: 'github' }]);
+    comp.url.set('https://github.com'); // Required for window.open to be called
     const openSpy = spyOn(window, 'open');
     comp.getRepoToken();
     expect(openSpy).toHaveBeenCalled();
@@ -355,14 +361,14 @@ describe('ConnectComponent advanced behaviors', () => {
 
   it('parseUrl handles valid and invalid inputs', () => {
     const { comp } = createComponent();
-    comp.pluginId = 'github';
-    comp.sourceUrl = 'https://github.com/org/repo.git';
+    comp.pluginId.set('github');
+    comp.sourceUrl.set('https://github.com/org/repo.git');
     const err = comp.parseUrl();
     expect(err).toBeUndefined();
-    expect(comp.url).toBe('https://github.com');
-    expect(comp.repoName).toBe('org/repo');
+    expect(comp.url()).toBe('https://github.com');
+    expect(comp.repoName()).toBe('org/repo');
 
-    comp.sourceUrl = 'invalid';
+    comp.sourceUrl.set('invalid');
     const err2 = comp.parseUrl();
     expect(err2).toBe('Malformed source url');
   });
@@ -386,19 +392,19 @@ describe('ConnectComponent advanced behaviors', () => {
       state: JSON.stringify(state),
       code: 'oauthCode',
     });
-    expect(comp.plugin).toBe('github');
-    expect(comp.pluginId).toBe('github');
-    expect(comp.repoName).toBe('owner/repo');
-    expect(comp.option).toBe('main');
-    expect(comp.datasetId).toBe('doi:ABC');
-    expect(comp.collectionId).toBe('root:COLL');
+    expect(comp.plugin()).toBe('github');
+    expect(comp.pluginId()).toBe('github');
+    expect(comp.repoName()).toBe('owner/repo');
+    expect(comp.option()).toBe('main');
+    expect(comp.datasetId()).toBe('doi:ABC');
+    expect(comp.collectionId()).toBe('root:COLL');
     expect(oauthService.lastArgs).toEqual({
       pluginId: 'github',
       code: 'oauthCode',
       nonce: 'nonce-123',
     });
     tick();
-    expect(comp.token).toBe('session-123');
+    expect(comp.token()).toBe('session-123');
   }));
 
   it('getDvObjectOptions populates dropdowns and handles errors', fakeAsync(() => {
@@ -409,21 +415,21 @@ describe('ConnectComponent advanced behaviors', () => {
     const { comp } = createComponent();
     comp['getDvObjectOptions'](
       'Dataset',
-      comp.doiItems,
+      comp.doiItems(),
       (c: any, items: SelectItem<string>[]) => {
-        c.doiItems = items;
+        c.doiItems.set(items);
       },
     );
     tick();
-    expect(comp.doiItems.length).toBe(2);
+    expect(comp.doiItems().length).toBe(2);
 
-    comp.doiItems = [];
+    comp.doiItems.set([]);
     dvLookup.error = 'boom';
     comp['getDvObjectOptions'](
       'Dataset',
-      comp.doiItems,
+      comp.doiItems(),
       (c: any, items: SelectItem<string>[]) => {
-        c.doiItems = items;
+        c.doiItems.set(items);
       },
     );
     tick();
@@ -438,15 +444,15 @@ describe('ConnectComponent advanced behaviors', () => {
       { label: 'opt2', value: 'o2' },
     ];
     const { comp } = createComponent();
-    comp.pluginId = 'github';
-    comp.plugin = 'github';
-    comp.repoName = 'owner/repo';
-    comp.user = 'alice';
-    comp.token = 'tok';
-    comp.url = 'https://host';
-    comp.sourceUrl = 'https://host/owner/repo';
-    comp.option = undefined;
-    comp.branchItems = [];
+    comp.pluginId.set('github');
+    comp.plugin.set('github');
+    comp.repoName.set('owner/repo');
+    comp.user.set('alice');
+    comp.token.set('tok');
+    comp.url.set('https://host');
+    comp.sourceUrl.set('https://host/owner/repo');
+    comp.option.set(undefined);
+    comp.branchItems.set([]);
     const node: TreeNode<string> = {
       label: 'root',
       data: 'root',
@@ -457,57 +463,85 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(node.children?.length).toBe(2);
 
     repoLookup.error = 'Bad request';
-    comp.branchItems = [];
+    comp.branchItems.set([]);
     comp.getOptions();
     tick();
     expect(
       notification.errors.some((e) => e.includes('Branch lookup failed')),
     ).toBeTrue();
-    expect(comp.branchItems.length).toBe(0);
+    expect(comp.branchItems().length).toBe(0);
   }));
 
-  it('optionSelected clears selection when value empty', () => {
+  it('optionSelected sets selection for empty string (root folder)', () => {
     const { comp } = createComponent();
     comp.optionSelected({
       data: 'branch',
       selectable: true,
     } as TreeNode<string>);
-    expect(comp.option).toBe('branch');
-    expect(comp.selectedOption?.data).toBe('branch');
+    expect(comp.option()).toBe('branch');
+    expect(comp.selectedOption()?.data).toBe('branch');
+    // Empty string is now a valid selection (root folder)
     comp.optionSelected({ data: '', selectable: true } as TreeNode<string>);
-    expect(comp.option).toBeUndefined();
-    expect(comp.selectedOption).toBeUndefined();
+    expect(comp.option()).toBe('');
+    expect(comp.selectedOption()?.data).toBe('');
+  });
+
+  it('optionSelected clears selection when value is null or undefined', () => {
+    const { comp } = createComponent();
+    comp.optionSelected({
+      data: 'branch',
+      selectable: true,
+    } as TreeNode<string>);
+    expect(comp.option()).toBe('branch');
+    expect(comp.selectedOption()?.data).toBe('branch');
+    // null/undefined should clear the selection
+    comp.optionSelected({
+      data: undefined,
+      selectable: true,
+    } as TreeNode<string>);
+    expect(comp.option()).toBeUndefined();
+    expect(comp.selectedOption()).toBeUndefined();
   });
 
   it('showReset reflects non-empty fields and performReset clears them', () => {
     const { comp } = createComponent();
-    comp.plugin = 'github';
-    expect(comp.showReset).toBeTrue();
+    comp.plugin.set('github');
+    expect(comp.showReset()).toBeTrue();
     comp['performReset']();
-    expect(comp.showReset).toBeFalse();
+    expect(comp.showReset()).toBeFalse();
     expect(snapshot.cleared).toBeTrue();
   });
 
   it('isOptionFieldInteractive respects plugin configuration', () => {
-    const { comp } = createComponent();
-    expect(comp.isOptionFieldInteractive()).toBeTrue();
+    // Test with interactive = true (default)
+    pluginService.repoNameFieldInteractive = true;
+    const { comp: comp1 } = createComponent();
+    comp1.pluginId.set('github');
+    expect(comp1.isOptionFieldInteractive()).toBeTrue();
+
+    // Test with interactive = false - need fresh component since computed signals
+    // cache values and only re-evaluate when signal dependencies change
     pluginService.repoNameFieldInteractive = false;
-    expect(comp.isOptionFieldInteractive()).toBeFalse();
+    const { comp: comp2 } = createComponent();
+    comp2.pluginId.set('github');
+    expect(comp2.isOptionFieldInteractive()).toBeFalse();
   });
 
-  it('validateUrlParsing enforces well-formed source URL', () => {
+  it('validateUrl enforces well-formed source URL', () => {
     const { comp } = createComponent();
-    comp.sourceUrl = undefined;
-    expect(comp['validateUrlParsing']()).toBe('Source URL is required');
-    comp.sourceUrl = 'https://host/repo';
-    expect(comp['validateUrlParsing']()).toBe('Malformed source url');
-    comp.sourceUrl = 'https://host/owner/repo/path';
-    expect(comp['validateUrlParsing']()).toBeUndefined();
+    // Need pluginId set for validation to be active
+    comp.pluginId.set('github');
+    comp.sourceUrl.set(undefined);
+    expect(comp.validateUrl()).toBe('Malformed source url'); // undefined source is malformed
+    comp.sourceUrl.set('https://host/repo');
+    expect(comp.validateUrl()).toBe('Malformed source url');
+    comp.sourceUrl.set('https://host/owner/repo/path');
+    expect(comp.validateUrl()).toBeUndefined();
   });
 
   it('repoNameSearch returns error placeholder when request invalid', async () => {
     const { comp } = createComponent();
-    comp.pluginId = undefined;
+    comp.pluginId.set(undefined);
     const results = await comp.repoNameSearch('owner');
     expect(results[0].value).toBe('error');
     expect(
@@ -517,44 +551,45 @@ describe('ConnectComponent advanced behaviors', () => {
 
   it('startRepoSearch respects foundRepoName and init toggle', () => {
     const { comp } = createComponent();
-    const existing = [...comp.repoNames];
-    comp.foundRepoName = 'owner/repo';
+    const existing = [...comp.repoNames()];
+    comp.foundRepoName.set('owner/repo');
     comp.startRepoSearch();
-    expect(comp.repoNames).toEqual(existing);
-    comp.foundRepoName = undefined;
+    expect(comp.repoNames()).toEqual(existing);
+    comp.foundRepoName.set(undefined);
     pluginService.repoNameFieldHasInit = false;
-    comp.repoNames = [];
+    comp.repoNames.set([]);
     comp.startRepoSearch();
-    expect(comp.repoNames[0].label).toContain('start typing');
+    expect(comp.repoNames()[0].label).toContain('start typing');
     pluginService.repoNameFieldHasInit = true;
   });
 
-  it('getSourceUrlValue prefers plugin-provided defaults over user input', () => {
+  it('sourceUrlValue computed signal prefers plugin-provided defaults over user input', () => {
     pluginService.sourceUrlFieldValue = 'https://preconfigured';
     const { comp } = createComponent();
-    comp.sourceUrl = 'https://user/provided';
-    expect(comp.getSourceUrlValue()).toBe('https://preconfigured');
+    comp.pluginId.set('github'); // Must set pluginId for sourceUrlValue to check plugin config
+    comp.sourceUrl.set('https://user/provided');
+    expect(comp.sourceUrlValue()).toBe('https://preconfigured');
     pluginService.sourceUrlFieldValue = undefined;
   });
 
-  it('getRepoName falls back from repoName to selected and found names', () => {
+  it('computedRepoName falls back from repoName to selected and found names', () => {
     const { comp } = createComponent();
-    comp.repoName = undefined;
-    comp.selectedRepoName = 'selected';
-    comp.foundRepoName = 'found';
-    expect(comp.getRepoName()).toBe('selected');
-    comp.selectedRepoName = undefined;
-    expect(comp.getRepoName()).toBe('found');
+    comp.repoName.set(undefined);
+    comp.selectedRepoName.set('selected');
+    comp.foundRepoName.set('found');
+    expect(comp.computedRepoName()).toBe('selected');
+    comp.selectedRepoName.set(undefined);
+    expect(comp.computedRepoName()).toBe('found');
   });
 
   it('getOptions requests additional scopes via getRepoToken when signalled', fakeAsync(() => {
     const { comp } = createComponent();
-    comp.plugin = 'github';
-    comp.pluginId = 'github';
-    comp.sourceUrl = 'https://host/owner/repo';
-    comp.user = 'alice';
-    comp.token = 'tok';
-    comp.repoName = 'owner/repo';
+    comp.plugin.set('github');
+    comp.pluginId.set('github');
+    comp.sourceUrl.set('https://host/owner/repo');
+    comp.user.set('alice');
+    comp.token.set('tok');
+    comp.repoName.set('owner/repo');
     spyOn(comp, 'getRepoToken');
     spyOn(repoLookup, 'getOptions').and.returnValue(
       new Observable((observer) => {
@@ -571,34 +606,34 @@ describe('ConnectComponent advanced behaviors', () => {
   it('getDvObjectOptions returns immediately when items already loaded', () => {
     const { comp } = createComponent();
     const spy = spyOn(dvLookup, 'getItems').and.callThrough();
-    comp.doiItems = [{ label: 'Existing', value: 'doi:123' }];
-    comp['getDvObjectOptions']('Dataset', comp.doiItems, comp.setDoiItems);
+    comp.doiItems.set([{ label: 'Existing', value: 'doi:123' }]);
+    comp['getDvObjectOptions']('Dataset', comp.doiItems(), comp.setDoiItems);
     expect(spy).not.toHaveBeenCalled();
   });
 
   it('setDoiItems preserves existing dataset selection even when missing from results', () => {
     const { comp } = createComponent();
-    comp.datasetId = 'doi:missing';
-    comp.doiItems = [];
+    comp.datasetId.set('doi:missing');
+    comp.doiItems.set([]);
     comp.setDoiItems(comp, [{ label: 'Existing dataset', value: 'doi:AAA' }]);
-    expect(comp.doiItems[0].value).toBe('CREATE_NEW_DATASET');
+    expect(comp.doiItems()[0].value).toBe('CREATE_NEW_DATASET');
     expect(
-      comp.doiItems.some((i: any) => i.value === 'doi:missing'),
+      comp.doiItems().some((i: any) => i.value === 'doi:missing'),
     ).toBeTrue();
   });
 
   it('newDataset avoids duplicating option when already present', () => {
     const { comp } = createComponent();
-    comp.collectionId = 'root';
+    comp.collectionId.set('root');
     const newValue = 'root:New Dataset';
-    comp.doiItems = [
+    comp.doiItems.set([
       { label: 'New Dataset', value: newValue },
       { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
-    ];
+    ]);
     comp.newDataset();
-    expect(comp.doiItems.filter((i: any) => i.value === newValue).length).toBe(
-      1,
-    );
+    expect(
+      comp.doiItems().filter((i: any) => i.value === newValue).length,
+    ).toBe(1);
   });
 
   it('isNewDatasetId detects colon-prefixed values', () => {
@@ -613,16 +648,16 @@ describe('ConnectComponent advanced behaviors', () => {
     const nextSpy = spyOn(comp.collectionSearchSubject, 'next');
 
     comp.onCollectionSearch(null);
-    expect(comp.collectionItems[0].value).toBe('start');
+    expect(comp.collectionItems()[0].value).toBe('start');
     expect(nextSpy).not.toHaveBeenCalled();
 
     comp.onCollectionSearch('ab');
-    expect(comp.collectionItems[0].value).toBe('start');
+    expect(comp.collectionItems()[0].value).toBe('start');
     expect(nextSpy).not.toHaveBeenCalled();
 
     comp.onCollectionSearch('term');
-    expect(comp.collectionItems[0].label).toContain('searching "term"');
-    expect(comp.collectionItems[0].value).toBe('term');
+    expect(comp.collectionItems()[0].label).toContain('searching "term"');
+    expect(comp.collectionItems()[0].value).toBe('term');
     expect(nextSpy).toHaveBeenCalledOnceWith('term');
   });
 
@@ -632,8 +667,8 @@ describe('ConnectComponent advanced behaviors', () => {
       { label: 'Coll B', value: 'root:B' },
     ];
     const { comp } = createComponent();
-    comp.collectionId = 'root:BASE';
-    comp.dataverseToken = 'dvTok';
+    comp.collectionId.set('root:BASE');
+    comp.dataverseToken.set('dvTok');
 
     const items = await comp.collectionSearch('term');
     expect(items).toEqual(dvLookup.items);
@@ -644,16 +679,16 @@ describe('ConnectComponent advanced behaviors', () => {
     const nextSpy = spyOn(comp.datasetSearchSubject, 'next');
 
     comp.onDatasetSearch(null);
-    expect(comp.doiItems[0].value).toBe('start');
+    expect(comp.doiItems()[0].value).toBe('start');
     expect(nextSpy).not.toHaveBeenCalled();
 
     comp.onDatasetSearch('xy');
-    expect(comp.doiItems[0].value).toBe('start');
+    expect(comp.doiItems()[0].value).toBe('start');
     expect(nextSpy).not.toHaveBeenCalled();
 
     comp.onDatasetSearch('term');
-    expect(comp.doiItems[0].label).toContain('searching "term"');
-    expect(comp.doiItems[0].value).toBe('term');
+    expect(comp.doiItems()[0].label).toContain('searching "term"');
+    expect(comp.doiItems()[0].value).toBe('term');
     expect(nextSpy).toHaveBeenCalledOnceWith('term');
   });
 
@@ -663,7 +698,7 @@ describe('ConnectComponent advanced behaviors', () => {
       { label: 'Dataset 2', value: 'doi:2' },
     ];
     const { comp } = createComponent();
-    comp.collectionId = 'root:COLL';
+    comp.collectionId.set('root:COLL');
 
     const items = await comp.datasetSearch('sample');
     expect(items[0].value).toBe('CREATE_NEW_DATASET');
@@ -672,24 +707,24 @@ describe('ConnectComponent advanced behaviors', () => {
 
   it('onDatasetSelectionChange handles create-new sentinel and explicit selections', fakeAsync(() => {
     const { comp } = createComponent();
-    comp.collectionId = 'root:COLL';
-    comp.doiItems = [
+    comp.collectionId.set('root:COLL');
+    comp.doiItems.set([
       { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
       { label: 'Existing', value: 'doi:123' },
-    ];
+    ]);
     const newDatasetSpy = spyOn(comp, 'newDataset').and.callThrough();
 
     comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
     expect(newDatasetSpy).toHaveBeenCalled();
-    expect(comp.datasetId).toContain('root:COLL');
-    expect(comp.showNewDatasetCreatedMessage).toBeTrue();
+    expect(comp.datasetId()).toContain('root:COLL');
+    expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
 
     tick(3000);
-    expect(comp.showNewDatasetCreatedMessage).toBeFalse();
+    expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
 
-    const previousValue = comp.datasetId;
+    const previousValue = comp.datasetId();
     comp.onDatasetSelectionChange({ value: 'doi:567' });
-    expect(comp.showNewDatasetCreatedMessage).toBeFalse();
-    expect(comp.datasetId).toBe(previousValue);
+    expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
+    expect(comp.datasetId()).toBe(previousValue);
   }));
 });

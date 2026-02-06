@@ -4,19 +4,20 @@
 <p-dialog
   header="Access Options"
   [modal]="true"
-  [(visible)]="showGuestLoginPopup"
+  [visible]="showGuestLoginPopup()"
+  (visibleChange)="showGuestLoginPopup.set($event)"
   [closable]="false"
-  (onHide)="showPreviewUrlInput = false; accessDeniedForGuest = false"
+  (onHide)="showPreviewUrlInput.set(false); accessDeniedForGuest.set(false)"
 >
   <!-- Step 1: Initial choice view -->
-  @if (!showPreviewUrlInput) {
+  @if (!showPreviewUrlInput()) {
     <p class="m-0">
       You are not logged in. Choose how you want to access Globus:
     </p>
   }
 
   <!-- Step 2: Preview URL input view (shown when guest access was denied) -->
-  @if (showPreviewUrlInput) {
+  @if (showPreviewUrlInput()) {
     <p class="m-0">
       <strong>Access Denied</strong>
     </p>
@@ -28,7 +29,8 @@
       <input
         type="text"
         pInputText
-        [(ngModel)]="previewUrlInput"
+        [ngModel]="previewUrlInput()"
+        (ngModelChange)="previewUrlInput.set($event)"
         placeholder="Paste preview URL or token here"
         class="w-full"
       />
@@ -37,7 +39,7 @@
 
   <ng-template pTemplate="footer">
     <!-- Step 1 buttons (initial choice: guest or login) -->
-    @if (!showPreviewUrlInput) {
+    @if (!showPreviewUrlInput()) {
       <div class="d-flex justify-content-end" style="gap: 0.5rem">
         <p-button
           (click)="continueAsGuest()"
@@ -52,16 +54,16 @@
       </div>
     }
     <!-- Step 2 buttons (preview URL input after guest access denied) -->
-    @if (showPreviewUrlInput) {
+    @if (showPreviewUrlInput()) {
       <div
         class="d-flex justify-content-end align-items-center"
         style="gap: 0.5rem"
       >
         <p-button
           (click)="
-            showPreviewUrlInput = false;
-            previewUrlInput = '';
-            accessDeniedForGuest = false
+            showPreviewUrlInput.set(false);
+            previewUrlInput.set('');
+            accessDeniedForGuest.set(false)
           "
           styleClass="p-button-sm p-button-raised p-button-secondary"
           ><i class="pi pi-arrow-left"></i>&nbsp;Back</p-button
@@ -69,7 +71,7 @@
         <p-button
           (click)="continueWithPreviewUrl()"
           styleClass="p-button-sm p-button-raised p-button-primary"
-          [disabled]="!previewUrlInput"
+          [disabled]="!previewUrlInput()"
           >Continue</p-button
         >
       </div>
@@ -88,7 +90,8 @@
         class="form-control"
         id="dataverseToken"
         placeholder="Dataverse API token"
-        [(ngModel)]="dataverseToken"
+        [ngModel]="dataverseToken()"
+        (ngModelChange)="dataverseToken.set($event)"
         #ctrl="ngModel"
         (onChange)="onUserChange()"
       />
@@ -101,7 +104,7 @@
     <button
       pButton
       type="button"
-      [attr.hidden]="!done ? null : ''"
+      [attr.hidden]="!done() ? null : ''"
       class="p-button-sm p-button-raised p-button-primary"
       [disabled]="downloadDisabled()"
       (click)="download()"
@@ -111,7 +114,7 @@
     <button
       pButton
       type="button"
-      [attr.hidden]="done ? null : ''"
+      [attr.hidden]="done() ? null : ''"
       class="p-button-sm p-button-raised p-button-primary"
       (click)="goToDataset()"
     >
@@ -130,12 +133,13 @@
     [style]="{ width: '100%' }"
     [editable]="datasetFieldEditable()"
     id="datasetId"
-    [options]="doiItems"
+    [options]="doiItems()"
     [filter]="true"
     filterBy="label"
     [resetFilterOnHide]="true"
     (onFilter)="onDatasetSearch($event.filter)"
-    [(ngModel)]="datasetId"
+    [ngModel]="datasetId()"
+    (ngModelChange)="datasetId.set($event)"
     (onClick)="getDoiOptions()"
     (onChange)="onDatasetChange()"
   ></p-select>
@@ -143,27 +147,27 @@
 
 <app-transfer-progress-card
   [isGlobus]="true"
-  [taskId]="lastTransferTaskId"
-  [monitorUrl]="globusMonitorUrl"
-  [oauthSessionId]="token"
-  [submitting]="downloadInProgress && !lastTransferTaskId"
+  [taskId]="lastTransferTaskId()"
+  [monitorUrl]="globusMonitorUrl()"
+  [oauthSessionId]="token()"
+  [submitting]="downloadInProgress() && !lastTransferTaskId()"
   (pollingChange)="onStatusPollingChange($event)"
-  (completed)="done = true"
+  (completed)="done.set(true)"
 ></app-transfer-progress-card>
 
 <br />
-@if (datasetId && data?.id) {
+@if (datasetId() && data()?.id) {
   <div style="height: 100% - 2rem; overflow: hidden">
     <div style="float: left; width: 50%">
       <p-treeTable
-        [value]="rootNodeChildren"
-        [loading]="loading"
+        [value]="rootNodeChildren()"
+        [loading]="loading()"
         loadingIcon=" pi pi-spin pi-spinner"
       >
         <ng-template pTemplate="header">
           <tr>
             <th style="text-align: left">
-              <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+              <a [href]="data()!.url" target="_blank">{{ data()!.id }}</a>
             </th>
             <th class="icon_col" style="text-align: right">
               <button
@@ -183,9 +187,11 @@
             app-downloadablefile
             #downloadRow="appDownloadablefile"
             [datafile]="rowData"
-            [rowNodeMap]="rowNodeMap"
+            [rowNodeMap]="rowNodeMap()"
             [rowNode]="rowNode"
-            [style]="downloadRow.getStyle()"
+            [trigger]="refreshTrigger()"
+            [style]="downloadRow.hostStyle()"
+            (changed)="onRowActionChanged()"
           ></tr
         ></ng-template>
       </p-treeTable>
@@ -194,15 +200,16 @@
       <div style="margin: 0.2rem; padding-left: 2rem">
         <div class="mb-3">
           <label for="repoNameSearch" class="form-label">{{
-            getRepoNameFieldName()
+            repoNameFieldName()
           }}</label>
           <p-select
             appendTo="body"
             [editable]="repoNameFieldEditable()"
             id="repoNameSearch"
-            [options]="repoNames"
-            [(ngModel)]="foundRepoName"
-            [placeholder]="getRepoNamePlaceholder()"
+            [options]="repoNames()"
+            [ngModel]="foundRepoName()"
+            (ngModelChange)="foundRepoName.set($event)"
+            [placeholder]="repoNamePlaceholder()"
             [filter]="true"
             filterBy="label"
             [resetFilterOnHide]="true"
@@ -213,15 +220,15 @@
         </div>
         <div class="mb-3">
           <label for="repoBranchTree" class="form-label">{{
-            getOptionFieldName()
+            optionFieldName()
           }}</label
           ><br />
           <p-tree
             selectionMode="single"
-            [selection]="selectedOption"
-            [value]="rootOptions"
+            [selection]="selectedOption()"
+            [value]="rootOptions()"
             (onNodeExpand)="getOptions($event.node)"
-            [loading]="optionsLoading"
+            [loading]="optionsLoading()"
             loadingIcon=" pi pi-spin pi-spinner"
             (onNodeSelect)="optionSelected($event.node)"
           ></p-tree>

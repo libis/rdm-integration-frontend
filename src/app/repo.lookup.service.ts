@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SelectItem } from 'primeng/api';
 import { RepoLookupRequest } from './models/repo-lookup';
+import { HierarchicalSelectItem } from './models/hierarchical-select-item';
 
 @Injectable({
   providedIn: 'root',
@@ -17,8 +18,10 @@ export class RepoLookupService {
 
   constructor() {}
 
-  getOptions(req: RepoLookupRequest): Observable<SelectItem<string>[]> {
-    return this.http.post<SelectItem<string>[]>(this.url, req);
+  getOptions(
+    req: RepoLookupRequest,
+  ): Observable<HierarchicalSelectItem<string>[]> {
+    return this.http.post<HierarchicalSelectItem<string>[]>(this.url, req);
   }
 
   search(req: RepoLookupRequest): Observable<SelectItem<string>[]> {

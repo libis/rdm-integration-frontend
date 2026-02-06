@@ -41,18 +41,17 @@ export class DataService {
   constructor() {}
 
   getData(): Observable<Key> {
-    const credentials = this.credentialsService.credentials;
     const req = {
-      pluginId: credentials.pluginId,
-      plugin: credentials.plugin,
-      repoName: credentials.repo_name,
-      url: credentials.url,
-      option: credentials.option,
-      user: credentials.user,
-      token: credentials.token,
-      persistentId: credentials.dataset_id,
-      newlyCreated: credentials.newly_created,
-      dataverseKey: credentials.dataverse_token,
+      pluginId: this.credentialsService.pluginId$(),
+      plugin: this.credentialsService.plugin$(),
+      repoName: this.credentialsService.repoName$(),
+      url: this.credentialsService.url$(),
+      option: this.credentialsService.option$(),
+      user: this.credentialsService.user$(),
+      token: this.credentialsService.token$(),
+      persistentId: this.credentialsService.datasetId$(),
+      newlyCreated: this.credentialsService.newlyCreated$(),
+      dataverseKey: this.credentialsService.dataverseToken$(),
     };
 
     return this.http.post<Key>(this.compare_url, req);

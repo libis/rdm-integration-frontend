@@ -2,7 +2,7 @@
 // https://karma-runner.github.io/1.0/config/configuration-file.html
 
 // Use Chromium if Chrome is not available
-process.env.CHROME_BIN = process.env.CHROME_BIN || '/usr/bin/chromium';
+process.env.CHROME_BIN = process.env.CHROME_BIN || "/usr/bin/chromium";
 
 module.exports = function (config) {
   const isCi =

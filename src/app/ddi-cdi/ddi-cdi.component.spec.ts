@@ -5,9 +5,8 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -30,7 +29,19 @@ import { SelectItem, TreeNode } from 'primeng/api';
 describe('DdiCdiComponent', () => {
   let dataServiceStub: jasmine.SpyObj<DataService>;
   let dvObjectLookupServiceStub: jasmine.SpyObj<DvObjectLookupService>;
-  let pluginServiceStub: jasmine.SpyObj<PluginService>;
+  let pluginServiceStub: Partial<PluginService> & {
+    showDVToken$: WritableSignal<boolean>;
+    datasetFieldEditable$: WritableSignal<boolean>;
+    dataverseHeader$: WritableSignal<string>;
+    sendMails$: WritableSignal<boolean>;
+    externalURL$: WritableSignal<string>;
+    setConfig: jasmine.Spy;
+    showDVToken: jasmine.Spy;
+    isStoreDvToken: jasmine.Spy;
+    datasetFieldEditable: jasmine.Spy;
+    dataverseHeader: jasmine.Spy;
+    sendMails: jasmine.Spy;
+  };
   let navigationServiceStub: jasmine.SpyObj<NavigationService>;
   let notificationServiceStub: jasmine.SpyObj<NotificationService>;
   let utilsServiceStub: jasmine.SpyObj<UtilsService>;
@@ -73,14 +84,28 @@ describe('DdiCdiComponent', () => {
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
       'getItems',
     ]);
-    pluginServiceStub = jasmine.createSpyObj('PluginService', [
-      'setConfig',
-      'showDVToken',
-      'isStoreDvToken',
-      'datasetFieldEditable',
-      'dataverseHeader',
-      'sendMails',
-    ]);
+    // Create pluginService stub with both methods and signals
+    pluginServiceStub = {
+      showDVToken$: signal(false),
+      datasetFieldEditable$: signal(true),
+      dataverseHeader$: signal('Dataverse'),
+      sendMails$: signal(false),
+      externalURL$: signal(''),
+      setConfig: jasmine
+        .createSpy('setConfig')
+        .and.returnValue(Promise.resolve()),
+      showDVToken: jasmine.createSpy('showDVToken').and.returnValue(false),
+      isStoreDvToken: jasmine
+        .createSpy('isStoreDvToken')
+        .and.returnValue(false),
+      datasetFieldEditable: jasmine
+        .createSpy('datasetFieldEditable')
+        .and.returnValue(true),
+      dataverseHeader: jasmine
+        .createSpy('dataverseHeader')
+        .and.returnValue('Dataverse'),
+      sendMails: jasmine.createSpy('sendMails').and.returnValue(false),
+    };
     navigationServiceStub = jasmine.createSpyObj('NavigationService', [
       'assign',
     ]);
@@ -96,13 +121,8 @@ describe('DdiCdiComponent', () => {
     ]);
 
     // Default stub behaviors
-    pluginServiceStub.setConfig.and.returnValue(Promise.resolve());
-    pluginServiceStub.showDVToken.and.returnValue(false);
-    pluginServiceStub.isStoreDvToken.and.returnValue(false);
-    pluginServiceStub.sendMails.and.returnValue(false);
-    pluginServiceStub.datasetFieldEditable.and.returnValue(true);
-    pluginServiceStub.dataverseHeader.and.returnValue('Dataverse');
     utilsServiceStub.sleep.and.returnValue(Promise.resolve());
+    dvObjectLookupServiceStub.getItems.and.returnValue(of([]));
     dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
       throwError(() => ({ status: 404 })),
     );
@@ -117,7 +137,6 @@ describe('DdiCdiComponent', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: DataService, useValue: dataServiceStub },
         { provide: DvObjectLookupService, useValue: dvObjectLookupServiceStub },
         { provide: PluginService, useValue: pluginServiceStub },
@@ -155,8 +174,8 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       await component.ngOnInit();
-      expect(component.datasetId).toBe('doi:10.123/test');
-      expect(component.dataverseToken).toBe('token123');
+      expect(component.datasetId()).toBe('doi:10.123/test');
+      expect(component.dataverseToken()).toBe('token123');
     });
   });
 
@@ -179,11 +198,11 @@ describe('DdiCdiComponent', () => {
     it('should clear doiItems and datasetId', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.doiItems = [{ label: 'test', value: 'test' }];
-      component.datasetId = 'doi:test';
+      component.doiItems.set([{ label: 'test', value: 'test' }]);
+      component.datasetId.set('doi:test');
       component.onUserChange();
-      expect(component.doiItems).toEqual([]);
-      expect(component.datasetId).toBeUndefined();
+      expect(component.doiItems()).toEqual([]);
+      expect(component.datasetId()).toBeUndefined();
     });
   });
 
@@ -191,7 +210,7 @@ describe('DdiCdiComponent', () => {
     it('should return early if items already loaded', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.doiItems = [{ label: 'test', value: 'test' }];
+      component.doiItems.set([{ label: 'test', value: 'test' }]);
       component.getDoiOptions();
       expect(dvObjectLookupServiceStub.getItems).not.toHaveBeenCalled();
     });
@@ -203,7 +222,7 @@ describe('DdiCdiComponent', () => {
       dvObjectLookupServiceStub.getItems.and.returnValue(of(mockItems));
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.doiItems = [];
+      component.doiItems.set([]);
       component.getDoiOptions();
       expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledWith(
         '',
@@ -211,7 +230,7 @@ describe('DdiCdiComponent', () => {
         undefined,
         undefined,
       );
-      expect(component.doiItems).toEqual(mockItems);
+      expect(component.doiItems()).toEqual(mockItems);
     });
 
     it('should handle error when fetching datasets', () => {
@@ -220,12 +239,12 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.doiItems = [];
+      component.doiItems.set([]);
       component.getDoiOptions();
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'DOI lookup failed: Network error',
       );
-      expect(component.doiItems).toEqual([]);
+      expect(component.doiItems()).toEqual([]);
     });
   });
 
@@ -234,7 +253,7 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.onDatasetSearch('ab');
-      expect(component.doiItems[0].label).toContain('at least three letters');
+      expect(component.doiItems()[0].label).toContain('at least three letters');
     });
 
     it('should trigger search for valid search terms', () => {
@@ -257,7 +276,7 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       fixture.detectChanges();
-      component.datasetId = 'doi:123';
+      component.datasetId.set('doi:123');
       component.onDatasetChange();
       // loading is set to false after synchronous observable completion
       setTimeout(() => {
@@ -265,7 +284,7 @@ describe('DdiCdiComponent', () => {
           'doi:123',
           undefined,
         );
-        expect(component.loading).toBe(false); // loading should be false after completion
+        expect(component.loading()).toBe(false); // loading should be false after completion
         done();
       }, 10);
     });
@@ -276,7 +295,7 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
+      component.datasetId.set('doi:123');
       component.onDatasetChange();
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'Getting files failed: Fetch error',
@@ -288,10 +307,10 @@ describe('DdiCdiComponent', () => {
     it('should handle empty data', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.loading = true;
+      component.loading.set(true);
       component.setData({ data: [] });
-      expect(component.loading).toBe(false);
-      expect(component.rootNodeChildren).toEqual([]);
+      expect(component.loading()).toBe(false);
+      expect(component.rootNodeChildren()).toEqual([]);
     });
 
     it('should process data and auto-select supported files', () => {
@@ -309,8 +328,8 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.setData({ data: [mockFile] });
-      expect(component.selectedFiles.has('data.csv')).toBe(true);
-      expect(component.loading).toBe(false);
+      expect(component.selectedFiles().has('data.csv')).toBe(true);
+      expect(component.loading()).toBe(false);
     });
   });
 
@@ -329,8 +348,8 @@ describe('DdiCdiComponent', () => {
         children: [childNode],
       };
       component.autoSelectAllFiles(parentNode);
-      expect(component.selectedFiles.has('parent.tsv')).toBe(true);
-      expect(component.selectedFiles.has('nested.csv')).toBe(true);
+      expect(component.selectedFiles().has('parent.tsv')).toBe(true);
+      expect(component.selectedFiles().has('nested.csv')).toBe(true);
     });
   });
 
@@ -338,7 +357,11 @@ describe('DdiCdiComponent', () => {
     it('isFileSelected should check selectedFiles set', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.selectedFiles.add('file.csv');
+      component.selectedFiles.update((files) => {
+        const s = new Set(files);
+        s.add('file.csv');
+        return s;
+      });
       expect(component.isFileSelected('file.csv')).toBe(true);
       expect(component.isFileSelected('other.csv')).toBe(false);
     });
@@ -347,9 +370,9 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.toggleFileSelection('file.csv');
-      expect(component.selectedFiles.has('file.csv')).toBe(true);
+      expect(component.selectedFiles().has('file.csv')).toBe(true);
       component.toggleFileSelection('file.csv');
-      expect(component.selectedFiles.has('file.csv')).toBe(false);
+      expect(component.selectedFiles().has('file.csv')).toBe(false);
     });
 
     it('autoSelectAllFiles should recursively select all files', () => {
@@ -363,8 +386,8 @@ describe('DdiCdiComponent', () => {
         children: [childNode],
       };
       component.autoSelectAllFiles(parentNode);
-      expect(component.selectedFiles.has('parent.tsv')).toBe(true);
-      expect(component.selectedFiles.has('nested.csv')).toBe(true);
+      expect(component.selectedFiles().has('parent.tsv')).toBe(true);
+      expect(component.selectedFiles().has('nested.csv')).toBe(true);
     });
   });
 
@@ -387,9 +410,13 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       fixture.detectChanges();
-      component.datasetId = 'doi:123';
-      component.dataverseToken = 'token';
-      component.selectedFiles.add('file.csv');
+      component.datasetId.set('doi:123');
+      component.dataverseToken.set('token');
+      component.selectedFiles.update((files) => {
+        const s = new Set(files);
+        s.add('file.csv');
+        return s;
+      });
       component.continueSubmitGenerate();
       // loading is set to false after synchronous observable completion
       setTimeout(() => {
@@ -400,7 +427,7 @@ describe('DdiCdiComponent', () => {
           fileNames: ['file.csv'],
           sendEmailOnSuccess: false,
         });
-        expect(component.loading).toBe(false); // loading should be false after completion
+        expect(component.loading()).toBe(false); // loading should be false after completion
         done();
       }, 10);
     });
@@ -411,8 +438,12 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.datasetId = 'doi:123';
-      component.selectedFiles.add('file.csv');
+      component.datasetId.set('doi:123');
+      component.selectedFiles.update((files) => {
+        const s = new Set(files);
+        s.add('file.csv');
+        return s;
+      });
       component.continueSubmitGenerate();
       setTimeout(() => {
         expect(notificationServiceStub.showError).toHaveBeenCalledWith(
@@ -446,9 +477,9 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component['getDdiCdiData'](mockKey);
       setTimeout(() => {
-        expect(component.generatedDdiCdi).toBe(GENERATED_TURTLE);
-        expect(component.output).toBe('output');
-        expect(component.loading).toBe(false);
+        expect(component.generatedDdiCdi()).toBe(GENERATED_TURTLE);
+        expect(component.output()).toBe('output');
+        expect(component.loading()).toBe(false);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
           'DDI-CDI generated successfully!',
         );
@@ -484,7 +515,7 @@ describe('DdiCdiComponent', () => {
         expect(notificationServiceStub.showError).toHaveBeenCalledWith(
           'Getting DDI-CDI results failed: Fetch failed',
         );
-        expect(component.loading).toBe(false);
+        expect(component.loading()).toBe(false);
         done();
       }, 50);
     });
@@ -494,7 +525,7 @@ describe('DdiCdiComponent', () => {
     it('should not do anything when generatedDdiCdi is undefined', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = undefined;
+      component.generatedDdiCdi.set(undefined);
       spyOn(URL, 'createObjectURL');
       component.downloadDdiCdi();
       expect(URL.createObjectURL).not.toHaveBeenCalled();
@@ -503,7 +534,7 @@ describe('DdiCdiComponent', () => {
     it('should create blob and trigger download when generatedDdiCdi has content', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = GENERATED_TURTLE;
+      component.generatedDdiCdi.set(GENERATED_TURTLE);
 
       const mockUrl = 'blob:mock-url';
       spyOn(URL, 'createObjectURL').and.returnValue(mockUrl);
@@ -530,7 +561,7 @@ describe('DdiCdiComponent', () => {
     it('should not do anything when generatedDdiCdi is undefined', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = undefined;
+      component.generatedDdiCdi.set(undefined);
       spyOn(window, 'open');
       component.openInViewer();
       expect(window.open).not.toHaveBeenCalled();
@@ -539,14 +570,12 @@ describe('DdiCdiComponent', () => {
     it('should add file to dataset and open viewer with fileId', fakeAsync(() => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = GENERATED_TURTLE;
-      component.datasetId = 'doi:10.5072/test';
-      component.dataverseToken = 'test-token';
+      component.generatedDdiCdi.set(GENERATED_TURTLE);
+      component.datasetId.set('doi:10.5072/test');
+      component.dataverseToken.set('test-token');
 
       spyOn(window, 'open');
-      pluginServiceStub.getExternalURL = jasmine
-        .createSpy('getExternalURL')
-        .and.returnValue('https://demo.dataverse.org');
+      pluginServiceStub.externalURL$.set('https://demo.dataverse.org');
       dataServiceStub.addFileToDataset.and.returnValue(
         of({ fileId: 12345, key: 'test-key' }),
       );
@@ -569,14 +598,12 @@ describe('DdiCdiComponent', () => {
     it('should show error when baseUrl is not configured', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = GENERATED_TURTLE;
-      component.datasetId = 'doi:10.5072/test';
-      component.dataverseToken = 'test-token';
+      component.generatedDdiCdi.set(GENERATED_TURTLE);
+      component.datasetId.set('doi:10.5072/test');
+      component.dataverseToken.set('test-token');
 
       spyOn(window, 'open');
-      pluginServiceStub.getExternalURL = jasmine
-        .createSpy('getExternalURL')
-        .and.returnValue(null);
+      pluginServiceStub.externalURL$.set('');
 
       component.openInViewer();
 
@@ -589,14 +616,12 @@ describe('DdiCdiComponent', () => {
     it('should show error when addFileToDataset fails', fakeAsync(() => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.generatedDdiCdi = GENERATED_TURTLE;
-      component.datasetId = 'doi:10.5072/test';
-      component.dataverseToken = 'test-token';
+      component.generatedDdiCdi.set(GENERATED_TURTLE);
+      component.datasetId.set('doi:10.5072/test');
+      component.dataverseToken.set('test-token');
 
       spyOn(window, 'open');
-      pluginServiceStub.getExternalURL = jasmine
-        .createSpy('getExternalURL')
-        .and.returnValue('https://demo.dataverse.org');
+      pluginServiceStub.externalURL$.set('https://demo.dataverse.org');
       dataServiceStub.addFileToDataset.and.returnValue(
         throwError(() => new Error('Network error')),
       );
@@ -613,16 +638,15 @@ describe('DdiCdiComponent', () => {
 
   describe('Additional Coverage Tests', () => {
     describe('showDVToken', () => {
-      it('should delegate to plugin service', () => {
-        pluginServiceStub.showDVToken.and.returnValue(true);
+      it('should return value from plugin service signal', () => {
+        pluginServiceStub.showDVToken$.set(true);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.showDVToken()).toBe(true);
-        expect(pluginServiceStub.showDVToken).toHaveBeenCalled();
       });
 
-      it('should return false when plugin service returns false', () => {
-        pluginServiceStub.showDVToken.and.returnValue(false);
+      it('should return false when plugin service signal is false', () => {
+        pluginServiceStub.showDVToken$.set(false);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.showDVToken()).toBe(false);
@@ -630,16 +654,15 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('datasetFieldEditable', () => {
-      it('should delegate to plugin service', () => {
-        pluginServiceStub.datasetFieldEditable.and.returnValue(true);
+      it('should return value from plugin service signal', () => {
+        pluginServiceStub.datasetFieldEditable$.set(true);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.datasetFieldEditable()).toBe(true);
-        expect(pluginServiceStub.datasetFieldEditable).toHaveBeenCalled();
       });
 
       it('should return false when not editable', () => {
-        pluginServiceStub.datasetFieldEditable.and.returnValue(false);
+        pluginServiceStub.datasetFieldEditable$.set(false);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.datasetFieldEditable()).toBe(false);
@@ -647,12 +670,11 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('dataverseHeader', () => {
-      it('should return header from plugin service', () => {
-        pluginServiceStub.dataverseHeader.and.returnValue('Test Header');
+      it('should return header from plugin service signal', () => {
+        pluginServiceStub.dataverseHeader$.set('Test Header');
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.dataverseHeader()).toBe('Test Header');
-        expect(pluginServiceStub.dataverseHeader).toHaveBeenCalled();
       });
     });
 
@@ -660,7 +682,7 @@ describe('DdiCdiComponent', () => {
       it('should not fetch when doiItems already has non-loading items', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.doiItems = [{ label: 'doi:1', value: 'doi:1' }];
+        component.doiItems.set([{ label: 'doi:1', value: 'doi:1' }]);
         component.getDoiOptions();
         expect(dvObjectLookupServiceStub.getItems).not.toHaveBeenCalled();
       });
@@ -670,8 +692,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.getDoiOptions();
-        expect(component.doiItems).toEqual([]);
-        expect(component.datasetId).toBeUndefined();
+        expect(component.doiItems()).toEqual([]);
+        expect(component.datasetId()).toBeUndefined();
       });
 
       it('should keep datasetId and ensure option exists when items are loaded', () => {
@@ -681,10 +703,10 @@ describe('DdiCdiComponent', () => {
         dvObjectLookupServiceStub.getItems.and.returnValue(of(mockItems));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'old-value';
+        component.datasetId.set('old-value');
         component.getDoiOptions();
-        expect(component.datasetId).toBe('old-value');
-        expect(component.doiItems[0].value).toBe('old-value');
+        expect(component.datasetId()).toBe('old-value');
+        expect(component.doiItems()[0].value).toBe('old-value');
       });
     });
 
@@ -693,16 +715,16 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.onDatasetSearch(null);
-        expect(component.doiItems.length).toBe(1);
-        expect(component.doiItems[0].label).toContain('start typing');
+        expect(component.doiItems().length).toBe(1);
+        expect(component.doiItems()[0].label).toContain('start typing');
       });
 
       it('should show instruction for short search term', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.onDatasetSearch('ab');
-        expect(component.doiItems.length).toBe(1);
-        expect(component.doiItems[0].label).toContain('at least three');
+        expect(component.doiItems().length).toBe(1);
+        expect(component.doiItems()[0].label).toContain('at least three');
       });
 
       it('should show searching message for valid term', () => {
@@ -710,7 +732,7 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         spyOn(component['datasetSearchSubject'], 'next');
         component.onDatasetSearch('test');
-        expect(component.doiItems[0].label).toContain('searching');
+        expect(component.doiItems()[0].label).toContain('searching');
       });
     });
 
@@ -722,7 +744,7 @@ describe('DdiCdiComponent', () => {
         dvObjectLookupServiceStub.getItems.and.returnValue(of(mockItems));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.dataverseToken = 'token';
+        component.dataverseToken.set('token');
         const result = await component.datasetSearch('search-term');
         expect(result).toEqual(mockItems);
         expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledWith(
@@ -773,9 +795,9 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         component.setData(mockData);
 
-        expect(component.selectedFiles.has('file1.csv')).toBe(true);
-        expect(component.selectedFiles.has('nested.tsv')).toBe(true);
-        expect(component.loading).toBe(false);
+        expect(component.selectedFiles().has('file1.csv')).toBe(true);
+        expect(component.selectedFiles().has('nested.tsv')).toBe(true);
+        expect(component.loading()).toBe(false);
       });
 
       it('should auto-select all files from backend', () => {
@@ -801,7 +823,7 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         component.setData(mockData);
 
-        expect(component.selectedFiles.has('file.csv')).toBe(true);
+        expect(component.selectedFiles().has('file.csv')).toBe(true);
       });
     });
 
@@ -833,8 +855,8 @@ describe('DdiCdiComponent', () => {
 
         setTimeout(() => {
           expect(callCount).toBeGreaterThanOrEqual(3);
-          expect(component.loading).toBe(false);
-          expect(component.generatedDdiCdi).toBe(FINAL_TURTLE);
+          expect(component.loading()).toBe(false);
+          expect(component.generatedDdiCdi()).toBe(FINAL_TURTLE);
           done();
         }, 100);
       });
@@ -859,7 +881,7 @@ describe('DdiCdiComponent', () => {
           expect(notificationServiceStub.showError).toHaveBeenCalledWith(
             'Processing error occurred',
           );
-          expect(component.loading).toBe(false);
+          expect(component.loading()).toBe(false);
           done();
         }, 10);
       });
@@ -884,7 +906,7 @@ describe('DdiCdiComponent', () => {
           expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
             'DDI-CDI generated successfully!',
           );
-          expect(component.outputDisabled).toBe(false);
+          expect(component.outputDisabled()).toBe(false);
           done();
         }, 10);
       });
@@ -915,7 +937,7 @@ describe('DdiCdiComponent', () => {
         component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
-          expect(component.output).toBe('Final output');
+          expect(component.output()).toBe('Final output');
           done();
         }, 100);
       });
@@ -945,8 +967,8 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         await component.ngOnInit();
 
-        expect(component.datasetId).toBe('doi:test');
-        expect(component.dataverseToken).toBe('test-token');
+        expect(component.datasetId()).toBe('doi:test');
+        expect(component.dataverseToken()).toBe('test-token');
         // doiItems is not populated when dataset is provided via query params
         // The dataset ID is used directly without going through the search dropdown
       });
@@ -969,7 +991,7 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         await component.ngOnInit();
 
-        expect(component.datasetId).toBe('doi:test');
+        expect(component.datasetId()).toBe('doi:test');
       });
     });
 
@@ -1014,9 +1036,9 @@ describe('DdiCdiComponent', () => {
         component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
-          expect(component.loading).toBe(false);
-          expect(component.generatedDdiCdi).toBeUndefined();
-          expect(component.output).toBe('output without ddiCdi');
+          expect(component.loading()).toBe(false);
+          expect(component.generatedDdiCdi()).toBeUndefined();
+          expect(component.output()).toBe('output without ddiCdi');
           done();
         }, 10);
       });
@@ -1053,7 +1075,7 @@ describe('DdiCdiComponent', () => {
         };
 
         expect(() => component.autoSelectAllFiles(node)).not.toThrow();
-        expect(component.selectedFiles.size).toBe(0);
+        expect(component.selectedFiles().size).toBe(0);
       });
 
       it('should handle node with data but no name', () => {
@@ -1066,7 +1088,7 @@ describe('DdiCdiComponent', () => {
         };
 
         expect(() => component.autoSelectAllFiles(node)).not.toThrow();
-        expect(component.selectedFiles.size).toBe(0);
+        expect(component.selectedFiles().size).toBe(0);
       });
 
       it('should recursively process all children', () => {
@@ -1084,8 +1106,8 @@ describe('DdiCdiComponent', () => {
         };
 
         component.autoSelectAllFiles(node);
-        expect(component.selectedFiles.has('child.tsv')).toBe(true);
-        expect(component.selectedFiles.has('parent.csv')).toBe(true);
+        expect(component.selectedFiles().has('child.tsv')).toBe(true);
+        expect(component.selectedFiles().has('parent.csv')).toBe(true);
       });
     });
 
@@ -1094,26 +1116,30 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.toggleFileSelection('file.csv');
-        expect(component.selectedFiles.has('file.csv')).toBe(true);
+        expect(component.selectedFiles().has('file.csv')).toBe(true);
       });
 
       it('should remove file when already selected', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.selectedFiles.add('file.csv');
+        component.selectedFiles.update((files) => {
+          const s = new Set(files);
+          s.add('file.csv');
+          return s;
+        });
         component.toggleFileSelection('file.csv');
-        expect(component.selectedFiles.has('file.csv')).toBe(false);
+        expect(component.selectedFiles().has('file.csv')).toBe(false);
       });
 
       it('should toggle multiple times correctly', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.toggleFileSelection('file.csv');
-        expect(component.selectedFiles.has('file.csv')).toBe(true);
+        expect(component.selectedFiles().has('file.csv')).toBe(true);
         component.toggleFileSelection('file.csv');
-        expect(component.selectedFiles.has('file.csv')).toBe(false);
+        expect(component.selectedFiles().has('file.csv')).toBe(false);
         component.toggleFileSelection('file.csv');
-        expect(component.selectedFiles.has('file.csv')).toBe(true);
+        expect(component.selectedFiles().has('file.csv')).toBe(true);
       });
     });
 
@@ -1121,7 +1147,7 @@ describe('DdiCdiComponent', () => {
       it('should handle null data array', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.loading = true;
+        component.loading.set(true);
 
         const mockData: CompareResult = {
           id: 'doi:123',
@@ -1129,8 +1155,8 @@ describe('DdiCdiComponent', () => {
         };
 
         component.setData(mockData);
-        expect(component.loading).toBe(false);
-        expect(component.selectedFiles.size).toBe(0);
+        expect(component.loading()).toBe(false);
+        expect(component.selectedFiles().size).toBe(0);
       });
 
       it('should handle rootNode without children', () => {
@@ -1151,8 +1177,8 @@ describe('DdiCdiComponent', () => {
         const component = fixture.componentInstance;
         component.setData(mockData);
 
-        expect(component.rootNodeChildren).toEqual([]);
-        expect(component.loading).toBe(false);
+        expect(component.rootNodeChildren()).toEqual([]);
+        expect(component.loading()).toBe(false);
       });
     });
 
@@ -1163,23 +1189,27 @@ describe('DdiCdiComponent', () => {
         fixture.detectChanges();
 
         // Set some state
-        component.output = 'previous output';
-        component.outputDisabled = false;
-        component.generatedDdiCdi = 'previous ddiCdi';
-        component.selectedFiles.add('file1.csv');
-        component.selectedFiles.add('file2.csv');
+        component.output.set('previous output');
+        component.outputDisabled.set(false);
+        component.generatedDdiCdi.set('previous ddiCdi');
+        component.selectedFiles.update((files) => {
+          const s = new Set(files);
+          s.add('file1.csv');
+          s.add('file2.csv');
+          return s;
+        });
 
         dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
           of({ id: 'doi:new', data: [] } as CompareResult),
         );
 
-        component.datasetId = 'doi:new';
+        component.datasetId.set('doi:new');
         component.onDatasetChange();
 
-        expect(component.output).toBe('');
-        expect(component.outputDisabled).toBe(true);
-        expect(component.generatedDdiCdi).toBeUndefined();
-        expect(component.selectedFiles.size).toBe(0);
+        expect(component.output()).toBe('');
+        expect(component.outputDisabled()).toBe(true);
+        expect(component.generatedDdiCdi()).toBeUndefined();
+        expect(component.selectedFiles().size).toBe(0);
       });
     });
 
@@ -1194,12 +1224,12 @@ describe('DdiCdiComponent', () => {
         dataServiceStub.getCachedDdiCdiOutput.and.returnValue(of(mockCache));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
+        component.datasetId.set('doi:123');
 
         component.loadCachedOutput();
 
-        expect(component.generatedDdiCdi).toBe(POLLED_CACHED_TURTLE);
-        expect(component.cachedOutputLoaded).toBe(true);
+        expect(component.generatedDdiCdi()).toBe(POLLED_CACHED_TURTLE);
+        expect(component.cachedOutputLoaded()).toBe(true);
         expect(notificationServiceStub.showSuccess).toHaveBeenCalled();
       });
 
@@ -1213,12 +1243,12 @@ describe('DdiCdiComponent', () => {
         dataServiceStub.getCachedDdiCdiOutput.and.returnValue(of(mockCache));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
+        component.datasetId.set('doi:123');
 
         component.loadCachedOutput();
 
-        expect(component.output).toContain('Previous generation failed');
-        expect(component.outputDisabled).toBe(false);
+        expect(component.output()).toContain('Previous generation failed');
+        expect(component.outputDisabled()).toBe(false);
       });
 
       it('should handle no cached output found', () => {
@@ -1227,17 +1257,17 @@ describe('DdiCdiComponent', () => {
         );
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
+        component.datasetId.set('doi:123');
 
         component.loadCachedOutput();
 
-        expect(component.cachedOutputLoaded).toBe(false);
+        expect(component.cachedOutputLoaded()).toBe(false);
       });
 
       it('should not call service when datasetId is not set', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = undefined;
+        component.datasetId.set(undefined);
 
         component.loadCachedOutput();
 
@@ -1256,13 +1286,13 @@ describe('DdiCdiComponent', () => {
         dataServiceStub.getCachedDdiCdiOutput.and.returnValue(of(mockCache));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
-        component.generatedDdiCdi = 'old-content';
+        component.datasetId.set('doi:123');
+        component.generatedDdiCdi.set('old-content');
 
         component.refreshOutput();
 
-        expect(component.generatedDdiCdi).toBe(REFRESHED_TURTLE);
-        expect(component.cachedOutputLoaded).toBe(true);
+        expect(component.generatedDdiCdi()).toBe(REFRESHED_TURTLE);
+        expect(component.cachedOutputLoaded()).toBe(true);
       });
 
       it('should clear previous state before refreshing', () => {
@@ -1271,15 +1301,15 @@ describe('DdiCdiComponent', () => {
         );
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
-        component.generatedDdiCdi = 'old-content';
-        component.output = 'old-output';
+        component.datasetId.set('doi:123');
+        component.generatedDdiCdi.set('old-content');
+        component.output.set('old-output');
 
         component.refreshOutput();
 
-        expect(component.generatedDdiCdi).toBeUndefined();
-        expect(component.output).toBe('');
-        expect(component.cachedOutputLoaded).toBe(false);
+        expect(component.generatedDdiCdi()).toBeUndefined();
+        expect(component.output()).toBe('');
+        expect(component.cachedOutputLoaded()).toBe(false);
       });
     });
 
@@ -1293,14 +1323,18 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-        component.datasetId = 'doi:123';
-        component.dataverseToken = 'token';
-        component.selectedFiles.add('file.csv');
-        component.submitPopup = true;
+        component.datasetId.set('doi:123');
+        component.dataverseToken.set('token');
+        component.selectedFiles.update((files) => {
+          const s = new Set(files);
+          s.add('file.csv');
+          return s;
+        });
+        component.submitPopup.set(true);
 
         component.continueSubmitGenerate();
 
-        expect(component.submitPopup).toBe(false);
+        expect(component.submitPopup()).toBe(false);
         setTimeout(() => {
           expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
             jasmine.stringContaining('DDI-CDI generation job submitted'),
@@ -1312,7 +1346,7 @@ describe('DdiCdiComponent', () => {
       it('should set expected output format for email disabled', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.sendEmailOnSuccess = false;
+        component.sendEmailOnSuccess.set(false);
 
         // Test the message format that should be set
         const expectedMsg = 'You will receive an email if it fails.';
@@ -1325,15 +1359,19 @@ describe('DdiCdiComponent', () => {
         );
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
-        component.selectedFiles.add('file.csv');
+        component.datasetId.set('doi:123');
+        component.selectedFiles.update((files) => {
+          const s = new Set(files);
+          s.add('file.csv');
+          return s;
+        });
 
         component.continueSubmitGenerate();
 
         expect(notificationServiceStub.showError).toHaveBeenCalledWith(
           'Generation failed: Submit failed',
         );
-        expect(component.loading).toBe(false);
+        expect(component.loading()).toBe(false);
       });
     });
 
@@ -1341,12 +1379,16 @@ describe('DdiCdiComponent', () => {
       it('should show popup instead of immediately submitting', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.datasetId = 'doi:123';
-        component.selectedFiles.add('file.csv');
+        component.datasetId.set('doi:123');
+        component.selectedFiles.update((files) => {
+          const s = new Set(files);
+          s.add('file.csv');
+          return s;
+        });
 
         component.submitGenerate();
 
-        expect(component.submitPopup).toBe(true);
+        expect(component.submitPopup()).toBe(true);
         expect(dataServiceStub.generateDdiCdi).not.toHaveBeenCalled();
       });
     });

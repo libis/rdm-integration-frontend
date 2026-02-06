@@ -28,7 +28,7 @@ export class DatasetService {
     metadata?: Metadata,
   ): Observable<NewDatasetResponse> {
     const req = {
-      collectionId: collectionId,
+      collection: collectionId,
       dataverseKey: apiToken,
       metadata: metadata,
     };

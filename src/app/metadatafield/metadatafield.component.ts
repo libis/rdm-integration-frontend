@@ -1,6 +1,12 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnInit, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
@@ -17,34 +23,39 @@ import {
   styleUrls: ['./metadatafield.component.scss'],
   imports: [TreeTableModule, ButtonDirective],
   exportAs: 'appMetadatafield',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MetadatafieldComponent implements OnInit {
+export class MetadatafieldComponent {
   readonly field = input<Field>({});
   readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(
     new Map<string, TreeNode<Field>>(),
   );
   readonly rowNode = input<TreeNode<Field>>({});
 
-  static icon_ignore = 'pi pi-stop';
-  static icon_copy = 'pi pi-check-square';
-  static icon_custom = 'pi pi-exclamation-triangle';
+  /** Emitted after action state changes to notify parent to refresh view */
+  readonly changed = output<void>();
 
-  node: TreeNode<Field> = {};
+  static readonly icon_ignore = 'pi pi-stop';
+  static readonly icon_copy = 'pi pi-check-square';
+  static readonly icon_custom = 'pi pi-exclamation-triangle';
 
-  constructor() {}
-
-  ngOnInit(): void {
+  readonly node = computed<TreeNode<Field>>(() => {
     const foundNode = [...this.rowNodeMap().values()].find(
       (x) => x.data?.id === this.field().id,
     );
-    this.node = foundNode ? foundNode : this.rowNode();
-  }
+    return foundNode ?? this.rowNode();
+  });
 
-  action(): string {
-    return MetadatafieldComponent.actionIcon(this.node);
-  }
+  // Trigger to force update when underlying data (action) mutates
+  readonly refreshTrigger = input(0);
 
-  public static actionIcon(node: TreeNode<Field>): string {
+  readonly actionIcon = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.refreshTrigger();
+    return MetadatafieldComponent.actionIconFromNode(this.node());
+  });
+
+  public static actionIconFromNode(node: TreeNode<Field>): string {
     switch (node.data?.action) {
       case Fieldaction.Ignore:
         return this.icon_ignore;
@@ -57,17 +68,15 @@ export class MetadatafieldComponent implements OnInit {
     }
   }
 
-  name(): string {
-    return `${this.field().name}`;
-  }
+  readonly fieldName = computed(() => `${this.field().name}`);
 
-  value(): string {
+  readonly fieldValue = computed(() => {
     const field = this.field();
     return field.leafValue ? `${field.leafValue}` : '';
-  }
+  });
 
-  source(): string {
-    const f = this.node?.data?.field;
+  readonly fieldSource = computed(() => {
+    const f = this.node()?.data?.field;
     // When the node is a leaf, field is a MetadataField and may carry `source`.
     // When it's a compound, it's a FieldDictionary and we don't show a source at this row level.
     // A safer check: if it has a 'value' and 'typeName', it's a MetadataField.
@@ -76,9 +85,27 @@ export class MetadatafieldComponent implements OnInit {
       return maybe.source ?? '';
     }
     // Fallback for compound rows: derive source from the first leaf child that has a source
-    const derived = this.firstLeafSource(this.node);
+    const derived = this.firstLeafSource(this.node());
     return derived ?? '';
-  }
+  });
+
+  readonly hostStyle = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.refreshTrigger();
+    const action = this.field().action ?? Fieldaction.Ignore;
+    let style: FileActionStyle;
+    switch (action) {
+      case Fieldaction.Copy:
+        style = getFileActionStyle('COPY');
+        break;
+      case Fieldaction.Custom:
+        style = getFileActionStyle('CUSTOM');
+        break;
+      default:
+        style = getFileActionStyle('IGNORE');
+    }
+    return buildInlineStyle(style);
+  });
 
   private firstLeafSource(node?: TreeNode<Field>): string | undefined {
     if (!node) return undefined;
@@ -100,8 +127,9 @@ export class MetadatafieldComponent implements OnInit {
   }
 
   toggleAction(): void {
-    MetadatafieldComponent.toggleNodeAction(this.node);
+    MetadatafieldComponent.toggleNodeAction(this.node());
     this.updateFolderActions(this.rowNodeMap().get('')!);
+    this.changed.emit();
   }
 
   updateFolderActions(node: TreeNode<Field>): Fieldaction {
@@ -144,22 +172,5 @@ export class MetadatafieldComponent implements OnInit {
   ): void {
     node.data!.action = action;
     node.children?.forEach((v) => this.setNodeAction(v, action));
-  }
-
-  private resolveHostStyle(): FileActionStyle {
-    const action = this.field().action ?? Fieldaction.Ignore;
-    switch (action) {
-      case Fieldaction.Copy:
-        return getFileActionStyle('COPY');
-      case Fieldaction.Custom:
-        return getFileActionStyle('CUSTOM');
-      default:
-        return getFileActionStyle('IGNORE');
-    }
-  }
-
-  getStyle(): string {
-    const style = this.resolveHostStyle();
-    return buildInlineStyle(style);
   }
 }

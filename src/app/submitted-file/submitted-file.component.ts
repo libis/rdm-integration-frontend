@@ -1,6 +1,12 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import {
   FileActionStyle,
@@ -14,63 +20,58 @@ import { CredentialsService } from '../credentials.service';
   templateUrl: './submitted-file.component.html',
   styleUrls: ['./submitted-file.component.scss'],
   exportAs: 'appSubmittedFile',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SubmittedFileComponent implements OnInit {
+export class SubmittedFileComponent {
   private readonly credentialsService = inject(CredentialsService);
   readonly datafile = input<Datafile>({});
   readonly isSubmitted = input(false);
 
-  constructor() {
-    // empty
-  }
-
-  ngOnInit(): void {
-    // empty
-  }
-
-  file(): string {
+  readonly fileName = computed(() => {
     const datafile = this.datafile();
-    return `${datafile.path ? `${datafile.path}/` : ''}${this.datafile().name}`;
-  }
+    return `${datafile.path ? `${datafile.path}/` : ''}${datafile.name}`;
+  });
 
-  iconClass(): string {
-    if (this.isReady()) {
-      return 'pi pi-check';
-    }
-    return 'pi pi-spin pi-spinner';
-  }
-
-  isReady(): boolean {
+  readonly isReady = computed(() => {
     const isDelete = this.datafile().action === Fileaction.Delete;
     const datafile = this.datafile();
     return (
       (isDelete && datafile.status === Filestatus.New) ||
       (!isDelete && datafile.status === Filestatus.Equal)
     );
-  }
+  });
 
-  private resolveHostStyle(): FileActionStyle {
+  readonly iconClass = computed(() => {
+    if (this.isReady()) {
+      return 'pi pi-check';
+    }
+    return 'pi pi-spin pi-spinner';
+  });
+
+  readonly hostStyle = computed(() => {
     const action = this.datafile().action ?? Fileaction.Ignore;
+    let style: FileActionStyle;
     switch (action) {
       case Fileaction.Copy:
-        return getFileActionStyle('COPY');
+        style = getFileActionStyle('COPY');
+        break;
       case Fileaction.Update:
-        return getFileActionStyle('UPDATE');
+        style = getFileActionStyle('UPDATE');
+        break;
       case Fileaction.Delete:
-        return getFileActionStyle('DELETE');
+        style = getFileActionStyle('DELETE');
+        break;
       case Fileaction.Custom:
-        return getFileActionStyle('CUSTOM');
+        style = getFileActionStyle('CUSTOM');
+        break;
       default:
-        return getFileActionStyle('IGNORE');
+        style = getFileActionStyle('IGNORE');
     }
-  }
-
-  getStyle(): string {
-    const style = this.resolveHostStyle();
     return buildInlineStyle(style);
-  }
+  });
 
-  isGlobus(): boolean {
-    return this.credentialsService.credentials.plugin === 'globus';
-  }
+  /** Returns true if using Globus plugin */
+  readonly isGlobus = computed(
+    () => this.credentialsService.plugin$() === 'globus',
+  );
 }
