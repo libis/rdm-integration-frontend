@@ -1,6 +1,12 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, OnInit, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
@@ -17,33 +23,38 @@ import {
   styleUrls: ['./downladablefile.component.scss'],
   imports: [TreeTableModule, ButtonDirective],
   exportAs: 'appDownloadablefile',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DownladablefileComponent implements OnInit {
+export class DownladablefileComponent {
   readonly datafile = input<Datafile>({});
   readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(
     new Map<string, TreeNode<Datafile>>(),
   );
   readonly rowNode = input<TreeNode<Datafile>>({});
+  // Trigger to force update when underlying data (action) mutates
+  readonly trigger = input(0);
 
-  node: TreeNode<Datafile> = {};
+  /** Emitted after action state changes to notify parent to refresh view */
+  readonly changed = output<void>();
 
-  static icon_ignore = 'pi pi-stop';
-  static icon_download = 'pi pi-check-square';
-  static icon_custom = 'pi pi-exclamation-triangle';
+  readonly node = computed<TreeNode<Datafile>>(() => {
+    const map = this.rowNodeMap();
+    const df = this.datafile();
+    const key = df.id! + (df.attributes?.isFile ? ':file' : '');
+    return map.get(key) ?? {};
+  });
 
-  constructor() {}
+  static readonly icon_ignore = 'pi pi-stop';
+  static readonly icon_download = 'pi pi-check-square';
+  static readonly icon_custom = 'pi pi-exclamation-triangle';
 
-  ngOnInit(): void {
-    this.node = this.rowNodeMap().get(
-      this.datafile().id! + (this.datafile().attributes?.isFile ? ':file' : ''),
-    )!; // avoid collisions between folders and files having the same path and name
-  }
+  readonly actionIcon = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
+    return DownladablefileComponent.actionIconFromNode(this.node());
+  });
 
-  action(): string {
-    return DownladablefileComponent.actionIcon(this.node);
-  }
-
-  public static actionIcon(node: TreeNode<Datafile>): string {
+  public static actionIconFromNode(node: TreeNode<Datafile>): string {
     switch (node.data?.action) {
       case Fileaction.Ignore:
         return this.icon_ignore;
@@ -56,13 +67,30 @@ export class DownladablefileComponent implements OnInit {
     }
   }
 
-  sourceFile(): string {
-    return `${this.datafile().name}`;
-  }
+  readonly fileName = computed(() => `${this.datafile().name}`);
+
+  readonly hostStyle = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
+    const action = this.datafile().action ?? Fileaction.Ignore;
+    let style: FileActionStyle;
+    switch (action) {
+      case Fileaction.Download:
+        style = getFileActionStyle('DOWNLOAD');
+        break;
+      case Fileaction.Custom:
+        style = getFileActionStyle('CUSTOM');
+        break;
+      default:
+        style = getFileActionStyle('IGNORE');
+    }
+    return buildInlineStyle(style);
+  });
 
   toggleAction(): void {
-    DownladablefileComponent.toggleNodeAction(this.node);
+    DownladablefileComponent.toggleNodeAction(this.node());
     this.updateFolderActions(this.rowNodeMap().get('')!);
+    this.changed.emit();
   }
 
   updateFolderActions(node: TreeNode<Datafile>): Fileaction {
@@ -105,22 +133,5 @@ export class DownladablefileComponent implements OnInit {
   ): void {
     node.data!.action = action;
     node.children?.forEach((v) => this.setNodeAction(v, action));
-  }
-
-  private resolveHostStyle(): FileActionStyle {
-    const action = this.datafile().action ?? Fileaction.Ignore;
-    switch (action) {
-      case Fileaction.Download:
-        return getFileActionStyle('DOWNLOAD');
-      case Fileaction.Custom:
-        return getFileActionStyle('CUSTOM');
-      default:
-        return getFileActionStyle('IGNORE');
-    }
-  }
-
-  getStyle(): string {
-    const style = this.resolveHostStyle();
-    return buildInlineStyle(style);
   }
 }

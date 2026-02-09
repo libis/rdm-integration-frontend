@@ -1,9 +1,17 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { CommonModule, Location } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  OnDestroy,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 // Services
 import { CredentialsService } from '../credentials.service';
@@ -43,37 +51,61 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
     TreeTableModule,
     MetadatafieldComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MetadataSelectorComponent implements OnInit {
+export class MetadataSelectorComponent implements OnDestroy {
   private readonly dataStateService = inject(DataStateService);
-  private readonly location = inject(Location);
   private readonly router = inject(Router);
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
   private readonly snapshotStorage = inject(SnapshotStorageService);
 
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
+
   // Icon constants
   readonly icon_copy = APP_CONSTANTS.ICONS.UPDATE;
 
-  metadata?: Metadata;
+  // Signal State
+  readonly metadata = signal<Metadata | undefined>(undefined);
+  readonly root = signal<TreeNode<Field> | undefined>(undefined);
+  readonly rowNodeMap = signal<Map<string, TreeNode<Field>>>(new Map());
+  readonly treeTableColumnCount = signal(4);
 
-  root?: TreeNode<Field>;
-  rootNodeChildren: TreeNode<Field>[] = [];
-  rowNodeMap: Map<string, TreeNode<Field>> = new Map<string, TreeNode<Field>>();
+  // Used to trigger view updates when row actions are mutated
+  readonly refreshTrigger = signal(0);
 
-  treeTableColumnCount = 4;
+  // Computed
+  readonly rootNodeChildren = computed(() => this.root()?.children ?? []);
+  readonly action = computed(() => {
+    // Read refreshTrigger to re-evaluate when row actions change
+    this.refreshTrigger();
+    const r = this.root();
+    if (r) {
+      return MetadatafieldComponent.actionIconFromNode(r);
+    }
+    return MetadatafieldComponent.icon_ignore;
+  });
 
-  id = 0;
-
-  constructor() {}
-
-  ngOnInit(): void {
-    // Load metadata immediately for rendering in the tree table
+  constructor() {
     this.loadData();
+
+    // Effect to build the tree when metadata changes
+    // Note: Using effect() here because root/rowNodeMap need to be mutable WritableSignals
+    // for toggleAction() to work (it mutates tree nodes in place)
+    effect(() => {
+      const m = this.metadata();
+      if (m) {
+        const rowDataMap = this.mapFields(m);
+        rowDataMap.forEach((v) => this.addChild(v, rowDataMap));
+        this.root.set(rowDataMap.get(''));
+        this.rowNodeMap.set(rowDataMap);
+      }
+    });
   }
 
-  async loadData() {
-    const credentials = this.credentialsService.credentials;
+  loadData() {
+    const credentials = this.credentialsService.credentials$();
     const req: MetadataRequest = {
       pluginId: credentials.pluginId,
       plugin: credentials.plugin,
@@ -83,16 +115,28 @@ export class MetadataSelectorComponent implements OnInit {
       user: credentials.user,
       token: credentials.token,
       dvToken: credentials.dataverse_token,
-      compareResult: this.dataStateService.getCurrentValue(),
+      compareResult: this.dataStateService.state$(),
     };
-    this.metadata = await firstValueFrom(this.datasetService.getMetadata(req));
-    const rowDataMap = this.mapFields(this.metadata);
-    rowDataMap.forEach((v) => this.addChild(v, rowDataMap));
-    this.root = rowDataMap.get('');
-    this.rowNodeMap = rowDataMap;
-    if (this.root?.children) {
-      this.rootNodeChildren = this.root.children;
-    }
+    let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    subscription = this.datasetService.getMetadata(req).subscribe({
+      next: (metadata) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
+        this.metadata.set(metadata);
+      },
+      error: (err) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
+        console.error('Failed to load metadata', err);
+      },
+    });
+    this.subscriptions.add(subscription!);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.clear();
   }
 
   submit() {
@@ -101,7 +145,7 @@ export class MetadataSelectorComponent implements OnInit {
   }
 
   back(): void {
-    const value = this.dataStateService.getCurrentValue();
+    const value = this.dataStateService.state$();
     const datasetId = value?.id;
     if (datasetId) {
       this.snapshotStorage.mergeConnect({ dataset_id: datasetId });
@@ -111,20 +155,31 @@ export class MetadataSelectorComponent implements OnInit {
     });
   }
 
-  action(): string {
-    if (this.root) {
-      return MetadatafieldComponent.actionIcon(this.root);
-    }
-    return MetadatafieldComponent.icon_ignore;
-  }
-
   toggleAction(): void {
-    if (this.root) {
-      MetadatafieldComponent.toggleNodeAction(this.root);
+    const r = this.root();
+    if (r) {
+      MetadatafieldComponent.toggleNodeAction(r);
+      // Trigger update by setting a new reference (shallow copy or recreate)
+      // Since TreeNode is mutable and we mutated it in place, strict signal equality might skip update if we set same ref.
+      // We pass a new object wrapping the data to force signal update if needed, or rely on internal mutation handling?
+      // Signals are strict equality by default.
+      // Force update by setting a shallow copy of the root node or triggering a version signal.
+      // Note: PrimeNG TreeTable might rely on object identity.
+      // We trigger the signal to notify consumers (like `action` computed).
+      this.root.update((current) => (current ? { ...current } : undefined));
     }
+    this.refreshTrigger.update((n) => n + 1);
   }
 
-  addChild(v: TreeNode<Field>, rowDataMap: Map<string, TreeNode<Field>>): void {
+  /** Called by child rows when their action changes */
+  onRowActionChanged(): void {
+    this.refreshTrigger.update((n) => n + 1);
+  }
+
+  private addChild(
+    v: TreeNode<Field>,
+    rowDataMap: Map<string, TreeNode<Field>>,
+  ): void {
     if (v.data?.id === '') {
       return;
     }
@@ -133,7 +188,8 @@ export class MetadataSelectorComponent implements OnInit {
     parent.children = children.concat(v);
   }
 
-  mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
+  private mapFields(metadata: Metadata): Map<string, TreeNode<Field>> {
+    let nodeIdCounter = 0; // Local counter to replace class property
     const rootData: Field = {
       id: '',
       parent: '',
@@ -149,78 +205,81 @@ export class MetadataSelectorComponent implements OnInit {
       data: rootData,
     });
 
+    const addToDataMap = (
+      d: MetadataField,
+      parent: string,
+      map: Map<string, TreeNode<Field>>,
+    ) => {
+      // Local register helper closing over parent and d.typeName
+      const localRegister = (
+        fieldRef: MetadataField | FieldDictonary,
+        parentId: string,
+        leafValue?: unknown,
+        assignOriginal = false,
+      ) => {
+        const nodeId = `${nodeIdCounter++}`;
+        if (assignOriginal) {
+          (fieldRef as MetadataField).id = nodeId;
+        }
+        const data: Field = {
+          id: nodeId,
+          parent: parentId,
+          name: d.typeName, // Use d.typeName like the original code
+          action: Fieldaction.Copy,
+          leafValue: typeof leafValue === 'string' ? leafValue : undefined,
+          field: fieldRef,
+        };
+        map.set(nodeId, { data });
+        return nodeId;
+      };
+
+      if (d.value && Array.isArray(d.value) && d.value.length > 0) {
+        if (typeof d.value[0] === 'string') {
+          // Flat string array
+          localRegister(d, parent, (d.value as string[]).join(', '), true);
+        } else {
+          // Array of dictionaries -> each dictionary becomes a node and is recursed
+          // (same structure as original: dictionary nodes are direct children of parent)
+          (d.value as FieldDictonary[]).forEach((v) => {
+            const nid = localRegister(v, parent, undefined, false);
+            mapChildField(nid, v, map);
+          });
+        }
+        return;
+      }
+      // Primitive or single value
+      localRegister(d, parent, d.value, true);
+    };
+
+    const mapChildField = (
+      parent: string,
+      fieldDictonary: FieldDictonary,
+      map: Map<string, TreeNode<Field>>,
+    ) => {
+      Object.values(fieldDictonary).forEach((d) => {
+        addToDataMap(d, parent, map);
+      });
+    };
+
+    // Start mapping
     metadata.datasetVersion.metadataBlocks.citation.fields.forEach((d) => {
-      this.addToDataMap(d, '', rowDataMap);
+      addToDataMap(d, '', rowDataMap);
     });
+
     return rowDataMap;
   }
 
-  private addToDataMap(
-    d: MetadataField,
-    parent: string,
-    rowDataMap: Map<string, TreeNode<Field>>,
-  ) {
-    // Helper to register a node
-    const register = (
-      fieldRef: MetadataField | FieldDictonary,
-      leafValue?: unknown,
-      assignOriginal = false,
-    ) => {
-      const nodeId = `${this.id++}`;
-      if (assignOriginal) {
-        // only assign the id on the original MetadataField (primitive / string[] / single value case)
-        (d as MetadataField).id = nodeId;
-      }
-      const data: Field = {
-        id: nodeId,
-        parent,
-        name: d.typeName,
-        action: Fieldaction.Copy,
-        leafValue: typeof leafValue === 'string' ? leafValue : undefined,
-        field: fieldRef,
-      };
-      rowDataMap.set(nodeId, { data });
-      return nodeId;
-    };
+  private filteredMetadata(): Metadata | undefined {
+    const m = this.metadata();
+    const children = this.rootNodeChildren();
+    const map = this.rowNodeMap();
 
-    if (d.value && Array.isArray(d.value) && d.value.length > 0) {
-      if (typeof d.value[0] === 'string') {
-        // Flat string array
-        register(d, (d.value as string[]).join(', '), true);
-      } else {
-        // Array of dictionaries -> each becomes a node and is recursed
-        (d.value as FieldDictonary[]).forEach((v) => {
-          const nid = register(v);
-          this.mapChildField(nid, v, rowDataMap);
-        });
-      }
-      return;
-    }
-    // Primitive or single value
-    register(d, d.value, true);
-  }
-
-  mapChildField(
-    parent: string,
-    fieldDictonary: FieldDictonary,
-    rowDataMap: Map<string, TreeNode<Field>>,
-  ) {
-    Object.values(fieldDictonary).forEach((d) => {
-      this.addToDataMap(d, parent, rowDataMap);
-    });
-  }
-
-  filteredMetadata(): Metadata | undefined {
-    if (
-      !this.metadata ||
-      !this.rootNodeChildren ||
-      this.rootNodeChildren.length === 0
-    ) {
+    if (!m || !children || children.length === 0) {
       return undefined;
     }
     let res: MetadataField[] = [];
-    this.metadata.datasetVersion.metadataBlocks.citation.fields.forEach((f) => {
-      if (this.rowNodeMap.get(f.id!)?.data?.action === Fieldaction.Copy) {
+    m.datasetVersion.metadataBlocks.citation.fields.forEach((f) => {
+      if (map.get(f.id!)?.data?.action === Fieldaction.Copy) {
         const field: MetadataField = {
           expandedvalue: f.expandedvalue,
           multiple: f.multiple,
@@ -252,23 +311,23 @@ export class MetadataSelectorComponent implements OnInit {
       datasetVersion: {
         metadataBlocks: {
           citation: {
-            displayName:
-              this.metadata.datasetVersion.metadataBlocks.citation.displayName,
+            displayName: m.datasetVersion.metadataBlocks.citation.displayName,
             fields: res,
-            name: this.metadata.datasetVersion.metadataBlocks.citation.name,
+            name: m.datasetVersion.metadataBlocks.citation.name,
           },
         },
       },
     };
   }
 
-  customValue(metadataFields: FieldDictonary[]): FieldDictonary[] {
+  private customValue(metadataFields: FieldDictonary[]): FieldDictonary[] {
     let res: FieldDictonary[] = [];
+    const map = this.rowNodeMap();
     metadataFields.forEach((d) => {
       const dict: FieldDictonary = {};
       Object.keys(d).forEach((k) => {
         const f = d[k];
-        if (this.rowNodeMap.get(f.id!)?.data?.action === Fieldaction.Copy) {
+        if (map.get(f.id!)?.data?.action === Fieldaction.Copy) {
           const field: MetadataField = {
             expandedvalue: f.expandedvalue,
             multiple: f.multiple,

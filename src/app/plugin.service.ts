@@ -1,68 +1,103 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { SelectItem } from 'primeng/api';
 import { Config, RepoPlugin } from './models/plugin';
 import { firstValueFrom } from 'rxjs';
+
+const DEFAULT_CONFIG: Config = {
+  dataverseHeader: 'Unknown header: configuration failed',
+  collectionOptionsHidden: true,
+  createNewDatasetEnabled: false,
+  datasetFieldEditable: false,
+  collectionFieldEditable: false,
+  externalURL: '',
+  showDvTokenGetter: false,
+  showDvToken: true,
+  redirect_uri: '',
+  sendMails: false,
+  plugins: [],
+};
+
+const DEFAULT_PLUGIN: RepoPlugin = {
+  id: 'defaultPlugin',
+  plugin: 'defaultPlugin',
+  name: 'Unknown repository type',
+  pluginName: 'Unknown plugin',
+  parseSourceUrlField: false,
+  repoNameFieldHasSearch: false,
+  repoNameFieldHasInit: false,
+  showTokenGetter: false,
+};
 
 @Injectable({
   providedIn: 'root',
 })
 export class PluginService {
-  private http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
 
-  private config: Config = {
-    dataverseHeader: 'Unknown header: configuration failed',
-    collectionOptionsHidden: true,
-    createNewDatasetEnabled: false,
-    datasetFieldEditable: false,
-    collectionFieldEditable: false,
-    externalURL: '',
-    showDvTokenGetter: false,
-    showDvToken: true,
-    redirect_uri: '',
-    sendMails: false,
-    plugins: [],
-  };
+  // Internal signals for reactive state
+  private readonly configSignal = signal<Config>(DEFAULT_CONFIG);
+  private readonly pluginsMap = signal<Map<string, RepoPlugin>>(new Map());
 
-  private allPlugins: Map<string, RepoPlugin> = new Map<string, RepoPlugin>();
+  // Computed signals for public access (cleaner reactive API)
+  readonly dataverseHeader$ = computed(
+    () => this.configSignal().dataverseHeader,
+  );
+  readonly collectionOptionsHidden$ = computed(
+    () => this.configSignal().collectionOptionsHidden,
+  );
+  readonly createNewDatasetEnabled$ = computed(
+    () => this.configSignal().createNewDatasetEnabled,
+  );
+  readonly datasetFieldEditable$ = computed(
+    () => this.configSignal().datasetFieldEditable,
+  );
+  readonly collectionFieldEditable$ = computed(
+    () => this.configSignal().collectionFieldEditable,
+  );
+  readonly externalURL$ = computed(() => this.configSignal().externalURL);
+  readonly showDVTokenGetter$ = computed(
+    () => this.configSignal().showDvTokenGetter,
+  );
+  readonly showDVToken$ = computed(() => this.configSignal().showDvToken);
+  readonly storeDvToken$ = computed(
+    () => this.configSignal().storeDvToken ?? false,
+  );
+  readonly redirectUri$ = computed(() => this.configSignal().redirect_uri);
+  readonly loginRedirectUrl$ = computed(
+    () => this.configSignal().loginRedirectUrl,
+  );
+  readonly sendMails$ = computed(() => this.configSignal().sendMails);
+  readonly globusPlugin$ = computed(() =>
+    this.configSignal().plugins.find((p) => p.id === 'globus'),
+  );
 
-  private defaultPlugin: RepoPlugin = {
-    id: 'defaultPlugin',
-    plugin: 'defaultPlugin',
-    name: 'Unknown repository type',
-    pluginName: 'Unknown plugin',
-    parseSourceUrlField: false,
-    repoNameFieldHasSearch: false,
-    repoNameFieldHasInit: false,
-    showTokenGetter: false,
-  };
-
-  constructor() {}
-
-  async setConfig() {
+  async setConfig(): Promise<void> {
     const c = await firstValueFrom(
       this.http.get<Config>(`api/frontend/config`),
     );
-    this.config = c;
-    this.config.plugins.forEach((p) => {
+    const newMap = new Map<string, RepoPlugin>();
+    c.plugins.forEach((p) => {
       p.showTokenGetter =
         p.tokenGetter !== undefined &&
         p.tokenGetter.URL !== undefined &&
         p.tokenGetter.URL !== '';
-      this.allPlugins.set(p.id, p);
+      newMap.set(p.id, p);
     });
+    this.configSignal.set(c);
+    this.pluginsMap.set(newMap);
   }
 
   getGlobusPlugin(): RepoPlugin | undefined {
-    return this.config.plugins.find((p) => p.id === 'globus');
+    return this.globusPlugin$();
   }
 
   getPlugins(): SelectItem<string>[] {
     const res: SelectItem<string>[] = [];
     const added = new Set<string>();
-    this.config.plugins.forEach((x) => {
+    this.configSignal().plugins.forEach((x) => {
       if (!added.has(x.plugin)) {
         added.add(x.plugin);
         res.push({ value: x.plugin, label: x.pluginName });
@@ -73,7 +108,7 @@ export class PluginService {
 
   getPluginIds(plugin?: string): SelectItem<string>[] {
     const res: SelectItem<string>[] = [];
-    this.config.plugins.forEach((x) => {
+    this.configSignal().plugins.forEach((x) => {
       if (x.plugin == plugin) {
         res.push({ value: x.id, label: x.name });
       }
@@ -82,65 +117,61 @@ export class PluginService {
   }
 
   getPlugin(p?: string): RepoPlugin {
-    let plugin: RepoPlugin | undefined;
     if (p !== undefined) {
-      plugin = this.allPlugins.get(p);
+      const plugin = this.pluginsMap().get(p);
+      if (plugin) return plugin;
     }
-    if (plugin) {
-      return plugin;
-    }
-    return this.defaultPlugin;
+    return DEFAULT_PLUGIN;
   }
 
   dataverseHeader(): string {
-    return this.config.dataverseHeader;
+    return this.dataverseHeader$();
   }
 
   collectionOptionsHidden(): boolean {
-    return this.config.collectionOptionsHidden;
+    return this.collectionOptionsHidden$();
   }
 
   createNewDatasetEnabled(): boolean {
-    return this.config.createNewDatasetEnabled;
+    return this.createNewDatasetEnabled$();
   }
 
   datasetFieldEditable(): boolean {
-    return this.config.datasetFieldEditable;
+    return this.datasetFieldEditable$();
   }
 
   collectionFieldEditable(): boolean {
-    return this.config.collectionFieldEditable;
+    return this.collectionFieldEditable$();
   }
 
   getExternalURL(): string {
-    return this.config.externalURL;
+    return this.externalURL$();
   }
 
   showDVTokenGetter(): boolean {
-    return this.config.showDvTokenGetter;
+    return this.showDVTokenGetter$();
   }
 
   showDVToken(): boolean {
-    return this.config.showDvToken;
+    return this.showDVToken$();
   }
 
   isStoreDvToken(): boolean {
-    const v = this.config.storeDvToken;
-    return v === undefined ? false : v;
+    return this.storeDvToken$();
   }
 
   getRedirectUri(): string {
-    return this.config.redirect_uri;
+    return this.redirectUri$();
   }
 
   getLoginRedirectUrl(): string | undefined {
-    return this.config.loginRedirectUrl;
+    return this.loginRedirectUrl$();
   }
 
   redirectToLogin(): void {
     // eslint-disable-next-line no-console
     console.debug('[PluginService] redirectToLogin called');
-    const loginUrl = this.getLoginRedirectUrl();
+    const loginUrl = this.loginRedirectUrl$();
     // eslint-disable-next-line no-console
     console.debug('[PluginService] loginRedirectUrl from config:', loginUrl);
 
@@ -185,16 +216,15 @@ export class PluginService {
   }
 
   sendMails(): boolean {
-    return this.config.sendMails;
+    return this.sendMails$();
   }
 
   getQueues(extension: string): SelectItem<string>[] {
-    return this.config.queues
-      ? this.config.queues
+    const queues = this.configSignal().queues;
+    return queues
+      ? queues
           .filter((queue) => queue.fileExtensions.includes(extension))
-          .map((queue) => {
-            return { label: queue.label, value: queue.value };
-          })
+          .map((queue) => ({ label: queue.label, value: queue.value }))
       : [];
   }
 }

@@ -1,4 +1,4 @@
-/* To learn more about this file see: https://angular.io/config/tsconfig. */
+/* To learn more about this file see: https://angular.dev/reference/configs/workspace-config */
 {
   "compileOnSave": false,
   "compilerOptions": {
@@ -17,10 +17,10 @@
     "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
-    "module": "es2020",
-    "lib": ["es2020", "dom"],
+    "module": "ES2022",
+    "lib": ["ES2022", "dom"],
     "resolveJsonModule": true,
-    "useDefineForClassFields": false
+    "useDefineForClassFields": true
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

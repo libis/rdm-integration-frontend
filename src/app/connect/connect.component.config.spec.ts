@@ -7,7 +7,6 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -327,7 +326,6 @@ describe('ConnectComponent pilot plugin configuration', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        provideNoopAnimations(),
         { provide: DataStateService, useClass: DataStateServiceStub },
         { provide: DatasetService, useClass: DatasetServiceStub },
         { provide: RepoLookupService, useClass: RepoLookupServiceStub },
@@ -368,7 +366,7 @@ describe('ConnectComponent pilot plugin configuration', () => {
   it('exposes pilot plugin families on demand', fakeAsync(() => {
     const component = createComponent();
     component.getPlugins();
-    const actual = new Set(component.plugins.map((p) => p.value));
+    const actual = new Set(component.plugins().map((p) => p.value));
     expect(actual).toEqual(
       new Set([
         'irods',
@@ -387,29 +385,29 @@ describe('ConnectComponent pilot plugin configuration', () => {
   it('requires explicit plugin instance selection when multiple options exist', fakeAsync(() => {
     const component = createComponent();
 
-    component.plugin = 'gitlab';
+    component.plugin.set('gitlab');
     component.changePlugin();
     component.getPluginIds();
-    expect(component.pluginId).toBeUndefined();
-    expect(component.pluginIdSelectHidden).toBeFalse();
-    expect(component.pluginIds.map((i) => i.value)).toEqual([
+    expect(component.pluginId()).toBeUndefined();
+    expect(component.pluginIdSelectHidden()).toBeFalse();
+    expect(component.pluginIds().map((i) => i.value)).toEqual([
       'kulgitlab',
       'gitlab.com',
       'gitlab',
     ]);
 
-    component.plugin = 'github';
+    component.plugin.set('github');
     component.changePlugin();
-    expect(component.pluginId).toBe('github');
-    expect(component.pluginIdSelectHidden).toBeTrue();
+    expect(component.pluginId()).toBe('github');
+    expect(component.pluginIdSelectHidden()).toBeTrue();
   }));
 
   PILOT_CONFIG.plugins.forEach((plugin) => {
     it(`mirrors pilot configuration for plugin ${plugin.id}`, fakeAsync(() => {
       const component = createComponent();
-      component.plugin = plugin.plugin;
+      component.plugin.set(plugin.plugin);
       component.changePlugin();
-      component.pluginId = plugin.id;
+      component.pluginId.set(plugin.id);
       component.changePluginId();
 
       const expectBoolean = (value: unknown) => Boolean(value);
@@ -421,37 +419,37 @@ describe('ConnectComponent pilot plugin configuration', () => {
         Boolean(plugin.tokenGetter?.oauth_client_id),
       );
 
-      expect(component.getTokenFieldName()).toBe(plugin.tokenFieldName);
-      expect(component.getTokenPlaceholder()).toBe(
-        plugin.tokenFieldPlaceholder,
+      expect(component.tokenFieldName()).toBe(plugin.tokenFieldName);
+      expect(component.tokenPlaceholder()).toBe(
+        plugin.tokenFieldPlaceholder ?? '',
       );
 
-      expect(component.getUsernameFieldName()).toBe(plugin.usernameFieldName);
-      expect(component.getUsernamePlaceholder()).toBe(
-        plugin.usernameFieldPlaceholder,
+      expect(component.usernameFieldName()).toBe(plugin.usernameFieldName);
+      expect(component.usernamePlaceholder()).toBe(
+        plugin.usernameFieldPlaceholder ?? '',
       );
 
       if (plugin.optionFieldName) {
-        expect(component.getOptionFieldName()).toBe(plugin.optionFieldName);
-        expect(component.getOptionPlaceholder()).toBe(
+        expect(component.optionFieldName()).toBe(plugin.optionFieldName);
+        expect(component.optionPlaceholder()).toBe(
           plugin.optionFieldPlaceholder ?? '',
         );
       } else {
-        expect(component.getOptionFieldName()).toBeUndefined();
-        expect(component.getOptionPlaceholder()).toBe('');
+        expect(component.optionFieldName()).toBeUndefined();
+        expect(component.optionPlaceholder()).toBe('');
       }
       expect(component.isOptionFieldInteractive()).toBe(
         Boolean(plugin.optionFieldInteractive),
       );
 
-      expect(component.getSourceUrlFieldName()).toBe(plugin.sourceUrlFieldName);
-      expect(component.getSourceUrlPlaceholder()).toBe(
-        plugin.sourceUrlFieldPlaceholder,
+      expect(component.sourceUrlFieldName()).toBe(plugin.sourceUrlFieldName);
+      expect(component.sourceUrlPlaceholder()).toBe(
+        plugin.sourceUrlFieldPlaceholder ?? '',
       );
-      expect(component.getSourceUrlValue()).toBe(plugin.sourceUrlFieldValue);
+      expect(component.sourceUrlValue()).toBe(plugin.sourceUrlFieldValue);
 
-      expect(component.getRepoNameFieldName()).toBe(plugin.repoNameFieldName);
-      expect(component.getRepoNamePlaceholder()).toBe(
+      expect(component.repoNameFieldName()).toBe(plugin.repoNameFieldName);
+      expect(component.repoNamePlaceholder()).toBe(
         plugin.repoNameFieldPlaceholder ?? '',
       );
       expect(component.repoNameFieldEditable()).toBe(

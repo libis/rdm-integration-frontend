@@ -17,9 +17,6 @@ fmt: ## format code (ts, html, css, scss, json)
 test: ## run all unit/integration tests headless (single run)
 	npm run test:ci
 
-test-watch: ## developer watch mode tests (interactive Chrome)
-	npm test
-
 coverage: ## run tests and generate coverage report (HTML in coverage/datasync)
 	npm run test:ci
 	@echo "Coverage HTML: coverage/datasync/index.html"
@@ -30,6 +27,6 @@ coverage-check: ## run coverage and fail if below MIN_COVERAGE (default $(MIN_CO
 	@node -e 'const fs=require("fs");const min=Number(process.env.MIN_COVERAGE||"$(MIN_COVERAGE)");const p="coverage/datasync/coverage-summary.json";if(!fs.existsSync(p)){console.error("No coverage summary found ("+p+")");process.exit(2);}let raw=fs.readFileSync(p,"utf8");let json;try{json=JSON.parse(raw);}catch(e){console.error("Parse error:",e.message);process.exit(2);}const pct=(json.total&&json.total.statements&&json.total.statements.pct)||0;console.log("Enforce: statements "+pct+"% (min "+min+"%)"); if(pct < min){console.error("Coverage threshold not met"); process.exit(1);}'
 
 ci: ## run lint, format (write), and tests (headless)
-	$(MAKE) eslint
+	$(MAKE) lint
 	$(MAKE) fmt
 	$(MAKE) test

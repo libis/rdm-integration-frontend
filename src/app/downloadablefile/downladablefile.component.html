@@ -1,7 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 <td>
   <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
-  >{{ sourceFile() }}
+  >{{ fileName() }}
 </td>
 <td style="text-align: right">
   <button
@@ -11,6 +11,6 @@
     class="p-button-sm p-button-outlined p-button-secondary"
     (click)="toggleAction()"
   >
-    <i [class]="action()"></i>
+    <i [class]="actionIcon()"></i>
   </button>
 </td>

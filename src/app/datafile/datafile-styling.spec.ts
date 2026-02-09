@@ -116,7 +116,7 @@ describe('File Action Styling - Real TreeTable Integration', () => {
               [rowNodeMap]="rowNodeMap"
               [rowNode]="rowNode"
               [isInFilter]="false"
-              [style]="row.getStyle()"
+              [style]="row.hostStyle()"
             ></tr>
           </ng-template>
         </p-treeTable>

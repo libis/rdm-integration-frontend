@@ -1,8 +1,8 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Signal, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { DataService } from './data.service';
 import { CachedResponse, CompareResult, Key } from './models/compare-result';
 import { NotificationService } from './shared/notification.service';
@@ -17,8 +17,12 @@ export class DataStateService {
   private utils = inject(UtilsService);
   private notificationService = inject(NotificationService);
 
-  private state: BehaviorSubject<CompareResult | null> =
-    new BehaviorSubject<CompareResult | null>(null);
+  // Internal signal for state
+  private readonly _state = signal<CompareResult | null>(null);
+
+  // Public read-only signal
+  readonly state$: Signal<CompareResult | null> = this._state.asReadonly();
+
   private pollGeneration = 0;
   private dataSubscription?: Subscription;
   private compareSubscription?: Subscription;
@@ -75,9 +79,9 @@ export class DataStateService {
                 ? -1
                 : 1,
             );
-            this.state.next(res.res);
+            this._state.set(res.res);
           } else {
-            this.state.next(null);
+            this._state.set(null);
           }
           if (res.err && res.err !== '') {
             this.notificationService.showError(res.err);
@@ -105,19 +109,11 @@ export class DataStateService {
     });
   }
 
-  getObservableState(): Observable<CompareResult | null> {
-    return this.state.asObservable();
-  }
-
   updateState(state: CompareResult): void {
-    this.state.next(state);
-  }
-
-  getCurrentValue(): CompareResult | null {
-    return this.state.getValue();
+    this._state.set(state);
   }
 
   resetState(): void {
-    this.state.next(null);
+    this._state.set(null);
   }
 }

@@ -84,7 +84,7 @@ describe('DataStateService', () => {
       },
     });
     tick();
-    const v = service.getCurrentValue();
+    const v = service.state$();
     expect(v?.data?.map((f) => f.id)).toEqual(['a', 'b']);
   }));
 
@@ -99,7 +99,7 @@ describe('DataStateService', () => {
     init();
     data.cached$.next({ ready: true, res: undefined });
     tick();
-    expect(service.getCurrentValue()).toBeNull();
+    expect(service.state$()).toBeNull();
   }));
 
   it('handles getData error and navigates', fakeAsync(() => {
@@ -165,13 +165,13 @@ describe('DataStateService', () => {
 
     expect(dataUnsubscribed).toBeTrue();
     expect(cachedUnsubscribed).toBeTrue();
-    expect(service.getCurrentValue()).toBeNull();
+    expect(service.state$()).toBeNull();
   });
 
   it('cancelInitialization can skip state reset', () => {
     service.updateState({ id: 'persist' } as any);
     service.cancelInitialization(false);
-    expect(service.getCurrentValue()?.id).toBe('persist');
+    expect(service.state$()?.id).toBe('persist');
   });
 
   it('ignores polling results once generation changes mid-flight', fakeAsync(() => {
@@ -199,14 +199,14 @@ describe('DataStateService', () => {
     service.cancelInitialization();
     flushMicrotasks();
 
-    expect(service.getCurrentValue()).toBeNull();
+    expect(service.state$()).toBeNull();
     expect(cachedUnsubscribed).toBeTrue();
   }));
 
   it('updateState and resetState manipulate current value', () => {
     service.updateState({ data: [] });
-    expect(service.getCurrentValue()).not.toBeNull();
+    expect(service.state$()).not.toBeNull();
     service.resetState();
-    expect(service.getCurrentValue()).toBeNull();
+    expect(service.state$()).toBeNull();
   });
 });

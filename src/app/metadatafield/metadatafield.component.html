@@ -1,9 +1,10 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 <td>
-  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler>{{ name() }}
+  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
+  >{{ fieldName() }}
 </td>
-<td>{{ value() }}</td>
-<td>{{ source() }}</td>
+<td>{{ fieldValue() }}</td>
+<td>{{ fieldSource() }}</td>
 <td style="text-align: right">
   <button
     pButton
@@ -12,6 +13,6 @@
     class="p-button-sm p-button-outlined p-button-secondary"
     (click)="toggleAction()"
   >
-    <i [class]="action()"></i>
+    <i [class]="actionIcon()"></i>
   </button>
 </td>

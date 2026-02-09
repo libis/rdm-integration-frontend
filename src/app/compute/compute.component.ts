@@ -1,6 +1,14 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 
 // Services
@@ -63,13 +71,14 @@ import { SubscriptionManager } from '../shared/types';
     ExecutablefileComponent,
     AutosizeModule,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ComputeComponent
   implements OnInit, OnDestroy, SubscriptionManager
 {
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly pluginService = inject(PluginService);
-  dataService = inject(DataService);
+  private readonly dataService = inject(DataService);
   private readonly utils = inject(UtilsService);
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
@@ -84,31 +93,43 @@ export class ComputeComponent
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
 
-  // NG MODEL FIELDS
-  dataverseToken?: string;
-  datasetId?: string;
-  output = '';
-  data: CompareResult = {};
-  rootNodeChildren: TreeNode<Datafile>[] = [];
-  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
-    string,
-    TreeNode<Datafile>
-  >();
-  loading = false;
-  popup = false;
-  outputDisabled = true;
-  sendEmailOnSuccess = false;
+  // NG MODEL FIELDS (signals)
+  readonly dataverseToken = signal<string | undefined>(undefined);
+  readonly datasetId = signal<string | undefined>(undefined);
+  readonly output = signal('');
+  readonly data = signal<CompareResult>({});
+  readonly rootNodeChildren = signal<TreeNode<Datafile>[]>([]);
+  readonly rowNodeMap = signal<Map<string, TreeNode<Datafile>>>(
+    new Map<string, TreeNode<Datafile>>(),
+  );
+  readonly loading = signal(false);
+  readonly popup = signal(false);
+  readonly outputDisabled = signal(true);
+  readonly sendEmailOnSuccess = signal(false);
 
   // ITEMS IN SELECTS
-  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
-  loadingItems: SelectItem<string>[] = [this.loadingItem];
-  doiItems: SelectItem<string>[] = [];
+  readonly loadingItem: SelectItem<string> = {
+    label: `Loading...`,
+    value: 'loading',
+  };
+  readonly loadingItems: SelectItem<string>[] = [this.loadingItem];
+  readonly doiItems = signal<SelectItem<string>[]>([]);
 
   // INTERNAL STATE VARIABLES
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   datasetSearchResultsSubscription?: Subscription;
   req?: ComputeRequest;
+
+  // Computed signals for template bindings
+  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
+  readonly datasetFieldEditable = computed(() =>
+    this.pluginService.datasetFieldEditable$(),
+  );
+  readonly dataverseHeader = computed(() =>
+    this.pluginService.dataverseHeader$(),
+  );
+  readonly sendMails = computed(() => this.pluginService.sendMails$());
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
@@ -124,37 +145,38 @@ export class ComputeComponent
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');
       if (dvToken !== null) {
-        this.dataverseToken = dvToken;
+        this.dataverseToken.set(dvToken);
       }
     }
 
-    this.route.queryParams.subscribe((params) => {
-      const pid = params['datasetPid'];
-      if (pid) {
-        this.doiItems = [{ label: pid, value: pid }];
-        this.datasetId = pid;
-      }
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken = apiToken;
-      }
-    });
+    this.subscriptions.add(
+      this.route.queryParams.subscribe((params) => {
+        const pid = params['datasetPid'];
+        if (pid) {
+          this.doiItems.set([{ label: pid, value: pid }]);
+          this.datasetId.set(pid);
+        }
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken.set(apiToken);
+        }
+      }),
+    );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.doiItems = v))
-            .catch(
-              (err) =>
-                (this.doiItems = [
-                  {
-                    label: `search failed: ${err.message}`,
-                    value: err.message,
-                  },
-                ]),
+            .then((v) => this.doiItems.set(v))
+            .catch((err) =>
+              this.doiItems.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]),
             ),
         error: (err) =>
-          (this.doiItems = [
+          this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]),
       });
@@ -173,19 +195,15 @@ export class ComputeComponent
     this.navigation.assign('connect');
   }
 
-  showDVToken(): boolean {
-    return this.pluginService.showDVToken();
-  }
-
   onUserChange() {
-    this.doiItems = [];
-    this.datasetId = undefined;
+    this.doiItems.set([]);
+    this.datasetId.set(undefined);
     // Save dataverseToken to localStorage if storeDvToken is enabled
     if (
-      this.dataverseToken !== undefined &&
+      this.dataverseToken() !== undefined &&
       this.pluginService.isStoreDvToken()
     ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken);
+      localStorage.setItem('dataverseToken', this.dataverseToken()!);
     }
   }
 
@@ -193,53 +211,48 @@ export class ComputeComponent
 
   getDoiOptions(): void {
     if (
-      this.doiItems.length !== 0 &&
-      this.doiItems.find((x) => x === this.loadingItem) === undefined
+      this.doiItems().length !== 0 &&
+      this.doiItems().find((x) => x === this.loadingItem) === undefined
     ) {
       return;
     }
-    this.doiItems = this.loadingItems;
-    this.datasetId = undefined;
+    this.doiItems.set(this.loadingItems);
+    this.datasetId.set(undefined);
 
     const httpSubscription = this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, this.dataverseToken)
+      .getItems('', 'Dataset', undefined, this.dataverseToken())
       .subscribe({
         next: (items: SelectItem<string>[]) => {
           if (items && items.length > 0) {
-            this.doiItems = items;
-            this.datasetId = undefined;
+            this.doiItems.set(items);
+            this.datasetId.set(undefined);
           } else {
-            this.doiItems = [];
-            this.datasetId = undefined;
+            this.doiItems.set([]);
+            this.datasetId.set(undefined);
           }
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
-          this.doiItems = [];
-          this.datasetId = undefined;
+          this.doiItems.set([]);
+          this.datasetId.set(undefined);
         },
       });
   }
 
-  // DATASETS
-  datasetFieldEditable(): boolean {
-    return this.pluginService.datasetFieldEditable();
-  }
-
   onDatasetSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems = [
+      this.doiItems.set([
         {
           label: 'start typing to search (at least three letters)',
           value: 'start',
         },
-      ];
+      ]);
       return;
     }
-    this.doiItems = [
+    this.doiItems.set([
       { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ];
+    ]);
     this.datasetSearchSubject.next(searchTerm);
   }
 
@@ -249,28 +262,24 @@ export class ComputeComponent
         '',
         'Dataset',
         searchTerm,
-        this.dataverseToken,
+        this.dataverseToken(),
       ),
     );
   }
 
-  dataverseHeader(): string {
-    return this.pluginService.dataverseHeader();
-  }
-
   onDatasetChange() {
-    this.loading = true;
-    this.output = '';
-    this.outputDisabled = true;
+    this.loading.set(true);
+    this.output.set('');
+    this.outputDisabled.set(true);
     const subscription = this.dataService
-      .getExecutableFiles(this.datasetId!, this.dataverseToken)
+      .getExecutableFiles(this.datasetId()!, this.dataverseToken())
       .subscribe({
         next: (data) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           this.setData(data);
         },
         error: (err) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           this.notificationService.showError(
             `Getting executable files failed: ${err.error}`,
           );
@@ -279,75 +288,78 @@ export class ComputeComponent
   }
 
   setData(data: CompareResult): void {
-    this.data = data;
+    this.data.set(data);
     if (!data.data || data.data.length === 0) {
-      this.loading = false;
+      this.loading.set(false);
       return;
     }
     const rowDataMap = this.utils.mapDatafiles(data.data);
     rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
     const rootNode = rowDataMap.get('');
-    this.rowNodeMap = rowDataMap;
+    this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
-      this.rootNodeChildren = rootNode.children;
+      this.rootNodeChildren.set(rootNode.children);
     }
-    this.loading = false;
+    this.loading.set(false);
   }
 
   submitCompute(req: ComputeRequest): void {
     this.req = req;
-    this.popup = true;
+    this.popup.set(true);
   }
 
   continueSubmit() {
-    this.popup = false;
-    this.loading = true;
-    this.req!.sendEmailOnSuccess = this.sendEmailOnSuccess;
-    const httpSubscription = this.dataService.compute(this.req!).subscribe({
+    this.popup.set(false);
+    this.loading.set(true);
+    this.req!.sendEmailOnSuccess = this.sendEmailOnSuccess();
+    let httpSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    httpSubscription = this.dataService.compute(this.req!).subscribe({
       next: (key: Key) => {
-        httpSubscription.unsubscribe();
+        httpSubscription?.unsubscribe();
         this.getComputeData(key);
       },
       error: (err) => {
-        httpSubscription.unsubscribe();
+        httpSubscription?.unsubscribe();
         this.notificationService.showError(err);
       },
     });
   }
 
-  sendMails(): boolean {
-    return this.pluginService.sendMails();
-  }
-
   private getComputeData(key: Key): void {
-    const subscription = this.dataService.getCachedComputeData(key).subscribe({
+    let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    subscription = this.dataService.getCachedComputeData(key).subscribe({
       next: async (res: CachedComputeResponse) => {
-        subscription.unsubscribe();
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
         if (res.ready === true) {
-          this.loading = false;
+          this.loading.set(false);
           if (res.res) {
-            this.output = res.res;
+            this.output.set(res.res);
           }
           if (res.err && res.err !== '') {
             this.notificationService.showError(res.err);
           } else {
-            this.outputDisabled = false;
+            this.outputDisabled.set(false);
           }
         } else {
           if (res.res) {
-            this.output = res.res;
+            this.output.set(res.res);
           }
           await this.utils.sleep(1000);
           this.getComputeData(key);
         }
       },
       error: (err) => {
-        subscription.unsubscribe();
-        this.loading = false;
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
+        this.loading.set(false);
         this.notificationService.showError(
           `Getting computation results failed: ${err.error}`,
         );
       },
     });
+    this.subscriptions.add(subscription);
   }
 }

@@ -6,17 +6,18 @@
 <td style="text-align: right">
   <div [hidden]="!datafile().attributes?.isFile">
     <p-progressSpinner
-      [hidden]="!spinning"
+      [hidden]="!spinning()"
       styleClass="w-1rem h-1rem"
       ariaLabel="loading"
     ></p-progressSpinner>
     <p-select
       appendTo="body"
-      [options]="queues"
+      [options]="queues()"
       [filter]="true"
       filterBy="label"
       [resetFilterOnHide]="true"
-      [(ngModel)]="queue"
+      [ngModel]="queue()"
+      (ngModelChange)="queue.set($event)"
       placeholder="Select queue"
       (onChange)="onSelectQueue()"
     ></p-select>
@@ -25,7 +26,7 @@
       pButton
       label="Run on"
       type="button"
-      [disabled]="!computeEnabled"
+      [disabled]="!computeEnabled()"
       (click)="compute()"
     >
       <i [class]="icon_play"></i>

@@ -68,15 +68,15 @@ describe('MetadatafieldComponent', () => {
 
     expect(() =>
       expectBootstrapTableStyle(
-        component.getStyle(),
+        component.hostStyle(),
         'var(--app-file-action-copy-bg)',
         'var(--app-file-action-copy-color)',
       ),
     ).not.toThrow();
-    expect(component.name()).toBe('Title');
-    expect(component.value()).toBe('My dataset');
-    expect(component.source()).toBe('codemeta.json');
-    expect(component.action()).toBe(MetadatafieldComponent.icon_copy);
+    expect(component.fieldName()).toBe('Title');
+    expect(component.fieldValue()).toBe('My dataset');
+    expect(component.fieldSource()).toBe('codemeta.json');
+    expect(component.actionIcon()).toBe(MetadatafieldComponent.icon_copy);
   });
 
   it('source falls back to first leaf child when parent lacks metadata', () => {
@@ -91,8 +91,7 @@ describe('MetadatafieldComponent', () => {
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
-    expect(component.node).toEqual(parentNode);
-    component.node = parentNode;
+    expect(component.node()).toEqual(parentNode);
     expect(parentNode.children?.length).toBe(1);
     const derived = (
       component as unknown as {
@@ -100,8 +99,8 @@ describe('MetadatafieldComponent', () => {
       }
     ).firstLeafSource(parentNode);
     expect(derived).toBe('codemeta.json');
-    expect(component.source()).toBe('codemeta.json');
-    expect(component.getStyle()).toBe('');
+    expect(component.fieldSource()).toBe('codemeta.json');
+    expect(component.hostStyle()).toBe('');
   });
 
   it('toggleAction cascades updates and resolve folder state', () => {
@@ -147,5 +146,17 @@ describe('MetadatafieldComponent', () => {
     MetadatafieldComponent.toggleNodeAction(parentNode);
     expect(parentNode.data?.action).toBe(Fieldaction.Ignore);
     expect(parentNode.children?.[0].data?.action).toBe(Fieldaction.Ignore);
+  });
+
+  it('emits changed event when toggleAction is called', () => {
+    const { parentNode, map } = buildFieldTree();
+    fixture.componentRef.setInput('field', parentNode.data);
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput('rowNode', parentNode);
+    fixture.detectChanges();
+
+    const emitSpy = spyOn(component.changed, 'emit');
+    component.toggleAction();
+    expect(emitSpy).toHaveBeenCalledTimes(1);
   });
 });

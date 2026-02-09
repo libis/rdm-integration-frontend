@@ -122,17 +122,17 @@ describe('ExecutablefileComponent', () => {
 
   it('initialises node and loads queues based on file extension', () => {
     initialiseComponent();
-    expect(component.node?.data?.id).toBe('script.py');
-    expect(component.queues.map((q) => q.value)).toEqual(['cpu', 'gpu']);
+    expect(component.node()?.data?.id).toBe('script.py');
+    expect(component.queues().map((q) => q.value)).toEqual(['cpu', 'gpu']);
   });
 
   it('onSelectQueue enables compute when access granted', async () => {
     initialiseComponent();
-    component.queue = 'cpu';
+    component.queue.set('cpu');
     component.onSelectQueue();
     await Promise.resolve();
-    expect(component.spinning).toBeFalse();
-    expect(component.computeEnabled).toBeTrue();
+    expect(component.spinning()).toBeFalse();
+    expect(component.computeEnabled()).toBeTrue();
   });
 
   it('onSelectQueue resets queue and reports error when access denied', async () => {
@@ -141,22 +141,22 @@ describe('ExecutablefileComponent', () => {
       access: false,
       message: 'no access',
     };
-    component.queue = 'gpu';
+    component.queue.set('gpu');
     component.onSelectQueue();
     await Promise.resolve();
-    expect(component.computeEnabled).toBeFalse();
-    expect(component.queue).toBeUndefined();
+    expect(component.computeEnabled()).toBeFalse();
+    expect(component.queue()).toBeUndefined();
     expect(notifications.errors.pop()).toContain('no access');
   });
 
   it('onSelectQueue handles transport errors', async () => {
     initialiseComponent();
     dataService.shouldError = true;
-    component.queue = 'gpu';
+    component.queue.set('gpu');
     component.onSelectQueue();
     await Promise.resolve();
-    expect(component.queue).toBeUndefined();
-    expect(component.spinning).toBeFalse();
+    expect(component.queue()).toBeUndefined();
+    expect(component.spinning()).toBeFalse();
     expect(notifications.errors.pop()).toContain(
       'Checking access to queue failed',
     );
@@ -164,8 +164,8 @@ describe('ExecutablefileComponent', () => {
 
   it('compute emits request payload', () => {
     initialiseComponent();
-    component.queue = 'gpu';
-    component.computeEnabled = true;
+    component.queue.set('gpu');
+    component.computeEnabled.set(true);
     const events: any[] = [];
     component.computeClicked.subscribe((evt) => events.push(evt));
     component.compute();

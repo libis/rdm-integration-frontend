@@ -21,7 +21,7 @@
       [ngClass]="canProceed() ? 'p-button-primary' : 'p-button-secondary'"
       (click)="submit()"
       [title]="proceedTitle()"
-      [attr.disabled]="!canProceed() || disabled ? '' : null"
+      [attr.disabled]="!canProceed() || disabled() ? '' : null"
     >
       Confirm file actions&nbsp;<i class="pi pi-angle-double-right"></i>
     </button>
@@ -37,7 +37,7 @@
         class="p-button-sm p-button-raised"
         (click)="mirrorSelection()"
         title="Copy all new and changed files; remove missing"
-        [attr.disabled]="disabled ? '' : null"
+        [attr.disabled]="disabled() ? '' : null"
         style="margin-right: 0.5rem"
       >
         <i [class]="icon_mirror"></i>&nbsp;Mirror
@@ -48,7 +48,7 @@
         class="p-button-sm p-button-raised"
         (click)="updateSelection()"
         title="Copy new and changed files"
-        [attr.disabled]="disabled ? '' : null"
+        [attr.disabled]="disabled() ? '' : null"
         style="margin-right: 0.5rem"
       >
         <i [class]="icon_update"></i>&nbsp;Copy
@@ -59,7 +59,7 @@
         class="p-button-sm p-button-raised"
         (click)="noActionSelection()"
         title="Clear selection (no actions)"
-        [attr.disabled]="disabled ? '' : null"
+        [attr.disabled]="disabled() ? '' : null"
         style="margin-right: 0.5rem"
       >
         <i [class]="icon_noaction"></i>&nbsp;Clear
@@ -70,7 +70,7 @@
         class="p-button-sm p-button-raised"
         (click)="refresh()"
         title="Refresh files status"
-        [hidden]="refreshHidden"
+        [hidden]="refreshHidden()"
       >
         <i class="pi pi-refresh"></i>&nbsp;Refresh
       </button>
@@ -79,23 +79,24 @@
 </div>
 
 @if (
-  (rejectedSize && rejectedSize.length) || (rejectedName && rejectedName.length)
+  (rejectedSize() && rejectedSize()!.length) ||
+  (rejectedName() && rejectedName()!.length)
 ) {
   <div class="mb-3">
-    @if (rejectedSize && rejectedSize.length) {
+    @if (rejectedSize() && rejectedSize()!.length) {
       <div>
         <table class="table table-theme-adaptive">
           <tbody>
             <tr class="file-list-header">
               <th>
                 <i [class]="icon_warning" style="color: red"></i> Files
-                exceeding maximum allowed size ({{ maxFileSize }} bytes):
+                exceeding maximum allowed size ({{ maxFileSize() }} bytes):
               </th>
             </tr>
             <tr>
               <table class="table table-theme-adaptive">
                 <tbody>
-                  @for (fileName of rejectedSize; track fileName) {
+                  @for (fileName of rejectedSize(); track fileName) {
                     <tr>
                       <td>
                         <span>{{ fileName }}</span>
@@ -109,7 +110,7 @@
         </table>
       </div>
     }
-    @if (rejectedName && rejectedName.length) {
+    @if (rejectedName() && rejectedName()!.length) {
       <div>
         <table class="table table-theme-adaptive">
           <tbody>
@@ -122,7 +123,7 @@
             <tr>
               <table class="table table-theme-adaptive">
                 <tbody>
-                  @for (fileName of rejectedName; track fileName) {
+                  @for (fileName of rejectedName(); track fileName) {
                     <tr>
                       <td>
                         <span>{{ fileName }}</span>
@@ -135,10 +136,10 @@
             <tr>
               <td class="small px-3 pb-2">
                 Allowed file name pattern:
-                <code>{{ allowedFileNamePattern }}</code
+                <code>{{ allowedFileNamePattern() }}</code
                 ><br />
                 Allowed folder path pattern:
-                <code>{{ allowedFolderPathPattern }}</code>
+                <code>{{ allowedFolderPathPattern() }}</code>
               </td>
             </tr>
           </tbody>
@@ -150,8 +151,8 @@
 
 <div height="100% - 2em; overflow: hidden;">
   <p-treeTable
-    [value]="rootNodeChildren"
-    [loading]="loading"
+    [value]="rootNodeChildrenView()"
+    [loading]="loading()"
     loadingIcon=" pi pi-spin pi-spinner"
   >
     <ng-template pTemplate="header">
@@ -167,15 +168,14 @@
             <p-popover #op appendTo="body">
               <p-table
                 [value]="filterItems"
-                [(selection)]="selectedFilterItems"
+                [selection]="selectedFilterItems()"
+                (selectionChange)="selectedFilterItems.set($event)"
                 dataKey="label"
               >
                 <ng-template pTemplate="header">
                   <tr>
                     <th title="Show all files">
-                      <p-tableHeaderCheckbox
-                        (click)="updateFilters()"
-                      ></p-tableHeaderCheckbox>
+                      <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
                     </th>
                     <th>Comparison status</th>
                   </tr>
@@ -183,10 +183,7 @@
                 <ng-template pTemplate="body" let-product>
                   <tr [title]="product.title">
                     <td>
-                      <p-tableCheckbox
-                        [value]="product"
-                        (click)="updateFilters()"
-                      ></p-tableCheckbox>
+                      <p-tableCheckbox [value]="product"></p-tableCheckbox>
                     </td>
                     <td>
                       <i [style]="product.iconStyle" [class]="product.icon"></i
@@ -202,7 +199,7 @@
               class="p-button-sm p-button-raised"
               icon="pi pi-filter"
               (click)="op.toggle($event)"
-              [attr.disabled]="disabled ? '' : null"
+              [attr.disabled]="disabled() ? '' : null"
             ></button>
           </span>
         </th>
@@ -215,7 +212,7 @@
           {{ isNewDataset() ? dataverseHeaderNoColon() : dataverseHeader() }}
           (
           @if (!isNewDataset()) {
-            <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+            <a [href]="data().url" target="_blank">{{ data().id }}</a>
           } @else {
             {{ displayDatasetId() }}
           }
@@ -229,11 +226,13 @@
         #datafileRow="appDatafile"
         [hidden]="rowData.hidden"
         [datafile]="rowData"
-        [loading]="loading"
-        [rowNodeMap]="rowNodeMap"
+        [loading]="loading()"
+        [rowNodeMap]="rowNodeMap()"
         [rowNode]="rowNode"
-        [isInFilter]="isInFilterMode"
-        [style]="datafileRow.getStyle()"
+        [isInFilter]="isInFilterMode()"
+        [trigger]="refreshTrigger()"
+        (changed)="refreshTrigger.set(refreshTrigger() + 1)"
+        [style]="datafileRow.hostStyle()"
       ></tr>
     </ng-template>
   </p-treeTable>

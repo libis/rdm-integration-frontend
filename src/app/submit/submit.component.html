@@ -6,21 +6,21 @@
       type="button"
       class="p-button-sm p-button-raised p-button-secondary"
       (click)="back()"
-      [attr.disabled]="transferStarted ? '' : null"
+      [attr.disabled]="transferStarted() ? '' : null"
     >
       <i class="pi pi-angle-double-left"></i>&nbsp;Return
     </button>
   </div>
   <div class="col text-center">
     <h2 class="page-title m-0">
-      {{ transferStarted ? "Transfer status" : "Transfer preview" }}
+      {{ transferStarted() ? "Transfer status" : "Transfer preview" }}
     </h2>
   </div>
   <div class="col-auto">
     <button
       pButton
       type="button"
-      [hidden]="!done || !hasAccessToCompute"
+      [hidden]="!done() || !hasAccessToCompute()"
       class="p-button-sm p-button-raised p-button-secondary"
       (click)="goToCompute()"
       title="Go to compute"
@@ -30,9 +30,9 @@
     <button
       pButton
       type="button"
-      [attr.hidden]="done ? null : ''"
+      [attr.hidden]="done() ? null : ''"
       class="p-button-sm p-button-raised"
-      [ngClass]="done ? 'p-button-primary' : 'p-button-secondary'"
+      [ngClass]="done() ? 'p-button-primary' : 'p-button-secondary'"
       (click)="goToDataset()"
       title="Go to RDR to see the resulting dataset"
     >
@@ -41,11 +41,11 @@
     <button
       pButton
       type="button"
-      [attr.hidden]="done ? '' : null"
+      [attr.hidden]="done() ? '' : null"
       class="p-button-sm p-button-raised p-button-primary"
       (click)="submit()"
       title="Initiate selected changes"
-      [attr.disabled]="disabled ? '' : null"
+      [attr.disabled]="disabled() ? '' : null"
     >
       Start transfer&nbsp;<i class="pi pi-angle-double-right"></i>
     </button>
@@ -54,16 +54,16 @@
 
 <br />
 
-@if (transferStarted) {
+@if (transferStarted()) {
   <app-transfer-progress-card
     [isGlobus]="isGlobus()"
-    [taskId]="transferTaskId"
-    [monitorUrl]="transferMonitorUrl"
-    [submitting]="transferInProgress && !transferTaskId"
+    [taskId]="transferTaskId()"
+    [monitorUrl]="transferMonitorUrl()"
+    [submitting]="transferInProgress() && !transferTaskId()"
     (pollingChange)="onStatusPollingChange($event)"
-    [data]="data"
-    [dataUpdate]="onDataUpdate.bind(this)"
-    (completed)="done = true"
+    [data]="data()"
+    [dataUpdate]="onDataUpdateCallback"
+    (completed)="done.set(true)"
   ></app-transfer-progress-card>
 }
 
@@ -75,7 +75,8 @@
   header="Submit"
   position="topright"
   [modal]="true"
-  [(visible)]="popup"
+  [visible]="popup()"
+  (visibleChange)="popup.set($event)"
 >
   <p class="m-0">
     Click on "OK" to start the update/transfer. You can close the window and the
@@ -93,7 +94,8 @@
   <div style="text-align: right">
     <div class="field-checkbox" [hidden]="!sendMails() || isGlobus()">
       <p-checkbox
-        [(ngModel)]="sendEmailOnSuccess"
+        [ngModel]="sendEmailOnSuccess()"
+        (ngModelChange)="sendEmailOnSuccess.set($event)"
         [binary]="true"
         inputId="sendEmailOnSuccessCB"
       ></p-checkbox>
@@ -120,13 +122,13 @@
       <td class="inner-table-cell">
         <table class="table table-theme-adaptive">
           <tbody>
-            @for (datafile of created; track datafile) {
+            @for (datafile of created(); track datafile) {
               <tr
                 app-submitted-file
                 #submittedRow="appSubmittedFile"
                 [datafile]="datafile"
-                [isSubmitted]="submitted"
-                [style]="submittedRow.getStyle()"
+                [isSubmitted]="submitted()"
+                [style]="submittedRow.hostStyle()"
               ></tr>
             }
           </tbody>
@@ -140,13 +142,13 @@
       <td class="inner-table-cell">
         <table class="table table-theme-adaptive">
           <tbody>
-            @for (datafile of updated; track datafile) {
+            @for (datafile of updated(); track datafile) {
               <tr
                 app-submitted-file
                 #submittedRow="appSubmittedFile"
                 [datafile]="datafile"
-                [isSubmitted]="submitted"
-                [style]="submittedRow.getStyle()"
+                [isSubmitted]="submitted()"
+                [style]="submittedRow.hostStyle()"
               ></tr>
             }
           </tbody>
@@ -160,13 +162,13 @@
       <td class="inner-table-cell">
         <table class="table table-theme-adaptive">
           <tbody>
-            @for (datafile of deleted; track datafile) {
+            @for (datafile of deleted(); track datafile) {
               <tr
                 app-submitted-file
                 #submittedRow="appSubmittedFile"
                 [datafile]="datafile"
-                [isSubmitted]="submitted"
-                [style]="submittedRow.getStyle()"
+                [isSubmitted]="submitted()"
+                [style]="submittedRow.hostStyle()"
               ></tr>
             }
           </tbody>

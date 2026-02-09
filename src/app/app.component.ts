@@ -1,6 +1,11 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { PrimeNG } from 'primeng/config';
 import { DataService } from './data.service';
 import { DatasetService } from './dataset.service';
@@ -12,6 +17,7 @@ import { PluginService } from './plugin.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   imports: [RouterOutlet],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
   private primengConfig = inject(PrimeNG);
@@ -30,7 +36,7 @@ export class AppComponent implements OnInit {
       .checkAccessToQueue('', '', '')
       .subscribe({
         next: (access) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           if (!access.access) {
             const computeLink = document.getElementById(
               'navbar-compute-li',

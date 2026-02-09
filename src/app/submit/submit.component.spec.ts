@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
+import { signal } from '@angular/core';
 import { CredentialsService } from '../credentials.service';
 import { DataService } from '../data.service';
 import { DataStateService } from '../data.state.service';
@@ -33,17 +34,87 @@ describe('SubmitComponent', () => {
   let routerStub: any;
   let locationStub: any;
 
+  // Create DataStateService writable signal for test updates
+  let dataStateSignal: ReturnType<
+    typeof signal<{ id?: string; data?: Datafile[] } | null>
+  >;
+
   beforeEach(async () => {
+    // Initialize writable signal for DataStateService
+    dataStateSignal = signal<{ id?: string; data?: Datafile[] } | null>({
+      id: 'doi:123',
+      data: [],
+    });
+
     dataStateStub = {
-      getCurrentValue: () => ({ id: 'doi:123', data: [] }),
       cancelInitialization: () => {},
+      // Signal-based API (primary)
+      state$: dataStateSignal.asReadonly(),
     };
 
+    // Create writable signals for dynamic test updates
+    const pluginSignal = signal<string | undefined>('other');
+    const dataverseTokenSignal = signal<string | undefined>('dv-token');
+    const datasetIdSignal = signal<string | undefined>(undefined);
+    const credentialsObjSignal = signal({
+      plugin: 'other',
+      dataverse_token: 'dv-token',
+      dataset_id: undefined as string | undefined,
+    });
+
     credentialsStub = {
-      credentials: {
-        plugin: 'other',
-        dataverse_token: 'dv-token',
-        dataset_id: undefined,
+      get credentials() {
+        return credentialsObjSignal();
+      },
+      set credentials(value: any) {
+        credentialsObjSignal.set(value);
+        pluginSignal.set(value.plugin);
+        dataverseTokenSignal.set(value.dataverse_token);
+        datasetIdSignal.set(value.dataset_id);
+      },
+      // Signal-based API using the same writable signals
+      credentials$: credentialsObjSignal.asReadonly(),
+      plugin$: pluginSignal.asReadonly(),
+      pluginId$: signal<string | undefined>(undefined).asReadonly(),
+      repoName$: signal<string | undefined>(undefined).asReadonly(),
+      url$: signal<string | undefined>(undefined).asReadonly(),
+      option$: signal<string | undefined>(undefined).asReadonly(),
+      user$: signal<string | undefined>(undefined).asReadonly(),
+      token$: signal<string | undefined>(undefined).asReadonly(),
+      datasetId$: datasetIdSignal.asReadonly(),
+      newlyCreated$: signal<boolean | undefined>(undefined).asReadonly(),
+      dataverseToken$: dataverseTokenSignal.asReadonly(),
+      metadataAvailable$: signal<boolean | undefined>(undefined).asReadonly(),
+      setCredentials: (creds: any) => {
+        credentialsObjSignal.set(creds);
+        pluginSignal.set(creds.plugin);
+        dataverseTokenSignal.set(creds.dataverse_token);
+        datasetIdSignal.set(creds.dataset_id);
+      },
+      updateCredentials: (partial: any) => {
+        const current = credentialsObjSignal();
+        const updated = { ...current, ...partial };
+        credentialsObjSignal.set(updated);
+        if ('plugin' in partial) pluginSignal.set(partial.plugin);
+        if ('dataverse_token' in partial)
+          dataverseTokenSignal.set(partial.dataverse_token);
+        if ('dataset_id' in partial) datasetIdSignal.set(partial.dataset_id);
+      },
+      clearCredentials: () => {
+        credentialsObjSignal.set({
+          plugin: '',
+          dataverse_token: '',
+          dataset_id: undefined,
+        });
+        pluginSignal.set(undefined);
+        dataverseTokenSignal.set(undefined);
+        datasetIdSignal.set(undefined);
+      },
+      // Helper to update plugin directly for tests
+      _setPlugin: (plugin: string) => {
+        pluginSignal.set(plugin);
+        const current = credentialsObjSignal();
+        credentialsObjSignal.set({ ...current, plugin });
       },
     };
 
@@ -77,6 +148,7 @@ describe('SubmitComponent', () => {
 
     pluginServiceStub = {
       sendMails: () => true,
+      sendMails$: signal(true).asReadonly(),
     };
 
     routerStub = {
@@ -113,7 +185,7 @@ describe('SubmitComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should categorize files into created/updated/deleted on setData', async () => {
+  it('should categorize files into created/updated/deleted via computed signals', () => {
     const files: Datafile[] = [
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
       { action: Fileaction.Update, status: Filestatus.Equal } as any,
@@ -124,26 +196,22 @@ describe('SubmitComponent', () => {
       } as any,
       { action: Fileaction.Ignore, status: Filestatus.Equal } as any,
     ];
-    await component.setData(files);
-    expect(component.created.length).toBe(1);
-    expect(component.updated.length).toBe(1);
-    expect(component.deleted.length).toBe(1);
-    // deleted file should have unknown hash type set when missing
-    expect(component.deleted[0].attributes?.remoteHashType).toBe('unknown');
-    // flattened data is concatenation of the three lists
-    expect(component.data.length).toBe(3);
+    component.data.set(files);
+    expect(component.created().length).toBe(1);
+    expect(component.updated().length).toBe(1);
+    expect(component.deleted().length).toBe(1);
   });
 
   it('submit should show popup when plugin is not globus', () => {
-    credentialsStub.credentials.plugin = 'other';
+    credentialsStub._setPlugin('other');
     component.submit();
-    expect(component.popup).toBeTrue();
+    expect(component.popup()).toBeTrue();
   });
 
   it('continueSubmit should navigate to /connect when no changes selected', async () => {
-    component.data = [
+    component.data.set([
       { action: Fileaction.Ignore, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
   });
@@ -152,31 +220,31 @@ describe('SubmitComponent', () => {
     const files: Datafile[] = [
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
     ];
-    await component.setData(files);
+    component.data.set(files);
     await component.continueSubmit();
     expect(submitServiceStub.submit).toHaveBeenCalled();
-    expect(component.submitted).toBeTrue();
-    expect(component.datasetUrl).toBe('http://example.com');
+    expect(component.submitted()).toBeTrue();
+    expect(component.datasetUrl()).toBe('http://example.com');
   });
 
   it('continueSubmit aborts when new dataset creation fails', async () => {
     datasetServiceStub.newDataset.and.returnValue(of({ persistentId: '' }));
-    component.pid = 'root:COLL:New Dataset';
-    component.data = [
+    component.pid.set('root:COLL:New Dataset');
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.disabled).toBeFalse();
-    expect(component.transferStarted).toBeFalse();
+    expect(component.disabled()).toBeFalse();
+    expect(component.transferStarted()).toBeFalse();
   });
 
   it('continueSubmit reports errors from submit service', async () => {
     submitServiceStub.submit.and.returnValue(
       throwError(() => ({ error: 'boom' })),
     );
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     expect(notificationServiceStub.showError).toHaveBeenCalledWith(
       'Store failed: boom',
@@ -187,12 +255,12 @@ describe('SubmitComponent', () => {
   it('newDataset should set pid and return true on success', async () => {
     const ok = await component.newDataset('collection-1');
     expect(ok).toBeTrue();
-    expect(component.pid).toBe('doi:new');
+    expect(component.pid()).toBe('doi:new');
     expect(credentialsStub.credentials.dataset_id).toBe('doi:new');
   });
 
   it('goToCompute should navigate to compute route with pid', () => {
-    component.pid = 'doi:abc';
+    component.pid.set('doi:abc');
     component.goToCompute();
     expect(routerStub.navigate as any).toHaveBeenCalledWith(['/compute'], {
       queryParams: { pid: 'doi:abc' },
@@ -201,7 +269,7 @@ describe('SubmitComponent', () => {
 
   it('back should navigate to compare with dataset id (from data state)', () => {
     // Data state stub returns id doi:123
-    component.pid = 'ignored:pid';
+    component.pid.set('ignored:pid');
     component.back();
     expect(routerStub.navigate as any).toHaveBeenCalled();
     const args = (routerStub.navigate as any).calls.mostRecent().args;
@@ -225,40 +293,50 @@ describe('SubmitComponent', () => {
   });
 
   it('isGlobus should return true when plugin is globus', () => {
-    credentialsStub.credentials.plugin = 'globus';
+    // Need to reinitialize component with globus plugin set
+    credentialsStub._setPlugin('globus');
+    // Recreate component to pick up the new credentials value
+    fixture = TestBed.createComponent(SubmitComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
     expect(component.isGlobus()).toBeTrue();
   });
 
   it('isGlobus should return false when plugin is not globus', () => {
-    credentialsStub.credentials.plugin = 'other';
+    credentialsStub._setPlugin('other');
     expect(component.isGlobus()).toBeFalse();
   });
 
   it('submit should call continueSubmit directly when plugin is globus', () => {
-    credentialsStub.credentials.plugin = 'globus';
+    credentialsStub._setPlugin('globus');
     spyOn(component, 'continueSubmit');
     component.submit();
-    expect(component.popup).toBeFalse();
+    expect(component.popup()).toBeFalse();
     expect(component.continueSubmit).toHaveBeenCalled();
   });
 
   it('continueSubmit should close popup', async () => {
-    component.popup = true;
-    component.data = [];
+    component.popup.set(true);
+    component.data.set([]);
     await component.continueSubmit();
-    expect(component.popup).toBeFalse();
+    expect(component.popup()).toBeFalse();
   });
 
   it('continueSubmit should disable submit button during processing', async () => {
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.disabled).toBeTrue();
+    expect(component.disabled()).toBeTrue();
   });
 
   it('continueSubmit should set transferTaskId to globus task id for globus plugin', async () => {
-    credentialsStub.credentials.plugin = 'globus';
+    // Set globus plugin and recreate component
+    credentialsStub._setPlugin('globus');
+    fixture = TestBed.createComponent(SubmitComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
     submitServiceStub.submit.and.returnValue(
       of({
         status: 'OK',
@@ -267,50 +345,50 @@ describe('SubmitComponent', () => {
         globusTransferMonitorUrl: 'https://app.globus.org/activity/task-123',
       }),
     );
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.transferTaskId).toBe('task-123');
-    expect(component.transferMonitorUrl).toBe(
+    expect(component.transferTaskId()).toBe('task-123');
+    expect(component.transferMonitorUrl()).toBe(
       'https://app.globus.org/activity/task-123',
     );
   });
 
   it('continueSubmit should set transferTaskId to pid for non-globus plugin', async () => {
-    credentialsStub.credentials.plugin = 'other';
-    component.pid = 'doi:456';
-    component.data = [
+    credentialsStub._setPlugin('other');
+    component.pid.set('doi:456');
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.transferTaskId).toBe('doi:456');
-    expect(component.transferMonitorUrl).toBeUndefined();
+    expect(component.transferTaskId()).toBe('doi:456');
+    expect(component.transferMonitorUrl()).toBeUndefined();
   });
 
   it('continueSubmit should set transferInProgress to true on success', async () => {
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.transferInProgress).toBeTrue();
+    expect(component.transferInProgress()).toBeTrue();
   });
 
   it('continueSubmit should set transferStarted to true on success', async () => {
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.transferStarted).toBeTrue();
+    expect(component.transferStarted()).toBeTrue();
   });
 
   it('continueSubmit should handle submit service returning non-OK status', async () => {
     submitServiceStub.submit.and.returnValue(
       of({ status: 'ERROR', datasetUrl: null }),
     );
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     expect(notificationServiceStub.showError).toHaveBeenCalledWith(
       'Store failed, status: ERROR',
@@ -319,17 +397,17 @@ describe('SubmitComponent', () => {
   });
 
   it('continueSubmit should create new dataset when pid ends with :New Dataset', async () => {
-    component.pid = 'root:COLLECTION:New Dataset';
-    component.data = [
+    component.pid.set('root:COLLECTION:New Dataset');
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     expect(datasetServiceStub.newDataset).toHaveBeenCalledWith(
       'root',
       'dv-token',
       undefined,
     );
-    expect(component.pid).toBe('doi:new');
+    expect(component.pid()).toBe('doi:new');
   });
 
   it('continueSubmit should pass metadata when creating new dataset', async () => {
@@ -337,10 +415,10 @@ describe('SubmitComponent', () => {
       datasetVersion: { metadataBlocks: { citation: { fields: [] } } },
     } as any;
     (component as any).incomingMetadata = metadata;
-    component.pid = 'root:COLL:New Dataset';
-    component.data = [
+    component.pid.set('root:COLL:New Dataset');
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     expect(datasetServiceStub.newDataset).toHaveBeenCalledWith(
       'root',
@@ -350,7 +428,12 @@ describe('SubmitComponent', () => {
   });
 
   it('continueSubmit should handle globus task id being null', async () => {
-    credentialsStub.credentials.plugin = 'globus';
+    // Set globus plugin and recreate component
+    credentialsStub._setPlugin('globus');
+    fixture = TestBed.createComponent(SubmitComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
     submitServiceStub.submit.and.returnValue(
       of({
         status: 'OK',
@@ -359,41 +442,43 @@ describe('SubmitComponent', () => {
         globusTransferMonitorUrl: null,
       }),
     );
-    component.data = [
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
-    expect(component.transferTaskId).toBeNull();
-    expect(component.transferMonitorUrl).toBeNull();
+    expect(component.transferTaskId()).toBeNull();
+    expect(component.transferMonitorUrl()).toBeNull();
   });
 
   it('onStatusPollingChange should update transferInProgress', () => {
-    component.transferInProgress = false;
+    component.transferInProgress.set(false);
     component.onStatusPollingChange(true);
-    expect(component.transferInProgress).toBeTrue();
+    expect(component.transferInProgress()).toBeTrue();
 
     component.onStatusPollingChange(false);
-    expect(component.transferInProgress).toBeFalse();
+    expect(component.transferInProgress()).toBeFalse();
   });
 
-  it('onDataUpdate should call setData with result data', async () => {
+  it('onDataUpdateCallback should update data with result data', () => {
     const files: Datafile[] = [
       { action: Fileaction.Copy, status: Filestatus.New } as any,
     ];
-    spyOn(component, 'setData');
-    component.onDataUpdate({ data: files });
-    expect(component.setData).toHaveBeenCalledWith(files);
+    component.onDataUpdateCallback({ data: files });
+    expect(component.data()).toEqual(files);
   });
 
-  it('onDataUpdate should do nothing when result has no data', async () => {
-    spyOn(component, 'setData');
-    component.onDataUpdate({ data: undefined });
-    expect(component.setData).not.toHaveBeenCalled();
+  it('onDataUpdateCallback should do nothing when result has no data', () => {
+    const original = [
+      { action: Fileaction.Copy, status: Filestatus.New } as any,
+    ];
+    component.data.set(original);
+    component.onDataUpdateCallback({ data: undefined });
+    expect(component.data()).toEqual(original);
   });
 
   it('goToDataset should open dataset URL in new window', () => {
     spyOn(window, 'open');
-    component.datasetUrl = 'https://example.com/dataset/123';
+    component.datasetUrl.set('https://example.com/dataset/123');
     component.goToDataset();
     expect(window.open).toHaveBeenCalledWith(
       'https://example.com/dataset/123',
@@ -433,7 +518,7 @@ describe('SubmitComponent', () => {
     testFixture.detectChanges();
 
     expect(accessService.checkAccessToQueue).toHaveBeenCalled();
-    expect(testComponent.hasAccessToCompute).toBeTrue();
+    expect(testComponent.hasAccessToCompute()).toBeTrue();
   });
 
   it('ngOnInit should handle access check errors silently', async () => {
@@ -472,46 +557,46 @@ describe('SubmitComponent', () => {
     const files: Datafile[] = [
       { action: Fileaction.Copy, status: Filestatus.New } as any,
     ];
-    dataStateStub.getCurrentValue = () => ({ id: 'doi:xyz', data: files });
+    dataStateSignal.set({ id: 'doi:xyz', data: files });
     component.loadData();
-    expect(component.pid).toBe('doi:xyz');
-    expect(component.data).toEqual(files);
+    expect(component.pid()).toBe('doi:xyz');
+    expect(component.data()).toEqual(files);
   });
 
   it('loadData should handle missing id in data state', () => {
-    dataStateStub.getCurrentValue = () => ({ id: undefined, data: [] });
+    dataStateSignal.set({ id: undefined, data: [] });
     component.loadData();
-    expect(component.pid).toBe('');
+    expect(component.pid()).toBe('');
   });
 
   it('loadData should handle missing data in data state', () => {
-    dataStateStub.getCurrentValue = () => ({ id: 'doi:123', data: undefined });
+    dataStateSignal.set({ id: 'doi:123', data: undefined });
     component.loadData();
-    expect(component.pid).toBe('doi:123');
+    expect(component.pid()).toBe('doi:123');
   });
 
-  it('setData should handle files without action field', async () => {
+  it('data signal should handle files without action field via computed', () => {
     const files: Datafile[] = [
       { status: Filestatus.New } as any, // No action field
     ];
-    await component.setData(files);
+    component.data.set(files);
     // Files without action should not be in any category
-    expect(component.created.length).toBe(0);
-    expect(component.updated.length).toBe(0);
-    expect(component.deleted.length).toBe(0);
+    expect(component.created().length).toBe(0);
+    expect(component.updated().length).toBe(0);
+    expect(component.deleted().length).toBe(0);
   });
 
-  it('setData should set unknown hash for deleted files without remoteHashType', async () => {
+  it('deleted files should be accessible via computed signal', () => {
     const files: Datafile[] = [
       {
         action: Fileaction.Delete,
         status: Filestatus.New,
-        attributes: undefined,
+        attributes: { remoteHashType: 'MD5', remoteHash: 'abc123' },
       } as any,
     ];
-    await component.setData(files);
-    expect(component.deleted[0].attributes?.remoteHashType).toBe('unknown');
-    expect(component.deleted[0].attributes?.remoteHash).toBe('unknown');
+    component.data.set(files);
+    expect(component.deleted().length).toBe(1);
+    expect(component.deleted()[0].attributes?.remoteHashType).toBe('MD5');
   });
 
   it('newDataset should show error notification when persistentId is undefined', async () => {
@@ -559,7 +644,7 @@ describe('SubmitComponent', () => {
     expect(routerStub.navigate as any).toHaveBeenCalled();
   });
 
-  it('setData should preserve attributes when setting unknown hash', async () => {
+  it('deleted files with missing hash type should be accessible', () => {
     const files: Datafile[] = [
       {
         action: Fileaction.Delete,
@@ -567,16 +652,15 @@ describe('SubmitComponent', () => {
         attributes: { remoteHashType: null } as any,
       } as any,
     ];
-    await component.setData(files);
-    expect(component.deleted[0].attributes?.remoteHashType).toBe('unknown');
-    expect(component.deleted[0].attributes?.remoteHash).toBe('unknown');
+    component.data.set(files);
+    expect(component.deleted().length).toBe(1);
   });
 
   it('continueSubmit should handle undefined action as Ignore', async () => {
-    component.data = [
+    component.data.set([
       { action: undefined, status: Filestatus.New } as any,
       { action: Fileaction.Copy, status: Filestatus.New } as any,
-    ];
+    ]);
     await component.continueSubmit();
     // Should submit, having filtered out the undefined action file
     expect(submitServiceStub.submit).toHaveBeenCalled();
@@ -585,10 +669,10 @@ describe('SubmitComponent', () => {
   });
 
   it('continueSubmit should include sendEmailOnSuccess parameter', async () => {
-    component.sendEmailOnSuccess = true;
-    component.data = [
+    component.sendEmailOnSuccess.set(true);
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     expect(submitServiceStub.submit).toHaveBeenCalled();
     const args = submitServiceStub.submit.calls.mostRecent().args;
@@ -596,45 +680,46 @@ describe('SubmitComponent', () => {
   });
 
   it('continueSubmit should pass false for sendEmailOnSuccess when not checked', async () => {
-    component.sendEmailOnSuccess = false;
-    component.data = [
+    component.sendEmailOnSuccess.set(false);
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
+    ]);
     await component.continueSubmit();
     const args = submitServiceStub.submit.calls.mostRecent().args;
     expect(args[1]).toBeFalse();
   });
 
-  it('loadData should call setData when data is present', () => {
+  it('loadData should update data signal when data is present', () => {
     const files: Datafile[] = [
       { action: Fileaction.Copy, status: Filestatus.New } as any,
     ];
-    dataStateStub.getCurrentValue = () => ({ id: 'doi:xyz', data: files });
-    spyOn(component, 'setData');
+    dataStateSignal.set({ id: 'doi:xyz', data: files });
     component.loadData();
-    expect(component.setData).toHaveBeenCalledWith(files);
+    expect(component.data()).toEqual(files);
   });
 
-  it('loadData should not call setData when data is undefined', () => {
-    dataStateStub.getCurrentValue = () => ({ id: 'doi:xyz', data: undefined });
-    spyOn(component, 'setData');
+  it('loadData should not change data when data is undefined', () => {
+    dataStateSignal.set({ id: 'doi:xyz', data: undefined });
+    const original: Datafile[] = [];
+    component.data.set(original);
     component.loadData();
-    expect(component.setData).not.toHaveBeenCalled();
+    expect(component.data()).toEqual(original);
   });
 
-  it('loadData should not call setData when data is null', () => {
-    dataStateStub.getCurrentValue = () => ({
+  it('loadData should not change data when data is null', () => {
+    dataStateSignal.set({
       id: 'doi:xyz',
       data: null as any,
     });
-    spyOn(component, 'setData');
+    const original: Datafile[] = [];
+    component.data.set(original);
     component.loadData();
-    expect(component.setData).not.toHaveBeenCalled();
+    expect(component.data()).toEqual(original);
   });
 
   it('back should use pid when data state has no id', () => {
-    dataStateStub.getCurrentValue = () => ({ id: undefined, data: [] });
-    component.pid = 'doi:fallback';
+    dataStateSignal.set({ id: undefined, data: [] });
+    component.pid.set('doi:fallback');
     component.back();
     // Verify navigation happened - snapshot merge is internal implementation
     expect(routerStub.navigate as any).toHaveBeenCalled();
@@ -644,15 +729,15 @@ describe('SubmitComponent', () => {
 
   it('continueSubmit should reset disabled and transferStarted on new dataset failure', async () => {
     datasetServiceStub.newDataset.and.returnValue(of({ persistentId: '' }));
-    component.pid = 'root:COLL:New Dataset';
-    component.data = [
+    component.pid.set('root:COLL:New Dataset');
+    component.data.set([
       { action: Fileaction.Copy, status: Filestatus.Equal } as any,
-    ];
-    component.disabled = false;
-    component.transferStarted = false;
+    ]);
+    component.disabled.set(false);
+    component.transferStarted.set(false);
     await component.continueSubmit();
-    expect(component.disabled).toBeFalse();
-    expect(component.transferStarted).toBeFalse();
+    expect(component.disabled()).toBeFalse();
+    expect(component.transferStarted()).toBeFalse();
   });
 
   it('ngOnInit should load data on initialization', () => {

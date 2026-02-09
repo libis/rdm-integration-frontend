@@ -21,7 +21,8 @@
         class="form-control"
         id="dataverseToken"
         placeholder="Dataverse API token"
-        [(ngModel)]="dataverseToken"
+        [ngModel]="dataverseToken()"
+        (ngModelChange)="dataverseToken.set($event)"
         #ctrl="ngModel"
         (onChange)="onUserChange()"
       />
@@ -38,12 +39,13 @@
         [style]="{ width: '100%' }"
         [editable]="datasetFieldEditable()"
         id="datasetId"
-        [options]="doiItems"
+        [options]="doiItems()"
         [filter]="true"
         filterBy="label"
         [resetFilterOnHide]="true"
         (onFilter)="onDatasetSearch($event.filter)"
-        [(ngModel)]="datasetId"
+        [ngModel]="datasetId()"
+        (ngModelChange)="datasetId.set($event)"
         (onClick)="getDoiOptions()"
         (onChange)="onDatasetChange()"
       ></p-select>
@@ -57,7 +59,8 @@
   header="Compute"
   position="topright"
   [modal]="true"
-  [(visible)]="popup"
+  [visible]="popup()"
+  (visibleChange)="popup.set($event)"
 >
   <p class="m-0">
     Click on "OK" to start the computation. You can close the window and the
@@ -71,7 +74,8 @@
   <div style="text-align: right">
     <div class="field-checkbox" [hidden]="!sendMails()">
       <p-checkbox
-        [(ngModel)]="sendEmailOnSuccess"
+        [ngModel]="sendEmailOnSuccess()"
+        (ngModelChange)="sendEmailOnSuccess.set($event)"
         [binary]="true"
         inputId="sendEmailOnSuccessCB"
       ></p-checkbox>
@@ -91,14 +95,14 @@
 <div style="height: 100% - 2rem; overflow: hidden">
   <div style="float: left; width: 50%">
     <p-treeTable
-      [value]="rootNodeChildren"
-      [loading]="loading"
+      [value]="rootNodeChildren()"
+      [loading]="loading()"
       loadingIcon=" pi pi-spin pi-spinner"
     >
       <ng-template pTemplate="header">
         <tr>
           <th style="text-align: left">
-            <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+            <a [href]="data()!.url" target="_blank">{{ data()!.id }}</a>
           </th>
           <th class="icon_col" style="text-align: right">
             <span title="Action">Compute</span>
@@ -109,11 +113,11 @@
         <tr
           app-executablefile
           [datafile]="rowData"
-          [loading]="loading"
-          [rowNodeMap]="rowNodeMap"
+          [loading]="loading()"
+          [rowNodeMap]="rowNodeMap()"
           [rowNode]="rowNode"
-          [pid]="datasetId"
-          [dv_token]="dataverseToken"
+          [pid]="datasetId()"
+          [dv_token]="dataverseToken()"
           (computeClicked)="submitCompute($event)"
         ></tr
       ></ng-template>
@@ -122,12 +126,12 @@
   <div style="float: right; width: 50%">
     <div [style.width]="'100%'" [style.margin]="'0.2rem'">
       <textarea
-        [disabled]="outputDisabled"
+        [disabled]="outputDisabled()"
         autosize
         [minRows]="15"
         [maxRows]="15"
-        [value]="output"
-        [placeholder]="output ? '' : 'Console output...'"
+        [value]="output()"
+        [placeholder]="output() ? '' : 'Console output...'"
         style="font-family: monospace"
       ></textarea>
     </div>

@@ -1,14 +1,22 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 // Services
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
-import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
@@ -20,6 +28,7 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 // Models
 import { Credentials } from '../models/credentials';
+import { HierarchicalSelectItem } from '../models/hierarchical-select-item';
 import { Item, LoginState } from '../models/oauth';
 import { RepoLookupRequest } from '../models/repo-lookup';
 
@@ -54,6 +63,10 @@ import {
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
+import {
+  convertToTreeNodes,
+  createPlaceholderRootOptions,
+} from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
@@ -78,12 +91,12 @@ const RESTORE_TRACE = true; // can be wired to environment flag later
     Tree,
     ProgressSpinnerModule,
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConnectComponent
   implements OnInit, OnDestroy, SubscriptionManager
 {
   private readonly router = inject(Router);
-  private readonly datasetService = inject(DatasetService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly repoLookupService = inject(RepoLookupService);
@@ -109,44 +122,238 @@ export class ConnectComponent
     this.sanitizer.bypassSecurityTrustStyle('calc(100% - 12rem)');
   readonly NEW_DATASET = new_dataset;
 
-  // NG MODEL FIELDS
+  // NG MODEL SIGNALS
+  readonly plugin = signal<string | undefined>(undefined);
+  readonly pluginId = signal<string | undefined>(undefined);
+  readonly user = signal<string | undefined>(undefined);
+  readonly token = signal<string | undefined>(undefined);
+  readonly sourceUrl = signal<string | undefined>(undefined);
+  readonly repoName = signal<string | undefined>(undefined);
+  readonly selectedRepoName = signal<string | undefined>(undefined);
+  readonly foundRepoName = signal<string | undefined>(undefined);
+  readonly option = signal<string | undefined>(undefined);
+  readonly dataverseToken = signal<string | undefined>(undefined);
+  readonly collectionId = signal<string | undefined>(undefined);
+  readonly datasetId = signal<string | undefined>(undefined);
 
-  plugin?: string;
-  pluginId?: string;
-  user?: string;
-  token?: string;
-  sourceUrl?: string;
-  repoName?: string;
-  selectedRepoName?: string;
-  foundRepoName?: string;
-  option?: string;
-  dataverseToken?: string;
-  collectionId?: string;
-  datasetId?: string;
+  // ITEMS IN SELECTS SIGNALS
+  readonly loadingItem: SelectItem<string> = {
+    label: `Loading...`,
+    value: 'loading',
+  };
+  readonly loadingItems: SelectItem<string>[] = [this.loadingItem];
 
-  // ITEMS IN SELECTS
+  readonly plugins = signal<SelectItem<string>[]>([]);
+  readonly pluginIds = signal<SelectItem<string>[]>([]);
+  readonly repoNames = signal<SelectItem<string>[]>([]);
+  readonly branchItems = signal<HierarchicalSelectItem<string>[]>([]);
+  readonly collectionItems = signal<SelectItem<string>[]>([]);
+  readonly doiItems = signal<SelectItem<string>[]>([]);
+  // Internal storage for tree nodes; use rootOptions() computed for reading
+  private readonly _rootOptionsData = signal<TreeNode<string>[]>(
+    createPlaceholderRootOptions(),
+  );
+  // Used to trigger view updates when tree nodes are mutated
+  readonly refreshTrigger = signal(0);
+  // Computed signal that tracks refreshTrigger for change detection
+  readonly rootOptions = computed(() => {
+    this.refreshTrigger(); // Track refresh trigger to force re-render
+    return this._rootOptionsData();
+  });
+  readonly selectedOption = signal<TreeNode<string> | undefined>(undefined);
 
-  loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
-  loadingItems: SelectItem<string>[] = [this.loadingItem];
-  plugins: SelectItem<string>[] = [];
-  pluginIds: SelectItem<string>[] = [];
-  repoNames: SelectItem<string>[] = [];
-  branchItems: SelectItem<string>[] = [];
-  collectionItems: SelectItem<string>[] = [];
-  doiItems: SelectItem<string>[] = [];
-  rootOptions: TreeNode<string>[] = [
-    { label: 'Expand and select', data: '', leaf: false, selectable: true },
-  ];
-  selectedOption?: TreeNode<string>;
   // Both accordion panels expanded by default
-  expandedPanels: string[] = ['0', '1'];
+  readonly expandedPanels = signal<string[]>(['0', '1']);
 
-  // INTERNAL STATE VARIABLES
+  // INTERNAL STATE VARIABLES SIGNALS
+  readonly url = signal<string | undefined>(undefined);
+  readonly pluginIdSelectHidden = signal(true);
+  readonly optionsLoading = signal(false);
+  readonly showNewDatasetCreatedMessage = signal(false);
+  // Computed Properties for UI - these must read all signals they depend on
 
-  url?: string;
-  pluginIdSelectHidden = true;
-  optionsLoading = false;
-  showNewDatasetCreatedMessage = false;
+  // OAuth/Token computed signals
+  readonly hasOauthConfig = computed(() => {
+    const pId = this.pluginId();
+    if (pId === undefined) return false;
+    return (
+      this.pluginService.getPlugin(pId).tokenGetter?.oauth_client_id !==
+      undefined
+    );
+  });
+
+  readonly isAuthorized = computed(() => this.token() !== undefined);
+
+  readonly showRepoTokenGetter = computed(() => {
+    const pId = this.pluginId();
+    if (pId === undefined) return false;
+    return !!this.pluginService.getPlugin(pId).showTokenGetter;
+  });
+
+  // Repo name computed signals
+  readonly repoNameFieldName = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return undefined;
+    return this.pluginService.getPlugin(pId).repoNameFieldName;
+  });
+
+  readonly repoNamePlaceholder = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return '';
+    const v = this.pluginService.getPlugin(pId).repoNameFieldPlaceholder;
+    return v === undefined ? '' : v;
+  });
+
+  readonly repoNameFieldEditable = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return false;
+    const v = this.pluginService.getPlugin(pId).repoNameFieldEditable;
+    return v === undefined ? false : v;
+  });
+
+  readonly repoNameSearchEnabled = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return false;
+    return !!this.pluginService.getPlugin(pId).repoNameFieldHasSearch;
+  });
+
+  readonly repoNameSearchInitEnabled = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return false;
+    return !!this.pluginService.getPlugin(pId).repoNameFieldHasInit;
+  });
+
+  readonly computedRepoName = computed(() => {
+    if (this.repoName() !== undefined) return this.repoName();
+    if (this.selectedRepoName() !== undefined) return this.selectedRepoName();
+    return this.foundRepoName();
+  });
+
+  // Plugin repo names computed signal
+  readonly pluginRepoNames = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return [];
+    const values = this.pluginService.getPlugin(pId).repoNameFieldValues;
+    return values?.map((x) => ({ label: x, value: x })) ?? [];
+  });
+
+  // Option field computed signals
+  readonly optionFieldName = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return undefined;
+    return this.pluginService.getPlugin(pId).optionFieldName;
+  });
+
+  readonly optionPlaceholder = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return '';
+    const v = this.pluginService.getPlugin(pId).optionFieldPlaceholder;
+    return v === undefined ? '' : v;
+  });
+
+  readonly isOptionFieldInteractive = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return false;
+    return !!this.pluginService.getPlugin(pId).optionFieldInteractive;
+  });
+
+  // Username field computed signals
+  readonly usernameFieldName = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return undefined;
+    return this.pluginService.getPlugin(pId).usernameFieldName;
+  });
+
+  readonly usernamePlaceholder = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return '';
+    return this.pluginService.getPlugin(pId).usernameFieldPlaceholder ?? '';
+  });
+
+  // Token field computed signals
+  readonly tokenFieldName = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return undefined;
+    return this.pluginService.getPlugin(pId).tokenFieldName;
+  });
+
+  readonly tokenPlaceholder = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return '';
+    return this.pluginService.getPlugin(pId).tokenFieldPlaceholder ?? '';
+  });
+
+  // Source URL computed signals
+  readonly sourceUrlFieldName = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return undefined;
+    return this.pluginService.getPlugin(pId).sourceUrlFieldName;
+  });
+
+  readonly sourceUrlPlaceholder = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return '';
+    return this.pluginService.getPlugin(pId).sourceUrlFieldPlaceholder ?? '';
+  });
+
+  readonly sourceUrlValue = computed(() => {
+    const pId = this.pluginId();
+    if (!pId) return undefined;
+    const res = this.pluginService.getPlugin(pId).sourceUrlFieldValue;
+    return res !== undefined ? res : this.sourceUrl();
+  });
+  // Validation computed signal
+  readonly missingFieldsTitle = computed(() => {
+    return this.computedParseAndCheckFields() ?? 'Ready to connect';
+  });
+
+  readonly isConnectReady = computed(() => this.computedIsFormValid());
+  readonly connectButtonClass = computed(() => {
+    const baseClasses = 'p-button-sm p-button-raised';
+    return this.isConnectReady()
+      ? `${baseClasses} p-button-primary`
+      : `${baseClasses} p-button-secondary`;
+  });
+  readonly showReset = computed(
+    () =>
+      !!(
+        this.plugin() ||
+        this.pluginId() ||
+        this.user() ||
+        this.token() ||
+        this.repoName() ||
+        this.selectedRepoName() ||
+        this.foundRepoName() ||
+        this.option() ||
+        this.dataverseToken() ||
+        this.collectionId() ||
+        this.datasetId() ||
+        this.sourceUrl()
+      ),
+  );
+
+  // Computed signals for pluginService data
+  readonly dataverseHeader = computed(() =>
+    this.pluginService.dataverseHeader$(),
+  );
+  readonly showDVTokenGetter = computed(() =>
+    this.pluginService.showDVTokenGetter$(),
+  );
+  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
+  readonly collectionOptionsHidden = computed(() =>
+    this.pluginService.collectionOptionsHidden$(),
+  );
+  readonly collectionFieldEditable = computed(() =>
+    this.pluginService.collectionFieldEditable$(),
+  );
+  readonly datasetFieldEditable = computed(() =>
+    this.pluginService.datasetFieldEditable$(),
+  );
+  readonly createNewDatasetEnabled = computed(() =>
+    this.pluginService.createNewDatasetEnabled$(),
+  );
+  readonly externalURL = computed(() => this.pluginService.externalURL$());
+
   repoSearchSubject: Subject<string> = new Subject();
   collectionSearchSubject: Subject<string> = new Subject();
   datasetSearchSubject: Subject<string> = new Subject();
@@ -186,7 +393,7 @@ export class ConnectComponent
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');
       if (dvToken !== null) {
-        this.dataverseToken = dvToken;
+        this.dataverseToken.set(dvToken);
       }
     }
 
@@ -194,43 +401,50 @@ export class ConnectComponent
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.repoNames = v))
-            .catch(
-              (err) =>
-                (this.repoNames = [
-                  {
-                    label: `search failed: ${err.message}`,
-                    value: err.message,
-                  },
-                ]),
-            ),
-        error: (err) =>
-          (this.repoNames = [
+            .then((v) => {
+              this.repoNames.set(v);
+            })
+            .catch((err) => {
+              this.repoNames.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]);
+            }),
+        error: (err) => {
+          this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
-          ]),
+          ]);
+        },
       });
     this.collectionSearchResultsSubscription =
       this.collectionSearchResultsObservable.subscribe({
         next: (x) =>
           x
-            .then((v) => (this.collectionItems = v))
-            .catch(
-              (err) =>
-                (this.collectionItems = [
-                  {
-                    label: `search failed: ${err.message}`,
-                    value: err.message,
-                  },
-                ]),
-            ),
-        error: (err) =>
-          (this.collectionItems = [
+            .then((v) => {
+              this.collectionItems.set(v);
+            })
+            .catch((err) => {
+              this.collectionItems.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]);
+            }),
+        error: (err) => {
+          this.collectionItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
-          ]),
+          ]);
+        },
       });
-    this.route.queryParams.subscribe((params) => {
-      this.handleQueryParams(params);
-    });
+    const queryParamsSubscription = this.route.queryParams.subscribe(
+      (params) => {
+        this.handleQueryParams(params);
+      },
+    );
+    this.subscriptions.add(queryParamsSubscription);
   }
 
   private handleQueryParams(params: Record<string, string | undefined>): void {
@@ -255,35 +469,33 @@ export class ConnectComponent
     if (params['datasetPid'] || params['apiToken']) {
       this.snapshotStorage.clearConnect();
       // Also clear current in-memory fields (but keep datasetId once set below)
-      this.plugin = undefined;
-      this.pluginId = undefined;
-      this.user = undefined;
-      this.token = undefined;
-      this.repoName = undefined;
-      this.selectedRepoName = undefined;
-      this.foundRepoName = undefined;
-      this.option = undefined;
-      this.collectionId = undefined; // allow explicit collectionId if later provided
-      this.plugins = [];
-      this.pluginIds = [];
-      this.repoNames = [];
-      this.branchItems = [];
-      this.collectionItems = [];
-      this.doiItems = [];
+      this.plugin.set(undefined);
+      this.pluginId.set(undefined);
+      this.user.set(undefined);
+      this.token.set(undefined);
+      this.repoName.set(undefined);
+      this.selectedRepoName.set(undefined);
+      this.foundRepoName.set(undefined);
+      this.option.set(undefined);
+      this.collectionId.set(undefined); // allow explicit collectionId if later provided
+      this.plugins.set([]);
+      this.pluginIds.set([]);
+      this.repoNames.set([]);
+      this.branchItems.set([]);
+      this.collectionItems.set([]);
+      this.doiItems.set([]);
     }
     const datasetPid = params['datasetPid'];
     if (datasetPid) {
-      this.ensureSelectContains(
-        this.doiItems,
-        datasetPid,
-        (items) => (this.doiItems = items),
+      this.ensureSelectContains(this.doiItems(), datasetPid, (items) =>
+        this.doiItems.set(items),
       );
       // Explicit deep link should override any previously restored dataset id
-      this.datasetId = datasetPid;
+      this.datasetId.set(datasetPid);
     }
     const apiToken = params['apiToken'];
     if (apiToken) {
-      this.dataverseToken = apiToken;
+      this.dataverseToken.set(apiToken);
     }
     // Note: callback parameter is now handled by AppComponent which parses it
     // and redirects to /connect with datasetPid already resolved
@@ -306,59 +518,60 @@ export class ConnectComponent
       this.router.navigate(['/download'], { queryParams: params });
       return;
     }
-    this.sourceUrl = loginState.sourceUrl;
-    this.url = loginState.url;
-    this.repoName = loginState.repoName;
-    this.selectedRepoName = loginState.repoName;
-    this.foundRepoName = loginState.repoName;
-    this.user = loginState.user;
+    this.sourceUrl.set(loginState.sourceUrl);
+    this.url.set(loginState.url);
+    this.repoName.set(loginState.repoName);
+    this.selectedRepoName.set(loginState.repoName);
+    this.foundRepoName.set(loginState.repoName);
+    this.user.set(loginState.user);
 
     if (loginState.plugin?.value) {
-      this.plugins = [
+      this.plugins.set([
         { label: loginState.plugin.label, value: loginState.plugin.value! },
-      ];
-      this.plugin = loginState.plugin.value;
+      ]);
+      this.plugin.set(loginState.plugin.value);
     }
     if (loginState.pluginId?.value) {
-      this.pluginIds = [
+      this.pluginIds.set([
         { label: loginState.pluginId.label, value: loginState.pluginId.value! },
-      ];
-      this.pluginId = loginState.pluginId.value;
-      this.pluginIdSelectHidden = !!loginState.pluginId.hidden;
+      ]);
+      this.pluginId.set(loginState.pluginId.value);
+      this.pluginIdSelectHidden.set(!!loginState.pluginId.hidden);
     } else {
-      this.pluginIdSelectHidden = true;
+      this.pluginIdSelectHidden.set(true);
     }
     if (loginState.option?.value) {
-      this.branchItems = [
+      this.branchItems.set([
         { label: loginState.option.label, value: loginState.option.value! },
         this.loadingItem,
-      ];
-      this.option = loginState.option.value;
+      ]);
+      this.option.set(loginState.option.value);
     }
     if (loginState.datasetId?.value) {
       this.ensureSelectContains(
-        this.doiItems,
+        this.doiItems(),
         loginState.datasetId.value,
-        (items) => (this.doiItems = items),
+        (items) => this.doiItems.set(items),
       );
-      this.datasetId = loginState.datasetId.value;
+      this.datasetId.set(loginState.datasetId.value);
     }
     if (loginState.collectionId?.value) {
       this.ensureSelectContains(
-        this.collectionItems,
+        this.collectionItems(),
         loginState.collectionId.value,
-        (items) => (this.collectionItems = items),
+        (items) => this.collectionItems.set(items),
       );
-      this.collectionId = loginState.collectionId.value;
+      this.collectionId.set(loginState.collectionId.value);
     }
     const code = params['code'];
-    if (loginState.nonce && this.pluginId && code) {
+    const pId = this.pluginId();
+    if (loginState.nonce && pId && code) {
       const tokenSubscription = this.oauth
-        .getToken(this.pluginId, code, loginState.nonce)
+        .getToken(pId, code, loginState.nonce)
         .subscribe((x) => {
-          this.token = x.session_id;
+          this.token.set(x.session_id);
           this.subscriptions.delete(tokenSubscription);
-          tokenSubscription.unsubscribe();
+          tokenSubscription?.unsubscribe();
         });
       this.subscriptions.add(tokenSubscription);
     }
@@ -406,8 +619,8 @@ export class ConnectComponent
       try {
         // eslint-disable-next-line no-console
         console.debug('[RESTORE-TRACE] restoreFromSnapshot result', {
-          datasetId: this.datasetId,
-          collectionId: this.collectionId,
+          datasetId: this.datasetId(),
+          collectionId: this.collectionId(),
           hasSnapshot: !!anyState.connectSnapshot,
         });
       } catch {
@@ -432,8 +645,8 @@ export class ConnectComponent
       try {
         // eslint-disable-next-line no-console
         console.debug('[RESTORE-TRACE] restoreFromStorage result', {
-          datasetId: this.datasetId,
-          collectionId: this.collectionId,
+          datasetId: this.datasetId(),
+          collectionId: this.collectionId(),
         });
       } catch {
         // intentional: ignore tracing error
@@ -450,41 +663,47 @@ export class ConnectComponent
     const assignIfEmpty = <T>(
       current: T | undefined,
       incoming: T | undefined,
-    ) => current === undefined && incoming !== undefined;
-    if (assignIfEmpty(this.plugin, snap.plugin)) this.plugin = snap.plugin;
-    if (assignIfEmpty(this.pluginId, snap.pluginId))
-      this.pluginId = snap.pluginId;
-    if (assignIfEmpty(this.user, snap.user)) this.user = snap.user;
-    if (assignIfEmpty(this.token, snap.token)) this.token = snap.token;
-    if (assignIfEmpty(this.repoName, snap.repo_name))
-      this.repoName = snap.repo_name;
-    if (assignIfEmpty(this.selectedRepoName, snap.repo_name))
-      this.selectedRepoName = snap.repo_name;
-    if (assignIfEmpty(this.foundRepoName, snap.repo_name))
-      this.foundRepoName = snap.repo_name;
-    if (assignIfEmpty(this.option, snap.option)) this.option = snap.option;
-    if (assignIfEmpty(this.dataverseToken, snap.dataverse_token))
-      this.dataverseToken = snap.dataverse_token;
+      setter: (v: T | undefined) => void,
+    ) => {
+      if (current === undefined && incoming !== undefined) {
+        setter(incoming);
+      }
+    };
+
+    assignIfEmpty(this.plugin(), snap.plugin, (v) => this.plugin.set(v));
+    assignIfEmpty(this.pluginId(), snap.pluginId, (v) => this.pluginId.set(v));
+    assignIfEmpty(this.user(), snap.user, (v) => this.user.set(v));
+    assignIfEmpty(this.token(), snap.token, (v) => this.token.set(v));
+    assignIfEmpty(this.repoName(), snap.repo_name, (v) => this.repoName.set(v));
+    assignIfEmpty(this.selectedRepoName(), snap.repo_name, (v) =>
+      this.selectedRepoName.set(v),
+    );
+    assignIfEmpty(this.foundRepoName(), snap.repo_name, (v) =>
+      this.foundRepoName.set(v),
+    );
+    assignIfEmpty(this.option(), snap.option, (v) => this.option.set(v));
+    assignIfEmpty(this.dataverseToken(), snap.dataverse_token, (v) =>
+      this.dataverseToken.set(v),
+    );
 
     // Dataset precedence logic:
-    // 1. Existing this.datasetId (already present) wins.
-    // 2. Navigation-provided datasetFromNav (explicit user path) next.
-    // 3. Snapshot dataset_id / id fallback.
-    if (!this.datasetId) {
+    if (!this.datasetId()) {
       const snapId = (snap as Record<string, unknown>)['id'];
-      this.datasetId =
+      const newVal =
         datasetFromNav ||
         snap.dataset_id ||
         (typeof snapId === 'string' ? snapId : undefined) ||
-        this.datasetId;
+        this.datasetId();
+      this.datasetId.set(newVal);
     }
     // Collection similar precedence; do not overwrite existing selection.
-    if (!this.collectionId) {
+    if (!this.collectionId()) {
       const snapCollection = (snap as Record<string, unknown>)['collectionId'];
-      this.collectionId =
+      const newVal =
         collectionFromNav ||
         (typeof snapCollection === 'string' ? snapCollection : undefined) ||
-        this.collectionId;
+        this.collectionId();
+      this.collectionId.set(newVal);
     }
 
     const ensureList = (
@@ -496,15 +715,15 @@ export class ConnectComponent
       if (list.length === 0)
         setter([{ label: value, value }, this.loadingItem]);
     };
-    ensureList(this.plugins, this.plugin, (i) => (this.plugins = i));
-    ensureList(this.pluginIds, this.pluginId, (i) => (this.pluginIds = i));
-    ensureList(this.repoNames, this.repoName, (i) => (this.repoNames = i));
-    ensureList(this.branchItems, this.option, (i) => (this.branchItems = i));
-    ensureList(this.doiItems, this.datasetId, (i) => (this.doiItems = i));
-    ensureList(
-      this.collectionItems,
-      this.collectionId,
-      (i) => (this.collectionItems = i),
+    ensureList(this.plugins(), this.plugin(), (i) => this.plugins.set(i));
+    ensureList(this.pluginIds(), this.pluginId(), (i) => this.pluginIds.set(i));
+    ensureList(this.repoNames(), this.repoName(), (i) => this.repoNames.set(i));
+    ensureList(this.branchItems(), this.option(), (i) =>
+      this.branchItems.set(i),
+    );
+    ensureList(this.doiItems(), this.datasetId(), (i) => this.doiItems.set(i));
+    ensureList(this.collectionItems(), this.collectionId(), (i) =>
+      this.collectionItems.set(i),
     );
   }
 
@@ -521,13 +740,13 @@ export class ConnectComponent
       }
     }
     this.restoreFromSnapshot(window?.history?.state);
-    if (!this.datasetId) this.restoreFromStorage();
+    if (!this.datasetId()) this.restoreFromStorage();
     if (RESTORE_TRACE) {
       try {
         // eslint-disable-next-line no-console
         console.debug('[RESTORE-TRACE] attemptFullRestore end', {
-          datasetId: this.datasetId,
-          collectionId: this.collectionId,
+          datasetId: this.datasetId(),
+          collectionId: this.collectionId(),
         });
       } catch {
         // intentional: ignore tracing error
@@ -550,47 +769,33 @@ export class ConnectComponent
    * OAUTH AND API TOKEN *
    ***********************/
 
-  hasOauthConfig(): boolean {
-    return (
-      this.pluginService.getPlugin(this.pluginId).tokenGetter
-        ?.oauth_client_id !== undefined
-    );
-  }
-
-  isAuthorized(): boolean {
-    return this.token !== undefined;
-  }
-
-  showRepoTokenGetter(): boolean {
-    return this.pluginService.getPlugin(this.pluginId).showTokenGetter!;
-  }
-
   getRepoToken(scopes?: string) {
-    if (this.pluginId === undefined) {
+    const pId = this.pluginId();
+    if (pId === undefined) {
       this.notificationService.showError('Repository type is missing');
       return;
     }
-    const tg = this.pluginService.getPlugin(this.pluginId).tokenGetter!;
-    let url = this.url + (tg.URL === undefined ? '' : tg.URL);
+    const tg = this.pluginService.getPlugin(pId).tokenGetter!;
+    let url = this.url() + (tg.URL === undefined ? '' : tg.URL);
     if (tg.URL?.includes('://')) {
       url = tg.URL;
     }
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       const nonce = this.newNonce(44);
-      const pluginId = this.getItem(this.pluginIds, this.pluginId);
-      if (pluginId !== undefined) {
-        pluginId.hidden = this.pluginIdSelectHidden;
+      const pluginIdItem = this.getItem(this.pluginIds(), pId);
+      if (pluginIdItem !== undefined) {
+        pluginIdItem.hidden = this.pluginIdSelectHidden();
       }
       const loginState: LoginState = {
-        sourceUrl: this.sourceUrl,
-        url: this.url,
-        plugin: this.getItem(this.plugins, this.plugin),
-        pluginId: pluginId,
-        repoName: this.getRepoName(),
-        user: this.user,
-        option: this.getItem(this.branchItems, this.option),
-        datasetId: this.getItem(this.doiItems, this.datasetId),
-        collectionId: this.getItem(this.collectionItems, this.collectionId),
+        sourceUrl: this.sourceUrl(),
+        url: this.url(),
+        plugin: this.getItem(this.plugins(), this.plugin()),
+        pluginId: pluginIdItem,
+        repoName: this.computedRepoName(),
+        user: this.user(),
+        option: this.getItem(this.branchItems(), this.option()),
+        datasetId: this.getItem(this.doiItems(), this.datasetId()),
+        collectionId: this.getItem(this.collectionItems(), this.collectionId()),
         nonce: nonce,
       };
       let clId = '?client_id=';
@@ -619,7 +824,8 @@ export class ConnectComponent
       }
       this.navigation.assign(url);
     } else {
-      window.open(url, '_blank');
+      const curUrl = this.url();
+      if (curUrl) window.open(curUrl, '_blank');
     }
   }
 
@@ -644,76 +850,69 @@ export class ConnectComponent
     return { label: label, value: value };
   }
 
-  // API TOKEN FIELD
-
-  getTokenFieldName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).tokenFieldName;
-  }
-
-  getTokenPlaceholder(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).tokenFieldPlaceholder;
-  }
-
   /***********
    * CONNECT *
    ***********/
 
   async connect() {
-    const subscr = this.http
-      .post<string>('api/common/useremail', this.dataverseToken)
+    let subscr: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    subscr = this.http
+      .post<string>('api/common/useremail', this.dataverseToken())
       .subscribe({
         next: (useremail) => {
-          subscr.unsubscribe();
+          subscr?.unsubscribe();
           if (useremail !== '') {
             const err = this.parseAndCheckFields();
             if (err !== undefined) {
               this.notificationService.showError(err);
               return;
             }
-            const tokenName = this.pluginService.getPlugin(
-              this.pluginId,
-            ).tokenName;
+            const pId = this.pluginId();
+            if (!pId) return;
+
+            const tokenName = this.pluginService.getPlugin(pId).tokenName;
+            const token = this.token();
             if (
-              this.token !== undefined &&
+              token !== undefined &&
               tokenName !== undefined &&
               tokenName !== ''
             ) {
-              localStorage.setItem(tokenName, this.token);
+              localStorage.setItem(tokenName, token);
             }
             const creds: Credentials = {
-              pluginId: this.pluginId,
-              plugin: this.plugin,
-              repo_name: this.getRepoName(),
-              url: this.url,
-              option: this.option,
-              user: this.user,
-              token: this.token,
-              dataset_id: this.datasetId,
-              // New dataset detection must work even when a collection prefix is included (e.g. "root:COLL:New Dataset")
-              // Earlier logic only compared full equality with "New Dataset" and failed in prefixed cases, breaking Compare proceed logic.
-              newly_created: this.isNewDatasetId(this.datasetId),
-              dataverse_token: this.dataverseToken,
+              pluginId: pId,
+              plugin: this.plugin(),
+              repo_name: this.computedRepoName(),
+              url: this.url(),
+              option: this.option(),
+              user: this.user(),
+              token: token,
+              dataset_id: this.datasetId(),
+              // New dataset detection must work even when a collection prefix is included
+              newly_created: this.isNewDatasetId(this.datasetId()),
+              dataverse_token: this.dataverseToken(),
             };
-            // Persist snapshot BEFORE navigating so a later back() can restore even if navigation state is empty
+            // Persist snapshot BEFORE navigating
             this.snapshotStorage.saveConnect({
-              plugin: this.plugin,
-              pluginId: this.pluginId,
-              user: this.user,
-              token: this.token,
-              repo_name: this.getRepoName(),
-              url: this.url,
-              option: this.option,
-              dataverse_token: this.dataverseToken,
-              dataset_id: this.datasetId,
-              collectionId: this.collectionId,
+              plugin: this.plugin(),
+              pluginId: pId,
+              user: this.user(),
+              token: token,
+              repo_name: this.computedRepoName(),
+              url: this.url(),
+              option: this.option(),
+              dataverse_token: this.dataverseToken(),
+              dataset_id: this.datasetId(),
+              collectionId: this.collectionId(),
             });
             this.dataStateService.resetState();
-            this.credentialsService.credentials = creds;
+            this.credentialsService.setCredentials(creds);
 
-            this.router.navigate(['/compare', this.datasetId], {
+            this.router.navigate(['/compare', this.datasetId()], {
               state: {
-                collectionId: this.collectionId,
-                collectionItems: this.collectionItems,
+                collectionId: this.collectionId(),
+                collectionItems: this.collectionItems(),
               },
             });
           } else {
@@ -723,7 +922,7 @@ export class ConnectComponent
           }
         },
         error: (err) => {
-          subscr.unsubscribe();
+          subscr?.unsubscribe();
           console.error(err);
           this.notificationService.showError(
             'Error getting user: you need to generate a valid Dataverse API token first',
@@ -749,67 +948,57 @@ export class ConnectComponent
   private performReset() {
     this.snapshotStorage.clearConnect();
     // Clear all bindable fields
-    this.plugin = undefined;
-    this.pluginId = undefined;
-    this.user = undefined;
-    this.token = undefined;
-    this.repoName = undefined;
-    this.selectedRepoName = undefined;
-    this.foundRepoName = undefined;
-    this.option = undefined;
-    this.dataverseToken = undefined;
-    this.collectionId = undefined;
-    this.datasetId = undefined;
-    this.plugins = [];
-    this.pluginIds = [];
-    this.repoNames = [];
-    this.branchItems = [];
-    this.collectionItems = [];
-    this.doiItems = [];
-    this.rootOptions = [
-      { label: 'Expand and select', data: '', leaf: false, selectable: true },
-    ];
-    this.selectedOption = undefined;
-    this.expandedPanels = ['0', '1'];
-  }
-
-  /**
-   * Whether the Reset button should be shown. Hidden when all key user-editable inputs are empty.
-   * (We exclude arrays like branchItems/collectionItems which are populated programmatically.)
-   */
-  get showReset(): boolean {
-    return !!(
-      this.plugin ||
-      this.pluginId ||
-      this.user ||
-      this.token ||
-      this.repoName ||
-      this.selectedRepoName ||
-      this.foundRepoName ||
-      this.option ||
-      this.dataverseToken ||
-      this.collectionId ||
-      this.datasetId ||
-      this.sourceUrl
-    );
+    this.plugin.set(undefined);
+    this.pluginId.set(undefined);
+    this.user.set(undefined);
+    this.token.set(undefined);
+    this.repoName.set(undefined);
+    this.selectedRepoName.set(undefined);
+    this.foundRepoName.set(undefined);
+    this.option.set(undefined);
+    this.dataverseToken.set(undefined);
+    this.collectionId.set(undefined);
+    this.datasetId.set(undefined);
+    this.plugins.set([]);
+    this.pluginIds.set([]);
+    this.repoNames.set([]);
+    this.branchItems.set([]);
+    this.collectionItems.set([]);
+    this.doiItems.set([]);
+    this._rootOptionsData.set(createPlaceholderRootOptions());
+    this.selectedOption.set(undefined);
+    this.expandedPanels.set(['0', '1']);
   }
 
   private buildValidationContext() {
     return {
-      pluginId: this.pluginId,
-      datasetId: this.datasetId,
-      sourceUrl: this.sourceUrl,
-      token: this.token,
-      option: this.option,
-      user: this.user,
-      repoName: this.getRepoName(),
-      getSourceUrlFieldName: () => this.getSourceUrlFieldName(),
-      getTokenFieldName: () => this.getTokenFieldName(),
-      getOptionFieldName: () => this.getOptionFieldName(),
-      getUsernameFieldName: () => this.getUsernameFieldName(),
-      getRepoNameFieldName: () => this.getRepoNameFieldName(),
-      parseUrl: () => this.parseUrl(),
+      pluginId: this.pluginId(),
+      datasetId: this.datasetId(),
+      sourceUrl: this.sourceUrl(),
+      token: this.token(),
+      option: this.option(),
+      user: this.user(),
+      repoName: this.computedRepoName(),
+      getSourceUrlFieldName: () => this.sourceUrlFieldName(),
+      getTokenFieldName: () => this.tokenFieldName(),
+      getOptionFieldName: () => this.optionFieldName(),
+      getUsernameFieldName: () => this.usernameFieldName(),
+      getRepoNameFieldName: () => this.repoNameFieldName(),
+      parseUrl: () => this.validateUrl(), // Use validateUrl (pure, no signal writes) for validation
     };
+  }
+
+  /** Computed version of isFormValid for use in computed signals */
+  private computedIsFormValid(): boolean {
+    return this.connectValidation.isValid(this.buildValidationContext());
+  }
+
+  /** Computed version of parseAndCheckFields for use in computed signals */
+  private computedParseAndCheckFields(): string | undefined {
+    const issues = this.connectValidation.gatherIssues(
+      this.buildValidationContext(),
+    );
+    return this.connectValidation.summarizeIssues(issues);
   }
 
   parseAndCheckFields(): string | undefined {
@@ -817,10 +1006,6 @@ export class ConnectComponent
       this.buildValidationContext(),
     );
     return this.connectValidation.summarizeIssues(issues);
-  }
-
-  missingFieldsTitle(): string {
-    return this.parseAndCheckFields() ?? 'Ready to connect';
   }
 
   /**
@@ -832,66 +1017,51 @@ export class ConnectComponent
   }
 
   /**
-   * Validates URL parsing without side effects
-   * Returns error string if invalid, undefined if valid
+   * Validates the URL format and returns an error message if invalid.
+   * This is a pure function that does NOT write to signals - safe for use in computed signals.
    */
-  private validateUrlParsing(): string | undefined {
-    if (!this.sourceUrl) return 'Source URL is required';
-
-    let toSplit = this.sourceUrl;
+  validateUrl(): string | undefined {
+    const pId = this.pluginId();
+    if (!pId) return;
+    if (!this.pluginService.getPlugin(pId).parseSourceUrlField) {
+      return;
+    }
+    const sUrl = this.sourceUrl();
+    if (!sUrl) {
+      return 'Malformed source url';
+    }
+    let toSplit = sUrl!;
     if (toSplit.endsWith('/')) {
       toSplit = toSplit.substring(0, toSplit.length - 1);
     }
-
     const splitted = toSplit.split('://');
-    if (splitted?.length !== 2) {
+    if (splitted?.length == 2) {
+      const pathParts = splitted[1].split('/');
+      if (pathParts?.length <= 2) {
+        return 'Malformed source url';
+      }
+    } else {
       return 'Malformed source url';
     }
-
-    const pathParts = splitted[1].split('/');
-    if (pathParts?.length <= 2) {
-      return 'Malformed source url';
-    }
-
-    return undefined;
+    return;
   }
 
   /**
-   * Determines if the Connect button should be in ready state (blue/primary)
+   * Parses the URL and updates the url and repoName signals.
+   * Should only be called from effects or event handlers, NOT from computed signals.
    */
-  get isConnectReady(): boolean {
-    return this.isFormValid();
-  }
-
-  /**
-   * Determines the CSS classes for the Connect button
-   */
-  get connectButtonClass(): string {
-    const baseClasses = 'p-button-sm p-button-raised';
-    return this.isConnectReady
-      ? `${baseClasses} p-button-primary`
-      : `${baseClasses} p-button-secondary`;
-  }
-
-  /**
-   * Triggers validation update - can be called from change handlers
-   * This method doesn't do anything but calling it ensures Angular's change detection
-   * picks up the validation state changes for the button styling
-   */
-  private triggerValidationUpdate(): void {
-    // Angular change detection will automatically update the getter-based properties
-    // This method is mainly for explicit triggering if needed
-  }
-
   parseUrl(): string | undefined {
-    if (!this.pluginService.getPlugin(this.pluginId).parseSourceUrlField) {
-      this.url = this.getSourceUrlValue();
+    const pId = this.pluginId();
+    if (!pId) return;
+    if (!this.pluginService.getPlugin(pId).parseSourceUrlField) {
+      this.url.set(this.sourceUrlValue());
       return;
     }
-    if (!this.sourceUrl) {
+    const sUrl = this.sourceUrl();
+    if (!sUrl) {
       return 'Malformed source url';
     }
-    let toSplit = this.sourceUrl!;
+    let toSplit = sUrl!;
     if (toSplit.endsWith('/')) {
       toSplit = toSplit.substring(0, toSplit.length - 1);
     }
@@ -899,11 +1069,12 @@ export class ConnectComponent
     if (splitted?.length == 2) {
       splitted = splitted[1].split('/');
       if (splitted?.length > 2) {
-        this.url = `https://${splitted[0]}`;
-        this.repoName = splitted.slice(1, splitted.length).join('/');
-        if (this.repoName.endsWith('.git')) {
-          this.repoName = this.repoName.substring(0, this.repoName.length - 4);
+        this.url.set(`https://${splitted[0]}`);
+        let rName = splitted.slice(1, splitted.length).join('/');
+        if (rName.endsWith('.git')) {
+          rName = rName.substring(0, rName.length - 4);
         }
+        this.repoName.set(rName);
       } else {
         return 'Malformed source url';
       }
@@ -918,43 +1089,46 @@ export class ConnectComponent
    **********/
 
   getPlugins() {
-    this.plugins = this.pluginService.getPlugins();
+    this.plugins.set(this.pluginService.getPlugins());
   }
 
   changePlugin() {
-    const pluginIds = this.pluginService.getPluginIds(this.plugin);
+    const pluginIds = this.pluginService.getPluginIds(this.plugin());
     if (pluginIds.length === 1) {
-      this.pluginId = pluginIds[0].value;
+      this.pluginId.set(pluginIds[0].value);
     } else {
-      this.pluginId = undefined;
+      this.pluginId.set(undefined);
     }
-    this.pluginIdSelectHidden = pluginIds.length < 2;
+    this.pluginIdSelectHidden.set(pluginIds.length < 2);
     this.changePluginId();
   }
 
   getPluginIds() {
-    this.pluginIds = this.pluginService.getPluginIds(this.plugin);
+    this.pluginIds.set(this.pluginService.getPluginIds(this.plugin()));
   }
 
   changePluginId() {
-    this.token = undefined;
-    const tokenName = this.pluginService.getPlugin(this.pluginId).tokenName;
-    if (tokenName !== undefined && tokenName !== '') {
-      const token = localStorage.getItem(tokenName);
-      if (token !== null) {
-        this.token = token;
+    this.token.set(undefined);
+    const pId = this.pluginId();
+    if (pId) {
+      const tokenName = this.pluginService.getPlugin(pId).tokenName;
+      if (tokenName !== undefined && tokenName !== '') {
+        const token = localStorage.getItem(tokenName);
+        if (token !== null) {
+          this.token.set(token);
+        }
       }
     }
 
-    this.sourceUrl = undefined;
-    this.branchItems = [];
-    this.option = undefined;
-    this.url = undefined;
-    this.user = undefined;
-    this.repoNames = [];
-    this.repoName = undefined;
-    this.selectedRepoName = undefined;
-    this.foundRepoName = undefined;
+    this.sourceUrl.set(undefined);
+    this.branchItems.set([]);
+    this.option.set(undefined);
+    this.url.set(undefined);
+    this.user.set(undefined);
+    this.repoNames.set([]);
+    this.repoName.set(undefined);
+    this.selectedRepoName.set(undefined);
+    this.foundRepoName.set(undefined);
   }
 
   /**************
@@ -963,34 +1137,9 @@ export class ConnectComponent
 
   // REPO CHOICE: COMMON
 
-  getRepoNameFieldName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).repoNameFieldName;
-  }
-
-  getRepoNamePlaceholder(): string {
-    const v = this.pluginService.getPlugin(
-      this.pluginId,
-    ).repoNameFieldPlaceholder;
-    return v === undefined ? '' : v;
-  }
-
-  repoNameFieldEditable(): boolean {
-    const v = this.pluginService.getPlugin(this.pluginId).repoNameFieldEditable;
-    return v === undefined ? false : v;
-  }
-
-  getRepoName(): string | undefined {
-    if (this.repoName !== undefined) {
-      return this.repoName;
-    }
-    if (this.selectedRepoName !== undefined) {
-      return this.selectedRepoName;
-    }
-    return this.foundRepoName;
-  }
-
   getRepoLookupRequest(isSearch: boolean): RepoLookupRequest | undefined {
-    if (this.pluginId === undefined) {
+    const pId = this.pluginId();
+    if (pId === undefined) {
       this.notificationService.showError('Repository type is missing');
       return;
     }
@@ -999,75 +1148,63 @@ export class ConnectComponent
       this.notificationService.showError(err);
       return;
     }
-    if (this.url === undefined || this.url === '') {
+    const url = this.url();
+    if (url === undefined || url === '') {
       this.notificationService.showError('URL is missing');
       return;
     }
-    if (
-      this.getUsernameFieldName() &&
-      (this.user === undefined || this.user === '')
-    ) {
+    const user = this.user();
+    if (this.usernameFieldName() && (user === undefined || user === '')) {
       this.notificationService.showError(
-        `${this.getUsernameFieldName()} is missing`,
+        `${this.usernameFieldName()} is missing`,
       );
       return;
     }
     if (
-      this.getRepoNameFieldName() &&
-      (this.getRepoName() === undefined || this.getRepoName() === '') &&
+      this.repoNameFieldName() &&
+      (this.computedRepoName() === undefined ||
+        this.computedRepoName() === '') &&
       !isSearch
     ) {
       this.notificationService.showError(
-        `${this.getRepoNameFieldName()} is missing`,
+        `${this.repoNameFieldName()} is missing`,
       );
       return;
     }
-    if (
-      this.getTokenFieldName() &&
-      (this.token === undefined || this.token === '')
-    ) {
-      this.notificationService.showError(
-        `${this.getTokenFieldName()} is missing`,
-      );
+    const token = this.token();
+    if (this.tokenFieldName() && (token === undefined || token === '')) {
+      this.notificationService.showError(`${this.tokenFieldName()} is missing`);
       return;
     }
     if (
-      this.branchItems.length !== 0 &&
-      this.branchItems.find((x) => x === this.loadingItem) === undefined
+      this.branchItems().length !== 0 &&
+      this.branchItems().find((x) => x === this.loadingItem) === undefined
     ) {
       return;
     }
 
-    this.branchItems = this.loadingItems;
+    this.branchItems.set(this.loadingItems);
 
     return {
-      pluginId: this.pluginId,
-      plugin: this.plugin,
-      repoName: this.getRepoName(),
-      url: this.url,
-      user: this.user,
-      token: this.token,
+      pluginId: pId,
+      plugin: this.plugin(),
+      repoName: this.computedRepoName(),
+      url: url,
+      user: user,
+      token: token,
     };
   }
 
   onRepoChange() {
-    this.branchItems = [];
-    this.option = undefined;
-    this.url = undefined;
-    if (this.getRepoNameFieldName() === undefined) {
-      this.repoName = undefined;
+    this.branchItems.set([]);
+    this.option.set(undefined);
+    this.url.set(undefined);
+    if (this.repoNameFieldName() === undefined) {
+      this.repoName.set(undefined);
     }
   }
 
   // REPO VIA SEARCH
-
-  repoNameSearchEnabled(): boolean {
-    return this.pluginService.getPlugin(this.pluginId).repoNameFieldHasSearch!;
-  }
-
-  repoNameSearchInitEnabled(): boolean {
-    return this.pluginService.getPlugin(this.pluginId).repoNameFieldHasInit!;
-  }
 
   async repoNameSearch(searchTerm: string): Promise<SelectItem<string>[]> {
     const req = this.getRepoLookupRequest(true);
@@ -1080,82 +1217,44 @@ export class ConnectComponent
 
   onRepoNameSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames = [
+      this.repoNames.set([
         {
           label: 'start typing to search (at least three letters)',
           value: 'start',
         },
-      ];
+      ]);
       return;
     }
-    this.repoNames = [
+    this.repoNames.set([
       { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ];
+    ]);
     this.repoSearchSubject.next(searchTerm);
   }
 
   startRepoSearch() {
-    if (this.foundRepoName !== undefined) {
+    if (this.foundRepoName() !== undefined) {
       return;
     }
     if (this.repoNameSearchInitEnabled()) {
-      this.repoNames = [{ label: 'loading...', value: 'start' }];
+      this.repoNames.set([{ label: 'loading...', value: 'start' }]);
       this.repoSearchSubject.next('');
     } else {
-      this.repoNames = [
+      this.repoNames.set([
         {
           label: 'start typing to search (at least three letters)',
           value: 'start',
         },
-      ];
+      ]);
     }
-  }
-
-  // REPO VIA URL
-
-  getSourceUrlFieldName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).sourceUrlFieldName;
-  }
-
-  getSourceUrlPlaceholder(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId)
-      .sourceUrlFieldPlaceholder;
-  }
-
-  getSourceUrlValue(): string | undefined {
-    const res = this.pluginService.getPlugin(this.pluginId).sourceUrlFieldValue;
-    if (res !== undefined) {
-      return res;
-    }
-    return this.sourceUrl;
   }
 
   // REPO VIA SELECT
-
-  getPluginRepoNames(): SelectItem<string>[] {
-    const res: SelectItem<string>[] = [];
-    this.pluginService
-      .getPlugin(this.pluginId)
-      .repoNameFieldValues?.forEach((x) => res.push({ label: x, value: x }));
-    return res;
-  }
 
   showRepoName() {
     this.repoNameSelect().show();
   }
 
   // BRANCHES/FOLDERS/OTHER OPTIONS
-
-  getOptionFieldName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).optionFieldName;
-  }
-
-  getOptionPlaceholder(): string {
-    const v = this.pluginService.getPlugin(
-      this.pluginId,
-    ).optionFieldPlaceholder;
-    return v === undefined ? '' : v;
-  }
 
   getOptions(node?: TreeNode<string>): void {
     const req = this.getRepoLookupRequest(false);
@@ -1164,42 +1263,15 @@ export class ConnectComponent
     }
     if (node) {
       req.option = node.data;
-      this.optionsLoading = true;
+      this.optionsLoading.set(true);
     }
 
     this.repoLookupService
       .getOptions(req)
       .pipe(take(1))
       .subscribe({
-        next: (items: SelectItem<string>[]) => {
-          if (items && node) {
-            const nodes: TreeNode<string>[] = [];
-            let selectedNode: TreeNode<string> | undefined;
-            items.forEach((i) => {
-              const treeNode: TreeNode<string> = {
-                label: i.label,
-                data: i.value,
-                leaf: false,
-                selectable: true,
-              };
-              nodes.push(treeNode);
-              // Check if backend marked this item as selected (e.g., default folder)
-              if ('selected' in i && i.selected) {
-                selectedNode = treeNode;
-              }
-            });
-            node.children = nodes;
-            this.optionsLoading = false;
-            // Auto-select the default folder if specified by backend
-            if (selectedNode) {
-              this.option = selectedNode.data;
-              this.selectedOption = selectedNode;
-            }
-          } else if (items && items.length > 0) {
-            this.branchItems = items;
-          } else {
-            this.branchItems = [];
-          }
+        next: (items: HierarchicalSelectItem<string>[]) => {
+          this.handleOptionsResponse(items, node);
         },
         error: (err) => {
           const errStr: string = err.error;
@@ -1214,75 +1286,85 @@ export class ConnectComponent
             this.notificationService.showError(
               `Branch lookup failed: ${err.error}`,
             );
-            this.branchItems = [];
-            this.option = undefined;
-            this.optionsLoading = false;
+            this.branchItems.set([]);
+            this.option.set(undefined);
+            this.optionsLoading.set(false);
           }
         },
       });
   }
 
-  isOptionFieldInteractive(): boolean {
-    return this.pluginService.getPlugin(this.pluginId).optionFieldInteractive
-      ? true
-      : false;
+  /**
+   * Handle response from options lookup API.
+   * Builds tree from items and auto-selects if backend marked a node.
+   */
+  private handleOptionsResponse(
+    items: HierarchicalSelectItem<string>[],
+    node?: TreeNode<string>,
+  ): void {
+    if (items && node) {
+      // Expanding an existing node - add children
+      const nodes = convertToTreeNodes(items);
+      node.children = nodes.treeNodes;
+      // Increment refresh trigger to force change detection (zoneless Angular)
+      this.refreshTrigger.update((n) => n + 1);
+      this.optionsLoading.set(false);
+      this.autoSelectNode(nodes.selectedNode);
+    } else if (items && items.length > 0) {
+      // Initial load - convert items directly (backend returns from appropriate starting point)
+      const nodes = convertToTreeNodes(items);
+      this._rootOptionsData.set(nodes.treeNodes);
+      this.branchItems.set(items);
+      this.autoSelectNode(nodes.selectedNode);
+    } else {
+      this.branchItems.set([]);
+    }
+  }
+
+  /**
+   * Auto-select node if backend marked it as selected.
+   */
+  private autoSelectNode(selectedNode?: TreeNode<string>): void {
+    if (selectedNode) {
+      this.option.set(selectedNode.data);
+      this.selectedOption.set(selectedNode);
+    }
   }
 
   optionSelected(node: TreeNode<string>): void {
     const v = node.data;
-    if (!v || v === '') {
-      this.selectedOption = undefined;
-      this.option = undefined;
+    if (v === undefined || v === null) {
+      this.selectedOption.set(undefined);
+      this.option.set(undefined);
     } else {
-      this.option = v;
-      this.selectedOption = node;
+      // Allow selecting root "/" or any other folder
+      this.option.set(v);
+      this.selectedOption.set(node);
     }
-  }
-
-  // USER FIELD
-
-  getUsernameFieldName(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).usernameFieldName;
-  }
-
-  getUsernamePlaceholder(): string | undefined {
-    return this.pluginService.getPlugin(this.pluginId).usernameFieldPlaceholder;
   }
 
   /****************************************
    * DATAVERSE: DATASET CHOICE AND OPTIONS*
    ****************************************/
 
-  dataverseHeader(): string {
-    return this.pluginService.dataverseHeader();
-  }
-
   // DATAVERSE API TOKEN
 
-  showDVTokenGetter(): boolean {
-    return this.pluginService.showDVTokenGetter();
-  }
-
-  showDVToken(): boolean {
-    return this.pluginService.showDVToken();
-  }
-
   getDataverseToken(): void {
-    const url = `${this.pluginService.getExternalURL()}/dataverseuser.xhtml?selectTab=apiTokenTab`;
+    const url = `${this.externalURL()}/dataverseuser.xhtml?selectTab=apiTokenTab`;
     window.open(url, '_blank');
   }
 
   onUserChange() {
-    this.doiItems = [];
-    this.collectionItems = [];
-    this.datasetId = undefined;
-    this.collectionId = undefined;
+    this.doiItems.set([]);
+    this.collectionItems.set([]);
+    this.datasetId.set(undefined);
+    this.collectionId.set(undefined);
     // Save dataverseToken to localStorage if storeDvToken is enabled
     if (
-      this.dataverseToken !== undefined &&
+      this.dataverseToken() !== undefined &&
       this.pluginService.isStoreDvToken()
     ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken);
+      localStorage.setItem('dataverseToken', this.dataverseToken()!);
     }
   }
 
@@ -1299,14 +1381,15 @@ export class ConnectComponent
     ) {
       return;
     }
-    setter(this, this.loadingItems);
+    const lItems = this.loadingItems;
+    setter(this, lItems);
 
     const httpSubscription = this.dvObjectLookupService
       .getItems(
-        this.collectionId ? this.collectionId! : '',
+        this.collectionId() ? this.collectionId()! : '',
         objectType,
         undefined,
-        this.dataverseToken,
+        this.dataverseToken(),
       )
       .subscribe({
         next: (items: SelectItem<string>[]) => {
@@ -1315,7 +1398,7 @@ export class ConnectComponent
           } else {
             setter(this, []);
           }
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
@@ -1329,7 +1412,7 @@ export class ConnectComponent
   getCollectionOptions(): void {
     this.getDvObjectOptions(
       'Dataverse',
-      this.collectionItems,
+      this.collectionItems(),
       this.setCollectionItems,
     );
   }
@@ -1338,46 +1421,38 @@ export class ConnectComponent
     comp: ConnectComponent,
     items: SelectItem<string>[],
   ): void {
-    comp.collectionItems = items;
-    comp.collectionId = undefined;
-  }
-
-  collectionOptionsHidden(): boolean {
-    return this.pluginService.collectionOptionsHidden();
-  }
-
-  collectionFieldEditable(): boolean {
-    return this.pluginService.collectionFieldEditable();
+    comp.collectionItems.set(items);
+    comp.collectionId.set(undefined);
   }
 
   onCollectionChange() {
-    this.doiItems = [];
-    this.datasetId = undefined;
+    this.doiItems.set([]);
+    this.datasetId.set(undefined);
   }
 
   onCollectionSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.collectionItems = [
+      this.collectionItems.set([
         {
           label: 'start typing to search (at least three letters)',
           value: 'start',
         },
-      ];
+      ]);
       return;
     }
-    this.collectionItems = [
+    this.collectionItems.set([
       { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ];
+    ]);
     this.collectionSearchSubject.next(searchTerm);
   }
 
   async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
     return await firstValueFrom(
       this.dvObjectLookupService.getItems(
-        this.collectionId ? this.collectionId! : '',
+        this.collectionId() ? this.collectionId()! : '',
         'Dataverse',
         searchTerm,
-        this.dataverseToken,
+        this.dataverseToken(),
       ),
     );
   }
@@ -1385,7 +1460,7 @@ export class ConnectComponent
   // DATASETS
 
   getDoiOptions(): void {
-    this.getDvObjectOptions('Dataset', this.doiItems, this.setDoiItems);
+    this.getDvObjectOptions('Dataset', this.doiItems(), this.setDoiItems);
   }
 
   setDoiItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
@@ -1396,37 +1471,29 @@ export class ConnectComponent
     };
 
     // Preserve an existing (restored) datasetId selection when coming back from Compare
-    const existing = comp.datasetId;
-    comp.doiItems = [createNewOption, ...items];
+    const existing = comp.datasetId();
+    comp.doiItems.set([createNewOption, ...items]);
 
     if (existing && existing !== 'CREATE_NEW_DATASET') {
       // Ensure the existing selection is present in the list; if not, prepend it (after createNew option)
-      if (!comp.doiItems.some((i) => i.value === existing)) {
-        comp.doiItems = [
+      if (!comp.doiItems().some((i) => i.value === existing)) {
+        comp.doiItems.set([
           createNewOption,
           { label: existing, value: existing },
           ...items,
-        ];
+        ]);
       }
       // Leave comp.datasetId untouched so the selection stays visible
     } else {
       // Only reset if there was no prior selection
-      comp.datasetId = undefined;
+      comp.datasetId.set(undefined);
     }
-  }
-
-  datasetFieldEditable(): boolean {
-    return this.pluginService.datasetFieldEditable();
   }
 
   // NEW DATASET
 
-  createNewDatasetEnabled(): boolean {
-    return this.pluginService.createNewDatasetEnabled();
-  }
-
   newDataset() {
-    const datasetId = `${this.collectionId ? this.collectionId! : ''}:${new_dataset}`;
+    const datasetId = `${this.collectionId() ? this.collectionId()! : ''}:${new_dataset}`;
 
     // Create the new dataset option
     const newDatasetOption: SelectItem<string> = {
@@ -1435,43 +1502,43 @@ export class ConnectComponent
     };
 
     // Add it to the dropdown options if not already there
-    const existingIndex = this.doiItems.findIndex(
+    const existingIndex = this.doiItems().findIndex(
       (item) => item.value === datasetId,
     );
     if (existingIndex === -1) {
       // Remove the "Create new dataset" option temporarily and add the actual new dataset
-      const filteredItems = this.doiItems.filter(
+      const filteredItems = this.doiItems().filter(
         (item) => item.value !== 'CREATE_NEW_DATASET',
       );
-      this.doiItems = [newDatasetOption, ...filteredItems];
+      this.doiItems.set([newDatasetOption, ...filteredItems]);
     }
 
-    this.datasetId = datasetId;
+    this.datasetId.set(datasetId);
   }
 
   onDatasetSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems = [
+      this.doiItems.set([
         {
           label: 'start typing to search (at least three letters)',
           value: 'start',
         },
-      ];
+      ]);
       return;
     }
-    this.doiItems = [
+    this.doiItems.set([
       { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ];
+    ]);
     this.datasetSearchSubject.next(searchTerm);
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
     const items = await firstValueFrom(
       this.dvObjectLookupService.getItems(
-        this.collectionId ? this.collectionId! : '',
+        this.collectionId() ? this.collectionId()! : '',
         'Dataset',
         searchTerm,
-        this.dataverseToken,
+        this.dataverseToken(),
       ),
     );
 
@@ -1490,14 +1557,14 @@ export class ConnectComponent
     if (selectedValue === 'CREATE_NEW_DATASET') {
       // Handle creation of new dataset
       this.newDataset();
-      this.showNewDatasetCreatedMessage = true;
+      this.showNewDatasetCreatedMessage.set(true);
 
       // Hide the message after 3 seconds
       setTimeout(() => {
-        this.showNewDatasetCreatedMessage = false;
+        this.showNewDatasetCreatedMessage.set(false);
       }, 3000);
     } else {
-      this.showNewDatasetCreatedMessage = false;
+      this.showNewDatasetCreatedMessage.set(false);
     }
   }
 }

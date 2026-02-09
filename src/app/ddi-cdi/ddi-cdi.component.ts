@@ -1,6 +1,14 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 
 // Services
@@ -51,6 +59,7 @@ import { SubscriptionManager } from '../shared/types';
   selector: 'app-ddi-cdi',
   templateUrl: './ddi-cdi.component.html',
   styleUrl: './ddi-cdi.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     ButtonDirective,
@@ -69,7 +78,7 @@ import { SubscriptionManager } from '../shared/types';
 export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly pluginService = inject(PluginService);
-  dataService = inject(DataService);
+  private readonly dataService = inject(DataService);
   private readonly utils = inject(UtilsService);
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
@@ -81,31 +90,55 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
 
-  // NG MODEL FIELDS
-  dataverseToken?: string;
-  datasetId?: string;
-  output = '';
-  data: CompareResult = {};
-  rootNodeChildren: TreeNode<Datafile>[] = [];
-  rowNodeMap: Map<string, TreeNode<Datafile>> = new Map<
-    string,
-    TreeNode<Datafile>
-  >();
-  loading = false;
-  submitPopup = false;
-  outputDisabled = true;
-  selectedFiles: Set<string> = new Set<string>();
-  generatedDdiCdi?: string;
-  cachedOutputLoaded = false;
-  sendEmailOnSuccess = false;
+  // NG MODEL FIELDS (signals)
+  readonly dataverseToken = signal<string | undefined>(undefined);
+  readonly datasetId = signal<string | undefined>(undefined);
+  readonly output = signal('');
+  readonly data = signal<CompareResult>({});
+  readonly rootNodeChildren = signal<TreeNode<Datafile>[]>([]);
+  readonly rowNodeMap = signal<Map<string, TreeNode<Datafile>>>(
+    new Map<string, TreeNode<Datafile>>(),
+  );
+  readonly loading = signal(false);
+  readonly submitPopup = signal(false);
+  readonly outputDisabled = signal(true);
+  readonly selectedFiles = signal<Set<string>>(new Set<string>());
+  readonly generatedDdiCdi = signal<string | undefined>(undefined);
+  readonly cachedOutputLoaded = signal(false);
+  readonly sendEmailOnSuccess = signal(false);
   originalDdiCdi?: string;
-  activeTab: string = 'files';
-  private totalSelectableFiles = 0;
+  readonly activeTab = signal<string>('files');
+  private readonly totalSelectableFiles = signal(0);
+
+  // Computed signals for template bindings
+  readonly allFilesSelected = computed(
+    () =>
+      this.totalSelectableFiles() > 0 &&
+      this.selectedFiles().size >= this.totalSelectableFiles(),
+  );
+  readonly selectAllIcon = computed(() =>
+    this.allFilesSelected() ? 'pi pi-check-square' : 'pi pi-square',
+  );
+  readonly generateDisabled = computed(
+    () =>
+      this.loading() || this.selectedFiles().size === 0 || !this.datasetId(),
+  );
+
+  // Computed signals for pluginService data
+  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
+  readonly datasetFieldEditable = computed(() =>
+    this.pluginService.datasetFieldEditable$(),
+  );
+  readonly dataverseHeader = computed(() =>
+    this.pluginService.dataverseHeader$(),
+  );
+  readonly sendMails = computed(() => this.pluginService.sendMails$());
+  readonly externalURL = computed(() => this.pluginService.externalURL$());
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
   loadingItems: SelectItem<string>[] = [this.loadingItem];
-  doiItems: SelectItem<string>[] = [];
+  readonly doiItems = signal<SelectItem<string>[]>([]);
 
   // INTERNAL STATE VARIABLES
   datasetSearchSubject: Subject<string> = new Subject();
@@ -127,44 +160,49 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');
       if (dvToken !== null) {
-        this.dataverseToken = dvToken;
+        this.dataverseToken.set(dvToken);
       }
     }
 
-    this.route.queryParams.subscribe((params) => {
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken = apiToken;
-      }
-      const pid = params['datasetPid'] ?? params['pid'];
-      if (pid) {
-        void this.populateDatasetOption(pid);
-        this.datasetId = pid;
-        this.onDatasetChange();
-      }
-    });
+    this.subscriptions.add(
+      this.route.queryParams.subscribe((params) => {
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken.set(apiToken);
+        }
+        const pid = params['datasetPid'] ?? params['pid'];
+        if (pid) {
+          void this.populateDatasetOption(pid);
+          this.datasetId.set(pid);
+          this.onDatasetChange();
+        }
+      }),
+    );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
           x
             .then((v) => {
-              this.doiItems = v;
-              if (this.datasetId) {
-                const match = v.find((item) => item.value === this.datasetId);
-                this.ensureSelectedDatasetOption(this.datasetId, match?.label);
+              this.doiItems.set(v);
+              const currentDatasetId = this.datasetId();
+              if (currentDatasetId) {
+                const match = v.find((item) => item.value === currentDatasetId);
+                this.ensureSelectedDatasetOption(
+                  currentDatasetId,
+                  match?.label,
+                );
               }
             })
-            .catch(
-              (err) =>
-                (this.doiItems = [
-                  {
-                    label: `search failed: ${err.message}`,
-                    value: err.message,
-                  },
-                ]),
+            .catch((err) =>
+              this.doiItems.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]),
             ),
         error: (err) =>
-          (this.doiItems = [
+          this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]),
       });
@@ -179,46 +217,44 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.datasetSearchResultsSubscription?.unsubscribe();
   }
 
-  showDVToken(): boolean {
-    return this.pluginService.showDVToken();
-  }
-
   onUserChange() {
-    this.doiItems = [];
-    this.datasetId = undefined;
+    this.doiItems.set([]);
+    this.datasetId.set(undefined);
     // Save dataverseToken to localStorage if storeDvToken is enabled
-    if (
-      this.dataverseToken !== undefined &&
-      this.pluginService.isStoreDvToken()
-    ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken);
+    const token = this.dataverseToken();
+    if (token !== undefined && this.pluginService.isStoreDvToken()) {
+      localStorage.setItem('dataverseToken', token);
     }
   }
 
   // DV OBJECTS: COMMON
 
   getDoiOptions(): void {
+    const currentItems = this.doiItems();
     if (
-      this.doiItems.length !== 0 &&
-      this.doiItems.find((x) => x === this.loadingItem) === undefined
+      currentItems.length !== 0 &&
+      currentItems.find((x) => x === this.loadingItem) === undefined
     ) {
-      if (this.datasetId) {
-        this.ensureSelectedDatasetOption(this.datasetId);
+      const currentDatasetId = this.datasetId();
+      if (currentDatasetId) {
+        this.ensureSelectedDatasetOption(currentDatasetId);
       }
       return;
     }
-    const previouslySelected = this.datasetId;
-    this.doiItems = this.loadingItems;
+    const previouslySelected = this.datasetId();
+    this.doiItems.set(this.loadingItems);
     if (!previouslySelected) {
-      this.datasetId = undefined;
+      this.datasetId.set(undefined);
     }
 
-    this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, this.dataverseToken)
+    let httpSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    httpSubscription = this.dvObjectLookupService
+      .getItems('', 'Dataset', undefined, this.dataverseToken())
       .subscribe({
         next: (items: SelectItem<string>[]) => {
           if (items && items.length > 0) {
-            this.doiItems = items;
+            this.doiItems.set(items);
             if (previouslySelected) {
               const match = items.find(
                 (item) => item.value === previouslySelected,
@@ -227,45 +263,45 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
                 previouslySelected,
                 match?.label,
               );
-              this.datasetId = previouslySelected;
+              this.datasetId.set(previouslySelected);
             } else {
-              this.datasetId = undefined;
+              this.datasetId.set(undefined);
             }
           } else {
-            this.doiItems = [];
+            this.doiItems.set([]);
             if (!previouslySelected) {
-              this.datasetId = undefined;
+              this.datasetId.set(undefined);
             }
           }
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
-          this.doiItems = [];
+          this.doiItems.set([]);
           if (!previouslySelected) {
-            this.datasetId = undefined;
+            this.datasetId.set(undefined);
           }
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
         },
       });
-  }
-
-  // DATASETS
-  datasetFieldEditable(): boolean {
-    return this.pluginService.datasetFieldEditable();
+    this.subscriptions.add(httpSubscription!);
   }
 
   onDatasetSearch(searchTerm: string | null) {
     if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems = [
+      this.doiItems.set([
         {
           label: 'start typing to search (at least three letters)',
           value: 'start',
         },
-      ];
+      ]);
       return;
     }
-    this.doiItems = [
+    this.doiItems.set([
       { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ];
+    ]);
     this.datasetSearchSubject.next(searchTerm);
   }
 
@@ -275,7 +311,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         '',
         'Dataset',
         searchTerm,
-        this.dataverseToken,
+        this.dataverseToken(),
       ),
     );
   }
@@ -284,26 +320,27 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     if (!pid) {
       return;
     }
-    const existingIndex = this.doiItems.findIndex((item) => item.value === pid);
+    const currentItems = this.doiItems();
+    const existingIndex = currentItems.findIndex((item) => item.value === pid);
     const resolvedLabel =
-      label ?? (existingIndex >= 0 ? this.doiItems[existingIndex].label : pid);
+      label ?? (existingIndex >= 0 ? currentItems[existingIndex].label : pid);
     const option: SelectItem<string> = {
       label: resolvedLabel ?? pid,
       value: pid,
     };
 
     if (existingIndex === -1) {
-      this.doiItems = [option, ...this.doiItems];
+      this.doiItems.set([option, ...currentItems]);
       return;
     }
 
-    if (resolvedLabel && this.doiItems[existingIndex].label !== resolvedLabel) {
-      const updated = [...this.doiItems];
+    if (resolvedLabel && currentItems[existingIndex].label !== resolvedLabel) {
+      const updated = [...currentItems];
       updated[existingIndex] = {
         ...updated[existingIndex],
         label: resolvedLabel,
       };
-      this.doiItems = updated;
+      this.doiItems.set(updated);
     }
   }
 
@@ -320,7 +357,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           '',
           'Dataset',
           pid,
-          this.dataverseToken,
+          this.dataverseToken(),
         ),
       );
       const match = items.find(
@@ -334,40 +371,44 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
   }
 
-  dataverseHeader(): string {
-    return this.pluginService.dataverseHeader();
-  }
-
   onDatasetChange() {
-    this.loading = true;
-    this.output = '';
-    this.outputDisabled = true;
+    this.loading.set(true);
+    this.output.set('');
+    this.outputDisabled.set(true);
     this.resetOutputState();
-    this.selectedFiles.clear();
-    this.totalSelectableFiles = 0;
-    this.activeTab = 'files';
+    this.selectedFiles.set(new Set<string>());
+    this.totalSelectableFiles.set(0);
+    this.activeTab.set('files');
 
     // First, try to load cached output
     this.loadCachedOutput();
 
-    this.dataService
-      .getDdiCdiCompatibleFiles(this.datasetId!, this.dataverseToken)
+    const currentDatasetId = this.datasetId();
+    let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    subscription = this.dataService
+      .getDdiCdiCompatibleFiles(currentDatasetId!, this.dataverseToken())
       .subscribe({
         next: (data) => {
+          this.subscriptions.delete(subscription);
+          subscription?.unsubscribe();
           this.setData(data);
         },
         error: (err) => {
+          this.subscriptions.delete(subscription);
+          subscription?.unsubscribe();
           this.notificationService.showError(
             `Getting files failed: ${err.error}`,
           );
         },
       });
+    this.subscriptions.add(subscription);
   }
 
   setData(data: CompareResult): void {
-    this.data = data;
+    this.data.set(data);
     if (!data.data || data.data.length === 0) {
-      this.loading = false;
+      this.loading.set(false);
       // Show message if no compatible files found
       this.notificationService.showInfo(
         'No compatible files found in this dataset. Only files with supported extensions (csv, tsv, tab, sps, sas, dct) can be processed for DDI-CDI generation.',
@@ -377,25 +418,30 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     const rowDataMap = this.utils.mapDatafiles(data.data);
     rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
     const rootNode = rowDataMap.get('');
-    this.rowNodeMap = rowDataMap;
+    this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
-      this.rootNodeChildren = rootNode.children;
+      this.rootNodeChildren.set(rootNode.children);
     }
-    this.totalSelectableFiles = this.countSelectableFiles(
-      this.rootNodeChildren,
+    this.totalSelectableFiles.set(
+      this.countSelectableFiles(this.rootNodeChildren()),
     );
 
     // Auto-select all files (backend has already filtered to supported types)
-    this.rootNodeChildren.forEach((node) => {
+    this.rootNodeChildren().forEach((node) => {
       this.autoSelectAllFiles(node);
     });
 
-    this.loading = false;
+    this.loading.set(false);
   }
 
   autoSelectAllFiles(node: TreeNode<Datafile>): void {
-    if (node.data?.name) {
-      this.selectedFiles.add(node.data.name);
+    const filename = node.data?.name;
+    if (filename) {
+      this.selectedFiles.update((files) => {
+        const newFiles = new Set(files);
+        newFiles.add(filename);
+        return newFiles;
+      });
     }
     if (node.children) {
       node.children.forEach((child) => this.autoSelectAllFiles(child));
@@ -414,34 +460,27 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   toggleSelectAll(): void {
     if (this.allFilesSelected()) {
-      this.selectedFiles.clear();
+      this.selectedFiles.set(new Set<string>());
       return;
     }
-    this.selectedFiles.clear();
-    this.rootNodeChildren.forEach((node) => this.autoSelectAllFiles(node));
-  }
-
-  selectAllIcon(): string {
-    return this.allFilesSelected() ? 'pi pi-check-square' : 'pi pi-square';
-  }
-
-  allFilesSelected(): boolean {
-    return (
-      this.totalSelectableFiles > 0 &&
-      this.selectedFiles.size >= this.totalSelectableFiles
-    );
+    this.selectedFiles.set(new Set<string>());
+    this.rootNodeChildren().forEach((node) => this.autoSelectAllFiles(node));
   }
 
   isFileSelected(filename: string): boolean {
-    return this.selectedFiles.has(filename);
+    return this.selectedFiles().has(filename);
   }
 
   toggleFileSelection(filename: string): void {
-    if (this.selectedFiles.has(filename)) {
-      this.selectedFiles.delete(filename);
-    } else {
-      this.selectedFiles.add(filename);
-    }
+    this.selectedFiles.update((files) => {
+      const newFiles = new Set(files);
+      if (newFiles.has(filename)) {
+        newFiles.delete(filename);
+      } else {
+        newFiles.add(filename);
+      }
+      return newFiles;
+    });
   }
 
   getFileStyle(filename: string): string {
@@ -453,56 +492,68 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   submitGenerate(): void {
-    if (this.selectedFiles.size === 0) {
+    if (this.selectedFiles().size === 0) {
       this.notificationService.showError('Please select at least one file');
       return;
     }
     // Show async popup
-    this.submitPopup = true;
-  }
-
-  generateDisabled(): boolean {
-    return this.loading || this.selectedFiles.size === 0 || !this.datasetId;
+    this.submitPopup.set(true);
   }
 
   continueSubmitGenerate(): void {
-    this.submitPopup = false;
-    this.activeTab = 'console';
+    this.submitPopup.set(false);
+    this.activeTab.set('console');
+    const currentSendEmail = this.sendEmailOnSuccess();
     this.req = {
-      persistentId: this.datasetId!,
-      dataverseKey: this.dataverseToken,
+      persistentId: this.datasetId()!,
+      dataverseKey: this.dataverseToken(),
       queue: '',
-      fileNames: Array.from(this.selectedFiles),
-      sendEmailOnSuccess: this.sendEmailOnSuccess,
+      fileNames: Array.from(this.selectedFiles()),
+      sendEmailOnSuccess: currentSendEmail,
     };
-    this.loading = true;
+    this.loading.set(true);
     this.resetOutputState();
-    const emailMsg = this.sendEmailOnSuccess
+    const emailMsg = currentSendEmail
       ? 'You will receive an email when it completes.'
       : 'You will receive an email if it fails.';
-    this.output = `DDI-CDI generation started...\n${emailMsg}\nYou can close this window.`;
-    this.dataService.generateDdiCdi(this.req!).subscribe({
-      next: (key: Key) => {
-        const successMsg = this.sendEmailOnSuccess
-          ? 'DDI-CDI generation job submitted. You will be notified by email when complete.'
-          : 'DDI-CDI generation job submitted.';
-        this.notificationService.showSuccess(successMsg);
-        this.getDdiCdiData(key);
-      },
-      error: (err) => {
-        this.notificationService.showError(`Generation failed: ${err.error}`);
-        this.loading = false;
-      },
-    });
+    this.output.set(
+      `DDI-CDI generation started...\n${emailMsg}\nYou can close this window.`,
+    );
+    let generateSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    generateSubscription = this.dataService
+      .generateDdiCdi(this.req!)
+      .subscribe({
+        next: (key: Key) => {
+          this.subscriptions.delete(generateSubscription);
+          generateSubscription?.unsubscribe();
+          const successMsg = currentSendEmail
+            ? 'DDI-CDI generation job submitted. You will be notified by email when complete.'
+            : 'DDI-CDI generation job submitted.';
+          this.notificationService.showSuccess(successMsg);
+          this.getDdiCdiData(key);
+        },
+        error: (err) => {
+          this.subscriptions.delete(generateSubscription);
+          generateSubscription?.unsubscribe();
+          this.notificationService.showError(`Generation failed: ${err.error}`);
+          this.loading.set(false);
+        },
+      });
+    this.subscriptions.add(generateSubscription);
   }
 
   private getDdiCdiData(key: Key): void {
-    this.dataService.getCachedDdiCdiData(key).subscribe({
+    let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    subscription = this.dataService.getCachedDdiCdiData(key).subscribe({
       next: async (res: CachedComputeResponse) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
         if (res.ready === true) {
-          this.loading = false;
+          this.loading.set(false);
           if (res.res) {
-            this.output = res.res;
+            this.output.set(res.res);
           }
           if (res.ddiCdi) {
             this.setGeneratedOutput(res.ddiCdi);
@@ -510,8 +561,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           if (res.err && res.err !== '') {
             this.notificationService.showError(res.err);
           } else {
-            this.outputDisabled = false;
-            if (this.generatedDdiCdi) {
+            this.outputDisabled.set(false);
+            if (this.generatedDdiCdi()) {
               this.notificationService.showSuccess(
                 'DDI-CDI generated successfully!',
               );
@@ -519,41 +570,45 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           }
         } else {
           if (res.res) {
-            this.output = res.res;
+            this.output.set(res.res);
           }
           await this.utils.sleep(1000);
           this.getDdiCdiData(key);
         }
       },
       error: (err) => {
-        this.loading = false;
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
+        this.loading.set(false);
         this.notificationService.showError(
           `Getting DDI-CDI results failed: ${err.error}`,
         );
       },
     });
+    this.subscriptions.add(subscription!);
   }
 
   private resetOutputState(): void {
-    this.generatedDdiCdi = undefined;
+    this.generatedDdiCdi.set(undefined);
     this.originalDdiCdi = undefined;
   }
 
   private setGeneratedOutput(jsonld: string): void {
     this.resetOutputState();
     this.originalDdiCdi = jsonld;
-    this.generatedDdiCdi = jsonld;
+    this.generatedDdiCdi.set(jsonld);
   }
 
   /**
    * Download the generated DDI-CDI as a file
    */
   downloadDdiCdi(): void {
-    if (!this.generatedDdiCdi) {
+    const currentDdiCdi = this.generatedDdiCdi();
+    if (!currentDdiCdi) {
       return;
     }
 
-    const blob = new Blob([this.generatedDdiCdi], {
+    const blob = new Blob([currentDdiCdi], {
       type: 'application/ld+json',
     });
     const url = URL.createObjectURL(blob);
@@ -572,12 +627,14 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
    * with standard Dataverse file parameters.
    */
   openInViewer(): void {
-    if (!this.generatedDdiCdi || !this.datasetId) {
+    const currentDdiCdi = this.generatedDdiCdi();
+    const currentDatasetId = this.datasetId();
+    if (!currentDdiCdi || !currentDatasetId) {
       return;
     }
 
     const fileName = 'ddi-cdi-metadata.jsonld';
-    const baseUrl = this.pluginService.getExternalURL();
+    const baseUrl = this.externalURL();
 
     if (!baseUrl) {
       this.notificationService.showError('Dataverse URL not configured');
@@ -585,15 +642,19 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
 
     // Add the file to the dataset via backend (handles auth and MIME type)
-    this.dataService
+    let viewerSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    viewerSubscription = this.dataService
       .addFileToDataset({
-        persistentId: this.datasetId,
-        dataverseKey: this.dataverseToken,
+        persistentId: currentDatasetId,
+        dataverseKey: this.dataverseToken(),
         fileName: fileName,
-        content: this.generatedDdiCdi,
+        content: currentDdiCdi,
       })
       .subscribe({
         next: (response) => {
+          this.subscriptions.delete(viewerSubscription);
+          viewerSubscription?.unsubscribe();
           if (response.fileId) {
             // Build the Dataverse file page URL
             // Version is always DRAFT because we just added a file to the dataset
@@ -612,50 +673,61 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           }
         },
         error: (err) => {
+          this.subscriptions.delete(viewerSubscription);
+          viewerSubscription?.unsubscribe();
           console.error('Failed to add file to dataset:', err);
           this.notificationService.showError('Failed to add file to dataset');
         },
       });
-  }
-
-  sendMails(): boolean {
-    return this.pluginService.sendMails();
+    this.subscriptions.add(viewerSubscription);
   }
 
   loadCachedOutput(): void {
-    if (!this.datasetId) {
+    const currentDatasetId = this.datasetId();
+    if (!currentDatasetId) {
       return;
     }
 
-    this.dataService.getCachedDdiCdiOutput(this.datasetId).subscribe({
-      next: (cache) => {
-        if (cache.errorMessage) {
-          this.output = `Previous generation failed:\n${cache.errorMessage}`;
-          this.outputDisabled = false;
-        } else if (cache.ddiCdi) {
-          this.setGeneratedOutput(cache.ddiCdi);
-          if (cache.consoleOut) {
-            this.output = cache.consoleOut;
+    let cacheSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    cacheSubscription = this.dataService
+      .getCachedDdiCdiOutput(currentDatasetId)
+      .subscribe({
+        next: (cache) => {
+          this.subscriptions.delete(cacheSubscription);
+          cacheSubscription?.unsubscribe();
+          if (cache.errorMessage) {
+            this.output.set(
+              `Previous generation failed:\n${cache.errorMessage}`,
+            );
+            this.outputDisabled.set(false);
+          } else if (cache.ddiCdi) {
+            this.setGeneratedOutput(cache.ddiCdi);
+            if (cache.consoleOut) {
+              this.output.set(cache.consoleOut);
+            }
+            this.cachedOutputLoaded.set(true);
+            this.notificationService.showSuccess(
+              `Loaded previously generated DDI-CDI metadata (${new Date(cache.timestamp).toLocaleString()})`,
+            );
           }
-          this.cachedOutputLoaded = true;
-          this.notificationService.showSuccess(
-            `Loaded previously generated DDI-CDI metadata (${new Date(cache.timestamp).toLocaleString()})`,
-          );
-        }
-      },
-      error: () => {
-        // No cached output found, which is fine
-        this.cachedOutputLoaded = false;
-      },
-    });
+        },
+        error: () => {
+          this.subscriptions.delete(cacheSubscription);
+          cacheSubscription?.unsubscribe();
+          // No cached output found, which is fine
+          this.cachedOutputLoaded.set(false);
+        },
+      });
+    this.subscriptions.add(cacheSubscription!);
   }
 
   refreshOutput(): void {
-    this.loading = true;
+    this.loading.set(true);
     this.resetOutputState();
-    this.output = '';
-    this.cachedOutputLoaded = false;
+    this.output.set('');
+    this.cachedOutputLoaded.set(false);
     this.loadCachedOutput();
-    this.loading = false;
+    this.loading.set(false);
   }
 }

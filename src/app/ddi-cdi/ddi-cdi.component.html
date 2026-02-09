@@ -1,7 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto">
-    @if (generatedDdiCdi) {
+    @if (generatedDdiCdi()) {
       <button
         pButton
         type="button"
@@ -23,7 +23,8 @@
           class="form-control"
           id="dataverseToken"
           placeholder="Dataverse API token"
-          [(ngModel)]="dataverseToken"
+          [ngModel]="dataverseToken()"
+          (ngModelChange)="dataverseToken.set($event)"
           #ctrl="ngModel"
           (onChange)="onUserChange()"
         />
@@ -34,12 +35,12 @@
     <h2 class="page-title m-0">Generate DDI-CDI Metadata</h2>
   </div>
   <div class="col-auto d-flex" style="gap: 0.5rem">
-    @if (generatedDdiCdi) {
+    @if (generatedDdiCdi()) {
       <button
         pButton
         type="button"
         class="p-button-sm p-button-raised p-button-secondary header-button"
-        [disabled]="loading"
+        [disabled]="loading()"
         (click)="downloadDdiCdi()"
         title="Download the generated DDI-CDI JSON-LD file"
       >
@@ -49,7 +50,7 @@
         pButton
         type="button"
         class="p-button-sm p-button-raised p-button-primary header-button"
-        [disabled]="loading"
+        [disabled]="loading()"
         (click)="openInViewer()"
         title="Saves the DDI-CDI file to your dataset and opens the file page in Dataverse"
       >
@@ -79,19 +80,20 @@
     [style]="{ width: '100%' }"
     [editable]="datasetFieldEditable()"
     id="datasetId"
-    [options]="doiItems"
+    [options]="doiItems()"
     [filter]="true"
     filterBy="label"
     [resetFilterOnHide]="true"
     (onFilter)="onDatasetSearch($event.filter)"
-    [(ngModel)]="datasetId"
+    [ngModel]="datasetId()"
+    (ngModelChange)="datasetId.set($event)"
     (onClick)="getDoiOptions()"
     (onChange)="onDatasetChange()"
   ></p-select>
 </div>
 
 <!-- Info box about file filtering -->
-@if (datasetId) {
+@if (datasetId()) {
   <div class="alert alert-info" role="alert">
     <i class="pi pi-info-circle"></i>&nbsp; <strong>DDI-CDI Generation</strong
     ><br />
@@ -106,7 +108,8 @@
   header="Generate DDI-CDI Metadata"
   position="topright"
   [modal]="true"
-  [(visible)]="submitPopup"
+  [visible]="submitPopup()"
+  (visibleChange)="submitPopup.set($event)"
 >
   <p class="m-0">
     Click on "OK" to start the DDI-CDI generation. The job will run
@@ -123,7 +126,8 @@
   <div style="text-align: right">
     <div class="field-checkbox" [hidden]="!sendMails()">
       <p-checkbox
-        [(ngModel)]="sendEmailOnSuccess"
+        [ngModel]="sendEmailOnSuccess()"
+        (ngModelChange)="sendEmailOnSuccess.set($event)"
         [binary]="true"
         inputId="sendEmailOnSuccessCB"
       ></p-checkbox>
@@ -134,7 +138,7 @@
   </div>
   <ng-template pTemplate="footer">
     <p-button
-      (onClick)="submitPopup = false"
+      (onClick)="submitPopup.set(false)"
       styleClass="p-button-sm p-button-raised p-button-secondary"
       >Cancel</p-button
     >
@@ -148,7 +152,7 @@
 
 <div style="height: 100% - 2rem; overflow: hidden">
   <div style="float: left; width: 50%">
-    <p-tabs [(value)]="activeTab">
+    <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
       <p-tablist>
         <p-tab value="files">Select files</p-tab>
         <p-tab value="console">Console output</p-tab>
@@ -156,14 +160,14 @@
       <p-tabpanels>
         <p-tabpanel value="files">
           <p-treeTable
-            [value]="rootNodeChildren"
-            [loading]="loading"
+            [value]="rootNodeChildren()"
+            [loading]="loading()"
             loadingIcon=" pi pi-spin pi-spinner"
           >
             <ng-template pTemplate="header">
               <tr>
                 <th style="text-align: left">
-                  <a [href]="data!.url" target="_blank">{{ data!.id }}</a>
+                  <a [href]="data().url" target="_blank">{{ data().id }}</a>
                 </th>
                 <th class="icon_col" style="text-align: right; width: 100px">
                   <button
@@ -199,9 +203,10 @@
             autosize
             [minRows]="20"
             [maxRows]="25"
-            [(ngModel)]="output"
+            [ngModel]="output()"
+            (ngModelChange)="output.set($event)"
             readonly
-            [disabled]="outputDisabled"
+            [disabled]="outputDisabled()"
             class="console-output"
             style="width: 100%; font-family: monospace; font-size: 0.9rem"
           ></textarea>
@@ -210,7 +215,7 @@
     </p-tabs>
   </div>
   <div style="float: right; width: 50%">
-    @if (generatedDdiCdi) {
+    @if (generatedDdiCdi()) {
       <div style="text-align: left; margin-bottom: 0.5rem">
         <strong>Generated DDI-CDI Output</strong>
         <span style="color: var(--p-text-muted-color); margin-left: 1rem">
@@ -237,7 +242,7 @@
             white-space: pre-wrap;
             word-wrap: break-word;
           "
-          >{{ generatedDdiCdi }}</pre
+          >{{ generatedDdiCdi() }}</pre
         >
       </div>
     }

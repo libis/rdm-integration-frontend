@@ -42,16 +42,18 @@ describe('DatafileComponent', () => {
   });
 
   function setInputs(df: Datafile, map: Map<string, TreeNode<Datafile>>) {
-    // Bypass signal input setters (simpler for unit test) by monkey patching
-    (component as any).datafile = () => df;
-    (component as any).rowNodeMap = () => map;
-    (component as any).rowNode = () =>
-      map.get(df.id + (df.attributes?.isFile ? ':file' : ''));
-    (component as any).isInFilter = () => false;
-    (component as any).loading = () => false;
+    // Use proper Angular signal input setters via component reference
+    fixture.componentRef.setInput('datafile', df);
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput(
+      'rowNode',
+      map.get(df.id + (df.attributes?.isFile ? ':file' : '')),
+    );
+    fixture.componentRef.setInput('isInFilter', false);
+    fixture.componentRef.setInput('loading', false);
   }
 
-  it('comparison() and comparisonTitle() reflect status & loading', () => {
+  it('comparisonIcon, comparisonColor and comparisonTitle reflect status & loading', () => {
     const statuses = [
       Filestatus.New,
       Filestatus.Equal,
@@ -73,14 +75,15 @@ describe('DatafileComponent', () => {
         [`${df.id}:file`, node],
       ]);
       setInputs(df, map);
-      component.ngOnInit();
-      expect(component.comparison(false)).toBeTruthy();
+      fixture.detectChanges();
+      expect(component.comparisonIcon()).toBeTruthy();
+      expect(component.comparisonColor()).toBeTruthy();
       expect(component.comparisonTitle().length).toBeGreaterThan(3);
     });
     // simplified default branch coverage
   });
 
-  it('action() returns correct icons', () => {
+  it('actionIcon returns correct icons', () => {
     const actions = [
       Fileaction.Ignore,
       Fileaction.Copy,
@@ -103,8 +106,8 @@ describe('DatafileComponent', () => {
         [`${df.id}:file`, node],
       ]);
       setInputs(df, map);
-      component.ngOnInit();
-      expect(component.action()).toBeTruthy();
+      fixture.detectChanges();
+      expect(component.actionIcon()).toBeTruthy();
     });
   });
 
@@ -149,7 +152,7 @@ describe('DatafileComponent', () => {
       ['file2:file', childNode2],
     ]);
     setInputs(folder, map);
-    component.ngOnInit();
+    fixture.detectChanges();
     // apply Update at folder level -> file status based mapping
     component.setNodeAction(folderNode, Fileaction.Update);
     expect(fileNew.action).toBe(Fileaction.Copy); // New + Update => Copy
@@ -160,7 +163,7 @@ describe('DatafileComponent', () => {
   });
 
   it('targetFile and sourceFile obey rules', () => {
-    const df: Datafile = {
+    const dfNew: Datafile = {
       id: 'ff',
       name: 'f',
       path: 'p',
@@ -169,40 +172,84 @@ describe('DatafileComponent', () => {
       action: Fileaction.Ignore,
       attributes: { isFile: true },
     };
-    const node: TreeNode<Datafile> = { data: df };
-    const map = new Map<string, TreeNode<Datafile>>([[`${df.id}:file`, node]]);
-    setInputs(df, map);
-    component.ngOnInit();
+    const nodeNew: TreeNode<Datafile> = { data: dfNew };
+    const mapNew = new Map<string, TreeNode<Datafile>>([
+      [`${dfNew.id}:file`, nodeNew],
+    ]);
+    setInputs(dfNew, mapNew);
+    fixture.detectChanges();
     expect(component.targetFile()).toBe(''); // new + not Copy
-    df.action = Fileaction.Copy;
+
+    // Create new datafile with Copy action to test targetFile
+    const dfCopy: Datafile = { ...dfNew, action: Fileaction.Copy };
+    const nodeCopy: TreeNode<Datafile> = { data: dfCopy };
+    const mapCopy = new Map<string, TreeNode<Datafile>>([
+      [`${dfCopy.id}:file`, nodeCopy],
+    ]);
+    setInputs(dfCopy, mapCopy);
+    fixture.detectChanges();
     expect(component.targetFile()).toContain('f');
+
     // sourceFile respects isInFilter formatting (no path) vs filter (with path)
-    (component as any).isInFilter = () => false;
+    fixture.componentRef.setInput('isInFilter', false);
+    fixture.detectChanges();
     expect(component.sourceFile()).toBe('f');
-    (component as any).isInFilter = () => true;
+    fixture.componentRef.setInput('isInFilter', true);
+    fixture.detectChanges();
     expect(component.sourceFile()).toBe('p/f');
   });
 
   it('targetFileClass returns style classes', () => {
-    const df: Datafile = {
+    const baseDatafile = {
       id: 'cls',
       name: 'f',
       path: '',
       hidden: false,
       status: Filestatus.New,
-      action: Fileaction.Delete,
       attributes: { isFile: true },
     };
-    const node: TreeNode<Datafile> = { data: df };
-    const map = new Map<string, TreeNode<Datafile>>([[`${df.id}:file`, node]]);
-    setInputs(df, map);
-    component.ngOnInit();
-    expect(component.targetFileClass()).toContain('line-through');
-    df.action = Fileaction.Copy;
-    expect(component.targetFileClass()).toContain('fst-italic');
-    df.action = Fileaction.Update;
+
+    // Test Delete action
+    const dfDelete: Datafile = {
+      ...baseDatafile,
+      action: Fileaction.Delete,
+    };
+    const nodeDelete: TreeNode<Datafile> = { data: dfDelete };
+    const mapDelete = new Map<string, TreeNode<Datafile>>([
+      [`${dfDelete.id}:file`, nodeDelete],
+    ]);
+    setInputs(dfDelete, mapDelete);
+    fixture.detectChanges();
+    expect(component.targetFileClass()).toBe('text-decoration-line-through');
+
+    // Test Copy action
+    const dfCopy: Datafile = { ...baseDatafile, action: Fileaction.Copy };
+    const nodeCopy: TreeNode<Datafile> = { data: dfCopy };
+    const mapCopy = new Map<string, TreeNode<Datafile>>([
+      [`${dfCopy.id}:file`, nodeCopy],
+    ]);
+    setInputs(dfCopy, mapCopy);
+    fixture.detectChanges();
+    expect(component.targetFileClass()).toBe('fst-italic fw-bold');
+
+    // Test Update action
+    const dfUpdate: Datafile = { ...baseDatafile, action: Fileaction.Update };
+    const nodeUpdate: TreeNode<Datafile> = { data: dfUpdate };
+    const mapUpdate = new Map<string, TreeNode<Datafile>>([
+      [`${dfUpdate.id}:file`, nodeUpdate],
+    ]);
+    setInputs(dfUpdate, mapUpdate);
+    fixture.detectChanges();
     expect(component.targetFileClass()).toBe('fw-bold');
-    df.action = Fileaction.Ignore;
+
+    // Test Ignore action
+    const dfIgnore: Datafile = { ...baseDatafile, action: Fileaction.Ignore };
+    const nodeIgnore: TreeNode<Datafile> = { data: dfIgnore };
+    const mapIgnore = new Map<string, TreeNode<Datafile>>([
+      [`${dfIgnore.id}:file`, nodeIgnore],
+    ]);
+    setInputs(dfIgnore, mapIgnore);
+    fixture.detectChanges();
     expect(component.targetFileClass()).toBe('');
   });
 });

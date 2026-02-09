@@ -3,22 +3,23 @@
 import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
-  Input,
   OnChanges,
   OnDestroy,
-  Output,
   SimpleChanges,
-  ViewChild,
+  computed,
   inject,
+  input,
+  output,
+  signal,
+  viewChild,
 } from '@angular/core';
 import { ButtonDirective } from 'primeng/button';
-
 import { ProgressBarModule } from 'primeng/progressbar';
 import { Observable, Subscription, merge, of, timer } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap, takeWhile } from 'rxjs/operators';
 import { DataUpdatesService } from 'src/app/data.updates.service';
 import { CompareResult } from '../../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../../models/datafile';
@@ -26,17 +27,8 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
 
 /**
  * Universal transfer progress card that works with all transfer plugins.
- *
- * The parent component must specify the transfer mode via the `isGlobus` input:
- *
- * - **Globus transfers** (`isGlobus=true`): Uses `taskId` to poll Globus API and shows
- *   real-time Globus status
- * - **Non-Globus transfers** (`isGlobus=false`): Uses `taskId` (dataset ID) + `data`
- *   (CompareResult) to poll the rdm-integration backend and maps file statuses to a
- *   unified TransferTaskStatus
- *
- * This explicit mode selection avoids relying on global state and ensures correct behavior
- * regardless of how the user navigated to the page.
+ * Uses Angular Signals for reactive state management with lifecycle hooks for
+ * compatibility with Zone.js testing.
  */
 @Component({
   selector: 'app-transfer-progress-card',
@@ -44,20 +36,38 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
   imports: [CommonModule, ButtonDirective, ProgressBarModule],
   templateUrl: './transfer-progress-card.component.html',
   styleUrls: ['./transfer-progress-card.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TransferProgressCardComponent
   implements OnChanges, OnDestroy, AfterViewInit
 {
   private readonly submitService = inject(SubmitService);
-  private dataUpdatesService = inject(DataUpdatesService);
+  private readonly dataUpdatesService = inject(DataUpdatesService);
 
-  @ViewChild('cardRoot')
-  private cardRoot?: ElementRef<HTMLDivElement>;
+  readonly cardRoot = viewChild<ElementRef<HTMLDivElement>>('cardRoot');
 
-  private viewInitialized = false;
-  private hasRenderedCard = false;
+  // Inputs
+  readonly isGlobus = input.required<boolean>();
+  // Allow undefined to support usage where input binding might be missing/undefined in parent template
+  readonly taskId = input<string | null | undefined>(undefined);
+  readonly monitorUrl = input<string | null | undefined>(undefined);
+  readonly oauthSessionId = input<string | null | undefined>(undefined);
+  readonly submitting = input(false);
+  readonly data = input<Datafile[] | null>(null);
+  readonly dataUpdate = input<((result: CompareResult) => void) | undefined>(
+    undefined,
+  );
 
-  private statusSubscription?: Subscription;
+  // Outputs
+  readonly pollingChange = output<boolean>();
+  readonly completed = output<TransferTaskStatus>();
+
+  // State
+  readonly status = signal<TransferTaskStatus | undefined>(undefined);
+  readonly statusPollingError = signal<string | undefined>(undefined);
+  readonly statusPollingActive = signal(false);
+
+  // Constants
   private readonly pollIntervalMs = 5000;
   private readonly terminalStatuses = new Set([
     'SUCCEEDED',
@@ -66,130 +76,71 @@ export class TransferProgressCardComponent
     'INACTIVE',
   ]);
 
-  // Determines the transfer mode: Globus or non-Globus backend polling
-  // Must be explicitly provided by parent component
-  @Input({ required: true })
-  isGlobus = false;
-
-  // For Globus: this is the Globus task ID
-  // For non-Globus: this is the dataset ID used for backend polling
-  @Input({ required: true })
-  taskId?: string | null;
-
-  // Optional external monitor URL (Globus only)
-  @Input()
-  monitorUrl?: string | null;
-
-  // OAuth session ID for Globus status polling
-  @Input()
-  oauthSessionId?: string | null;
-
-  @Input()
-  submitting = false;
-
-  // CompareResult for non-Globus transfers (ignored for Globus)
-  @Input()
-  data?: Datafile[] | null;
-
-  // Callback to update parent component's data (non-Globus only)
-  @Input()
-  dataUpdate?: (result: CompareResult) => void;
-
-  @Output()
-  pollingChange = new EventEmitter<boolean>();
-
-  @Output()
-  completed = new EventEmitter<TransferTaskStatus>();
-
-  statusPollingActive = false;
-  statusPollingError?: string;
-  status?: TransferTaskStatus;
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if ('taskId' in changes) {
-      const taskId = this.taskId ?? '';
-      if (taskId) {
-        this.startPolling(taskId);
-      } else {
-        this.reset();
-      }
-    }
-
-    if ('submitting' in changes && !this.submitting && !this.taskId) {
-      this.reset();
-    }
-
-    if (this.viewInitialized) {
-      this.maybeScrollCardIntoView();
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.stopPolling();
-  }
-
-  ngAfterViewInit(): void {
-    this.viewInitialized = true;
-    this.maybeScrollCardIntoView();
-  }
-
-  get hasStatus(): boolean {
-    // Always show status if we have any status information, even after completion
+  // Computed
+  readonly hasStatus = computed(() => {
     return !!(
-      this.submitting ||
-      this.taskId ||
-      this.status ||
-      this.statusPollingError ||
-      this.statusPollingActive
+      this.submitting() ||
+      this.taskId() ||
+      this.status() ||
+      this.statusPollingError() ||
+      this.statusPollingActive()
     );
-  }
+  });
 
-  get statusIcon(): string {
-    if (this.statusPollingError || this.isErrorStatus(this.status?.status)) {
+  readonly statusIcon = computed(() => {
+    if (
+      this.statusPollingError() ||
+      this.isErrorStatus(this.status()?.status)
+    ) {
       return 'pi pi-exclamation-triangle';
     }
-    if (this.isSuccessStatus(this.status?.status)) {
+    if (this.isSuccessStatus(this.status()?.status)) {
       return 'pi pi-check-circle';
     }
-    if (this.statusPollingActive || this.submitting) {
+    if (this.statusPollingActive() || this.submitting()) {
       return 'pi pi-spinner pi-spin';
     }
     return 'pi pi-info-circle';
-  }
+  });
 
-  get statusTone(): 'success' | 'error' | 'info' {
-    if (this.statusPollingError || this.isErrorStatus(this.status?.status)) {
+  readonly statusTone = computed(() => {
+    if (
+      this.statusPollingError() ||
+      this.isErrorStatus(this.status()?.status)
+    ) {
       return 'error';
     }
-    if (this.isSuccessStatus(this.status?.status)) {
+    if (this.isSuccessStatus(this.status()?.status)) {
       return 'success';
     }
     return 'info';
-  }
+  });
 
-  get statusMessage(): string {
-    if (this.statusPollingError) {
-      return this.statusPollingError;
-    }
+  readonly statusMessage = computed(() => {
+    const error = this.statusPollingError();
+    if (error) return error;
 
-    if (this.submitting && !this.taskId) {
+    if (this.submitting() && !this.taskId()) {
       return 'Submitting transfer request…';
     }
 
-    if (!this.status && this.statusPollingActive) {
-      return this.isGlobus
+    const active = this.statusPollingActive();
+    const s = this.status();
+
+    if (!s && active) {
+      return this.isGlobus()
         ? 'Checking Globus transfer status…'
         : 'Checking transfer status…';
     }
 
-    if (!this.status) {
-      return this.isGlobus
+    if (!s) {
+      return this.isGlobus()
         ? 'Waiting for Globus updates…'
         : 'Waiting for status updates…';
     }
 
-    const niceStatus = this.status.nice_status?.trim();
-    const normalized = (this.status.status ?? '').toUpperCase().trim();
+    const niceStatus = s.nice_status?.trim();
+    const normalized = (s.status ?? '').toUpperCase().trim();
 
     if (this.isSuccessStatus(normalized)) {
       return niceStatus || 'Transfer completed successfully.';
@@ -199,160 +150,190 @@ export class TransferProgressCardComponent
       return niceStatus || `Transfer ended with status ${normalized}.`;
     }
 
-    // For active transfers, show "Transfer in progress..." instead of technical status
     if (normalized === 'ACTIVE') {
       return 'Transfer in progress...';
     }
 
-    if (niceStatus) {
-      return niceStatus;
-    }
-
-    if (normalized) {
-      return `Current status: ${normalized}`;
-    }
+    if (niceStatus) return niceStatus;
+    if (normalized) return `Current status: ${normalized}`;
 
     return 'Waiting for Globus updates…';
-  }
+  });
 
-  get transferProgress(): number | undefined {
-    const expected = this.status?.bytes_expected ?? 0;
-    const transferred = this.status?.bytes_transferred ?? 0;
-    if (!expected) {
-      return undefined;
-    }
+  readonly transferProgress = computed(() => {
+    const s = this.status();
+    const expected = s?.bytes_expected ?? 0;
+    const transferred = s?.bytes_transferred ?? 0;
+    if (!expected) return undefined;
     const percent = Math.round((transferred / expected) * 100);
     return Math.min(100, Math.max(0, percent));
-  }
+  });
 
-  // Percentage [0..100] for files-based progress (processed vs total)
-  get filesProgressPercent(): number {
-    const total = this.filesSummary.total;
-    const processed = this.filesSummary.processed;
-    if (!total) {
-      return 0; // hidden by template when total is 0
-    }
-    const percent = Math.round((processed / total) * 100);
-    return Math.min(100, Math.max(0, percent));
-  }
-
-  get filesSummary(): { processed: number; total: number; failed: number } {
-    const total = this.status?.files ?? 0;
-    const transferred = this.status?.files_transferred ?? 0;
-    const skipped = this.status?.files_skipped ?? 0;
-    const failed = this.status?.files_failed ?? 0;
+  readonly filesSummary = computed(() => {
+    const s = this.status();
+    const total = s?.files ?? 0;
+    const transferred = s?.files_transferred ?? 0;
+    const skipped = s?.files_skipped ?? 0;
+    const failed = s?.files_failed ?? 0;
     return {
       processed: transferred + skipped,
       total,
       failed,
     };
+  });
+
+  readonly filesProgressPercent = computed(() => {
+    const summary = this.filesSummary();
+    if (!summary.total) return 0;
+    const percent = Math.round((summary.processed / summary.total) * 100);
+    return Math.min(100, Math.max(0, percent));
+  });
+
+  readonly formattedMonitorUrl = computed(() => {
+    if (!this.isGlobus()) return undefined;
+    const url = this.monitorUrl();
+    if (url) return url;
+    const taskId = this.taskId();
+    if (!taskId) return undefined;
+    return `https://app.globus.org/activity/${encodeURIComponent(taskId)}`;
+  });
+
+  private hasRenderedCard = false;
+  private viewInitialized = false;
+  private currentPollingSubscription?: Subscription;
+  private previousTaskId?: string | null;
+  private previousSubmitting?: boolean;
+
+  ngOnChanges(_changes: SimpleChanges): void {
+    // Handle taskId changes for polling
+    const currentTaskId = this.taskId();
+    const currentSubmitting = this.submitting();
+
+    if (currentTaskId !== this.previousTaskId) {
+      this.previousTaskId = currentTaskId;
+      if (currentTaskId) {
+        this.currentPollingSubscription?.unsubscribe();
+        this.currentPollingSubscription = this.startPolling(currentTaskId);
+      } else {
+        // Stop polling and reset when taskId becomes empty
+        this.currentPollingSubscription?.unsubscribe();
+        this.setPollingState(false);
+        this.reset();
+      }
+    }
+
+    // Reset when submitting becomes false and no taskId
+    if (
+      this.previousSubmitting !== currentSubmitting &&
+      !currentSubmitting &&
+      !currentTaskId
+    ) {
+      this.reset();
+    }
+    this.previousSubmitting = currentSubmitting;
+
+    // Scroll logic
+    if (this.viewInitialized) {
+      this.maybeScrollCardIntoView();
+    }
   }
 
-  get formattedMonitorUrl(): string | undefined {
-    // Only show Globus monitor URL for Globus transfers
-    if (!this.isGlobus) {
-      return undefined;
-    }
-    if (this.monitorUrl) {
-      return this.monitorUrl;
-    }
-    if (!this.taskId) {
-      return undefined;
-    }
-    return `https://app.globus.org/activity/${encodeURIComponent(this.taskId)}`;
+  ngOnDestroy(): void {
+    this.currentPollingSubscription?.unsubscribe();
+    this.setPollingState(false);
+  }
+
+  ngAfterViewInit(): void {
+    this.viewInitialized = true;
+    this.maybeScrollCardIntoView();
   }
 
   refresh(): void {
-    if (!this.taskId) {
-      return;
-    }
-    this.statusPollingError = undefined;
-    this.startPolling(this.taskId);
+    const taskId = this.taskId();
+    if (!taskId) return;
+    this.statusPollingError.set(undefined);
+    // Restart polling
+    this.currentPollingSubscription?.unsubscribe();
+    this.currentPollingSubscription = this.startPolling(taskId);
   }
 
   openGlobus(): void {
-    const url = this.formattedMonitorUrl;
+    const url = this.formattedMonitorUrl();
     if (url) {
       window.open(url, '_blank', 'noopener');
     }
   }
 
-  private startPolling(taskId: string): void {
-    this.stopPolling();
-    this.statusPollingError = undefined;
+  private startPolling(taskId: string): Subscription {
+    this.statusPollingError.set(undefined);
     this.setPollingState(true);
     const immediate$ = this.getTransferStatus(taskId);
     const polling$ = timer(this.pollIntervalMs, this.pollIntervalMs).pipe(
       switchMap(() => this.getTransferStatus(taskId)),
     );
-    this.statusSubscription = merge(immediate$, polling$).subscribe({
-      next: (status) => this.handleStatus(status),
-      error: (err) => this.handleError(err),
-    });
+    return merge(immediate$, polling$)
+      .pipe(takeWhile((s) => !this.isTerminalStatus(s.status), true))
+      .subscribe({
+        next: (status) => this.handleStatus(status),
+        error: (err) => this.handleError(err),
+      });
   }
 
   private getTransferStatus(taskId: string): Observable<TransferTaskStatus> {
-    if (this.isGlobus) {
-      // Globus: poll the Globus API using the task ID and OAuth session ID
+    if (this.isGlobus()) {
       return this.submitService.getGlobusTransferStatus(
         taskId,
-        this.oauthSessionId || undefined,
+        this.oauthSessionId() || undefined,
       );
     }
 
-    // Non-Globus: poll the backend using dataset ID and CompareResult
-    if (!this.data) {
-      return of(this.buildStatusFromCompareResult(taskId, this.data));
+    const data = this.data();
+    if (!data) {
+      return of(this.buildStatusFromCompareResult(taskId, undefined));
     }
 
-    return this.dataUpdatesService.updateData(this.data, taskId).pipe(
+    return this.dataUpdatesService.updateData(data, taskId).pipe(
       tap((updated) => {
-        // Update parent component's data for UI refresh
-        this.dataUpdate?.(updated);
+        this.dataUpdate()?.(updated);
       }),
       map((updated) => this.buildStatusFromCompareResult(taskId, updated)),
     );
   }
 
-  private stopPolling(): void {
-    this.statusSubscription?.unsubscribe();
-    this.statusSubscription = undefined;
-    this.setPollingState(false);
-  }
-
   private reset(): void {
-    this.stopPolling();
-    this.status = undefined;
-    this.statusPollingError = undefined;
+    this.status.set(undefined);
+    this.statusPollingError.set(undefined);
     this.hasRenderedCard = false;
   }
 
   private handleStatus(status: TransferTaskStatus): void {
-    this.status = status;
+    this.status.set(status);
     if (this.isTerminalStatus(status.status)) {
-      this.stopPolling();
+      this.setPollingState(false);
       this.completed.emit(status);
     }
   }
 
   private handleError(err: unknown): void {
-    this.stopPolling();
+    this.setPollingState(false);
     const statusCode = (err as { status?: number })?.status;
 
     if (statusCode === 401) {
-      this.statusPollingError = this.isGlobus
-        ? 'Globus session expired. Please reconnect to refresh the transfer status.'
-        : 'Session expired. Please reconnect to refresh the transfer status.';
+      this.statusPollingError.set(
+        this.isGlobus()
+          ? 'Globus session expired. Please reconnect to refresh the transfer status.'
+          : 'Session expired. Please reconnect to refresh the transfer status.',
+      );
       return;
     }
 
     const errorMessage =
       (err as { error?: string; message?: string })?.error ||
       (err as { message?: string })?.message ||
-      (this.isGlobus
+      (this.isGlobus()
         ? 'Unable to retrieve the latest status from Globus.'
         : 'Unable to retrieve the latest transfer status.');
-    this.statusPollingError = errorMessage;
+    this.statusPollingError.set(errorMessage);
   }
 
   private buildStatusFromCompareResult(
@@ -372,14 +353,6 @@ export class TransferProgressCardComponent
     };
   }
 
-  /**
-   * Summarizes file transfer progress based on file actions and statuses.
-   *
-   * Completion rules:
-   * - Copy/Update files: done when status is Equal (file matches source)
-   * - Delete files: done when status is New (file no longer exists in destination)
-   * - Unknown status: counted as failed
-   */
   private summarizeCompareData(datafiles?: Datafile[] | null): {
     status: string;
     message: string;
@@ -388,34 +361,39 @@ export class TransferProgressCardComponent
     skipped: number;
     failed: number;
   } {
-    const skipped = 0; // Reserved for future use
-    const failed = 0; // Reserved for future use
+    const skipped = 0;
+    const failed = 0;
     const files = datafiles ?? [];
     let completed = 0;
+    let total = 0;
 
     for (const file of files) {
       switch (file.action) {
         case Fileaction.Copy:
+          total++;
           if (file.status === Filestatus.Equal) {
             completed++;
           }
           break;
         case Fileaction.Update:
+          total++;
           if (file.status === Filestatus.Equal) {
             completed++;
           }
           break;
         case Fileaction.Delete:
+          total++;
           if (file.status === Filestatus.New) {
             completed++;
           }
           break;
+        // Fileaction.Ignore files are not counted - they're not being transferred
       }
     }
 
     let status: string;
     let message: string;
-    if (files.length === completed) {
+    if (total === completed) {
       status = 'SUCCEEDED';
       message = 'Transfer completed successfully.';
     } else {
@@ -425,7 +403,7 @@ export class TransferProgressCardComponent
     return {
       status,
       message,
-      total: files.length,
+      total,
       completed,
       skipped,
       failed,
@@ -449,18 +427,18 @@ export class TransferProgressCardComponent
   }
 
   private setPollingState(active: boolean): void {
-    if (this.statusPollingActive === active) {
+    if (this.statusPollingActive() === active) {
       return;
     }
-    this.statusPollingActive = active;
+    this.statusPollingActive.set(active);
     this.pollingChange.emit(active);
   }
 
   private maybeScrollCardIntoView(): void {
-    const visible = this.hasStatus;
+    const visible = this.hasStatus();
     if (visible && !this.hasRenderedCard) {
       setTimeout(() => {
-        this.cardRoot?.nativeElement.scrollIntoView({
+        this.cardRoot()?.nativeElement.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
         });

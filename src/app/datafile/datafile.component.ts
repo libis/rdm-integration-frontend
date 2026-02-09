@@ -1,6 +1,13 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-import { Component, OnInit, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 import { TreeNode } from 'primeng/api';
 import { ButtonDirective } from 'primeng/button';
 import { TreeTableModule } from 'primeng/treetable';
@@ -18,8 +25,9 @@ import {
   styleUrls: ['./datafile.component.scss'],
   imports: [TreeTableModule, ButtonDirective],
   exportAs: 'appDatafile',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DatafileComponent implements OnInit {
+export class DatafileComponent {
   private folderActionUpdateService = inject(FolderActionUpdateService);
 
   readonly datafile = input<Datafile>({});
@@ -29,34 +37,34 @@ export class DatafileComponent implements OnInit {
   );
   readonly rowNode = input<TreeNode<Datafile>>({});
   readonly isInFilter = input(false);
+  // Trigger to force update when underlying data (action) mutates
+  readonly trigger = input(0);
+  readonly changed = output<void>();
 
-  icon_unknown = 'pi pi-question-circle';
+  // Icon constants - static readonly for efficiency
+  static readonly icon_unknown = 'pi pi-question-circle';
+  static readonly icon_new = 'pi pi-plus-circle';
+  static readonly icon_deleted = 'pi pi-minus-circle';
+  static readonly icon_equal = 'pi pi-check-circle';
+  static readonly icon_not_equal = 'pi pi-exclamation-circle';
+  static readonly icon_spinner = 'pi pi-spin pi-spinner';
+  static readonly icon_refresh = 'pi pi-refresh';
+  static readonly icon_ignore = 'pi pi-stop';
+  static readonly icon_copy = 'pi pi-copy';
+  static readonly icon_update = 'pi pi-clone';
+  static readonly icon_delete = 'pi pi-trash';
+  static readonly icon_custom = 'pi pi-stop';
 
-  icon_new = 'pi pi-plus-circle';
-  icon_deleted = 'pi pi-minus-circle';
-  icon_equal = 'pi pi-check-circle';
-  icon_not_equal = 'pi pi-exclamation-circle';
-  icon_spinner = 'pi pi-spin pi-spinner';
-  icon_refresh = 'pi pi-refresh';
+  readonly node = computed<TreeNode<Datafile>>(() => {
+    const id = this.datafile().id;
+    const isFile = this.datafile().attributes?.isFile;
+    if (id !== undefined) {
+      return this.rowNodeMap().get(id + (isFile ? ':file' : '')) ?? {};
+    }
+    return {};
+  });
 
-  icon_ignore = 'pi pi-stop';
-  icon_copy = 'pi pi-copy';
-  icon_update = 'pi pi-clone';
-  icon_delete = 'pi pi-trash';
-  // Use block for warning indicator
-  icon_custom = 'pi pi-stop';
-
-  node: TreeNode<Datafile> = {};
-
-  constructor() {}
-
-  ngOnInit(): void {
-    this.node = this.rowNodeMap().get(
-      this.datafile().id! + (this.datafile().attributes?.isFile ? ':file' : ''),
-    )!; // avoid collisions between folders and files having the same path and name
-  }
-
-  sourceFile(): string {
+  readonly sourceFile = computed(() => {
     const datafile = this.datafile();
     if (datafile.status == Filestatus.Deleted) {
       return '';
@@ -65,26 +73,39 @@ export class DatafileComponent implements OnInit {
       return `${datafile.path ? `${datafile.path}/` : ''}${datafile.name}`;
     }
     return `${datafile.name}`;
-  }
+  });
 
-  comparison(color: boolean): string {
+  readonly comparisonIcon = computed(() => {
     switch (Number(this.datafile().status)) {
       case Filestatus.New:
-        return color ? 'green' : this.icon_new;
+        return DatafileComponent.icon_new;
       case Filestatus.Equal:
-        return color ? 'foreground' : this.icon_equal;
+        return DatafileComponent.icon_equal;
       case Filestatus.Updated:
-        return color ? 'blue' : this.icon_not_equal;
+        return DatafileComponent.icon_not_equal;
       case Filestatus.Deleted:
-        return color ? 'red' : this.icon_deleted;
+        return DatafileComponent.icon_deleted;
     }
-    if (this.loading()) {
-      return color ? 'foreground' : this.icon_spinner;
-    }
-    return color ? 'foreground' : this.icon_refresh;
-  }
+    return this.loading()
+      ? DatafileComponent.icon_spinner
+      : DatafileComponent.icon_refresh;
+  });
 
-  comparisonTitle(): string {
+  readonly comparisonColor = computed(() => {
+    switch (Number(this.datafile().status)) {
+      case Filestatus.New:
+        return 'green';
+      case Filestatus.Equal:
+        return 'foreground';
+      case Filestatus.Updated:
+        return 'blue';
+      case Filestatus.Deleted:
+        return 'red';
+    }
+    return 'foreground';
+  });
+
+  readonly comparisonTitle = computed(() => {
     switch (Number(this.datafile().status)) {
       case Filestatus.New:
         return 'New file in repository (not in dataset yet)';
@@ -98,25 +119,27 @@ export class DatafileComponent implements OnInit {
     return this.loading()
       ? 'Loading status...'
       : 'Click refresh to re-check status';
-  }
+  });
 
-  action(): string {
+  readonly actionIcon = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
     switch (Number(this.datafile().action)) {
       case Fileaction.Ignore:
-        return this.icon_ignore;
+        return DatafileComponent.icon_ignore;
       case Fileaction.Copy:
-        return this.icon_copy;
+        return DatafileComponent.icon_copy;
       case Fileaction.Delete:
-        return this.icon_delete;
+        return DatafileComponent.icon_delete;
       case Fileaction.Update:
-        return this.icon_update;
+        return DatafileComponent.icon_update;
       case Fileaction.Custom:
-        return this.icon_custom;
+        return DatafileComponent.icon_custom;
     }
-    return this.icon_unknown;
-  }
+    return DatafileComponent.icon_unknown;
+  });
 
-  targetFile(): string {
+  readonly targetFile = computed(() => {
     const datafile = this.datafile();
     if (
       datafile.status === Filestatus.New &&
@@ -125,39 +148,82 @@ export class DatafileComponent implements OnInit {
       return '';
     }
     return `${datafile.path ? `${datafile.path}/` : ''}${datafile.name}`;
-  }
+  });
+
+  readonly hostStyle = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
+    const action = this.datafile().action ?? Fileaction.Ignore;
+    let style: FileActionStyle;
+    switch (action) {
+      case Fileaction.Copy:
+        style = getFileActionStyle('COPY');
+        break;
+      case Fileaction.Update:
+        style = getFileActionStyle('UPDATE');
+        break;
+      case Fileaction.Delete:
+        style = getFileActionStyle('DELETE');
+        break;
+      case Fileaction.Custom:
+        style = getFileActionStyle('CUSTOM');
+        break;
+      default:
+        style = getFileActionStyle('IGNORE');
+    }
+    return buildInlineStyle(style);
+  });
+
+  readonly targetFileClass = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
+    switch (this.datafile().action) {
+      case Fileaction.Delete:
+        return 'text-decoration-line-through';
+      case Fileaction.Copy:
+        return 'fst-italic fw-bold';
+      case Fileaction.Update:
+        return 'fw-bold';
+      case Fileaction.Ignore:
+        return '';
+    }
+    return '';
+  });
 
   toggleAction(): void {
     const datafile = this.datafile();
+    const node = this.node();
     switch (datafile.action) {
       case Fileaction.Ignore:
         switch (datafile.status) {
           case Filestatus.New:
-            this.setNodeAction(this.node, Fileaction.Copy);
+            this.setNodeAction(node, Fileaction.Copy);
             break;
           case Filestatus.Updated:
-            this.setNodeAction(this.node, Fileaction.Update);
+            this.setNodeAction(node, Fileaction.Update);
             break;
           default:
-            this.setNodeAction(this.node, Fileaction.Delete);
+            this.setNodeAction(node, Fileaction.Delete);
             break;
         }
         break;
       case Fileaction.Update:
         if (datafile.attributes?.isFile) {
-          this.setNodeAction(this.node, Fileaction.Delete);
+          this.setNodeAction(node, Fileaction.Delete);
         } else {
-          this.setNodeAction(this.node, Fileaction.Ignore);
+          this.setNodeAction(node, Fileaction.Ignore);
         }
         break;
       default:
-        this.setNodeAction(this.node, Fileaction.Ignore);
+        this.setNodeAction(node, Fileaction.Ignore);
         break;
     }
     this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap());
+    this.changed.emit();
   }
 
   setNodeAction(node: TreeNode<Datafile>, action: Fileaction): void {
+    if (!node || !node.data) return;
     const isFileFileInFolder =
       node.data?.attributes?.isFile && !this.datafile().attributes?.isFile;
     node.data!.action = isFileFileInFolder
@@ -186,40 +252,5 @@ export class DatafileComponent implements OnInit {
       }
     }
     return action;
-  }
-
-  private resolveHostStyle(): FileActionStyle {
-    const action = this.datafile().action ?? Fileaction.Ignore;
-    switch (action) {
-      case Fileaction.Copy:
-        return getFileActionStyle('COPY');
-      case Fileaction.Update:
-        return getFileActionStyle('UPDATE');
-      case Fileaction.Delete:
-        return getFileActionStyle('DELETE');
-      case Fileaction.Custom:
-        return getFileActionStyle('CUSTOM');
-      default:
-        return getFileActionStyle('IGNORE');
-    }
-  }
-
-  getStyle(): string {
-    const style = this.resolveHostStyle();
-    return buildInlineStyle(style);
-  }
-
-  targetFileClass(): string {
-    switch (this.datafile().action) {
-      case Fileaction.Delete:
-        return 'text-decoration-line-through';
-      case Fileaction.Copy:
-        return 'fst-italic fw-bold';
-      case Fileaction.Update:
-        return 'fw-bold';
-      case Fileaction.Ignore:
-        return '';
-    }
-    return '';
   }
 }

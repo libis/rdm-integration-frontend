@@ -5,8 +5,8 @@
 </td>
 <td class="compact-col" style="text-align: center">
   <i
-    [class]="comparison(false)"
-    [style]="'color:' + comparison(true)"
+    [class]="comparisonIcon()"
+    [style]="'color:' + comparisonColor()"
     [title]="comparisonTitle()"
   ></i>
 </td>
@@ -18,7 +18,7 @@
     class="p-button-sm p-button-outlined p-button-secondary"
     (click)="toggleAction()"
   >
-    <i [class]="action()"></i>
+    <i [class]="actionIcon()"></i>
   </button>
 </td>
 <td [class]="targetFileClass()">

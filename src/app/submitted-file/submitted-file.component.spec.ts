@@ -17,7 +17,7 @@ describe('SubmittedFileComponent', () => {
     fixture = TestBed.createComponent(SubmittedFileComponent);
     component = fixture.componentInstance;
     credentialsService = TestBed.inject(CredentialsService);
-    credentialsService.credentials = {};
+    credentialsService.clearCredentials();
   });
 
   const setDatafile = (overrides: Partial<Datafile>) => {
@@ -37,7 +37,7 @@ describe('SubmittedFileComponent', () => {
     setDatafile({ action: Fileaction.Copy });
     expect(() =>
       expectBootstrapTableStyle(
-        component.getStyle(),
+        component.hostStyle(),
         'var(--app-file-action-copy-bg)',
         'var(--app-file-action-copy-color)',
       ),
@@ -46,7 +46,7 @@ describe('SubmittedFileComponent', () => {
     setDatafile({ action: Fileaction.Update });
     expect(() =>
       expectBootstrapTableStyle(
-        component.getStyle(),
+        component.hostStyle(),
         'var(--app-file-action-update-bg)',
         'var(--app-file-action-update-color)',
       ),
@@ -55,7 +55,7 @@ describe('SubmittedFileComponent', () => {
     setDatafile({ action: Fileaction.Delete, status: Filestatus.New });
     expect(() =>
       expectBootstrapTableStyle(
-        component.getStyle(),
+        component.hostStyle(),
         'var(--app-file-action-delete-bg)',
         'var(--app-file-action-delete-color)',
       ),
@@ -64,27 +64,27 @@ describe('SubmittedFileComponent', () => {
     setDatafile({ action: Fileaction.Custom });
     expect(() =>
       expectBootstrapTableStyle(
-        component.getStyle(),
+        component.hostStyle(),
         'var(--app-file-action-custom-bg)',
         'var(--app-file-action-custom-color)',
       ),
     ).not.toThrow();
 
     setDatafile({ action: Fileaction.Ignore });
-    expect(component.getStyle()).toBe('');
+    expect(component.hostStyle()).toBe('');
   });
 
   it('falls back to ignore styling when action is missing', () => {
     setDatafile({ action: undefined, status: Filestatus.Equal });
-    expect(component.getStyle()).toBe('');
+    expect(component.hostStyle()).toBe('');
   });
 
   it('formats file path including folder prefix when present', () => {
     setDatafile({ path: 'docs', name: 'file.txt' });
-    expect(component.file()).toBe('docs/file.txt');
+    expect(component.fileName()).toBe('docs/file.txt');
 
     setDatafile({ path: undefined, name: 'top.txt' });
-    expect(component.file()).toBe('top.txt');
+    expect(component.fileName()).toBe('top.txt');
   });
 
   it('determines readiness and icon classes', () => {
@@ -102,10 +102,10 @@ describe('SubmittedFileComponent', () => {
   });
 
   it('detects globus submissions based on credentials service', () => {
-    credentialsService.credentials = { plugin: 'globus' };
+    credentialsService.setCredentials({ plugin: 'globus' });
     expect(component.isGlobus()).toBeTrue();
 
-    credentialsService.credentials = { plugin: 'dataverse' };
+    credentialsService.setCredentials({ plugin: 'dataverse' });
     expect(component.isGlobus()).toBeFalse();
   });
 });
