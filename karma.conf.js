@@ -1,8 +1,17 @@
 // Karma configuration file, see link for more information
 // https://karma-runner.github.io/1.0/config/configuration-file.html
 
-// Use Chromium if Chrome is not available
-process.env.CHROME_BIN = process.env.CHROME_BIN || "/usr/bin/chromium";
+// Auto-detect Chrome/Chromium binary if CHROME_BIN is not set
+if (!process.env.CHROME_BIN) {
+  const fs = require("fs");
+  const candidates = [
+    "/usr/bin/chromium",          // Arch, Alpine
+    "/usr/bin/chromium-browser",  // Fedora, Debian/Ubuntu
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/google-chrome",
+  ];
+  process.env.CHROME_BIN = candidates.find((p) => fs.existsSync(p)) || "chromium";
+}
 
 module.exports = function (config) {
   const isCi =
