@@ -59,8 +59,13 @@ import {
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import {
-  convertToTreeNodes,
   createPlaceholderRootOptions,
+  handleOptionsResponse,
+  newNonce,
+  onOptionSelected,
+  onSearchInput,
+  startRepoSearch as startRepoSearchFn,
+  subscribeDebouncedSearch,
 } from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
@@ -380,42 +385,14 @@ export class DownloadComponent
         }
       },
     );
-    this.datasetSearchResultsSubscription =
-      this.datasetSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => this.doiItems.set(v))
-            .catch((err) =>
-              this.doiItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]),
-            ),
-        error: (err) =>
-          this.doiItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]),
-      });
-    this.repoSearchResultsSubscription =
-      this.repoSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => this.repoNames.set(v))
-            .catch((err) =>
-              this.repoNames.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]),
-            ),
-        error: (err) =>
-          this.repoNames.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]),
-      });
+    this.datasetSearchResultsSubscription = subscribeDebouncedSearch(
+      this.datasetSearchResultsObservable,
+      this.doiItems,
+    );
+    this.repoSearchResultsSubscription = subscribeDebouncedSearch(
+      this.repoSearchResultsObservable,
+      this.repoNames,
+    );
 
     // Auto-load dataset options on init
     this.getDoiOptions();
@@ -716,19 +693,7 @@ export class DownloadComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.doiItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.datasetSearchSubject.next(searchTerm);
+    onSearchInput(searchTerm, this.doiItems, this.datasetSearchSubject);
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
@@ -1019,36 +984,16 @@ export class DownloadComponent
   }
 
   onRepoNameSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.repoNames.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.repoSearchSubject.next(searchTerm);
+    onSearchInput(searchTerm, this.repoNames, this.repoSearchSubject);
   }
 
   startRepoSearch() {
-    if (this.foundRepoName() !== undefined) {
-      return;
-    }
-    if (this.repoNameSearchInitEnabled()) {
-      this.repoNames.set([{ label: 'loading...', value: 'start' }]);
-      this.repoSearchSubject.next('');
-    } else {
-      this.repoNames.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-    }
+    startRepoSearchFn(
+      () => this.foundRepoName(),
+      () => this.repoNameSearchInitEnabled(),
+      this.repoNames,
+      this.repoSearchSubject,
+    );
   }
 
   getOptions(node?: TreeNode<string>): void {
@@ -1087,23 +1032,15 @@ export class DownloadComponent
     items: HierarchicalSelectItem<string>[],
     node?: TreeNode<string>,
   ): void {
-    if (items && node) {
-      // Expanding an existing node - add children
-      const nodes = convertToTreeNodes(items);
-      node.children = nodes.treeNodes;
-      // Create new array reference so PrimeNG p-tree detects the change
-      this._rootOptionsData.update((prev) => [...prev]);
-      this.optionsLoading.set(false);
-      this.autoSelectNode(nodes.selectedNode);
-    } else if (items && items.length > 0) {
-      // Initial load - convert items directly (backend returns from appropriate starting point)
-      const nodes = convertToTreeNodes(items);
-      this._rootOptionsData.set(nodes.treeNodes);
-      this.branchItems.set(items);
-      this.autoSelectNode(nodes.selectedNode);
-    } else {
-      this.branchItems.set([]);
-    }
+    handleOptionsResponse(
+      items,
+      node,
+      this._rootOptionsData,
+      this.branchItems,
+      this.optionsLoading,
+      this.option,
+      this.selectedOption,
+    );
   }
 
   /**
@@ -1117,15 +1054,7 @@ export class DownloadComponent
   }
 
   optionSelected(node: TreeNode<string>): void {
-    const v = node.data;
-    if (v === undefined || v === null) {
-      this.selectedOption.set(undefined);
-      this.option.set(undefined);
-    } else {
-      // Allow selecting root "/" or any other folder
-      this.option.set(v);
-      this.selectedOption.set(node);
-    }
+    onOptionSelected(node, this.option, this.selectedOption);
   }
 
   onRepoChange() {
@@ -1193,15 +1122,6 @@ export class DownloadComponent
   }
 
   newNonce(length: number): string {
-    let result = '';
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const charactersLength = characters.length;
-    let counter = 0;
-    while (counter < length) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-      counter += 1;
-    }
-    return result;
+    return newNonce(length);
   }
 }

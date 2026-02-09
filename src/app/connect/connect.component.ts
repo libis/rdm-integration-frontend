@@ -64,8 +64,13 @@ import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
 import {
-  convertToTreeNodes,
   createPlaceholderRootOptions,
+  handleOptionsResponse,
+  newNonce,
+  onOptionSelected,
+  onSearchInput,
+  startRepoSearch as startRepoSearchFn,
+  subscribeDebouncedSearch,
 } from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
@@ -392,48 +397,14 @@ export class ConnectComponent
       }
     }
 
-    this.repoSearchResultsSubscription =
-      this.repoSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => {
-              this.repoNames.set(v);
-            })
-            .catch((err) => {
-              this.repoNames.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]);
-            }),
-        error: (err) => {
-          this.repoNames.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]);
-        },
-      });
-    this.collectionSearchResultsSubscription =
-      this.collectionSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => {
-              this.collectionItems.set(v);
-            })
-            .catch((err) => {
-              this.collectionItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]);
-            }),
-        error: (err) => {
-          this.collectionItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]);
-        },
-      });
+    this.repoSearchResultsSubscription = subscribeDebouncedSearch(
+      this.repoSearchResultsObservable,
+      this.repoNames,
+    );
+    this.collectionSearchResultsSubscription = subscribeDebouncedSearch(
+      this.collectionSearchResultsObservable,
+      this.collectionItems,
+    );
     const queryParamsSubscription = this.route.queryParams.subscribe(
       (params) => {
         this.handleQueryParams(params);
@@ -825,16 +796,7 @@ export class ConnectComponent
   }
 
   newNonce(length: number): string {
-    let result = '';
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const charactersLength = characters.length;
-    let counter = 0;
-    while (counter < length) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-      counter += 1;
-    }
-    return result;
+    return newNonce(length);
   }
 
   getItem(items: SelectItem<string>[], value?: string): Item | undefined {
@@ -1211,36 +1173,16 @@ export class ConnectComponent
   }
 
   onRepoNameSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.repoNames.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.repoNames.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.repoSearchSubject.next(searchTerm);
+    onSearchInput(searchTerm, this.repoNames, this.repoSearchSubject);
   }
 
   startRepoSearch() {
-    if (this.foundRepoName() !== undefined) {
-      return;
-    }
-    if (this.repoNameSearchInitEnabled()) {
-      this.repoNames.set([{ label: 'loading...', value: 'start' }]);
-      this.repoSearchSubject.next('');
-    } else {
-      this.repoNames.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-    }
+    startRepoSearchFn(
+      () => this.foundRepoName(),
+      () => this.repoNameSearchInitEnabled(),
+      this.repoNames,
+      this.repoSearchSubject,
+    );
   }
 
   // REPO VIA SELECT
@@ -1297,23 +1239,15 @@ export class ConnectComponent
     items: HierarchicalSelectItem<string>[],
     node?: TreeNode<string>,
   ): void {
-    if (items && node) {
-      // Expanding an existing node - add children
-      const nodes = convertToTreeNodes(items);
-      node.children = nodes.treeNodes;
-      // Create new array reference so PrimeNG p-tree detects the change
-      this._rootOptionsData.update((prev) => [...prev]);
-      this.optionsLoading.set(false);
-      this.autoSelectNode(nodes.selectedNode);
-    } else if (items && items.length > 0) {
-      // Initial load - convert items directly (backend returns from appropriate starting point)
-      const nodes = convertToTreeNodes(items);
-      this._rootOptionsData.set(nodes.treeNodes);
-      this.branchItems.set(items);
-      this.autoSelectNode(nodes.selectedNode);
-    } else {
-      this.branchItems.set([]);
-    }
+    handleOptionsResponse(
+      items,
+      node,
+      this._rootOptionsData,
+      this.branchItems,
+      this.optionsLoading,
+      this.option,
+      this.selectedOption,
+    );
   }
 
   /**
@@ -1327,15 +1261,7 @@ export class ConnectComponent
   }
 
   optionSelected(node: TreeNode<string>): void {
-    const v = node.data;
-    if (v === undefined || v === null) {
-      this.selectedOption.set(undefined);
-      this.option.set(undefined);
-    } else {
-      // Allow selecting root "/" or any other folder
-      this.option.set(v);
-      this.selectedOption.set(node);
-    }
+    onOptionSelected(node, this.option, this.selectedOption);
   }
 
   /****************************************
@@ -1426,19 +1352,7 @@ export class ConnectComponent
   }
 
   onCollectionSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.collectionItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.collectionItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.collectionSearchSubject.next(searchTerm);
+    onSearchInput(searchTerm, this.collectionItems, this.collectionSearchSubject);
   }
 
   async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
@@ -1512,19 +1426,7 @@ export class ConnectComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.doiItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.datasetSearchSubject.next(searchTerm);
+    onSearchInput(searchTerm, this.doiItems, this.datasetSearchSubject);
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
