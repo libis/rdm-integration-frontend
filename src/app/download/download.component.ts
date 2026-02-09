@@ -288,97 +288,101 @@ export class DownloadComponent
       );
     }
 
-    this.queryParamsSubscription = this.route.queryParams.subscribe((params) => {
-      // eslint-disable-next-line no-console
-      console.debug('[DownloadComponent] Route params received:', params);
-
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken.set(apiToken);
-      }
-      const pid = params['datasetPid'];
-      if (pid) {
-        this.doiItems.set([{ label: pid, value: pid }]);
-        this.datasetId.set(pid);
-      }
-      this.downloadId.set(params['downloadId']);
-      // datasetDbId is passed when getDatasetVersion fails (preview URL users)
-      if (params['datasetDbId']) {
-        this.datasetDbId.set(params['datasetDbId']);
+    this.queryParamsSubscription = this.route.queryParams.subscribe(
+      (params) => {
         // eslint-disable-next-line no-console
-        console.debug(
-          '[DownloadComponent] Got datasetDbId from params:',
-          this.datasetDbId(),
-        );
-      }
+        console.debug('[DownloadComponent] Route params received:', params);
 
-      // If we have datasetDbId and downloadId but no DOI, fetch it now
-      if (this.datasetDbId() && this.downloadId() && !this.datasetId()) {
-        // eslint-disable-next-line no-console
-        console.debug(
-          '[DownloadComponent] Auto-fetching DOI from globusDownloadParameters',
-        );
-        this.fetchDoiFromGlobusParams();
-      }
-
-      const code = params['code'];
-      if (code !== undefined) {
-        // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] OAuth callback detected');
-        const loginState: LoginState = JSON.parse(params['state']);
-        // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] LoginState:', loginState);
-        if (loginState.nonce) {
-          const doi = loginState.datasetId?.value
-            ? loginState.datasetId?.value
-            : '?';
-          this.doiItems.set([{ label: doi, value: doi }]);
-          this.datasetId.set(doi);
-
-          // Restore state from OAuth redirect
-          if (loginState.downloadId) {
-            this.downloadId.set(loginState.downloadId);
-          }
-          if (loginState.accessMode) {
-            this.accessMode.set(loginState.accessMode);
-          }
-          if (loginState.dataverseToken) {
-            this.dataverseToken.set(loginState.dataverseToken);
-          }
-          if (loginState.preSelectedFileIds) {
-            this.preSelectedFileIds.set(new Set(loginState.preSelectedFileIds));
-          }
-
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken.set(apiToken);
+        }
+        const pid = params['datasetPid'];
+        if (pid) {
+          this.doiItems.set([{ label: pid, value: pid }]);
+          this.datasetId.set(pid);
+        }
+        this.downloadId.set(params['downloadId']);
+        // datasetDbId is passed when getDatasetVersion fails (preview URL users)
+        if (params['datasetDbId']) {
+          this.datasetDbId.set(params['datasetDbId']);
           // eslint-disable-next-line no-console
-          console.debug('[DownloadComponent] State after restore:', {
-            doi,
-            downloadId: this.downloadId(),
-            accessMode: this.accessMode(),
-            preSelectedFileIds: this.preSelectedFileIds().size,
-          });
+          console.debug(
+            '[DownloadComponent] Got datasetDbId from params:',
+            this.datasetDbId(),
+          );
+        }
 
-          // Load files if we have a valid dataset ID (DOI was fetched before OAuth)
-          if (doi && doi !== '?' && doi !== 'undefined') {
-            this.onDatasetChange();
-          }
+        // If we have datasetDbId and downloadId but no DOI, fetch it now
+        if (this.datasetDbId() && this.downloadId() && !this.datasetId()) {
+          // eslint-disable-next-line no-console
+          console.debug(
+            '[DownloadComponent] Auto-fetching DOI from globusDownloadParameters',
+          );
+          this.fetchDoiFromGlobusParams();
+        }
 
-          const tokenSubscription = this.oauth
-            .getToken('globus', code, loginState.nonce)
-            .subscribe((x) => {
-              this.token.set(x.session_id);
+        const code = params['code'];
+        if (code !== undefined) {
+          // eslint-disable-next-line no-console
+          console.debug('[DownloadComponent] OAuth callback detected');
+          const loginState: LoginState = JSON.parse(params['state']);
+          // eslint-disable-next-line no-console
+          console.debug('[DownloadComponent] LoginState:', loginState);
+          if (loginState.nonce) {
+            const doi = loginState.datasetId?.value
+              ? loginState.datasetId?.value
+              : '?';
+            this.doiItems.set([{ label: doi, value: doi }]);
+            this.datasetId.set(doi);
 
-              tokenSubscription?.unsubscribe();
+            // Restore state from OAuth redirect
+            if (loginState.downloadId) {
+              this.downloadId.set(loginState.downloadId);
+            }
+            if (loginState.accessMode) {
+              this.accessMode.set(loginState.accessMode);
+            }
+            if (loginState.dataverseToken) {
+              this.dataverseToken.set(loginState.dataverseToken);
+            }
+            if (loginState.preSelectedFileIds) {
+              this.preSelectedFileIds.set(
+                new Set(loginState.preSelectedFileIds),
+              );
+            }
+
+            // eslint-disable-next-line no-console
+            console.debug('[DownloadComponent] State after restore:', {
+              doi,
+              downloadId: this.downloadId(),
+              accessMode: this.accessMode(),
+              preSelectedFileIds: this.preSelectedFileIds().size,
             });
+
+            // Load files if we have a valid dataset ID (DOI was fetched before OAuth)
+            if (doi && doi !== '?' && doi !== 'undefined') {
+              this.onDatasetChange();
+            }
+
+            const tokenSubscription = this.oauth
+              .getToken('globus', code, loginState.nonce)
+              .subscribe((x) => {
+                this.token.set(x.session_id);
+
+                tokenSubscription?.unsubscribe();
+              });
+          }
+          this.globusPlugin.set(this.pluginService.getGlobusPlugin());
+        } else {
+          // First arrival - only redirect if user is logged in (popup not shown)
+          this.globusPlugin.set(this.pluginService.getGlobusPlugin());
+          if (!this.showGuestLoginPopup()) {
+            this.getRepoToken();
+          }
         }
-        this.globusPlugin.set(this.pluginService.getGlobusPlugin());
-      } else {
-        // First arrival - only redirect if user is logged in (popup not shown)
-        this.globusPlugin.set(this.pluginService.getGlobusPlugin());
-        if (!this.showGuestLoginPopup()) {
-          this.getRepoToken();
-        }
-      }
-    });
+      },
+    );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
@@ -745,6 +749,7 @@ export class DownloadComponent
   onDatasetChange() {
     this.loading.set(true);
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.dataService
       .getDownloadableFiles(this.datasetId()!, this.dataverseToken())
       .subscribe({
@@ -1060,6 +1065,7 @@ export class DownloadComponent
     }
 
     let httpSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     httpSubscription = this.repoLookupService.getOptions(req).subscribe({
       next: (items: HierarchicalSelectItem<string>[]) => {
         this.handleOptionsResponse(items, node);

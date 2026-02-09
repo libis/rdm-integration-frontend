@@ -5,12 +5,13 @@
 if (!process.env.CHROME_BIN) {
   const fs = require("fs");
   const candidates = [
-    "/usr/bin/chromium",          // Arch, Alpine
-    "/usr/bin/chromium-browser",  // Fedora, Debian/Ubuntu
+    "/usr/bin/chromium", // Arch, Alpine
+    "/usr/bin/chromium-browser", // Fedora, Debian/Ubuntu
     "/usr/bin/google-chrome-stable",
     "/usr/bin/google-chrome",
   ];
-  process.env.CHROME_BIN = candidates.find((p) => fs.existsSync(p)) || "chromium";
+  process.env.CHROME_BIN =
+    candidates.find((p) => fs.existsSync(p)) || "chromium";
 }
 
 module.exports = function (config) {

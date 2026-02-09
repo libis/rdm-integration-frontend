@@ -322,6 +322,7 @@ export class CompareComponent
     const dataItems = this.data().data!;
 
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.dataUpdatesService
       .updateData(dataItems, id)
       .subscribe(async (data: CompareResult) => {

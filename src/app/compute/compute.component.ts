@@ -313,6 +313,7 @@ export class ComputeComponent
     this.loading.set(true);
     this.req!.sendEmailOnSuccess = this.sendEmailOnSuccess();
     let httpSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     httpSubscription = this.dataService.compute(this.req!).subscribe({
       next: (key: Key) => {
         httpSubscription?.unsubscribe();
@@ -327,6 +328,7 @@ export class ComputeComponent
 
   private getComputeData(key: Key): void {
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.dataService.getCachedComputeData(key).subscribe({
       next: async (res: CachedComputeResponse) => {
         this.subscriptions.delete(subscription);

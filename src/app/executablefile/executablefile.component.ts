@@ -80,6 +80,7 @@ export class ExecutablefileComponent {
     this.spinning.set(true);
     this.computeEnabled.set(false);
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.dataService
       .checkAccessToQueue(this.pid(), this.dv_token(), this.queue())
       .subscribe({

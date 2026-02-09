@@ -853,6 +853,7 @@ export class ConnectComponent
 
   async connect() {
     let subscr: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscr = this.http
       .post<string>('api/common/useremail', this.dataverseToken())
       .subscribe({

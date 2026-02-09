@@ -248,6 +248,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
 
     let httpSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     httpSubscription = this.dvObjectLookupService
       .getItems('', 'Dataset', undefined, this.dataverseToken())
       .subscribe({
@@ -384,6 +385,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     const currentDatasetId = this.datasetId();
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.dataService
       .getDdiCdiCompatibleFiles(currentDatasetId!, this.dataverseToken())
       .subscribe({
@@ -518,28 +520,32 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       `DDI-CDI generation started...\n${emailMsg}\nYou can close this window.`,
     );
     let generateSubscription: Subscription;
-    generateSubscription = this.dataService.generateDdiCdi(this.req!).subscribe({
-      next: (key: Key) => {
-        this.subscriptions.delete(generateSubscription);
-        generateSubscription?.unsubscribe();
-        const successMsg = currentSendEmail
-          ? 'DDI-CDI generation job submitted. You will be notified by email when complete.'
-          : 'DDI-CDI generation job submitted.';
-        this.notificationService.showSuccess(successMsg);
-        this.getDdiCdiData(key);
-      },
-      error: (err) => {
-        this.subscriptions.delete(generateSubscription);
-        generateSubscription?.unsubscribe();
-        this.notificationService.showError(`Generation failed: ${err.error}`);
-        this.loading.set(false);
-      },
-    });
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    generateSubscription = this.dataService
+      .generateDdiCdi(this.req!)
+      .subscribe({
+        next: (key: Key) => {
+          this.subscriptions.delete(generateSubscription);
+          generateSubscription?.unsubscribe();
+          const successMsg = currentSendEmail
+            ? 'DDI-CDI generation job submitted. You will be notified by email when complete.'
+            : 'DDI-CDI generation job submitted.';
+          this.notificationService.showSuccess(successMsg);
+          this.getDdiCdiData(key);
+        },
+        error: (err) => {
+          this.subscriptions.delete(generateSubscription);
+          generateSubscription?.unsubscribe();
+          this.notificationService.showError(`Generation failed: ${err.error}`);
+          this.loading.set(false);
+        },
+      });
     this.subscriptions.add(generateSubscription);
   }
 
   private getDdiCdiData(key: Key): void {
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.dataService.getCachedDdiCdiData(key).subscribe({
       next: async (res: CachedComputeResponse) => {
         this.subscriptions.delete(subscription);
@@ -637,6 +643,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // Add the file to the dataset via backend (handles auth and MIME type)
     let viewerSubscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     viewerSubscription = this.dataService
       .addFileToDataset({
         persistentId: currentDatasetId,
@@ -682,31 +689,36 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
 
     let cacheSubscription: Subscription;
-    cacheSubscription = this.dataService.getCachedDdiCdiOutput(currentDatasetId).subscribe({
-      next: (cache) => {
-        this.subscriptions.delete(cacheSubscription);
-        cacheSubscription?.unsubscribe();
-        if (cache.errorMessage) {
-          this.output.set(`Previous generation failed:\n${cache.errorMessage}`);
-          this.outputDisabled.set(false);
-        } else if (cache.ddiCdi) {
-          this.setGeneratedOutput(cache.ddiCdi);
-          if (cache.consoleOut) {
-            this.output.set(cache.consoleOut);
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
+    cacheSubscription = this.dataService
+      .getCachedDdiCdiOutput(currentDatasetId)
+      .subscribe({
+        next: (cache) => {
+          this.subscriptions.delete(cacheSubscription);
+          cacheSubscription?.unsubscribe();
+          if (cache.errorMessage) {
+            this.output.set(
+              `Previous generation failed:\n${cache.errorMessage}`,
+            );
+            this.outputDisabled.set(false);
+          } else if (cache.ddiCdi) {
+            this.setGeneratedOutput(cache.ddiCdi);
+            if (cache.consoleOut) {
+              this.output.set(cache.consoleOut);
+            }
+            this.cachedOutputLoaded.set(true);
+            this.notificationService.showSuccess(
+              `Loaded previously generated DDI-CDI metadata (${new Date(cache.timestamp).toLocaleString()})`,
+            );
           }
-          this.cachedOutputLoaded.set(true);
-          this.notificationService.showSuccess(
-            `Loaded previously generated DDI-CDI metadata (${new Date(cache.timestamp).toLocaleString()})`,
-          );
-        }
-      },
-      error: () => {
-        this.subscriptions.delete(cacheSubscription);
-        cacheSubscription?.unsubscribe();
-        // No cached output found, which is fine
-        this.cachedOutputLoaded.set(false);
-      },
-    });
+        },
+        error: () => {
+          this.subscriptions.delete(cacheSubscription);
+          cacheSubscription?.unsubscribe();
+          // No cached output found, which is fine
+          this.cachedOutputLoaded.set(false);
+        },
+      });
     this.subscriptions.add(cacheSubscription!);
   }
 

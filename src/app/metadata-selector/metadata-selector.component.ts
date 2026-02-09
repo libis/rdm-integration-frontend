@@ -118,6 +118,7 @@ export class MetadataSelectorComponent implements OnDestroy {
       compareResult: this.dataStateService.state$(),
     };
     let subscription: Subscription;
+    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     subscription = this.datasetService.getMetadata(req).subscribe({
       next: (metadata) => {
         this.subscriptions.delete(subscription);
