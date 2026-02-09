@@ -439,9 +439,12 @@ export class ConnectComponent
           ]);
         },
       });
-    this.route.queryParams.subscribe((params) => {
-      this.handleQueryParams(params);
-    });
+    const queryParamsSubscription = this.route.queryParams.subscribe(
+      (params) => {
+        this.handleQueryParams(params);
+      },
+    );
+    this.subscriptions.add(queryParamsSubscription);
   }
 
   private handleQueryParams(params: Record<string, string | undefined>): void {
