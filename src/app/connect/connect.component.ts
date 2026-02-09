@@ -153,13 +153,8 @@ export class ConnectComponent
   private readonly _rootOptionsData = signal<TreeNode<string>[]>(
     createPlaceholderRootOptions(),
   );
-  // Used to trigger view updates when tree nodes are mutated
-  readonly refreshTrigger = signal(0);
-  // Computed signal that tracks refreshTrigger for change detection
-  readonly rootOptions = computed(() => {
-    this.refreshTrigger(); // Track refresh trigger to force re-render
-    return this._rootOptionsData();
-  });
+  // Computed signal for template binding
+  readonly rootOptions = computed(() => this._rootOptionsData());
   readonly selectedOption = signal<TreeNode<string> | undefined>(undefined);
 
   // Both accordion panels expanded by default
@@ -1306,8 +1301,8 @@ export class ConnectComponent
       // Expanding an existing node - add children
       const nodes = convertToTreeNodes(items);
       node.children = nodes.treeNodes;
-      // Increment refresh trigger to force change detection (zoneless Angular)
-      this.refreshTrigger.update((n) => n + 1);
+      // Create new array reference so PrimeNG p-tree detects the change
+      this._rootOptionsData.update((prev) => [...prev]);
       this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else if (items && items.length > 0) {

@@ -154,11 +154,8 @@ export class DownloadComponent
   private readonly _rootOptionsData = signal<TreeNode<string>[]>(
     createPlaceholderRootOptions(),
   );
-  // Computed signal that tracks refreshTrigger for change detection
-  readonly rootOptions = computed(() => {
-    this.refreshTrigger(); // Track refresh trigger to force re-render
-    return this._rootOptionsData();
-  });
+  // Computed signal for template binding
+  readonly rootOptions = computed(() => this._rootOptionsData());
   selectedOption = signal<TreeNode<string> | undefined>(undefined);
   optionsLoading = signal(false);
   globusPlugin = signal<RepoPlugin | undefined>(undefined);
@@ -1094,8 +1091,8 @@ export class DownloadComponent
       // Expanding an existing node - add children
       const nodes = convertToTreeNodes(items);
       node.children = nodes.treeNodes;
-      // Increment refresh trigger to force change detection (zoneless Angular)
-      this.refreshTrigger.update((n) => n + 1);
+      // Create new array reference so PrimeNG p-tree detects the change
+      this._rootOptionsData.update((prev) => [...prev]);
       this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else if (items && items.length > 0) {
