@@ -568,7 +568,7 @@ export class ConnectComponent
         .subscribe((x) => {
           this.token.set(x.session_id);
           this.subscriptions.delete(tokenSubscription);
-          tokenSubscription.unsubscribe();
+          tokenSubscription?.unsubscribe();
         });
       this.subscriptions.add(tokenSubscription);
     }
@@ -852,11 +852,12 @@ export class ConnectComponent
    ***********/
 
   async connect() {
-    const subscr = this.http
+    let subscr: Subscription;
+    subscr = this.http
       .post<string>('api/common/useremail', this.dataverseToken())
       .subscribe({
         next: (useremail) => {
-          subscr.unsubscribe();
+          subscr?.unsubscribe();
           if (useremail !== '') {
             const err = this.parseAndCheckFields();
             if (err !== undefined) {
@@ -917,7 +918,7 @@ export class ConnectComponent
           }
         },
         error: (err) => {
-          subscr.unsubscribe();
+          subscr?.unsubscribe();
           console.error(err);
           this.notificationService.showError(
             'Error getting user: you need to generate a valid Dataverse API token first',
@@ -1393,7 +1394,7 @@ export class ConnectComponent
           } else {
             setter(this, []);
           }
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);

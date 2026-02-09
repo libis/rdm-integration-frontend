@@ -124,6 +124,7 @@ export class DownloadComponent
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   datasetSearchResultsSubscription?: Subscription;
+  queryParamsSubscription?: Subscription;
   downloadRequested = signal(false);
   downloadInProgress = signal(false);
   lastTransferTaskId = signal<string | undefined>(undefined);
@@ -287,7 +288,7 @@ export class DownloadComponent
       );
     }
 
-    this.route.queryParams.subscribe((params) => {
+    this.queryParamsSubscription = this.route.queryParams.subscribe((params) => {
       // eslint-disable-next-line no-console
       console.debug('[DownloadComponent] Route params received:', params);
 
@@ -366,7 +367,7 @@ export class DownloadComponent
             .subscribe((x) => {
               this.token.set(x.session_id);
 
-              tokenSubscription.unsubscribe();
+              tokenSubscription?.unsubscribe();
             });
         }
         this.globusPlugin.set(this.pluginService.getGlobusPlugin());
@@ -420,6 +421,7 @@ export class DownloadComponent
   }
 
   ngOnDestroy() {
+    this.queryParamsSubscription?.unsubscribe();
     this.datasetSearchResultsSubscription?.unsubscribe();
     this.repoSearchResultsSubscription?.unsubscribe();
   }
@@ -678,7 +680,7 @@ export class DownloadComponent
       .getItems('', 'Dataset', undefined, this.dataverseToken(), true)
       .subscribe({
         next: (items: SelectItem<string>[]) => {
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
           // Don't overwrite if a valid DOI was set while we were loading
           if (
             this.datasetId() &&
@@ -696,7 +698,7 @@ export class DownloadComponent
           }
         },
         error: (err) => {
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
           // Don't show error if a valid DOI was set while we were loading
           if (
             this.datasetId() &&
@@ -742,11 +744,12 @@ export class DownloadComponent
 
   onDatasetChange() {
     this.loading.set(true);
-    const subscription = this.dataService
+    let subscription: Subscription;
+    subscription = this.dataService
       .getDownloadableFiles(this.datasetId()!, this.dataverseToken())
       .subscribe({
         next: (data) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           data.data = data.data?.sort((o1, o2) =>
             (o1.id === undefined ? '' : o1.id) <
             (o2.id === undefined ? '' : o2.id)
@@ -756,7 +759,7 @@ export class DownloadComponent
           this.setData(data);
         },
         error: (err) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           this.loading.set(false);
           // Check if this is an anonymized preview URL case
           if (this.accessMode() === 'preview' && this.dataverseToken()) {
@@ -1056,10 +1059,11 @@ export class DownloadComponent
       this.optionsLoading.set(true);
     }
 
-    const httpSubscription = this.repoLookupService.getOptions(req).subscribe({
+    let httpSubscription: Subscription;
+    httpSubscription = this.repoLookupService.getOptions(req).subscribe({
       next: (items: HierarchicalSelectItem<string>[]) => {
         this.handleOptionsResponse(items, node);
-        httpSubscription.unsubscribe();
+        httpSubscription?.unsubscribe();
       },
       error: (err) => {
         this.notificationService.showError(

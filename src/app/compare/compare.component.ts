@@ -151,12 +151,6 @@ export class CompareComponent
     const root = map.get('');
     if (!root) return [];
 
-    // Update folder statuses on the full tree
-    if (root.children) {
-      this.folderStatusService.updateTreeRoot(root);
-      this.folderActionUpdateService.updateFoldersAction(map);
-    }
-
     const filters = this.selectedFilterItems();
     const isFiltering = filters.length < 4;
 
@@ -170,17 +164,11 @@ export class CompareComponent
       if (!f.hidden) visible.push(n);
     });
 
-    // If filtering, return flattened visible nodes?
-    // Original logic:
-    // filterOn -> this.rootNodeChildren = visible;
-    // filterOff -> this.rootNodeChildren = this.rowNodeMap.get('')!.children!;
-
     if (isFiltering) {
       return visible;
     } else {
       // Ensure all unhidden
       map.forEach((n) => (n.data!.hidden = false));
-      // Re-update actions? Already done above.
       return root.children || [];
     }
   });
@@ -287,6 +275,18 @@ export class CompareComponent
   });
 
   constructor() {
+    // Effect to update folder statuses when tree data changes.
+    // This must be an effect (not inside a computed) because it mutates tree nodes.
+    effect(() => {
+      this.refreshTrigger(); // Track refresh trigger
+      const map = this.rowNodeMap();
+      const root = map.get('');
+      if (root?.children) {
+        this.folderStatusService.updateTreeRoot(root);
+        this.folderActionUpdateService.updateFoldersAction(map);
+      }
+    });
+
     // Effect to react to state changes
     effect(() => {
       const data = this.dataStateService.state$();
@@ -321,12 +321,13 @@ export class CompareComponent
     const id = this.data().id!;
     const dataItems = this.data().data!;
 
-    const subscription = this.dataUpdatesService
+    let subscription: Subscription;
+    subscription = this.dataUpdatesService
       .updateData(dataItems, id)
       .subscribe(async (data: CompareResult) => {
         cnt++;
         this.subscriptions.delete(subscription);
-        subscription.unsubscribe();
+        subscription?.unsubscribe();
         if (data.data && data.id) {
           this.data.set(data);
         }

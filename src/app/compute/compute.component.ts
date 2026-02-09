@@ -78,14 +78,14 @@ export class ComputeComponent
 {
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly pluginService = inject(PluginService);
-  dataService = inject(DataService);
+  private readonly dataService = inject(DataService);
   private readonly utils = inject(UtilsService);
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
   private readonly navigation = inject(NavigationService);
 
   // Subscriptions for cleanup
-  readonly subscriptions = new Set<Subscription>();
+  private readonly subscriptions = new Set<Subscription>();
 
   // Icon constants
   readonly icon_play = APP_CONSTANTS.ICONS.PLAY;
@@ -149,17 +149,19 @@ export class ComputeComponent
       }
     }
 
-    this.route.queryParams.subscribe((params) => {
-      const pid = params['datasetPid'];
-      if (pid) {
-        this.doiItems.set([{ label: pid, value: pid }]);
-        this.datasetId.set(pid);
-      }
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken.set(apiToken);
-      }
-    });
+    this.subscriptions.add(
+      this.route.queryParams.subscribe((params) => {
+        const pid = params['datasetPid'];
+        if (pid) {
+          this.doiItems.set([{ label: pid, value: pid }]);
+          this.datasetId.set(pid);
+        }
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken.set(apiToken);
+        }
+      }),
+    );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
@@ -228,7 +230,7 @@ export class ComputeComponent
             this.doiItems.set([]);
             this.datasetId.set(undefined);
           }
-          httpSubscription.unsubscribe();
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
@@ -273,11 +275,11 @@ export class ComputeComponent
       .getExecutableFiles(this.datasetId()!, this.dataverseToken())
       .subscribe({
         next: (data) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           this.setData(data);
         },
         error: (err) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           this.notificationService.showError(
             `Getting executable files failed: ${err.error}`,
           );
@@ -310,22 +312,25 @@ export class ComputeComponent
     this.popup.set(false);
     this.loading.set(true);
     this.req!.sendEmailOnSuccess = this.sendEmailOnSuccess();
-    const httpSubscription = this.dataService.compute(this.req!).subscribe({
+    let httpSubscription: Subscription;
+    httpSubscription = this.dataService.compute(this.req!).subscribe({
       next: (key: Key) => {
-        httpSubscription.unsubscribe();
+        httpSubscription?.unsubscribe();
         this.getComputeData(key);
       },
       error: (err) => {
-        httpSubscription.unsubscribe();
+        httpSubscription?.unsubscribe();
         this.notificationService.showError(err);
       },
     });
   }
 
   private getComputeData(key: Key): void {
-    const subscription = this.dataService.getCachedComputeData(key).subscribe({
+    let subscription: Subscription;
+    subscription = this.dataService.getCachedComputeData(key).subscribe({
       next: async (res: CachedComputeResponse) => {
-        subscription.unsubscribe();
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
         if (res.ready === true) {
           this.loading.set(false);
           if (res.res) {
@@ -345,12 +350,14 @@ export class ComputeComponent
         }
       },
       error: (err) => {
-        subscription.unsubscribe();
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
         this.loading.set(false);
         this.notificationService.showError(
           `Getting computation results failed: ${err.error}`,
         );
       },
     });
+    this.subscriptions.add(subscription);
   }
 }

@@ -36,7 +36,7 @@ export class AppComponent implements OnInit {
       .checkAccessToQueue('', '', '')
       .subscribe({
         next: (access) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           if (!access.access) {
             const computeLink = document.getElementById(
               'navbar-compute-li',

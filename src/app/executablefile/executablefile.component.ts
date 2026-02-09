@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { SelectItem, TreeNode } from 'primeng/api';
+import { Subscription } from 'rxjs';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { DataService } from '../data.service';
@@ -78,11 +79,12 @@ export class ExecutablefileComponent {
     }
     this.spinning.set(true);
     this.computeEnabled.set(false);
-    const subscription = this.dataService
+    let subscription: Subscription;
+    subscription = this.dataService
       .checkAccessToQueue(this.pid(), this.dv_token(), this.queue())
       .subscribe({
         next: (access) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           if (access.access) {
             this.computeEnabled.set(true);
           } else {
@@ -92,7 +94,7 @@ export class ExecutablefileComponent {
           this.spinning.set(false);
         },
         error: (err) => {
-          subscription.unsubscribe();
+          subscription?.unsubscribe();
           this.notificationService.showError(
             `Checking access to queue failed: ${err.error}`,
           );

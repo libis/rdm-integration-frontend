@@ -7,9 +7,11 @@ import {
   computed,
   effect,
   inject,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 // Services
 import { CredentialsService } from '../credentials.service';
@@ -51,12 +53,15 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MetadataSelectorComponent {
+export class MetadataSelectorComponent implements OnDestroy {
   private readonly dataStateService = inject(DataStateService);
   private readonly router = inject(Router);
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
   private readonly snapshotStorage = inject(SnapshotStorageService);
+
+  // Subscriptions for cleanup
+  private readonly subscriptions = new Set<Subscription>();
 
   // Icon constants
   readonly icon_copy = APP_CONSTANTS.ICONS.UPDATE;
@@ -112,10 +117,25 @@ export class MetadataSelectorComponent {
       dvToken: credentials.dataverse_token,
       compareResult: this.dataStateService.state$(),
     };
-    this.datasetService.getMetadata(req).subscribe({
-      next: (metadata) => this.metadata.set(metadata),
-      error: (err) => console.error('Failed to load metadata', err),
+    let subscription: Subscription;
+    subscription = this.datasetService.getMetadata(req).subscribe({
+      next: (metadata) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
+        this.metadata.set(metadata);
+      },
+      error: (err) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
+        console.error('Failed to load metadata', err);
+      },
     });
+    this.subscriptions.add(subscription!);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.clear();
   }
 
   submit() {

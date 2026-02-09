@@ -78,7 +78,7 @@ import { SubscriptionManager } from '../shared/types';
 export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly dvObjectLookupService = inject(DvObjectLookupService);
   private readonly pluginService = inject(PluginService);
-  dataService = inject(DataService);
+  private readonly dataService = inject(DataService);
   private readonly utils = inject(UtilsService);
   private readonly route = inject(ActivatedRoute);
   private readonly notificationService = inject(NotificationService);
@@ -164,18 +164,20 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     }
 
-    this.route.queryParams.subscribe((params) => {
-      const apiToken = params['apiToken'];
-      if (apiToken) {
-        this.dataverseToken.set(apiToken);
-      }
-      const pid = params['datasetPid'] ?? params['pid'];
-      if (pid) {
-        void this.populateDatasetOption(pid);
-        this.datasetId.set(pid);
-        this.onDatasetChange();
-      }
-    });
+    this.subscriptions.add(
+      this.route.queryParams.subscribe((params) => {
+        const apiToken = params['apiToken'];
+        if (apiToken) {
+          this.dataverseToken.set(apiToken);
+        }
+        const pid = params['datasetPid'] ?? params['pid'];
+        if (pid) {
+          void this.populateDatasetOption(pid);
+          this.datasetId.set(pid);
+          this.onDatasetChange();
+        }
+      }),
+    );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
@@ -245,7 +247,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.datasetId.set(undefined);
     }
 
-    this.dvObjectLookupService
+    let httpSubscription: Subscription;
+    httpSubscription = this.dvObjectLookupService
       .getItems('', 'Dataset', undefined, this.dataverseToken())
       .subscribe({
         next: (items: SelectItem<string>[]) => {
@@ -269,6 +272,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
               this.datasetId.set(undefined);
             }
           }
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
@@ -276,8 +281,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           if (!previouslySelected) {
             this.datasetId.set(undefined);
           }
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
         },
       });
+    this.subscriptions.add(httpSubscription!);
   }
 
   onDatasetSearch(searchTerm: string | null) {
@@ -375,18 +383,24 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.loadCachedOutput();
 
     const currentDatasetId = this.datasetId();
-    this.dataService
+    let subscription: Subscription;
+    subscription = this.dataService
       .getDdiCdiCompatibleFiles(currentDatasetId!, this.dataverseToken())
       .subscribe({
         next: (data) => {
+          this.subscriptions.delete(subscription);
+          subscription?.unsubscribe();
           this.setData(data);
         },
         error: (err) => {
+          this.subscriptions.delete(subscription);
+          subscription?.unsubscribe();
           this.notificationService.showError(
             `Getting files failed: ${err.error}`,
           );
         },
       });
+    this.subscriptions.add(subscription);
   }
 
   setData(data: CompareResult): void {
@@ -503,8 +517,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.output.set(
       `DDI-CDI generation started...\n${emailMsg}\nYou can close this window.`,
     );
-    this.dataService.generateDdiCdi(this.req!).subscribe({
+    let generateSubscription: Subscription;
+    generateSubscription = this.dataService.generateDdiCdi(this.req!).subscribe({
       next: (key: Key) => {
+        this.subscriptions.delete(generateSubscription);
+        generateSubscription?.unsubscribe();
         const successMsg = currentSendEmail
           ? 'DDI-CDI generation job submitted. You will be notified by email when complete.'
           : 'DDI-CDI generation job submitted.';
@@ -512,15 +529,21 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         this.getDdiCdiData(key);
       },
       error: (err) => {
+        this.subscriptions.delete(generateSubscription);
+        generateSubscription?.unsubscribe();
         this.notificationService.showError(`Generation failed: ${err.error}`);
         this.loading.set(false);
       },
     });
+    this.subscriptions.add(generateSubscription);
   }
 
   private getDdiCdiData(key: Key): void {
-    this.dataService.getCachedDdiCdiData(key).subscribe({
+    let subscription: Subscription;
+    subscription = this.dataService.getCachedDdiCdiData(key).subscribe({
       next: async (res: CachedComputeResponse) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
         if (res.ready === true) {
           this.loading.set(false);
           if (res.res) {
@@ -548,12 +571,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         }
       },
       error: (err) => {
+        this.subscriptions.delete(subscription);
+        subscription?.unsubscribe();
         this.loading.set(false);
         this.notificationService.showError(
           `Getting DDI-CDI results failed: ${err.error}`,
         );
       },
     });
+    this.subscriptions.add(subscription!);
   }
 
   private resetOutputState(): void {
@@ -610,7 +636,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     }
 
     // Add the file to the dataset via backend (handles auth and MIME type)
-    this.dataService
+    let viewerSubscription: Subscription;
+    viewerSubscription = this.dataService
       .addFileToDataset({
         persistentId: currentDatasetId,
         dataverseKey: this.dataverseToken(),
@@ -619,6 +646,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       })
       .subscribe({
         next: (response) => {
+          this.subscriptions.delete(viewerSubscription);
+          viewerSubscription?.unsubscribe();
           if (response.fileId) {
             // Build the Dataverse file page URL
             // Version is always DRAFT because we just added a file to the dataset
@@ -637,10 +666,13 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           }
         },
         error: (err) => {
+          this.subscriptions.delete(viewerSubscription);
+          viewerSubscription?.unsubscribe();
           console.error('Failed to add file to dataset:', err);
           this.notificationService.showError('Failed to add file to dataset');
         },
       });
+    this.subscriptions.add(viewerSubscription);
   }
 
   loadCachedOutput(): void {
@@ -649,8 +681,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       return;
     }
 
-    this.dataService.getCachedDdiCdiOutput(currentDatasetId).subscribe({
+    let cacheSubscription: Subscription;
+    cacheSubscription = this.dataService.getCachedDdiCdiOutput(currentDatasetId).subscribe({
       next: (cache) => {
+        this.subscriptions.delete(cacheSubscription);
+        cacheSubscription?.unsubscribe();
         if (cache.errorMessage) {
           this.output.set(`Previous generation failed:\n${cache.errorMessage}`);
           this.outputDisabled.set(false);
@@ -666,10 +701,13 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         }
       },
       error: () => {
+        this.subscriptions.delete(cacheSubscription);
+        cacheSubscription?.unsubscribe();
         // No cached output found, which is fine
         this.cachedOutputLoaded.set(false);
       },
     });
+    this.subscriptions.add(cacheSubscription!);
   }
 
   refreshOutput(): void {
