@@ -6,7 +6,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -353,18 +353,18 @@ describe('ConnectComponent pilot plugin configuration', () => {
     httpMock.verify();
   });
 
-  function createComponent(): ConnectComponent {
+  async function createComponent(): Promise<ConnectComponent> {
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
     const req = httpMock.expectOne('api/frontend/config');
     req.flush(PILOT_CONFIG);
-    flushMicrotasks();
+    await fixture.whenStable();
     fixture.detectChanges();
     return fixture.componentInstance;
   }
 
-  it('exposes pilot plugin families on demand', fakeAsync(() => {
-    const component = createComponent();
+  it('exposes pilot plugin families on demand', async () => {
+    const component = await createComponent();
     component.getPlugins();
     const actual = new Set(component.plugins().map((p) => p.value));
     expect(actual).toEqual(
@@ -380,10 +380,10 @@ describe('ConnectComponent pilot plugin configuration', () => {
       ]),
     );
     expect(component.dataverseHeader()).toBe(PILOT_CONFIG.dataverseHeader);
-  }));
+  });
 
-  it('requires explicit plugin instance selection when multiple options exist', fakeAsync(() => {
-    const component = createComponent();
+  it('requires explicit plugin instance selection when multiple options exist', async () => {
+    const component = await createComponent();
 
     component.plugin.set('gitlab');
     component.changePlugin();
@@ -400,11 +400,11 @@ describe('ConnectComponent pilot plugin configuration', () => {
     component.changePlugin();
     expect(component.pluginId()).toBe('github');
     expect(component.pluginIdSelectHidden()).toBeTrue();
-  }));
+  });
 
   PILOT_CONFIG.plugins.forEach((plugin) => {
-    it(`mirrors pilot configuration for plugin ${plugin.id}`, fakeAsync(() => {
-      const component = createComponent();
+    it(`mirrors pilot configuration for plugin ${plugin.id}`, async () => {
+      const component = await createComponent();
       component.plugin.set(plugin.plugin);
       component.changePlugin();
       component.pluginId.set(plugin.id);
@@ -461,6 +461,6 @@ describe('ConnectComponent pilot plugin configuration', () => {
       expect(expectBoolean(component.repoNameSearchInitEnabled())).toBe(
         Boolean(plugin.repoNameFieldHasInit),
       );
-    }));
+    });
   });
 });

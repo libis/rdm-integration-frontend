@@ -6,7 +6,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -567,7 +567,7 @@ describe('DdiCdiComponent', () => {
       expect(window.open).not.toHaveBeenCalled();
     });
 
-    it('should add file to dataset and open viewer with fileId', fakeAsync(() => {
+    it('should add file to dataset and open viewer with fileId', async () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi.set(GENERATED_TURTLE);
@@ -581,7 +581,7 @@ describe('DdiCdiComponent', () => {
       );
 
       component.openInViewer();
-      tick();
+      await new Promise<void>(r => setTimeout(r));
 
       expect(dataServiceStub.addFileToDataset).toHaveBeenCalledWith({
         persistentId: 'doi:10.5072/test',
@@ -593,7 +593,7 @@ describe('DdiCdiComponent', () => {
         'https://demo.dataverse.org/file.xhtml?fileId=12345&version=DRAFT',
         '_blank',
       );
-    }));
+    });
 
     it('should show error when baseUrl is not configured', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
@@ -613,7 +613,7 @@ describe('DdiCdiComponent', () => {
       expect(window.open).not.toHaveBeenCalled();
     });
 
-    it('should show error when addFileToDataset fails', fakeAsync(() => {
+    it('should show error when addFileToDataset fails', async () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi.set(GENERATED_TURTLE);
@@ -627,13 +627,13 @@ describe('DdiCdiComponent', () => {
       );
 
       component.openInViewer();
-      tick();
+      await new Promise<void>(r => setTimeout(r));
 
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'Failed to add file to dataset',
       );
       expect(window.open).not.toHaveBeenCalled();
-    }));
+    });
   });
 
   describe('Additional Coverage Tests', () => {

@@ -6,8 +6,6 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   ComponentFixture,
   TestBed,
-  fakeAsync,
-  tick,
 } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
@@ -217,7 +215,7 @@ describe('ComputeComponent', () => {
     expect(component.rowNodeMap().size).toBeGreaterThan(0);
   });
 
-  it('continueSubmit polls until ready', fakeAsync(() => {
+  it('continueSubmit polls until ready', async () => {
     component.submitCompute({
       persistentId: 'd1',
       queue: 'q',
@@ -227,17 +225,17 @@ describe('ComputeComponent', () => {
     component.sendEmailOnSuccess.set(true);
     component.continueSubmit();
     // flush compute() delayed emission to obtain key and trigger first getComputeData subscription
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     // first poll response: not ready yet
     mockData.emit({ ready: false, res: 'partial' });
     // allow microtasks (sleep immediate resolve) & re-subscription
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     // second poll response: ready
     mockData.emit({ ready: true, res: 'final', err: '' });
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(component.output()).toBe('final');
     expect(component.outputDisabled()).toBeFalse();
-  }));
+  });
 
   it('back navigates by changing location href', () => {
     component.back();
@@ -253,23 +251,23 @@ describe('ComputeComponent', () => {
     expect(component.sendMails()).toBeTrue();
   });
 
-  it('getDoiOptions loads options and handles errors', fakeAsync(() => {
+  it('getDoiOptions loads options and handles errors', async () => {
     dvLookup.items = [
       { label: 'Dataset A', value: 'doi:A' },
       { label: 'Dataset B', value: 'doi:B' },
     ];
     component.getDoiOptions();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(component.doiItems().length).toBe(2);
 
     component.doiItems.set([]);
     dvLookup.error = 'fail';
     component.getDoiOptions();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('DOI lookup failed')),
     ).toBeTrue();
-  }));
+  });
 
   it('getDoiOptions avoids reload when options already available', () => {
     component.doiItems.set([{ label: 'existing', value: 'doi:X' }]);
@@ -288,7 +286,7 @@ describe('ComputeComponent', () => {
     expect(component.datasetId()).toBeUndefined();
   });
 
-  it('onDatasetChange populates map or reports error', fakeAsync(() => {
+  it('onDatasetChange populates map or reports error', async () => {
     const df: Datafile = {
       id: '1',
       name: 'file',
@@ -300,22 +298,22 @@ describe('ComputeComponent', () => {
     mockData.executableResponse = { data: [df] };
     component.datasetId.set('doi:1');
     component.onDatasetChange();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(component.loading()).toBeFalse();
     expect(component.rowNodeMap().size).toBeGreaterThan(0);
 
     mockData.executableError = 'boom';
     component.onDatasetChange();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(
       notification.errors.some((e) =>
         e.includes('Getting executable files failed'),
       ),
     ).toBeTrue();
     mockData.executableError = undefined;
-  }));
+  });
 
-  it('continueSubmit handles compute errors gracefully', fakeAsync(() => {
+  it('continueSubmit handles compute errors gracefully', async () => {
     mockData.computeError = { error: 'server down' };
     component.submitCompute({
       persistentId: 'doi:1',
@@ -324,11 +322,11 @@ describe('ComputeComponent', () => {
       sendEmailOnSuccess: false,
     });
     component.continueSubmit();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(notification.errors.length).toBeGreaterThan(0);
-  }));
+  });
 
-  it('compute polling surfaces backend error messages', fakeAsync(() => {
+  it('compute polling surfaces backend error messages', async () => {
     component.submitCompute({
       persistentId: 'doi:1',
       queue: 'q',
@@ -336,9 +334,9 @@ describe('ComputeComponent', () => {
       sendEmailOnSuccess: false,
     });
     component.continueSubmit();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     mockData.emit({ ready: true, err: 'failure', res: '' });
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(notification.errors.some((e) => e.includes('failure'))).toBeTrue();
-  }));
+  });
 });

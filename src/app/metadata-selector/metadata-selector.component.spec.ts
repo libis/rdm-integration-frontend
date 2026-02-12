@@ -6,10 +6,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   ComponentFixture,
-  fakeAsync,
-  flushMicrotasks,
   TestBed,
-  tick,
 } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
@@ -137,10 +134,9 @@ describe('MetadataSelectorComponent', () => {
     ).toBeTrue();
   });
 
-  it('should load metadata and build tree map', fakeAsync(() => {
+  it('should load metadata and build tree map', async () => {
     // ngOnInit already called; wait for async loadData to complete
-    flushMicrotasks();
-    tick(); // Allow effects to run
+    await fixture.whenStable();
     fixture.detectChanges();
     expect(component.metadata()).toBeTruthy();
     expect(component.root()).toBeTruthy();
@@ -152,10 +148,10 @@ describe('MetadataSelectorComponent', () => {
     expect(names).toContain('author');
     // Row map should have entries for all nodes
     expect(component.rowNodeMap().size).toBeGreaterThan(3);
-  }));
+  });
 
-  it('should render rows with metadata fields', fakeAsync(() => {
-    flushMicrotasks();
+  it('should render rows with metadata fields', async () => {
+    await fixture.whenStable();
     fixture.detectChanges();
     // Verify that table rows are rendered
     const rows: HTMLElement[] = Array.from(
@@ -163,7 +159,7 @@ describe('MetadataSelectorComponent', () => {
     );
     // We expect at least one row (root children default to Copy)
     expect(rows.length).toBeGreaterThan(0);
-  }));
+  });
 
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {
     // prepare a fake root and spy on static methods
@@ -180,8 +176,8 @@ describe('MetadataSelectorComponent', () => {
     expect(toggleSpy).toHaveBeenCalledWith(root);
   });
 
-  it('submit should pass all fields by default', fakeAsync(() => {
-    flushMicrotasks();
+  it('submit should pass all fields by default', async () => {
+    await fixture.whenStable();
     fixture.detectChanges();
     component.submit();
     const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
@@ -205,10 +201,10 @@ describe('MetadataSelectorComponent', () => {
           .value as any[]
       ).length,
     ).toBe(2);
-  }));
+  });
 
-  it('submit should prune ignored primitive and nested values', fakeAsync(() => {
-    flushMicrotasks();
+  it('submit should prune ignored primitive and nested values', async () => {
+    await fixture.whenStable();
     fixture.detectChanges();
     // Ignore the title node
     const titleNode = Array.from(component.rowNodeMap().values()).find(
@@ -244,10 +240,10 @@ describe('MetadataSelectorComponent', () => {
     const authors = fields.find((f: MetadataField) => f.typeName === 'author')!
       .value as any[];
     expect(authors.length).toBe(1);
-  }));
+  });
 
-  it('submit should navigate with populated metadata once loaded', fakeAsync(() => {
-    flushMicrotasks();
+  it('submit should navigate with populated metadata once loaded', async () => {
+    await fixture.whenStable();
     fixture.detectChanges();
     component.submit();
     const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
@@ -257,7 +253,7 @@ describe('MetadataSelectorComponent', () => {
     expect(state.metadata).toBeDefined();
     const fields = state.metadata.datasetVersion.metadataBlocks.citation.fields;
     expect(fields.length).toBeGreaterThan(0);
-  }));
+  });
 
   it('back should navigate to compare with dataset id state', () => {
     component.back();

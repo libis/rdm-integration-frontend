@@ -4,12 +4,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { Router } from '@angular/router';
 import { Observable, Observer, Subscription, of } from 'rxjs';
@@ -655,7 +650,7 @@ describe('CompareComponent', () => {
       expect(component.newlyCreated()).toBeFalse();
     });
 
-    it('getUpdatedData and refresh process data update responses', fakeAsync(() => {
+    it('getUpdatedData and refresh process data update responses', async () => {
       const updates: CompareResult = {
         data: [],
         id: 'id',
@@ -685,7 +680,7 @@ describe('CompareComponent', () => {
       (component as any).utils = utilsStub;
       component.data.set(updating);
       component['getUpdatedData'](0);
-      tick();
+      await new Promise<void>(r => setTimeout(r));
       expect(component.loading()).toBeFalse();
 
       dataUpdatesStub.updateData.and.returnValue(
@@ -700,8 +695,8 @@ describe('CompareComponent', () => {
       component.refresh();
       // refresh() immediately sets refreshHidden to true
       expect(component.refreshHidden()).toBeTrue();
-      // After tick, the polling loop may change it based on retries
-      tick();
-    }));
+      // After yielding, the polling loop may change it based on retries
+      await new Promise<void>(r => setTimeout(r));
+    });
   });
 });

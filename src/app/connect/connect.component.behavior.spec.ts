@@ -9,9 +9,6 @@ import {
 import { signal } from '@angular/core';
 import {
   TestBed,
-  fakeAsync,
-  flushMicrotasks,
-  tick,
 } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem } from 'primeng/api';
@@ -339,20 +336,25 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(matches.length).toBe(1);
   });
 
-  it('onDatasetSelectionChange triggers new dataset creation flow and hides message after timeout', fakeAsync(() => {
-    const fixture = TestBed.createComponent(ConnectComponent);
-    const comp: any = fixture.componentInstance;
-    comp.collectionId.set('root:COLL');
-    comp.doiItems.set([
-      { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
-    ]);
-    fixture.detectChanges();
-    comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
-    expect(comp.datasetId()).toContain('root:COLL:New Dataset');
-    expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
-    tick(3000);
-    expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
-  }));
+  it('onDatasetSelectionChange triggers new dataset creation flow and hides message after timeout', () => {
+    jasmine.clock().install();
+    try {
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      comp.collectionId.set('root:COLL');
+      comp.doiItems.set([
+        { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+      ]);
+      fixture.detectChanges();
+      comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
+      expect(comp.datasetId()).toContain('root:COLL:New Dataset');
+      expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
+      jasmine.clock().tick(3000);
+      expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
 
   it('applySnapshot respects existing datasetId (precedence)', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
@@ -386,7 +388,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(credentialsService.newlyCreated$()).toBeTrue();
   });
 
-  it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', fakeAsync(() => {
+  it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', async () => {
     // Pre-populate snapshot with fields that should be cleared
     sessionStorage.setItem(
       'rdm-connect-snapshot',
@@ -429,7 +431,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    tick(); // flush async setConfig promise
+    await new Promise<void>(r => setTimeout(r)); // flush async setConfig promise
     const comp: any = fixture.componentInstance;
 
     // Explicit deep-link values applied
@@ -443,9 +445,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.repoName()).toBeUndefined();
     // Session storage cleared
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
-  }));
+  });
 
-  it('explicit reset query param clears snapshot and all fields including datasetId', fakeAsync(() => {
+  it('explicit reset query param clears snapshot and all fields including datasetId', async () => {
     sessionStorage.setItem(
       'rdm-connect-snapshot',
       JSON.stringify({
@@ -477,12 +479,12 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     const comp: any = fixture.componentInstance;
     expect(comp.datasetId()).toBeUndefined();
     expect(comp.plugin()).toBeUndefined();
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
-  }));
+  });
 
   it('validateUrl requires complete repo path', () => {
     const comp = TestBed.createComponent(ConnectComponent)
@@ -533,7 +535,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.pluginIdSelectHidden()).toBeTrue();
   });
 
-  it('repoNameSearch handles service errors by presenting failure message', fakeAsync(() => {
+  it('repoNameSearch handles service errors by presenting failure message', async () => {
     pluginService.pluginConfig.repoNameFieldHasSearch = true;
     pluginService.pluginConfig.parseSourceUrlField = true;
     pluginService.pluginIds = [{ label: 'GitHub', value: 'github' }];
@@ -543,9 +545,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
-    flushMicrotasks();
-    tick();
-    flushMicrotasks();
+    await new Promise<void>(r => setTimeout(r));
 
     comp.plugin.set('github');
     comp.pluginId.set('github');
@@ -555,14 +555,12 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     comp.startRepoSearch();
     comp.onRepoNameSearch('repo');
-    tick(comp.DEBOUNCE_TIME + 1);
-    flushMicrotasks();
-    tick();
-    flushMicrotasks();
+    await new Promise<void>(r => setTimeout(r, comp.DEBOUNCE_TIME + 100));
+    await new Promise<void>(r => setTimeout(r));
 
     expect(repoLookup.searchSpy).toHaveBeenCalled();
     expect(comp.repoNames()[0].label).toContain('search failed: boom');
-  }));
+  });
 
   it('getOptions requests oauth scopes when branch lookup returns scopes marker', () => {
     pluginService.pluginConfig.repoNameFieldHasSearch = true;

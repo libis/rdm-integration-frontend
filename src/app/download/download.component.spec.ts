@@ -8,10 +8,6 @@ import {
 } from '@angular/common/http/testing';
 import {
   TestBed,
-  fakeAsync,
-  flush,
-  flushMicrotasks,
-  tick,
 } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
@@ -339,7 +335,7 @@ describe('DownloadComponent', () => {
     expect(component.branchItems()[0].label).toBe('Loading...');
   });
 
-  it('getOptions populates node children for nested request', fakeAsync(() => {
+  it('getOptions populates node children for nested request', async () => {
     initComponent();
     component.selectedRepoName.set('repoA');
     repoLookup.options = [
@@ -352,12 +348,12 @@ describe('DownloadComponent', () => {
       selectable: true,
     };
     component.getOptions(parent);
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(parent.children?.length).toBe(2);
     expect(component.optionsLoading()).toBeFalse();
-  }));
+  });
 
-  it('getOptions handles error path', fakeAsync(() => {
+  it('getOptions handles error path', async () => {
     initComponent();
     component.selectedRepoName.set('repoA');
     // force error
@@ -367,15 +363,15 @@ describe('DownloadComponent', () => {
       }),
     );
     component.getOptions();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('Branch lookup failed')),
     ).toBeTrue();
     expect(component.branchItems().length).toBe(0);
     expect(component.option()).toBeUndefined();
-  }));
+  });
 
-  it('download surfaces error and stops polling setup', fakeAsync(() => {
+  it('download surfaces error and stops polling setup', async () => {
     initComponent();
     const df: Datafile = {
       id: '1',
@@ -390,16 +386,16 @@ describe('DownloadComponent', () => {
 
     submit.succeed = false;
     component.download();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(
       notification.errors.some((e) => e.includes('Download request failed')),
     ).toBeTrue();
     expect(component.statusPollingActive()).toBeFalse();
     expect(component.lastTransferTaskId()).toBeUndefined();
-  }));
+  });
 
-  it('download success stores monitoring info', fakeAsync(() => {
+  it('download success stores monitoring info', async () => {
     initComponent();
     const df: Datafile = {
       id: '1',
@@ -416,7 +412,7 @@ describe('DownloadComponent', () => {
     submit.responseMonitorUrl = 'https://app.globus.org/activity/task-789';
 
     component.download();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(notification.successes.pop()).toContain('Globus task ID: task-789');
     expect(component.lastTransferTaskId()).toBe('task-789');
@@ -425,9 +421,9 @@ describe('DownloadComponent', () => {
     );
     expect(component.downloadRequested()).toBeFalse();
     expect(component.downloadInProgress()).toBeFalse();
-  }));
+  });
 
-  it('download surfaces error notification', fakeAsync(() => {
+  it('download surfaces error notification', async () => {
     initComponent();
     const df: Datafile = {
       id: '1',
@@ -442,14 +438,14 @@ describe('DownloadComponent', () => {
 
     submit.succeed = false;
     component.download();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(
       notification.errors.some((e) => e.includes('Download request failed')),
     ).toBeTrue();
     expect(component.statusPollingActive()).toBeFalse();
     expect(component.lastTransferTaskId()).toBeUndefined();
-  }));
+  });
 
   it('onStatusPollingChange toggles polling state flag', () => {
     initComponent();
@@ -472,7 +468,7 @@ describe('DownloadComponent', () => {
     expect(results[1].value).toBe('doi:2');
   });
 
-  it('getOptions populates branchItems when called without node', fakeAsync(() => {
+  it('getOptions populates branchItems when called without node', async () => {
     const comp = initComponent();
     comp.selectedRepoName.set('repoA');
     repoLookup.options = [
@@ -481,11 +477,11 @@ describe('DownloadComponent', () => {
     ];
 
     comp.getOptions();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(comp.branchItems().length).toBe(2);
     expect(comp.branchItems()[0].label).toBe('folder-a');
-  }));
+  });
 
   it('helper accessors mirror globus plugin configuration', () => {
     const comp = initComponent();
@@ -701,7 +697,7 @@ describe('DownloadComponent', () => {
     expect(component.downloadDisabled()).toBeFalse();
   });
 
-  it('onDatasetChange populates tree on success', fakeAsync(() => {
+  it('onDatasetChange populates tree on success', async () => {
     initComponent();
     const payload: CompareResult = {
       data: [
@@ -725,28 +721,28 @@ describe('DownloadComponent', () => {
     dataService.response = payload;
     component.datasetId.set('doi:test');
     component.onDatasetChange();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(component.loading()).toBeFalse();
     expect(component.rootNodeChildren().length).toBe(2);
     expect(component.rootNodeChildren()[0].data?.id).toBe('a');
-  }));
+  });
 
-  it('onDatasetChange surfaces errors from service', fakeAsync(() => {
+  it('onDatasetChange surfaces errors from service', async () => {
     initComponent();
     dataService.error = 'service-down';
     component.datasetId.set('doi:test');
     component.accessMode.set('login');
     component.onDatasetChange();
-    tick();
-    flush();
+    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>(r => setTimeout(r));
     expect(
       notification.errors.some((msg) =>
         msg.includes('Getting downloadable files failed'),
       ),
     ).toBeTrue();
-  }));
+  });
 
-  it('ngOnInit processes globus callback state and fetches token', fakeAsync(() => {
+  it('ngOnInit processes globus callback state and fetches token', async () => {
     let datasetSpy!: jasmine.Spy<() => void>;
     initComponent(
       {
@@ -760,7 +756,7 @@ describe('DownloadComponent', () => {
         datasetSpy = spyOn(compInstance, 'onDatasetChange').and.stub();
       },
     );
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     const req = httpMock.expectOne('api/common/oauthtoken');
     expect(req.request.method).toBe('POST');
@@ -770,13 +766,13 @@ describe('DownloadComponent', () => {
       nonce: 'nonce-123',
     });
     req.flush({ session_id: 'session-xyz' });
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(datasetSpy).toHaveBeenCalled();
     expect(component.token()).toBe('session-xyz');
-  }));
+  });
 
-  it('ngOnInit skips dataset load when state value is placeholder', fakeAsync(() => {
+  it('ngOnInit skips dataset load when state value is placeholder', async () => {
     let datasetSpy!: jasmine.Spy<() => void>;
     initComponent(
       {
@@ -790,16 +786,16 @@ describe('DownloadComponent', () => {
         datasetSpy = spyOn(compInstance, 'onDatasetChange').and.stub();
       },
     );
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     const req = httpMock.expectOne('api/common/oauthtoken');
     req.flush({ session_id: 'session-abc' });
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(datasetSpy).not.toHaveBeenCalled();
-  }));
+  });
 
-  it('ngOnInit without oauth code triggers repo token lookup', fakeAsync(() => {
+  it('ngOnInit without oauth code triggers repo token lookup', async () => {
     dataService.userLoggedIn = true;
     let tokenSpy!: jasmine.Spy<() => void>;
     initComponent(
@@ -811,16 +807,15 @@ describe('DownloadComponent', () => {
         tokenSpy = spyOn(compInstance, 'getRepoToken').and.callThrough();
       },
     );
-    tick();
+    await new Promise<void>(r => setTimeout(r));
 
     expect(component.datasetId()).toBe('doi:XYZ');
     expect(tokenSpy).toHaveBeenCalled();
-  }));
+  });
 
-  it('repoName search subscription surfaces errors from service', fakeAsync(() => {
+  it('repoName search subscription surfaces errors from service', async () => {
     const comp = initComponent();
-    tick();
-    flushMicrotasks();
+    await new Promise<void>(r => setTimeout(r));
     comp.globusPlugin.set({
       repoNameFieldName: 'Endpoint',
       repoNameFieldHasInit: true,
@@ -831,30 +826,25 @@ describe('DownloadComponent', () => {
     );
 
     comp.onRepoNameSearch('abc');
-    tick(comp.DEBOUNCE_TIME + 1);
-    flushMicrotasks();
-    flush();
-    flushMicrotasks();
+    await new Promise<void>(r => setTimeout(r, comp.DEBOUNCE_TIME + 100));
+    await new Promise<void>(r => setTimeout(r));
 
     expect(comp.repoNames()[0].label).toContain('search failed');
-  }));
+  });
 
-  it('dataset search subscription handles rejected lookups', fakeAsync(() => {
+  it('dataset search subscription handles rejected lookups', async () => {
     const comp = initComponent();
-    tick();
-    flushMicrotasks();
+    await new Promise<void>(r => setTimeout(r));
     spyOn(dvLookup, 'getItems').and.returnValue(
       throwError(() => new Error('lookup-fail')),
     );
 
     comp.onDatasetSearch('proj');
-    tick(comp.DEBOUNCE_TIME + 1);
-    flushMicrotasks();
-    flush();
-    flushMicrotasks();
+    await new Promise<void>(r => setTimeout(r, comp.DEBOUNCE_TIME + 100));
+    await new Promise<void>(r => setTimeout(r));
 
     expect(comp.doiItems()[0].label).toContain('search failed');
-  }));
+  });
 
   describe('showDVToken', () => {
     it('should return true when pluginService.showDVToken returns true', () => {
@@ -881,9 +871,9 @@ describe('DownloadComponent', () => {
   });
 
   describe('continueAsGuest', () => {
-    it('should set accessMode to guest and close popup', fakeAsync(() => {
+    it('should set accessMode to guest and close popup', async () => {
       const comp = initComponent();
-      tick();
+      await new Promise<void>(r => setTimeout(r));
       comp.showGuestLoginPopup.set(true);
       comp.accessDeniedForGuest.set(true);
       comp.loading.set(false);
@@ -895,11 +885,11 @@ describe('DownloadComponent', () => {
       expect(comp.accessMode()).toBe('guest');
       expect(comp.showGuestLoginPopup()).toBeFalse();
       expect(comp.getRepoToken).toHaveBeenCalled();
-    }));
+    });
 
-    it('should wait for loading before proceeding', fakeAsync(() => {
+    it('should wait for loading before proceeding', async () => {
       const comp = initComponent();
-      tick();
+      await new Promise<void>(r => setTimeout(r));
       comp.showGuestLoginPopup.set(true);
       comp.loading.set(true);
       spyOn(comp, 'getRepoToken');
@@ -911,11 +901,11 @@ describe('DownloadComponent', () => {
 
       // Simulate loading complete
       comp.loading.set(false);
-      tick(200);
+      await new Promise<void>(r => setTimeout(r, 200));
 
       expect(comp.accessMode()).toBe('guest');
       expect(comp.getRepoToken).toHaveBeenCalled();
-    }));
+    });
   });
 
   describe('continueWithLogin', () => {
@@ -1205,9 +1195,9 @@ describe('DownloadComponent', () => {
       expect(comp.getRepoToken).not.toHaveBeenCalled();
     });
 
-    it('should set token and accessMode from valid preview URL', fakeAsync(() => {
+    it('should set token and accessMode from valid preview URL', async () => {
       const comp = initComponent();
-      tick();
+      await new Promise<void>(r => setTimeout(r));
       comp.previewUrlInput.set('12345678-1234-1234-1234-123456789012');
       comp.downloadId.set(undefined);
       comp.datasetDbId.set(undefined);
@@ -1221,6 +1211,6 @@ describe('DownloadComponent', () => {
       expect(comp.accessMode()).toBe('preview');
       expect(comp.showGuestLoginPopup()).toBeFalse();
       expect(comp.getRepoToken).toHaveBeenCalled();
-    }));
+    });
   });
 });

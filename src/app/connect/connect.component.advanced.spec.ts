@@ -4,7 +4,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
@@ -377,7 +377,7 @@ describe('ConnectComponent advanced behaviors', () => {
   // Callback parsing is now handled by AppComponent which redirects to /connect with datasetPid.
   // See app.component.spec.ts for tests of parseGlobusCallback and redirect handling.
 
-  it('restoreFromOauthState populates selections and fetches token', fakeAsync(() => {
+  it('restoreFromOauthState populates selections and fetches token', async () => {
     const { comp } = createComponent();
     const state = {
       plugin: { label: 'GitHub', value: 'github' },
@@ -403,11 +403,11 @@ describe('ConnectComponent advanced behaviors', () => {
       code: 'oauthCode',
       nonce: 'nonce-123',
     });
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(comp.token()).toBe('session-123');
-  }));
+  });
 
-  it('getDvObjectOptions populates dropdowns and handles errors', fakeAsync(() => {
+  it('getDvObjectOptions populates dropdowns and handles errors', async () => {
     dvLookup.items = [
       { label: 'Dataset A', value: 'doi:AAA' },
       { label: 'Dataset B', value: 'doi:BBB' },
@@ -420,7 +420,7 @@ describe('ConnectComponent advanced behaviors', () => {
         c.doiItems.set(items);
       },
     );
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(comp.doiItems().length).toBe(2);
 
     comp.doiItems.set([]);
@@ -432,13 +432,13 @@ describe('ConnectComponent advanced behaviors', () => {
         c.doiItems.set(items);
       },
     );
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('DOI lookup failed')),
     ).toBeTrue();
-  }));
+  });
 
-  it('getOptions populates branch items and handles nested nodes', fakeAsync(() => {
+  it('getOptions populates branch items and handles nested nodes', async () => {
     repoLookup.options = [
       { label: 'opt1', value: 'o1' },
       { label: 'opt2', value: 'o2' },
@@ -459,18 +459,18 @@ describe('ConnectComponent advanced behaviors', () => {
       selectable: true,
     };
     comp.getOptions(node);
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(node.children?.length).toBe(2);
 
     repoLookup.error = 'Bad request';
     comp.branchItems.set([]);
     comp.getOptions();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('Branch lookup failed')),
     ).toBeTrue();
     expect(comp.branchItems().length).toBe(0);
-  }));
+  });
 
   it('optionSelected sets selection for empty string (root folder)', () => {
     const { comp } = createComponent();
@@ -582,7 +582,7 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(comp.computedRepoName()).toBe('found');
   });
 
-  it('getOptions requests additional scopes via getRepoToken when signalled', fakeAsync(() => {
+  it('getOptions requests additional scopes via getRepoToken when signalled', async () => {
     const { comp } = createComponent();
     comp.plugin.set('github');
     comp.pluginId.set('github');
@@ -599,9 +599,9 @@ describe('ConnectComponent advanced behaviors', () => {
       }),
     );
     comp.getOptions();
-    tick();
+    await new Promise<void>(r => setTimeout(r));
     expect(comp.getRepoToken).toHaveBeenCalledWith('repo:read');
-  }));
+  });
 
   it('getDvObjectOptions returns immediately when items already loaded', () => {
     const { comp } = createComponent();
@@ -705,26 +705,31 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(items.slice(1)).toEqual(dvLookup.items);
   });
 
-  it('onDatasetSelectionChange handles create-new sentinel and explicit selections', fakeAsync(() => {
-    const { comp } = createComponent();
-    comp.collectionId.set('root:COLL');
-    comp.doiItems.set([
-      { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
-      { label: 'Existing', value: 'doi:123' },
-    ]);
-    const newDatasetSpy = spyOn(comp, 'newDataset').and.callThrough();
+  it('onDatasetSelectionChange handles create-new sentinel and explicit selections', () => {
+    jasmine.clock().install();
+    try {
+      const { comp } = createComponent();
+      comp.collectionId.set('root:COLL');
+      comp.doiItems.set([
+        { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+        { label: 'Existing', value: 'doi:123' },
+      ]);
+      const newDatasetSpy = spyOn(comp, 'newDataset').and.callThrough();
 
-    comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
-    expect(newDatasetSpy).toHaveBeenCalled();
-    expect(comp.datasetId()).toContain('root:COLL');
-    expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
+      comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
+      expect(newDatasetSpy).toHaveBeenCalled();
+      expect(comp.datasetId()).toContain('root:COLL');
+      expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
 
-    tick(3000);
-    expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
+      jasmine.clock().tick(3000);
+      expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
 
-    const previousValue = comp.datasetId();
-    comp.onDatasetSelectionChange({ value: 'doi:567' });
-    expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
-    expect(comp.datasetId()).toBe(previousValue);
-  }));
+      const previousValue = comp.datasetId();
+      comp.onDatasetSelectionChange({ value: 'doi:567' });
+      expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
+      expect(comp.datasetId()).toBe(previousValue);
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
 });

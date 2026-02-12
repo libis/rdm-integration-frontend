@@ -92,8 +92,6 @@
           "options": {
             "main": "src/test.ts",
             "polyfills": [
-              "zone.js",
-              "zone.js/testing",
               "@angular/localize/init"
             ],
             "tsConfig": "tsconfig.spec.json",
