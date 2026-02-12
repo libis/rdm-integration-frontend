@@ -403,7 +403,7 @@ describe('ConnectComponent advanced behaviors', () => {
       code: 'oauthCode',
       nonce: 'nonce-123',
     });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(comp.token()).toBe('session-123');
   });
 
@@ -420,7 +420,7 @@ describe('ConnectComponent advanced behaviors', () => {
         c.doiItems.set(items);
       },
     );
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(comp.doiItems().length).toBe(2);
 
     comp.doiItems.set([]);
@@ -432,7 +432,7 @@ describe('ConnectComponent advanced behaviors', () => {
         c.doiItems.set(items);
       },
     );
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('DOI lookup failed')),
     ).toBeTrue();
@@ -459,13 +459,13 @@ describe('ConnectComponent advanced behaviors', () => {
       selectable: true,
     };
     comp.getOptions(node);
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(node.children?.length).toBe(2);
 
     repoLookup.error = 'Bad request';
     comp.branchItems.set([]);
     comp.getOptions();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('Branch lookup failed')),
     ).toBeTrue();
@@ -599,7 +599,7 @@ describe('ConnectComponent advanced behaviors', () => {
       }),
     );
     comp.getOptions();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(comp.getRepoToken).toHaveBeenCalledWith('repo:read');
   });
 

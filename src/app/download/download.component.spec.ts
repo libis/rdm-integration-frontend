@@ -6,9 +6,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import {
-  TestBed,
-} from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
@@ -348,7 +346,7 @@ describe('DownloadComponent', () => {
       selectable: true,
     };
     component.getOptions(parent);
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(parent.children?.length).toBe(2);
     expect(component.optionsLoading()).toBeFalse();
   });
@@ -363,7 +361,7 @@ describe('DownloadComponent', () => {
       }),
     );
     component.getOptions();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('Branch lookup failed')),
     ).toBeTrue();
@@ -386,7 +384,7 @@ describe('DownloadComponent', () => {
 
     submit.succeed = false;
     component.download();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(
       notification.errors.some((e) => e.includes('Download request failed')),
@@ -412,7 +410,7 @@ describe('DownloadComponent', () => {
     submit.responseMonitorUrl = 'https://app.globus.org/activity/task-789';
 
     component.download();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(notification.successes.pop()).toContain('Globus task ID: task-789');
     expect(component.lastTransferTaskId()).toBe('task-789');
@@ -438,7 +436,7 @@ describe('DownloadComponent', () => {
 
     submit.succeed = false;
     component.download();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(
       notification.errors.some((e) => e.includes('Download request failed')),
@@ -477,7 +475,7 @@ describe('DownloadComponent', () => {
     ];
 
     comp.getOptions();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(comp.branchItems().length).toBe(2);
     expect(comp.branchItems()[0].label).toBe('folder-a');
@@ -721,7 +719,7 @@ describe('DownloadComponent', () => {
     dataService.response = payload;
     component.datasetId.set('doi:test');
     component.onDatasetChange();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(component.loading()).toBeFalse();
     expect(component.rootNodeChildren().length).toBe(2);
     expect(component.rootNodeChildren()[0].data?.id).toBe('a');
@@ -733,8 +731,8 @@ describe('DownloadComponent', () => {
     component.datasetId.set('doi:test');
     component.accessMode.set('login');
     component.onDatasetChange();
-    await new Promise<void>(r => setTimeout(r));
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notification.errors.some((msg) =>
         msg.includes('Getting downloadable files failed'),
@@ -756,7 +754,7 @@ describe('DownloadComponent', () => {
         datasetSpy = spyOn(compInstance, 'onDatasetChange').and.stub();
       },
     );
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     const req = httpMock.expectOne('api/common/oauthtoken');
     expect(req.request.method).toBe('POST');
@@ -766,7 +764,7 @@ describe('DownloadComponent', () => {
       nonce: 'nonce-123',
     });
     req.flush({ session_id: 'session-xyz' });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(datasetSpy).toHaveBeenCalled();
     expect(component.token()).toBe('session-xyz');
@@ -786,11 +784,11 @@ describe('DownloadComponent', () => {
         datasetSpy = spyOn(compInstance, 'onDatasetChange').and.stub();
       },
     );
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     const req = httpMock.expectOne('api/common/oauthtoken');
     req.flush({ session_id: 'session-abc' });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(datasetSpy).not.toHaveBeenCalled();
   });
@@ -807,7 +805,7 @@ describe('DownloadComponent', () => {
         tokenSpy = spyOn(compInstance, 'getRepoToken').and.callThrough();
       },
     );
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(component.datasetId()).toBe('doi:XYZ');
     expect(tokenSpy).toHaveBeenCalled();
@@ -815,7 +813,7 @@ describe('DownloadComponent', () => {
 
   it('repoName search subscription surfaces errors from service', async () => {
     const comp = initComponent();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     comp.globusPlugin.set({
       repoNameFieldName: 'Endpoint',
       repoNameFieldHasInit: true,
@@ -826,22 +824,22 @@ describe('DownloadComponent', () => {
     );
 
     comp.onRepoNameSearch('abc');
-    await new Promise<void>(r => setTimeout(r, comp.DEBOUNCE_TIME + 100));
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r, comp.DEBOUNCE_TIME + 100));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(comp.repoNames()[0].label).toContain('search failed');
   });
 
   it('dataset search subscription handles rejected lookups', async () => {
     const comp = initComponent();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     spyOn(dvLookup, 'getItems').and.returnValue(
       throwError(() => new Error('lookup-fail')),
     );
 
     comp.onDatasetSearch('proj');
-    await new Promise<void>(r => setTimeout(r, comp.DEBOUNCE_TIME + 100));
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r, comp.DEBOUNCE_TIME + 100));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(comp.doiItems()[0].label).toContain('search failed');
   });
@@ -873,7 +871,7 @@ describe('DownloadComponent', () => {
   describe('continueAsGuest', () => {
     it('should set accessMode to guest and close popup', async () => {
       const comp = initComponent();
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
       comp.showGuestLoginPopup.set(true);
       comp.accessDeniedForGuest.set(true);
       comp.loading.set(false);
@@ -889,7 +887,7 @@ describe('DownloadComponent', () => {
 
     it('should wait for loading before proceeding', async () => {
       const comp = initComponent();
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
       comp.showGuestLoginPopup.set(true);
       comp.loading.set(true);
       spyOn(comp, 'getRepoToken');
@@ -901,7 +899,7 @@ describe('DownloadComponent', () => {
 
       // Simulate loading complete
       comp.loading.set(false);
-      await new Promise<void>(r => setTimeout(r, 200));
+      await new Promise<void>((r) => setTimeout(r, 200));
 
       expect(comp.accessMode()).toBe('guest');
       expect(comp.getRepoToken).toHaveBeenCalled();
@@ -1197,7 +1195,7 @@ describe('DownloadComponent', () => {
 
     it('should set token and accessMode from valid preview URL', async () => {
       const comp = initComponent();
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
       comp.previewUrlInput.set('12345678-1234-1234-1234-123456789012');
       comp.downloadId.set(undefined);
       comp.datasetDbId.set(undefined);

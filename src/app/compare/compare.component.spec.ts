@@ -680,7 +680,7 @@ describe('CompareComponent', () => {
       (component as any).utils = utilsStub;
       component.data.set(updating);
       component['getUpdatedData'](0);
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
       expect(component.loading()).toBeFalse();
 
       dataUpdatesStub.updateData.and.returnValue(
@@ -696,7 +696,7 @@ describe('CompareComponent', () => {
       // refresh() immediately sets refreshHidden to true
       expect(component.refreshHidden()).toBeTrue();
       // After yielding, the polling loop may change it based on retries
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
     });
   });
 });

@@ -3,10 +3,7 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import {
-  ComponentFixture,
-  TestBed,
-} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
 import { signal } from '@angular/core';
@@ -225,14 +222,14 @@ describe('ComputeComponent', () => {
     component.sendEmailOnSuccess.set(true);
     component.continueSubmit();
     // flush compute() delayed emission to obtain key and trigger first getComputeData subscription
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     // first poll response: not ready yet
     mockData.emit({ ready: false, res: 'partial' });
     // allow microtasks (sleep immediate resolve) & re-subscription
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     // second poll response: ready
     mockData.emit({ ready: true, res: 'final', err: '' });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(component.output()).toBe('final');
     expect(component.outputDisabled()).toBeFalse();
   });
@@ -257,13 +254,13 @@ describe('ComputeComponent', () => {
       { label: 'Dataset B', value: 'doi:B' },
     ];
     component.getDoiOptions();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(component.doiItems().length).toBe(2);
 
     component.doiItems.set([]);
     dvLookup.error = 'fail';
     component.getDoiOptions();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notification.errors.some((e) => e.includes('DOI lookup failed')),
     ).toBeTrue();
@@ -298,13 +295,13 @@ describe('ComputeComponent', () => {
     mockData.executableResponse = { data: [df] };
     component.datasetId.set('doi:1');
     component.onDatasetChange();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(component.loading()).toBeFalse();
     expect(component.rowNodeMap().size).toBeGreaterThan(0);
 
     mockData.executableError = 'boom';
     component.onDatasetChange();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notification.errors.some((e) =>
         e.includes('Getting executable files failed'),
@@ -322,7 +319,7 @@ describe('ComputeComponent', () => {
       sendEmailOnSuccess: false,
     });
     component.continueSubmit();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(notification.errors.length).toBeGreaterThan(0);
   });
 
@@ -334,9 +331,9 @@ describe('ComputeComponent', () => {
       sendEmailOnSuccess: false,
     });
     component.continueSubmit();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     mockData.emit({ ready: true, err: 'failure', res: '' });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(notification.errors.some((e) => e.includes('failure'))).toBeTrue();
   });
 });

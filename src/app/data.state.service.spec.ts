@@ -3,9 +3,7 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import {
-  TestBed,
-} from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Observable, of, Subject, Subscription, throwError } from 'rxjs';
 import { DataService } from './data.service';
@@ -80,7 +78,7 @@ describe('DataStateService', () => {
         ],
       },
     });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     const v = service.state$();
     expect(v?.data?.map((f) => f.id)).toEqual(['a', 'b']);
   });
@@ -88,21 +86,21 @@ describe('DataStateService', () => {
   it('handles ready true with error message', async () => {
     init();
     data.cached$.next({ ready: true, res: { data: [] }, err: 'boom' });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(notify.errors.some((e) => e.includes('boom'))).toBeTrue();
   });
 
   it('handles ready true with missing response by leaving state null', async () => {
     init();
     data.cached$.next({ ready: true, res: undefined });
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(service.state$()).toBeNull();
   });
 
   it('handles getData error and navigates', async () => {
     data.getData = () => throwError(() => ({ error: 'x' })) as any;
     init();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(notify.errors.length).toBe(1);
     expect(router.navigated[0].commands).toEqual(['/connect']);
     expect(router.navigated[0].extras?.queryParams).toEqual({});
@@ -112,7 +110,7 @@ describe('DataStateService', () => {
     data.getData = () =>
       throwError(() => ({ error: 'denied', status: 401 })) as any;
     init();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(router.navigated[0].commands).toEqual(['/connect']);
     expect(router.navigated[0].extras?.queryParams).toEqual({ reset: 'true' });
   });
@@ -122,7 +120,7 @@ describe('DataStateService', () => {
     data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
     const generation = (service as any).pollGeneration;
     (service as any).getCompareData({ key: 'k2' }, generation);
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     expect(
       notify.errors.some((e) => e.includes('Comparing failed')),
     ).toBeTrue();

@@ -7,9 +7,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import {
-  TestBed,
-} from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -431,7 +429,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    await new Promise<void>(r => setTimeout(r)); // flush async setConfig promise
+    await new Promise<void>((r) => setTimeout(r)); // flush async setConfig promise
     const comp: any = fixture.componentInstance;
 
     // Explicit deep-link values applied
@@ -479,7 +477,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
     const comp: any = fixture.componentInstance;
     expect(comp.datasetId()).toBeUndefined();
     expect(comp.plugin()).toBeUndefined();
@@ -545,7 +543,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r));
 
     comp.plugin.set('github');
     comp.pluginId.set('github');
@@ -555,8 +553,8 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     comp.startRepoSearch();
     comp.onRepoNameSearch('repo');
-    await new Promise<void>(r => setTimeout(r, comp.DEBOUNCE_TIME + 100));
-    await new Promise<void>(r => setTimeout(r));
+    await new Promise<void>((r) => setTimeout(r, comp.DEBOUNCE_TIME + 100));
+    await new Promise<void>((r) => setTimeout(r));
 
     expect(repoLookup.searchSpy).toHaveBeenCalled();
     expect(comp.repoNames()[0].label).toContain('search failed: boom');

@@ -1352,7 +1352,11 @@ export class ConnectComponent
   }
 
   onCollectionSearch(searchTerm: string | null) {
-    onSearchInput(searchTerm, this.collectionItems, this.collectionSearchSubject);
+    onSearchInput(
+      searchTerm,
+      this.collectionItems,
+      this.collectionSearchSubject,
+    );
   }
 
   async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {

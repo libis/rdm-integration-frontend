@@ -581,7 +581,7 @@ describe('DdiCdiComponent', () => {
       );
 
       component.openInViewer();
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
 
       expect(dataServiceStub.addFileToDataset).toHaveBeenCalledWith({
         persistentId: 'doi:10.5072/test',
@@ -627,7 +627,7 @@ describe('DdiCdiComponent', () => {
       );
 
       component.openInViewer();
-      await new Promise<void>(r => setTimeout(r));
+      await new Promise<void>((r) => setTimeout(r));
 
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'Failed to add file to dataset',

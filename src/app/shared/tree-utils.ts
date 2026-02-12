@@ -84,7 +84,11 @@ export function replaceNodeInTree<T>(
   return nodes.map((n) => {
     if (n === target) return replacement;
     if (n.children) {
-      const updatedChildren = replaceNodeInTree(n.children, target, replacement);
+      const updatedChildren = replaceNodeInTree(
+        n.children,
+        target,
+        replacement,
+      );
       // Only create a new reference if something changed in subtree
       if (updatedChildren !== n.children) {
         return { ...n, children: updatedChildren };
@@ -129,7 +133,9 @@ export function handleOptionsResponse(
     const nodes = convertToTreeNodes(items);
     node.children = nodes.treeNodes;
     // Replace with a new object reference so PrimeNG OnPush re-renders children
-    rootOptionsData.update((prev) => replaceNodeInTree(prev, node, { ...node }));
+    rootOptionsData.update((prev) =>
+      replaceNodeInTree(prev, node, { ...node }),
+    );
     optionsLoading.set(false);
     autoSelectNode(nodes.selectedNode, option, selectedOption);
   } else if (items && items.length > 0) {
@@ -195,9 +201,7 @@ export function onSearchInput(
     ]);
     return;
   }
-  items.set([
-    { label: `searching "${searchTerm}"...`, value: searchTerm },
-  ]);
+  items.set([{ label: `searching "${searchTerm}"...`, value: searchTerm }]);
   searchSubject.next(searchTerm);
 }
 
