@@ -7,7 +7,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -323,7 +323,7 @@ describe('ConnectComponent pilot plugin configuration', () => {
     await TestBed.configureTestingModule({
       imports: [ConnectComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataStateService, useClass: DataStateServiceStub },

@@ -5,6 +5,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { SelectItem } from 'primeng/api';
 import { Config, RepoPlugin } from './models/plugin';
 import { firstValueFrom } from 'rxjs';
+import { NavigationService } from './shared/navigation.service';
 
 const DEFAULT_CONFIG: Config = {
   dataverseHeader: 'Unknown header: configuration failed',
@@ -36,6 +37,7 @@ const DEFAULT_PLUGIN: RepoPlugin = {
 })
 export class PluginService {
   private readonly http = inject(HttpClient);
+  private readonly navigation = inject(NavigationService);
 
   // Internal signals for reactive state
   private readonly configSignal = signal<Config>(DEFAULT_CONFIG);
@@ -203,7 +205,7 @@ export class PluginService {
       const finalUrl = loginUrlObj.toString();
       // eslint-disable-next-line no-console
       console.debug('[PluginService] Redirecting to:', finalUrl);
-      window.location.href = finalUrl;
+      this.navigation.assign(finalUrl);
     } else {
       // Fallback to original URL if no target parameter found
       // eslint-disable-next-line no-console
@@ -211,7 +213,7 @@ export class PluginService {
         '[PluginService] No target param, redirecting to:',
         loginUrl,
       );
-      window.location.href = loginUrl;
+      this.navigation.assign(loginUrl);
     }
   }
 

@@ -4,7 +4,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
 import { signal } from '@angular/core';
 import { DataService } from '../data.service';
@@ -166,7 +166,7 @@ describe('ComputeComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ComputeComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataService, useValue: mockData },

@@ -8,7 +8,11 @@ import {
 } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import {
+  ActivatedRoute,
+  provideRouter,
+  withDisabledInitialNavigation,
+} from '@angular/router';
 import { SelectItem } from 'primeng/api';
 import { of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
@@ -177,6 +181,21 @@ class ConnectValidationServiceStub {
   }
 }
 
+/** Poll until a condition is met – eliminates timer races in debounce tests. */
+async function waitForSignal(
+  condition: () => boolean,
+  timeoutMs = 5000,
+  intervalMs = 50,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!condition()) {
+    if (Date.now() >= deadline) {
+      throw new Error(`waitForSignal timed out after ${timeoutMs}ms`);
+    }
+    await new Promise<void>((r) => setTimeout(r, intervalMs));
+  }
+}
+
 describe('ConnectComponent additional behavior/validation', () => {
   let notification: NotificationServiceStub;
   let validation: ConnectValidationServiceStub;
@@ -189,7 +208,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     await TestBed.configureTestingModule({
       imports: [ConnectComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useClass: PluginServiceStub },
@@ -405,7 +424,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     TestBed.configureTestingModule({
       imports: [ConnectComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useClass: PluginServiceStub },
@@ -443,6 +462,8 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.repoName()).toBeUndefined();
     // Session storage cleared
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
+
+    fixture.destroy();
   });
 
   it('explicit reset query param clears snapshot and all fields including datasetId', async () => {
@@ -458,7 +479,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     TestBed.configureTestingModule({
       imports: [ConnectComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useClass: PluginServiceStub },
@@ -482,6 +503,8 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.datasetId()).toBeUndefined();
     expect(comp.plugin()).toBeUndefined();
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
+
+    fixture.destroy();
   });
 
   it('validateUrl requires complete repo path', () => {
@@ -553,8 +576,9 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     comp.startRepoSearch();
     comp.onRepoNameSearch('repo');
-    await new Promise<void>((r) => setTimeout(r, comp.DEBOUNCE_TIME + 100));
-    await new Promise<void>((r) => setTimeout(r));
+    await waitForSignal(
+      () => comp.repoNames()[0]?.label?.includes('search failed') ?? false,
+    );
 
     expect(repoLookup.searchSpy).toHaveBeenCalled();
     expect(comp.repoNames()[0].label).toContain('search failed: boom');

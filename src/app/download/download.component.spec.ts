@@ -8,7 +8,7 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { DataService } from '../data.service';
@@ -194,6 +194,21 @@ class MockNavigationService {
   assign = jasmine.createSpy('assign');
 }
 
+/** Poll until a condition is met – eliminates timer races in debounce tests. */
+async function waitForSignal(
+  condition: () => boolean,
+  timeoutMs = 5000,
+  intervalMs = 50,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (!condition()) {
+    if (Date.now() >= deadline) {
+      throw new Error(`waitForSignal timed out after ${timeoutMs}ms`);
+    }
+    await new Promise<void>((r) => setTimeout(r, intervalMs));
+  }
+}
+
 describe('DownloadComponent', () => {
   let component: DownloadComponent;
 
@@ -222,7 +237,7 @@ describe('DownloadComponent', () => {
     await TestBed.configureTestingModule({
       imports: [DownloadComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: NotificationService, useValue: notification },
@@ -824,8 +839,9 @@ describe('DownloadComponent', () => {
     );
 
     comp.onRepoNameSearch('abc');
-    await new Promise<void>((r) => setTimeout(r, comp.DEBOUNCE_TIME + 100));
-    await new Promise<void>((r) => setTimeout(r));
+    await waitForSignal(
+      () => comp.repoNames()[0]?.label?.includes('search failed') ?? false,
+    );
 
     expect(comp.repoNames()[0].label).toContain('search failed');
   });
@@ -838,8 +854,9 @@ describe('DownloadComponent', () => {
     );
 
     comp.onDatasetSearch('proj');
-    await new Promise<void>((r) => setTimeout(r, comp.DEBOUNCE_TIME + 100));
-    await new Promise<void>((r) => setTimeout(r));
+    await waitForSignal(
+      () => comp.doiItems()[0]?.label?.includes('search failed') ?? false,
+    );
 
     expect(comp.doiItems()[0].label).toContain('search failed');
   });

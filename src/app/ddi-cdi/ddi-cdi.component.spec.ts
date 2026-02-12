@@ -8,7 +8,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { DdiCdiComponent } from './ddi-cdi.component';
@@ -134,7 +134,7 @@ describe('DdiCdiComponent', () => {
       imports: [DdiCdiComponent],
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataService, useValue: dataServiceStub },

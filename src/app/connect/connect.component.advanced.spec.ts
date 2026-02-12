@@ -5,7 +5,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -286,7 +286,7 @@ describe('ConnectComponent advanced behaviors', () => {
     await TestBed.configureTestingModule({
       imports: [ConnectComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useValue: pluginService },

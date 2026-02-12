@@ -5,7 +5,11 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import {
+  provideRouter,
+  withDisabledInitialNavigation,
+} from '@angular/router';
+import { NavigationService } from '../shared/navigation.service';
 
 import { ConnectComponent } from './connect.component';
 // Router intentionally not imported (was unused)
@@ -49,10 +53,11 @@ describe('ConnectComponent', () => {
     await TestBed.configureTestingModule({
       imports: [ConnectComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useValue: pluginServiceStub },
+        { provide: NavigationService, useValue: { assign: () => {} } },
       ],
     }).compileComponents();
   });
