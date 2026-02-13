@@ -59,13 +59,8 @@ import {
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import {
+  convertToTreeNodes,
   createPlaceholderRootOptions,
-  handleOptionsResponse,
-  newNonce,
-  onOptionSelected,
-  onSearchInput,
-  startRepoSearch as startRepoSearchFn,
-  subscribeDebouncedSearch,
 } from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
@@ -159,8 +154,11 @@ export class DownloadComponent
   private readonly _rootOptionsData = signal<TreeNode<string>[]>(
     createPlaceholderRootOptions(),
   );
-  // Computed signal for template binding
-  readonly rootOptions = computed(() => this._rootOptionsData());
+  // Computed signal that tracks refreshTrigger for change detection
+  readonly rootOptions = computed(() => {
+    this.refreshTrigger(); // Track refresh trigger to force re-render
+    return this._rootOptionsData();
+  });
   selectedOption = signal<TreeNode<string> | undefined>(undefined);
   optionsLoading = signal(false);
   globusPlugin = signal<RepoPlugin | undefined>(undefined);
@@ -179,18 +177,16 @@ export class DownloadComponent
     return DownladablefileComponent.icon_ignore;
   });
 
-  readonly downloadDisabled = computed(() => {
-    this.refreshTrigger();
-    return (
+  readonly downloadDisabled = computed(
+    () =>
       this.downloadRequested() ||
       this.downloadInProgress() ||
       this.statusPollingActive() ||
       !this.option() ||
       !Array.from(this.rowNodeMap().values()).some(
         (x) => x.data?.action === Fileaction.Download,
-      )
-    );
-  });
+      ),
+  );
 
   readonly repoNameFieldEditable = computed(() => {
     const v = this.globusPlugin()?.repoNameFieldEditable;
@@ -391,14 +387,42 @@ export class DownloadComponent
         }
       },
     );
-    this.datasetSearchResultsSubscription = subscribeDebouncedSearch(
-      this.datasetSearchResultsObservable,
-      this.doiItems,
-    );
-    this.repoSearchResultsSubscription = subscribeDebouncedSearch(
-      this.repoSearchResultsObservable,
-      this.repoNames,
-    );
+    this.datasetSearchResultsSubscription =
+      this.datasetSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => this.doiItems.set(v))
+            .catch((err) =>
+              this.doiItems.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]),
+            ),
+        error: (err) =>
+          this.doiItems.set([
+            { label: `search failed: ${err.message}`, value: err.message },
+          ]),
+      });
+    this.repoSearchResultsSubscription =
+      this.repoSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => this.repoNames.set(v))
+            .catch((err) =>
+              this.repoNames.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]),
+            ),
+        error: (err) =>
+          this.repoNames.set([
+            { label: `search failed: ${err.message}`, value: err.message },
+          ]),
+      });
 
     // Auto-load dataset options on init
     this.getDoiOptions();
@@ -701,7 +725,19 @@ export class DownloadComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    onSearchInput(searchTerm, this.doiItems, this.datasetSearchSubject);
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.doiItems.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+      return;
+    }
+    this.doiItems.set([
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
+    ]);
+    this.datasetSearchSubject.next(searchTerm);
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
@@ -984,16 +1020,36 @@ export class DownloadComponent
   }
 
   onRepoNameSearch(searchTerm: string | null) {
-    onSearchInput(searchTerm, this.repoNames, this.repoSearchSubject);
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.repoNames.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+      return;
+    }
+    this.repoNames.set([
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
+    ]);
+    this.repoSearchSubject.next(searchTerm);
   }
 
   startRepoSearch() {
-    startRepoSearchFn(
-      () => this.foundRepoName(),
-      () => this.repoNameSearchInitEnabled(),
-      this.repoNames,
-      this.repoSearchSubject,
-    );
+    if (this.foundRepoName() !== undefined) {
+      return;
+    }
+    if (this.repoNameSearchInitEnabled()) {
+      this.repoNames.set([{ label: 'loading...', value: 'start' }]);
+      this.repoSearchSubject.next('');
+    } else {
+      this.repoNames.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+    }
   }
 
   getOptions(node?: TreeNode<string>): void {
@@ -1042,15 +1098,23 @@ export class DownloadComponent
     items: HierarchicalSelectItem<string>[],
     node?: TreeNode<string>,
   ): void {
-    handleOptionsResponse(
-      items,
-      node,
-      this._rootOptionsData,
-      this.branchItems,
-      this.optionsLoading,
-      this.option,
-      this.selectedOption,
-    );
+    if (items && node) {
+      // Expanding an existing node - add children
+      const nodes = convertToTreeNodes(items);
+      node.children = nodes.treeNodes;
+      // Increment refresh trigger to force change detection (zoneless Angular)
+      this.refreshTrigger.update((n) => n + 1);
+      this.optionsLoading.set(false);
+      this.autoSelectNode(nodes.selectedNode);
+    } else if (items && items.length > 0) {
+      // Initial load - convert items directly (backend returns from appropriate starting point)
+      const nodes = convertToTreeNodes(items);
+      this._rootOptionsData.set(nodes.treeNodes);
+      this.branchItems.set(items);
+      this.autoSelectNode(nodes.selectedNode);
+    } else {
+      this.branchItems.set([]);
+    }
   }
 
   /**
@@ -1064,7 +1128,15 @@ export class DownloadComponent
   }
 
   optionSelected(node: TreeNode<string>): void {
-    onOptionSelected(node, this.option, this.selectedOption);
+    const v = node.data;
+    if (v === undefined || v === null) {
+      this.selectedOption.set(undefined);
+      this.option.set(undefined);
+    } else {
+      // Allow selecting root "/" or any other folder
+      this.option.set(v);
+      this.selectedOption.set(node);
+    }
   }
 
   onRepoChange() {
@@ -1132,7 +1204,16 @@ export class DownloadComponent
   }
 
   newNonce(length: number): string {
-    return newNonce(length);
+    let result = '';
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
   }
 
   /**

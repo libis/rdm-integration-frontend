@@ -64,13 +64,8 @@ import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
 import {
+  convertToTreeNodes,
   createPlaceholderRootOptions,
-  handleOptionsResponse,
-  newNonce,
-  onOptionSelected,
-  onSearchInput,
-  startRepoSearch as startRepoSearchFn,
-  subscribeDebouncedSearch,
 } from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
@@ -158,8 +153,13 @@ export class ConnectComponent
   private readonly _rootOptionsData = signal<TreeNode<string>[]>(
     createPlaceholderRootOptions(),
   );
-  // Computed signal for template binding
-  readonly rootOptions = computed(() => this._rootOptionsData());
+  // Used to trigger view updates when tree nodes are mutated
+  readonly refreshTrigger = signal(0);
+  // Computed signal that tracks refreshTrigger for change detection
+  readonly rootOptions = computed(() => {
+    this.refreshTrigger(); // Track refresh trigger to force re-render
+    return this._rootOptionsData();
+  });
   readonly selectedOption = signal<TreeNode<string> | undefined>(undefined);
 
   // Both accordion panels expanded by default
@@ -397,14 +397,48 @@ export class ConnectComponent
       }
     }
 
-    this.repoSearchResultsSubscription = subscribeDebouncedSearch(
-      this.repoSearchResultsObservable,
-      this.repoNames,
-    );
-    this.collectionSearchResultsSubscription = subscribeDebouncedSearch(
-      this.collectionSearchResultsObservable,
-      this.collectionItems,
-    );
+    this.repoSearchResultsSubscription =
+      this.repoSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => {
+              this.repoNames.set(v);
+            })
+            .catch((err) => {
+              this.repoNames.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]);
+            }),
+        error: (err) => {
+          this.repoNames.set([
+            { label: `search failed: ${err.message}`, value: err.message },
+          ]);
+        },
+      });
+    this.collectionSearchResultsSubscription =
+      this.collectionSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => {
+              this.collectionItems.set(v);
+            })
+            .catch((err) => {
+              this.collectionItems.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]);
+            }),
+        error: (err) => {
+          this.collectionItems.set([
+            { label: `search failed: ${err.message}`, value: err.message },
+          ]);
+        },
+      });
     const queryParamsSubscription = this.route.queryParams.subscribe(
       (params) => {
         this.handleQueryParams(params);
@@ -796,7 +830,16 @@ export class ConnectComponent
   }
 
   newNonce(length: number): string {
-    return newNonce(length);
+    let result = '';
+    const characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
   }
 
   getItem(items: SelectItem<string>[], value?: string): Item | undefined {
@@ -1165,16 +1208,36 @@ export class ConnectComponent
   }
 
   onRepoNameSearch(searchTerm: string | null) {
-    onSearchInput(searchTerm, this.repoNames, this.repoSearchSubject);
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.repoNames.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+      return;
+    }
+    this.repoNames.set([
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
+    ]);
+    this.repoSearchSubject.next(searchTerm);
   }
 
   startRepoSearch() {
-    startRepoSearchFn(
-      () => this.foundRepoName(),
-      () => this.repoNameSearchInitEnabled(),
-      this.repoNames,
-      this.repoSearchSubject,
-    );
+    if (this.foundRepoName() !== undefined) {
+      return;
+    }
+    if (this.repoNameSearchInitEnabled()) {
+      this.repoNames.set([{ label: 'loading...', value: 'start' }]);
+      this.repoSearchSubject.next('');
+    } else {
+      this.repoNames.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+    }
   }
 
   // REPO VIA SELECT
@@ -1241,15 +1304,23 @@ export class ConnectComponent
     items: HierarchicalSelectItem<string>[],
     node?: TreeNode<string>,
   ): void {
-    handleOptionsResponse(
-      items,
-      node,
-      this._rootOptionsData,
-      this.branchItems,
-      this.optionsLoading,
-      this.option,
-      this.selectedOption,
-    );
+    if (items && node) {
+      // Expanding an existing node - add children
+      const nodes = convertToTreeNodes(items);
+      node.children = nodes.treeNodes;
+      // Increment refresh trigger to force change detection (zoneless Angular)
+      this.refreshTrigger.update((n) => n + 1);
+      this.optionsLoading.set(false);
+      this.autoSelectNode(nodes.selectedNode);
+    } else if (items && items.length > 0) {
+      // Initial load - convert items directly (backend returns from appropriate starting point)
+      const nodes = convertToTreeNodes(items);
+      this._rootOptionsData.set(nodes.treeNodes);
+      this.branchItems.set(items);
+      this.autoSelectNode(nodes.selectedNode);
+    } else {
+      this.branchItems.set([]);
+    }
   }
 
   /**
@@ -1263,7 +1334,15 @@ export class ConnectComponent
   }
 
   optionSelected(node: TreeNode<string>): void {
-    onOptionSelected(node, this.option, this.selectedOption);
+    const v = node.data;
+    if (v === undefined || v === null) {
+      this.selectedOption.set(undefined);
+      this.option.set(undefined);
+    } else {
+      // Allow selecting root "/" or any other folder
+      this.option.set(v);
+      this.selectedOption.set(node);
+    }
   }
 
   /****************************************
@@ -1354,11 +1433,19 @@ export class ConnectComponent
   }
 
   onCollectionSearch(searchTerm: string | null) {
-    onSearchInput(
-      searchTerm,
-      this.collectionItems,
-      this.collectionSearchSubject,
-    );
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.collectionItems.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+      return;
+    }
+    this.collectionItems.set([
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
+    ]);
+    this.collectionSearchSubject.next(searchTerm);
   }
 
   async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
@@ -1432,7 +1519,19 @@ export class ConnectComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    onSearchInput(searchTerm, this.doiItems, this.datasetSearchSubject);
+    if (searchTerm === null || searchTerm.length < 3) {
+      this.doiItems.set([
+        {
+          label: 'start typing to search (at least three letters)',
+          value: 'start',
+        },
+      ]);
+      return;
+    }
+    this.doiItems.set([
+      { label: `searching "${searchTerm}"...`, value: searchTerm },
+    ]);
+    this.datasetSearchSubject.next(searchTerm);
   }
 
   async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {

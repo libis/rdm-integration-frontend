@@ -323,17 +323,17 @@ describe('ConnectComponent additional behavior/validation', () => {
     req = comp.getRepoLookupRequest(false);
     expect(req).toBeDefined();
 
-    // 6. Simulate existing branchItems causing early return for subsequent search request
+    // 6. Existing branchItems no longer short-circuit request construction
     comp.branchItems.set([{ label: 'main', value: 'main' }]);
     req = comp.getRepoLookupRequest(true);
-    expect(req).toBeUndefined();
+    expect(req).toBeDefined();
 
-    // 7. Allow normal path (clear branchItems so request proceeds)
+    // 7. Request building is side-effect free for branch loading state
     comp.branchItems.set([]);
     req = comp.getRepoLookupRequest(true);
     expect(req).toBeDefined();
     expect(req.pluginId).toBe('github');
-    expect(comp.branchItems().length).toBeGreaterThan(0); // set to loading state
+    expect(comp.branchItems().length).toBe(0);
   });
 
   it('newDataset creates and selects dataset with collection prefix and inserts option once', () => {
