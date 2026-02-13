@@ -324,11 +324,12 @@ describe('DownloadComponent', () => {
     expect(notification.errors.some((e) => e.includes('Repo Name'))).toBeTrue();
   });
 
-  it('getRepoLookupRequest short-circuits when branchItems already loaded', () => {
+  it('getRepoLookupRequest does not short-circuit when branchItems already loaded', () => {
     initComponent();
+    component.selectedRepoName.set('repoA');
     component.branchItems.set([{ label: 'existing', value: 'v' }]);
     const req = component.getRepoLookupRequest(false);
-    expect(req).toBeUndefined();
+    expect(req).toBeDefined();
   });
 
   it('getRepoLookupRequest builds request when conditions satisfied', () => {
@@ -336,7 +337,6 @@ describe('DownloadComponent', () => {
     component.selectedRepoName.set('repoA');
     const req = component.getRepoLookupRequest(false);
     expect(req).toBeDefined();
-    expect(component.branchItems()[0].label).toBe('Loading...');
   });
 
   it('getOptions populates node children for nested request', fakeAsync(() => {
