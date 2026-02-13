@@ -177,16 +177,19 @@ export class DownloadComponent
     return DownladablefileComponent.icon_ignore;
   });
 
-  readonly downloadDisabled = computed(
-    () =>
+  readonly downloadDisabled = computed(() => {
+    // Row actions are mutated in place; track explicit trigger for zoneless refresh.
+    this.refreshTrigger();
+    return (
       this.downloadRequested() ||
       this.downloadInProgress() ||
       this.statusPollingActive() ||
       !this.option() ||
       !Array.from(this.rowNodeMap().values()).some(
         (x) => x.data?.action === Fileaction.Download,
-      ),
-  );
+      )
+    );
+  });
 
   readonly repoNameFieldEditable = computed(() => {
     const v = this.globusPlugin()?.repoNameFieldEditable;

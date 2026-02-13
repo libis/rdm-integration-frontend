@@ -714,6 +714,26 @@ describe('DownloadComponent', () => {
     expect(component.downloadDisabled()).toBeFalse();
   });
 
+  it('downloadDisabled recomputes after in-place row action mutation when refresh is triggered', () => {
+    initComponent();
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Ignore,
+    } as any;
+    component.rowNodeMap().set('1', { data: df });
+    component.option.set('folder');
+    expect(component.downloadDisabled()).toBeTrue();
+
+    // Simulate child mutation without replacing row/map references.
+    df.action = Fileaction.Download;
+    component.onRowActionChanged();
+
+    expect(component.downloadDisabled()).toBeFalse();
+  });
+
   it('onDatasetChange populates tree on success', async () => {
     initComponent();
     const payload: CompareResult = {
