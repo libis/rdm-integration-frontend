@@ -59,6 +59,10 @@ import {
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
 import {
+  bumpRefreshTrigger,
+  mutateWithRefresh,
+} from '../shared/refresh-trigger';
+import {
   convertToTreeNodes,
   createPlaceholderRootOptions,
 } from '../shared/tree-utils';
@@ -892,16 +896,17 @@ export class DownloadComponent
   }
 
   toggleAction(): void {
-    const root = this.rowNodeMap().get('');
-    if (root) {
-      DownladablefileComponent.toggleNodeAction(root);
-    }
-    this.refreshTrigger.update((n) => n + 1);
+    mutateWithRefresh(this.refreshTrigger, () => {
+      const root = this.rowNodeMap().get('');
+      if (root) {
+        DownladablefileComponent.toggleNodeAction(root);
+      }
+    });
   }
 
   /** Called by child rows when their action changes */
   onRowActionChanged(): void {
-    this.refreshTrigger.update((n) => n + 1);
+    bumpRefreshTrigger(this.refreshTrigger);
   }
 
   async download(): Promise<void> {
@@ -1103,8 +1108,8 @@ export class DownloadComponent
       // Expanding an existing node - add children
       const nodes = convertToTreeNodes(items);
       node.children = nodes.treeNodes;
-      // Increment refresh trigger to force change detection (zoneless Angular)
-      this.refreshTrigger.update((n) => n + 1);
+      // Bump trigger so zoneless templates pick up in-place node mutation.
+      bumpRefreshTrigger(this.refreshTrigger);
       this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else if (items && items.length > 0) {

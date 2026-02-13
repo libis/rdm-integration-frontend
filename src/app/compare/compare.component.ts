@@ -41,6 +41,10 @@ import { DatafileComponent } from '../datafile/datafile.component';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
+import {
+  bumpRefreshTrigger,
+  mutateWithRefresh,
+} from '../shared/refresh-trigger';
 import { FilterItem, SubscriptionManager } from '../shared/types';
 
 @Component({
@@ -356,56 +360,63 @@ export class CompareComponent
   }
 
   noActionSelection(): void {
-    this.rowNodeMap().forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) return;
-      datafile.action = Fileaction.Ignore;
+    mutateWithRefresh(this.refreshTrigger, () => {
+      this.rowNodeMap().forEach((rowNode) => {
+        const datafile = rowNode.data!;
+        if (datafile.hidden) return;
+        datafile.action = Fileaction.Ignore;
+      });
     });
-    this.refreshTrigger.update((n) => n + 1);
   }
 
   updateSelection(): void {
-    this.rowNodeMap().forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) return;
-      switch (datafile.status) {
-        case Filestatus.New:
-          datafile.action = Fileaction.Copy;
-          break;
-        case Filestatus.Equal:
-          datafile.action = Fileaction.Ignore;
-          break;
-        case Filestatus.Updated:
-          datafile.action = Fileaction.Update;
-          break;
-        case Filestatus.Deleted:
-          datafile.action = Fileaction.Ignore;
-          break;
-      }
+    mutateWithRefresh(this.refreshTrigger, () => {
+      this.rowNodeMap().forEach((rowNode) => {
+        const datafile = rowNode.data!;
+        if (datafile.hidden) return;
+        switch (datafile.status) {
+          case Filestatus.New:
+            datafile.action = Fileaction.Copy;
+            break;
+          case Filestatus.Equal:
+            datafile.action = Fileaction.Ignore;
+            break;
+          case Filestatus.Updated:
+            datafile.action = Fileaction.Update;
+            break;
+          case Filestatus.Deleted:
+            datafile.action = Fileaction.Ignore;
+            break;
+        }
+      });
     });
-    this.refreshTrigger.update((n) => n + 1);
   }
 
   mirrorSelection(): void {
-    this.rowNodeMap().forEach((rowNode) => {
-      const datafile = rowNode.data!;
-      if (datafile.hidden) return;
-      switch (datafile.status) {
-        case Filestatus.New:
-          datafile.action = Fileaction.Copy;
-          break;
-        case Filestatus.Equal:
-          datafile.action = Fileaction.Ignore;
-          break;
-        case Filestatus.Updated:
-          datafile.action = Fileaction.Update;
-          break;
-        case Filestatus.Deleted:
-          datafile.action = Fileaction.Delete;
-          break;
-      }
+    mutateWithRefresh(this.refreshTrigger, () => {
+      this.rowNodeMap().forEach((rowNode) => {
+        const datafile = rowNode.data!;
+        if (datafile.hidden) return;
+        switch (datafile.status) {
+          case Filestatus.New:
+            datafile.action = Fileaction.Copy;
+            break;
+          case Filestatus.Equal:
+            datafile.action = Fileaction.Ignore;
+            break;
+          case Filestatus.Updated:
+            datafile.action = Fileaction.Update;
+            break;
+          case Filestatus.Deleted:
+            datafile.action = Fileaction.Delete;
+            break;
+        }
+      });
     });
-    this.refreshTrigger.update((n) => n + 1);
+  }
+
+  onRowActionChanged(): void {
+    bumpRefreshTrigger(this.refreshTrigger);
   }
 
   submit(): void {

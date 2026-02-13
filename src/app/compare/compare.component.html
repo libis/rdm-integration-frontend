@@ -231,7 +231,7 @@
         [rowNode]="rowNode"
         [isInFilter]="isInFilterMode()"
         [trigger]="refreshTrigger()"
-        (changed)="refreshTrigger.set(refreshTrigger() + 1)"
+        (changed)="onRowActionChanged()"
         [style]="datafileRow.hostStyle()"
       ></tr>
     </ng-template>

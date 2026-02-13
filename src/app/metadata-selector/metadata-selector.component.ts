@@ -38,6 +38,10 @@ import { MetadatafieldComponent } from '../metadatafield/metadatafield.component
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
+import {
+  bumpRefreshTrigger,
+  mutateWithRefresh,
+} from '../shared/refresh-trigger';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 @Component({
@@ -156,24 +160,20 @@ export class MetadataSelectorComponent implements OnDestroy {
   }
 
   toggleAction(): void {
-    const r = this.root();
-    if (r) {
-      MetadatafieldComponent.toggleNodeAction(r);
-      // Trigger update by setting a new reference (shallow copy or recreate)
-      // Since TreeNode is mutable and we mutated it in place, strict signal equality might skip update if we set same ref.
-      // We pass a new object wrapping the data to force signal update if needed, or rely on internal mutation handling?
-      // Signals are strict equality by default.
-      // Force update by setting a shallow copy of the root node or triggering a version signal.
-      // Note: PrimeNG TreeTable might rely on object identity.
-      // We trigger the signal to notify consumers (like `action` computed).
-      this.root.update((current) => (current ? { ...current } : undefined));
-    }
-    this.refreshTrigger.update((n) => n + 1);
+    mutateWithRefresh(this.refreshTrigger, () => {
+      const r = this.root();
+      if (r) {
+        MetadatafieldComponent.toggleNodeAction(r);
+        // Keep object identity semantics for TreeTable, but set shallow root copy
+        // so parent signal observers re-evaluate consistently.
+        this.root.update((current) => (current ? { ...current } : undefined));
+      }
+    });
   }
 
   /** Called by child rows when their action changes */
   onRowActionChanged(): void {
-    this.refreshTrigger.update((n) => n + 1);
+    bumpRefreshTrigger(this.refreshTrigger);
   }
 
   private addChild(
