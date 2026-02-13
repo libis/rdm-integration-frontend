@@ -249,6 +249,10 @@ export class DownloadComponent
       }
     }
 
+    // Restore download state from sessionStorage if available
+    // This handles cases where user went through Shibboleth login
+    this.restoreDownloadState();
+
     // Get initial params to check if this is an OAuth callback
     const initialParams = await firstValueFrom(this.route.queryParams);
     const isOAuthCallback = initialParams['code'] !== undefined;
@@ -517,6 +521,8 @@ export class DownloadComponent
     // User chose to log in - redirect to Dataverse login first
     // After login, they'll return as logged in user and Globus OAuth will happen with session_required_single_domain
     this.showGuestLoginPopup.set(false);
+    // Save download state before redirecting to login
+    this.saveDownloadState();
     this.redirectToLogin();
   }
 
@@ -1125,5 +1131,86 @@ export class DownloadComponent
 
   newNonce(length: number): string {
     return newNonce(length);
+  }
+
+  /**
+   * Save critical download state to sessionStorage before redirecting to login.
+   * This ensures downloadId, datasetId, and other parameters are preserved
+   * across the Shibboleth authentication redirect.
+   */
+  private saveDownloadState(): void {
+    try {
+      const state = {
+        downloadId: this.downloadId(),
+        datasetId: this.datasetId(),
+        datasetDbId: this.datasetDbId(),
+        dataverseToken: this.dataverseToken(),
+        preSelectedFileIds: Array.from(this.preSelectedFileIds()),
+      };
+      // eslint-disable-next-line no-console
+      console.debug('[DownloadComponent] Saving download state:', state);
+      sessionStorage.setItem('downloadState', JSON.stringify(state));
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[DownloadComponent] Failed to save download state:', err);
+    }
+  }
+
+  /**
+   * Restore download state from sessionStorage after returning from login.
+   * Only restores if the current state is empty (no query params).
+   */
+  private restoreDownloadState(): void {
+    try {
+      const savedState = sessionStorage.getItem('downloadState');
+      if (!savedState) {
+        return;
+      }
+
+      const state = JSON.parse(savedState) as {
+        downloadId?: string;
+        datasetId?: string;
+        datasetDbId?: string;
+        dataverseToken?: string;
+        preSelectedFileIds?: string[];
+      };
+
+      // eslint-disable-next-line no-console
+      console.debug('[DownloadComponent] Restoring download state:', state);
+
+      // Only restore if current values are undefined/empty
+      // This prevents overwriting values from query params
+      if (state.downloadId && !this.downloadId()) {
+        this.downloadId.set(state.downloadId);
+      }
+      if (state.datasetId && !this.datasetId()) {
+        this.datasetId.set(state.datasetId);
+        this.doiItems.set([{ label: state.datasetId, value: state.datasetId }]);
+      }
+      if (state.datasetDbId && !this.datasetDbId()) {
+        this.datasetDbId.set(state.datasetDbId);
+      }
+      if (state.dataverseToken && !this.dataverseToken()) {
+        this.dataverseToken.set(state.dataverseToken);
+      }
+      if (state.preSelectedFileIds && state.preSelectedFileIds.length > 0) {
+        this.preSelectedFileIds.set(new Set(state.preSelectedFileIds));
+      }
+
+      // Clear the saved state after restoring
+      sessionStorage.removeItem('downloadState');
+      // eslint-disable-next-line no-console
+      console.debug(
+        '[DownloadComponent] Download state restored and cleared from storage',
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[DownloadComponent] Failed to restore download state:',
+        err,
+      );
+      // Clear potentially corrupted state
+      sessionStorage.removeItem('downloadState');
+    }
   }
 }
