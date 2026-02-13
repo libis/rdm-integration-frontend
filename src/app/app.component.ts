@@ -230,7 +230,6 @@ export class AppComponent implements OnInit {
       next: (x) => {
         // If persistentId is empty/missing, treat as error (e.g., draft dataset without auth)
         if (!x.persistentId) {
-           
           console.warn(
             '[AppComponent] getDatasetVersion returned empty persistentId, using fallback',
           );
@@ -251,7 +250,6 @@ export class AppComponent implements OnInit {
         this.router.navigate([targetRoute], { queryParams });
       },
       error: (err) => {
-         
         console.error('[AppComponent] Failed to get dataset version:', err);
         this.navigateWithFallback(targetRoute, datasetDbId, downloadId);
       },
@@ -295,7 +293,6 @@ export class AppComponent implements OnInit {
 
       const parsed = this.parseGlobusCallback(callback);
       if (!parsed) {
-         
         console.warn('[AppComponent] Invalid callback for download redirect');
         this.router.navigate(['/download']);
         return;
@@ -303,7 +300,6 @@ export class AppComponent implements OnInit {
 
       this.fetchAndRedirect('/download', parsed.datasetDbId, parsed.downloadId);
     } catch (e) {
-       
       console.error(
         '[AppComponent] Failed to parse URL for download redirect:',
         e,
@@ -328,7 +324,6 @@ export class AppComponent implements OnInit {
 
       const parsed = this.parseGlobusCallback(callback);
       if (!parsed) {
-         
         console.warn('[AppComponent] Invalid callback for connect redirect');
         this.router.navigate(['/connect']);
         return;
@@ -336,7 +331,6 @@ export class AppComponent implements OnInit {
 
       this.fetchAndRedirect('/connect', parsed.datasetDbId);
     } catch (e) {
-       
       console.error(
         '[AppComponent] Failed to parse URL for connect redirect:',
         e,
@@ -365,7 +359,6 @@ export class AppComponent implements OnInit {
         if (elapsed < AppComponent.REDIRECT_WINDOW_MS) {
           // Within time window - check count
           if (data.count >= AppComponent.MAX_REDIRECTS) {
-             
             console.warn(
               '[AppComponent] Redirect loop detected, stopping redirects',
             );
@@ -427,7 +420,6 @@ export class AppComponent implements OnInit {
         if (!userInfo.loggedIn) {
           // Check for redirect loop before redirecting
           if (this.isRedirectLoop()) {
-             
             console.error(
               '[AppComponent] Login redirect loop detected - authentication may be misconfigured',
             );
@@ -442,7 +434,6 @@ export class AppComponent implements OnInit {
       error: () => {
         // Check for redirect loop before redirecting
         if (this.isRedirectLoop()) {
-           
           console.error(
             '[AppComponent] Login redirect loop detected - authentication may be misconfigured',
           );

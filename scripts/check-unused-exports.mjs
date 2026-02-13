@@ -1,9 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import ts from 'typescript';
+import fs from "node:fs";
+import path from "node:path";
+import ts from "typescript";
 
 const projectRoot = process.cwd();
-const srcRoot = path.join(projectRoot, 'src');
+const srcRoot = path.join(projectRoot, "src");
 
 function walk(dir) {
   const out = [];
@@ -14,8 +14,8 @@ function walk(dir) {
       continue;
     }
     if (!entry.isFile()) continue;
-    if (!full.endsWith('.ts')) continue;
-    if (full.endsWith('.d.ts')) continue;
+    if (!full.endsWith(".ts")) continue;
+    if (full.endsWith(".d.ts")) continue;
     out.push(full);
   }
   return out;
@@ -24,7 +24,10 @@ function walk(dir) {
 function getDeclarationNames(nameNode) {
   if (!nameNode) return [];
   if (ts.isIdentifier(nameNode)) return [nameNode.text];
-  if (ts.isObjectBindingPattern(nameNode) || ts.isArrayBindingPattern(nameNode)) {
+  if (
+    ts.isObjectBindingPattern(nameNode) ||
+    ts.isArrayBindingPattern(nameNode)
+  ) {
     const names = [];
     for (const el of nameNode.elements) {
       if (ts.isOmittedExpression(el)) continue;
@@ -36,14 +39,14 @@ function getDeclarationNames(nameNode) {
 }
 
 function resolveModule(fromFile, specifier) {
-  if (!specifier.startsWith('.')) return null;
+  if (!specifier.startsWith(".")) return null;
   const base = path.resolve(path.dirname(fromFile), specifier);
   const candidates = [
     base,
     `${base}.ts`,
     `${base}.tsx`,
     `${base}.mts`,
-    path.join(base, 'index.ts'),
+    path.join(base, "index.ts"),
   ];
   for (const c of candidates) {
     if (fs.existsSync(c) && fs.statSync(c).isFile()) return path.normalize(c);
@@ -69,8 +72,13 @@ function addUsed(file, name) {
 }
 
 for (const file of files) {
-  const sourceText = fs.readFileSync(file, 'utf8');
-  const sf = ts.createSourceFile(file, sourceText, ts.ScriptTarget.Latest, true);
+  const sourceText = fs.readFileSync(file, "utf8");
+  const sf = ts.createSourceFile(
+    file,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true,
+  );
 
   for (const stmt of sf.statements) {
     if (
@@ -80,13 +88,17 @@ for (const file of files) {
       ts.isTypeAliasDeclaration(stmt) ||
       ts.isEnumDeclaration(stmt)
     ) {
-      const isExported = stmt.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+      const isExported = stmt.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
       if (isExported && stmt.name) addExport(file, stmt.name.text);
       continue;
     }
 
     if (ts.isVariableStatement(stmt)) {
-      const isExported = stmt.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+      const isExported = stmt.modifiers?.some(
+        (m) => m.kind === ts.SyntaxKind.ExportKeyword,
+      );
       if (isExported) {
         for (const decl of stmt.declarationList.declarations) {
           for (const n of getDeclarationNames(decl.name)) addExport(file, n);
@@ -96,7 +108,7 @@ for (const file of files) {
     }
 
     if (ts.isExportAssignment(stmt)) {
-      addExport(file, 'default');
+      addExport(file, "default");
       continue;
     }
 
@@ -123,12 +135,13 @@ for (const file of files) {
     }
 
     if (!ts.isImportDeclaration(stmt)) continue;
-    if (!stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
+    if (!stmt.moduleSpecifier || !ts.isStringLiteral(stmt.moduleSpecifier))
+      continue;
     const target = resolveModule(file, stmt.moduleSpecifier.text);
     if (!target || !fileSet.has(target)) continue;
     const clause = stmt.importClause;
     if (!clause) continue;
-    if (clause.name) addUsed(target, 'default');
+    if (clause.name) addUsed(target, "default");
     if (!clause.namedBindings) continue;
     if (ts.isNamespaceImport(clause.namedBindings)) {
       wildcardUsedFiles.add(target);
@@ -142,11 +155,13 @@ for (const file of files) {
 }
 
 const ignoredFiles = new Set([
-  path.normalize(path.join(srcRoot, 'main.ts')),
-  path.normalize(path.join(srcRoot, 'test.ts')),
-  path.normalize(path.join(srcRoot, 'environments', 'environment.ts')),
-  path.normalize(path.join(srcRoot, 'environments', 'environment.prod.ts')),
-  path.normalize(path.join(srcRoot, 'environments', 'environment.development.ts')),
+  path.normalize(path.join(srcRoot, "main.ts")),
+  path.normalize(path.join(srcRoot, "test.ts")),
+  path.normalize(path.join(srcRoot, "environments", "environment.ts")),
+  path.normalize(path.join(srcRoot, "environments", "environment.prod.ts")),
+  path.normalize(
+    path.join(srcRoot, "environments", "environment.development.ts"),
+  ),
 ]);
 
 const unused = [];
@@ -161,14 +176,18 @@ for (const [file, exportedNames] of exportsByFile.entries()) {
   }
 }
 
-unused.sort((a, b) => (a.file === b.file ? a.name.localeCompare(b.name) : a.file.localeCompare(b.file)));
+unused.sort((a, b) =>
+  a.file === b.file
+    ? a.name.localeCompare(b.name)
+    : a.file.localeCompare(b.file),
+);
 
 if (unused.length === 0) {
-  console.log('No unused exports found.');
+  console.log("No unused exports found.");
   process.exit(0);
 }
 
-console.error('Unused exports detected:');
+console.error("Unused exports detected:");
 for (const item of unused) {
   console.error(`- ${path.relative(projectRoot, item.file)} :: ${item.name}`);
 }

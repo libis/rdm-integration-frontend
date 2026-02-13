@@ -178,7 +178,6 @@ export class PluginService {
     console.debug('[PluginService] loginRedirectUrl from config:', loginUrl);
 
     if (!loginUrl) {
-       
       console.warn(
         '[PluginService] No loginRedirectUrl configured, cannot redirect',
       );
