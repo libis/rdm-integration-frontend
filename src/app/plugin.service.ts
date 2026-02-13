@@ -178,7 +178,7 @@ export class PluginService {
     console.debug('[PluginService] loginRedirectUrl from config:', loginUrl);
 
     if (!loginUrl) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         '[PluginService] No loginRedirectUrl configured, cannot redirect',
       );

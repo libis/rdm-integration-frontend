@@ -1,5 +1,5 @@
 // Focused spec to ensure logical datasets mirror physical datasets via blank nodes
-/* eslint-disable no-console */
+ 
 
 import { Parser } from 'n3';
 

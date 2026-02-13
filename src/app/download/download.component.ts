@@ -277,7 +277,7 @@ export class DownloadComponent
           this.accessMode.set('login');
         }
       } catch (err) {
-        // eslint-disable-next-line no-console
+         
         console.error('[DownloadComponent] getUserInfo error:', err);
         // eslint-disable-next-line no-console
         console.debug(
@@ -473,7 +473,7 @@ export class DownloadComponent
     // eslint-disable-next-line no-console
     console.debug('[DownloadComponent] Parsed result:', parsed);
     if (!parsed?.token) {
-      // eslint-disable-next-line no-console
+       
       console.error('[DownloadComponent] Could not extract token from input');
       return;
     }
@@ -526,7 +526,7 @@ export class DownloadComponent
           },
           error: (err) => {
             this.loading.set(false);
-            // eslint-disable-next-line no-console
+             
             console.error(
               '[DownloadComponent] Failed to fetch DOI, proceeding anyway:',
               err,
@@ -596,7 +596,7 @@ export class DownloadComponent
         },
         error: (err) => {
           this.loading.set(false);
-          // eslint-disable-next-line no-console
+           
           console.error('[DownloadComponent] Failed to fetch DOI:', err);
         },
       });
@@ -1234,7 +1234,7 @@ export class DownloadComponent
       console.debug('[DownloadComponent] Saving download state:', state);
       sessionStorage.setItem('downloadState', JSON.stringify(state));
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error('[DownloadComponent] Failed to save download state:', err);
     }
   }
@@ -1287,7 +1287,7 @@ export class DownloadComponent
         '[DownloadComponent] Download state restored and cleared from storage',
       );
     } catch (err) {
-      // eslint-disable-next-line no-console
+       
       console.error(
         '[DownloadComponent] Failed to restore download state:',
         err,

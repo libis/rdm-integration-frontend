@@ -9,6 +9,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default [
   { files: ["**/*.{js,mjs,cjs,ts}"] },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: "error",
+    },
+  },
   { languageOptions: { globals: globals.browser } },
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
