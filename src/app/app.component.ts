@@ -70,23 +70,12 @@ export class AppComponent implements OnInit {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this as any)._testWindowLocationHref ?? window.location.href;
 
-    // eslint-disable-next-line no-console
-    console.debug('[AppComponent] isDownloadFlow check:', {
-      routerUrl: this.router.url,
-      params: params,
-      windowLocation: locationHref,
-    });
-
     // Check if URL contains /upload but Angular routing failed (e.g., /connect/upload)
     // In this case, redirect to /connect with the same query params
     if (
       locationHref.includes('/upload') &&
       !this.router.url.includes('/connect')
     ) {
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[AppComponent] URL contains /upload but route does not match, redirecting to /connect',
-      );
       this.redirectToConnect(locationHref);
       // Return false - uploads require login, so continue with login check
       return false;
@@ -94,10 +83,6 @@ export class AppComponent implements OnInit {
 
     // Check if we're on the download page via router
     if (this.router.url.includes('/download')) {
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[AppComponent] isDownloadFlow: true (router matches /download)',
-      );
       return true;
     }
 
@@ -107,10 +92,6 @@ export class AppComponent implements OnInit {
       locationHref.includes('/download') &&
       !this.router.url.includes('/download')
     ) {
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[AppComponent] URL contains /download but route does not match, redirecting to /download',
-      );
       this.redirectToDownload(locationHref);
       return true;
     }
@@ -131,13 +112,7 @@ export class AppComponent implements OnInit {
     if (callback) {
       try {
         const decodedCallback = atob(callback);
-        // eslint-disable-next-line no-console
-        console.debug('[AppComponent] decoded callback:', decodedCallback);
         if (decodedCallback.includes('downloadId=')) {
-          // eslint-disable-next-line no-console
-          console.debug(
-            '[AppComponent] isDownloadFlow: true (downloadId in callback)',
-          );
           return true;
         }
       } catch {
@@ -161,10 +136,6 @@ export class AppComponent implements OnInit {
       try {
         const loginState = JSON.parse(state);
         if (loginState.download) {
-          // eslint-disable-next-line no-console
-          console.debug(
-            '[AppComponent] isDownloadFlow: true (download flag in state)',
-          );
           return true;
         }
       } catch {
@@ -172,8 +143,6 @@ export class AppComponent implements OnInit {
       }
     }
 
-    // eslint-disable-next-line no-console
-    console.debug('[AppComponent] isDownloadFlow: false');
     return false;
   }
 
@@ -230,9 +199,6 @@ export class AppComponent implements OnInit {
       next: (x) => {
         // If persistentId is empty/missing, treat as error (e.g., draft dataset without auth)
         if (!x.persistentId) {
-          console.warn(
-            '[AppComponent] getDatasetVersion returned empty persistentId, using fallback',
-          );
           this.navigateWithFallback(targetRoute, datasetDbId, downloadId);
           return;
         }
@@ -242,15 +208,9 @@ export class AppComponent implements OnInit {
         if (downloadId) {
           queryParams['downloadId'] = downloadId;
         }
-        // eslint-disable-next-line no-console
-        console.debug(
-          `[AppComponent] Redirecting to ${targetRoute} with:`,
-          queryParams,
-        );
         this.router.navigate([targetRoute], { queryParams });
       },
-      error: (err) => {
-        console.error('[AppComponent] Failed to get dataset version:', err);
+      error: (_err) => {
         this.navigateWithFallback(targetRoute, datasetDbId, downloadId);
       },
     });
@@ -270,11 +230,6 @@ export class AppComponent implements OnInit {
     if (downloadId) {
       fallbackParams['downloadId'] = downloadId;
     }
-    // eslint-disable-next-line no-console
-    console.debug(
-      `[AppComponent] Redirecting to ${targetRoute} with fallback:`,
-      fallbackParams,
-    );
     this.router.navigate([targetRoute], { queryParams: fallbackParams });
   }
 
@@ -293,17 +248,12 @@ export class AppComponent implements OnInit {
 
       const parsed = this.parseGlobusCallback(callback);
       if (!parsed) {
-        console.warn('[AppComponent] Invalid callback for download redirect');
         this.router.navigate(['/download']);
         return;
       }
 
       this.fetchAndRedirect('/download', parsed.datasetDbId, parsed.downloadId);
-    } catch (e) {
-      console.error(
-        '[AppComponent] Failed to parse URL for download redirect:',
-        e,
-      );
+    } catch {
       this.router.navigate(['/download']);
     }
   }
@@ -324,17 +274,12 @@ export class AppComponent implements OnInit {
 
       const parsed = this.parseGlobusCallback(callback);
       if (!parsed) {
-        console.warn('[AppComponent] Invalid callback for connect redirect');
         this.router.navigate(['/connect']);
         return;
       }
 
       this.fetchAndRedirect('/connect', parsed.datasetDbId);
-    } catch (e) {
-      console.error(
-        '[AppComponent] Failed to parse URL for connect redirect:',
-        e,
-      );
+    } catch {
       this.router.navigate(['/connect']);
     }
   }
@@ -359,9 +304,6 @@ export class AppComponent implements OnInit {
         if (elapsed < AppComponent.REDIRECT_WINDOW_MS) {
           // Within time window - check count
           if (data.count >= AppComponent.MAX_REDIRECTS) {
-            console.warn(
-              '[AppComponent] Redirect loop detected, stopping redirects',
-            );
             return true;
           }
           // Increment count
@@ -420,9 +362,6 @@ export class AppComponent implements OnInit {
         if (!userInfo.loggedIn) {
           // Check for redirect loop before redirecting
           if (this.isRedirectLoop()) {
-            console.error(
-              '[AppComponent] Login redirect loop detected - authentication may be misconfigured',
-            );
             return;
           }
           this.pluginService.redirectToLogin();
@@ -434,9 +373,6 @@ export class AppComponent implements OnInit {
       error: () => {
         // Check for redirect loop before redirecting
         if (this.isRedirectLoop()) {
-          console.error(
-            '[AppComponent] Login redirect loop detected - authentication may be misconfigured',
-          );
           return;
         }
         this.pluginService.redirectToLogin();

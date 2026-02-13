@@ -129,10 +129,9 @@ export class MetadataSelectorComponent implements OnDestroy {
         subscription?.unsubscribe();
         this.metadata.set(metadata);
       },
-      error: (err) => {
+      error: (_err) => {
         this.subscriptions.delete(subscription);
         subscription?.unsubscribe();
-        console.error('Failed to load metadata', err);
       },
     });
     this.subscriptions.add(subscription!);

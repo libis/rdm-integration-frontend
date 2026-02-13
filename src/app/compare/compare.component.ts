@@ -158,21 +158,11 @@ export class CompareComponent
     const filters = this.selectedFilterItems();
     const isFiltering = filters.length < 4;
 
-    // Apply Filtering
-    const visible: TreeNode<Datafile>[] = [];
-    map.forEach((n) => {
-      const f = n.data!;
-      f.hidden =
-        !f.attributes?.isFile ||
-        !filters.some((i) => f.status === i.fileStatus);
-      if (!f.hidden) visible.push(n);
-    });
-
     if (isFiltering) {
-      return visible;
+      return Array.from(map.values()).filter((node) =>
+        this.isVisibleInFilter(node, filters),
+      );
     } else {
-      // Ensure all unhidden
-      map.forEach((n) => (n.data!.hidden = false));
       return root.children || [];
     }
   });
@@ -289,6 +279,20 @@ export class CompareComponent
         this.folderStatusService.updateTreeRoot(root);
         this.folderActionUpdateService.updateFoldersAction(map);
       }
+    });
+
+    // Keep hidden flags synchronized with current filters.
+    effect(() => {
+      const map = this.rowNodeMap();
+      const filters = this.selectedFilterItems();
+      const isFiltering = filters.length < 4;
+      map.forEach((node) => {
+        const data = node.data;
+        if (!data) return;
+        data.hidden = isFiltering
+          ? !this.isVisibleInFilter(node, filters)
+          : false;
+      });
     });
 
     // Effect to react to state changes
@@ -466,5 +470,16 @@ export class CompareComponent
       collectionId,
     });
     this.router.navigate(['/connect']);
+  }
+
+  private isVisibleInFilter(
+    node: TreeNode<Datafile>,
+    filters: FilterItem[],
+  ): boolean {
+    const data = node.data;
+    if (!data?.attributes?.isFile) {
+      return false;
+    }
+    return filters.some((item) => data.status === item.fileStatus);
   }
 }

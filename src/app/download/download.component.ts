@@ -241,8 +241,6 @@ export class DownloadComponent
 
   async ngOnInit() {
     await this.pluginService.setConfig();
-    // eslint-disable-next-line no-console
-    console.debug('[DownloadComponent] Config loaded');
 
     // Load dataverseToken from localStorage if storeDvToken is enabled
     if (this.pluginService.isStoreDvToken()) {
@@ -262,47 +260,22 @@ export class DownloadComponent
 
     // Check if user is logged in and show popup if not
     // But skip popup for OAuth callbacks - user already made their choice
-    // eslint-disable-next-line no-console
-    console.debug('[DownloadComponent] Checking user info for popup...');
     if (!isOAuthCallback) {
       try {
         const userInfo = await firstValueFrom(this.dataService.getUserInfo());
-        // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] getUserInfo response:', userInfo);
         if (!userInfo.loggedIn) {
-          // eslint-disable-next-line no-console
-          console.debug(
-            '[DownloadComponent] User not logged in, showing popup',
-          );
           this.showGuestLoginPopup.set(true);
         } else {
-          // eslint-disable-next-line no-console
-          console.debug(
-            '[DownloadComponent] User is logged in, no popup needed',
-          );
           // Logged-in users should keep session_required_single_domain
           this.accessMode.set('login');
         }
-      } catch (err) {
-        console.error('[DownloadComponent] getUserInfo error:', err);
-        // eslint-disable-next-line no-console
-        console.debug(
-          '[DownloadComponent] Assuming not logged in, showing popup',
-        );
+      } catch {
         this.showGuestLoginPopup.set(true);
       }
-    } else {
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[DownloadComponent] OAuth callback detected, skipping popup',
-      );
     }
 
     this.queryParamsSubscription = this.route.queryParams.subscribe(
       (params) => {
-        // eslint-disable-next-line no-console
-        console.debug('[DownloadComponent] Route params received:', params);
-
         const apiToken = params['apiToken'];
         if (apiToken) {
           this.dataverseToken.set(apiToken);
@@ -316,29 +289,16 @@ export class DownloadComponent
         // datasetDbId is passed when getDatasetVersion fails (preview URL users)
         if (params['datasetDbId']) {
           this.datasetDbId.set(params['datasetDbId']);
-          // eslint-disable-next-line no-console
-          console.debug(
-            '[DownloadComponent] Got datasetDbId from params:',
-            this.datasetDbId(),
-          );
         }
 
         // If we have datasetDbId and downloadId but no DOI, fetch it now
         if (this.datasetDbId() && this.downloadId() && !this.datasetId()) {
-          // eslint-disable-next-line no-console
-          console.debug(
-            '[DownloadComponent] Auto-fetching DOI from globusDownloadParameters',
-          );
           this.fetchDoiFromGlobusParams();
         }
 
         const code = params['code'];
         if (code !== undefined) {
-          // eslint-disable-next-line no-console
-          console.debug('[DownloadComponent] OAuth callback detected');
           const loginState: LoginState = JSON.parse(params['state']);
-          // eslint-disable-next-line no-console
-          console.debug('[DownloadComponent] LoginState:', loginState);
           if (loginState.nonce) {
             const doi = loginState.datasetId?.value
               ? loginState.datasetId?.value
@@ -361,14 +321,6 @@ export class DownloadComponent
                 new Set(loginState.preSelectedFileIds),
               );
             }
-
-            // eslint-disable-next-line no-console
-            console.debug('[DownloadComponent] State after restore:', {
-              doi,
-              downloadId: this.downloadId(),
-              accessMode: this.accessMode(),
-              preSelectedFileIds: this.preSelectedFileIds().size,
-            });
 
             // Load files if we have a valid dataset ID (DOI was fetched before OAuth)
             if (doi && doi !== '?' && doi !== 'undefined') {
@@ -449,10 +401,6 @@ export class DownloadComponent
     this.accessDeniedForGuest.set(false);
     // If still loading DOI, wait for it to complete
     if (this.loading()) {
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[DownloadComponent] Still loading DOI, waiting before redirect',
-      );
       const checkInterval = setInterval(() => {
         if (!this.loading()) {
           clearInterval(checkInterval);
@@ -470,24 +418,11 @@ export class DownloadComponent
 
   continueWithPreviewUrl(): void {
     // User chose to continue with preview URL - extract token and datasetDbId, then fetch DOI
-    // eslint-disable-next-line no-console
-    console.debug(
-      '[DownloadComponent] continueWithPreviewUrl called. Input:',
-      this.previewUrlInput(),
-    );
     const parsed = this.extractFromPreviewUrl(this.previewUrlInput());
-    // eslint-disable-next-line no-console
-    console.debug('[DownloadComponent] Parsed result:', parsed);
     if (!parsed?.token) {
-      console.error('[DownloadComponent] Could not extract token from input');
       return;
     }
     this.dataverseToken.set(parsed.token);
-    // eslint-disable-next-line no-console
-    console.debug(
-      '[DownloadComponent] Token set. this.dataverseToken:',
-      this.dataverseToken(),
-    );
     if (parsed.datasetDbId) {
       this.datasetDbId.set(parsed.datasetDbId);
     }
@@ -498,13 +433,6 @@ export class DownloadComponent
     if (this.datasetDbId() && this.downloadId()) {
       this.loading.set(true);
       const dataverseUrl = this.externalURL();
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[DownloadComponent] Fetching DOI before OAuth. datasetDbId:',
-        this.datasetDbId(),
-        'downloadId:',
-        this.downloadId(),
-      );
       this.dataService
         .getGlobusDownloadParams(
           dataverseUrl,
@@ -517,8 +445,6 @@ export class DownloadComponent
             this.loading.set(false);
             const pid = response.data?.queryParameters?.datasetPid;
             if (pid) {
-              // eslint-disable-next-line no-console
-              console.debug('[DownloadComponent] Got DOI:', pid);
               this.datasetId.set(pid);
               this.doiItems.set([{ label: pid, value: pid }]);
             }
@@ -529,13 +455,9 @@ export class DownloadComponent
             // Now proceed to OAuth with DOI already known
             this.getRepoToken();
           },
-          error: (err) => {
+          error: (_err) => {
             this.loading.set(false);
 
-            console.error(
-              '[DownloadComponent] Failed to fetch DOI, proceeding anyway:',
-              err,
-            );
             // Proceed anyway - might work without DOI
             this.getRepoToken();
           },
@@ -566,13 +488,6 @@ export class DownloadComponent
     }
     this.loading.set(true);
     const dataverseUrl = this.externalURL();
-    // eslint-disable-next-line no-console
-    console.debug(
-      '[DownloadComponent] Fetching DOI. datasetDbId:',
-      this.datasetDbId(),
-      'downloadId:',
-      this.downloadId(),
-    );
     this.dataService
       .getGlobusDownloadParams(
         dataverseUrl,
@@ -585,8 +500,6 @@ export class DownloadComponent
           this.loading.set(false);
           const pid = response.data?.queryParameters?.datasetPid;
           if (pid) {
-            // eslint-disable-next-line no-console
-            console.debug('[DownloadComponent] Got DOI:', pid);
             this.datasetId.set(pid);
             this.doiItems.set([{ label: pid, value: pid }]);
             // Extract pre-selected file IDs from the files field
@@ -599,10 +512,8 @@ export class DownloadComponent
             }
           }
         },
-        error: (err) => {
+        error: (_err) => {
           this.loading.set(false);
-
-          console.error('[DownloadComponent] Failed to fetch DOI:', err);
         },
       });
   }
@@ -833,11 +744,6 @@ export class DownloadComponent
       const fileIds = Object.keys(files);
       if (fileIds.length > 0) {
         this.preSelectedFileIds.set(new Set(fileIds));
-        // eslint-disable-next-line no-console
-        console.debug(
-          `[DownloadComponent] Extracted ${fileIds.length} pre-selected file ID(s) from Dataverse:`,
-          fileIds,
-        );
       }
     }
   }
@@ -865,10 +771,6 @@ export class DownloadComponent
       if (rootNode) {
         this.updateFolderActionsRecursive(rootNode);
       }
-      // eslint-disable-next-line no-console
-      console.debug(
-        `[DownloadComponent] Pre-selected ${preSelectedCount} file(s) from Dataverse UI`,
-      );
     }
   }
 
@@ -964,8 +866,6 @@ export class DownloadComponent
           this.downloadInProgress.set(false);
           this.statusPollingActive.set(false);
 
-          console.error('something went wrong:');
-          console.error(err);
           const fallbackError = 'unknown error';
           const message =
             (err as { error?: string; message?: string })?.error ??
@@ -1168,13 +1068,6 @@ export class DownloadComponent
     if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
       const nonce = this.newNonce(44);
       // Include all state to preserve across OAuth redirect
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[DownloadComponent] getRepoToken called. this.dataverseToken:',
-        this.dataverseToken(),
-        'this.accessMode:',
-        this.accessMode(),
-      );
       const loginState: LoginState = {
         datasetId:
           this.datasetId() && this.datasetId() !== '?'
@@ -1190,10 +1083,6 @@ export class DownloadComponent
             ? Array.from(this.preSelectedFileIds())
             : undefined,
       };
-      // eslint-disable-next-line no-console
-      console.debug('[DownloadComponent] getRepoToken loginState:', {
-        ...loginState,
-      });
       let clId = '?client_id=';
       if (url.includes('?')) {
         clId = '&client_id=';
@@ -1236,11 +1125,9 @@ export class DownloadComponent
         dataverseToken: this.dataverseToken(),
         preSelectedFileIds: Array.from(this.preSelectedFileIds()),
       };
-      // eslint-disable-next-line no-console
-      console.debug('[DownloadComponent] Saving download state:', state);
       sessionStorage.setItem('downloadState', JSON.stringify(state));
-    } catch (err) {
-      console.error('[DownloadComponent] Failed to save download state:', err);
+    } catch {
+      // Ignore storage write errors (e.g., private mode quota restrictions).
     }
   }
 
@@ -1263,9 +1150,6 @@ export class DownloadComponent
         preSelectedFileIds?: string[];
       };
 
-      // eslint-disable-next-line no-console
-      console.debug('[DownloadComponent] Restoring download state:', state);
-
       // Only restore if current values are undefined/empty
       // This prevents overwriting values from query params
       if (state.downloadId && !this.downloadId()) {
@@ -1287,15 +1171,7 @@ export class DownloadComponent
 
       // Clear the saved state after restoring
       sessionStorage.removeItem('downloadState');
-      // eslint-disable-next-line no-console
-      console.debug(
-        '[DownloadComponent] Download state restored and cleared from storage',
-      );
-    } catch (err) {
-      console.error(
-        '[DownloadComponent] Failed to restore download state:',
-        err,
-      );
+    } catch {
       // Clear potentially corrupted state
       sessionStorage.removeItem('downloadState');
     }

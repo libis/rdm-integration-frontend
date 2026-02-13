@@ -12,7 +12,6 @@ export class NotificationService {
    * TODO: Replace with proper notification system (e.g., toast, snackbar)
    */
   showError(message: string): void {
-    console.error('Error:', message);
     // eslint-disable-next-line no-restricted-syntax
     alert(message); // Temporary implementation
   }
@@ -22,8 +21,7 @@ export class NotificationService {
    * TODO: Replace with proper notification system
    */
   showSuccess(message: string): void {
-    // eslint-disable-next-line no-console
-    console.log('Success:', message);
+    void message;
     // Could implement toast notifications here
   }
 
@@ -32,8 +30,7 @@ export class NotificationService {
    * TODO: Replace with proper notification system
    */
   showInfo(message: string): void {
-    // eslint-disable-next-line no-console
-    console.log('Info:', message);
+    void message;
     // Could implement toast notifications here
   }
 
@@ -42,7 +39,7 @@ export class NotificationService {
    * TODO: Replace with proper notification system
    */
   showWarning(message: string): void {
-    console.warn('Warning:', message);
+    void message;
     // Could implement toast notifications here
   }
 

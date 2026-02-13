@@ -366,8 +366,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       if (match) {
         this.ensureSelectedDatasetOption(pid, match.label);
       }
-    } catch (error) {
-      console.warn('Failed to preload dataset option', error);
+    } catch {
+      // Ignore lookup failure; selected ID is already prefilled.
     }
   }
 
@@ -672,10 +672,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
             );
           }
         },
-        error: (err) => {
+        error: (_err) => {
           this.subscriptions.delete(viewerSubscription);
           viewerSubscription?.unsubscribe();
-          console.error('Failed to add file to dataset:', err);
           this.notificationService.showError('Failed to add file to dataset');
         },
       });

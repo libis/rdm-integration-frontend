@@ -63,6 +63,7 @@ import {
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
+import { bumpRefreshTrigger } from '../shared/refresh-trigger';
 import {
   convertToTreeNodes,
   createPlaceholderRootOptions,
@@ -70,8 +71,6 @@ import {
 import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
-// Toggle detailed restoration tracing (set false for cleaner logs in production builds)
-const RESTORE_TRACE = true; // can be wired to environment flag later
 
 @Component({
   selector: 'app-connect',
@@ -597,61 +596,18 @@ export class ConnectComponent
     const datasetFromNav = (historyState as { datasetId?: string }).datasetId;
     const collectionFromNav = (historyState as { collectionId?: string })
       .collectionId;
-    if (RESTORE_TRACE) {
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('[RESTORE-TRACE] restoreFromSnapshot invoked', {
-          incomingHistoryState: historyState,
-          snapDataset: snap.dataset_id,
-          datasetFromNav,
-        });
-      } catch {
-        // intentional: tracing is non-critical
-      }
-    }
     if (anyState.connectSnapshot) {
       this.applySnapshot(snap, datasetFromNav, collectionFromNav);
     } else if (datasetFromNav || collectionFromNav) {
       // If only primitive ids passed
       this.applySnapshot({}, datasetFromNav, collectionFromNav);
     }
-    if (RESTORE_TRACE) {
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('[RESTORE-TRACE] restoreFromSnapshot result', {
-          datasetId: this.datasetId(),
-          collectionId: this.collectionId(),
-          hasSnapshot: !!anyState.connectSnapshot,
-        });
-      } catch {
-        // intentional: ignore tracing error
-      }
-    }
   }
 
   private restoreFromStorage(): void {
     const snap = this.snapshotStorage.loadConnect();
     if (!snap) return;
-    if (RESTORE_TRACE) {
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('[RESTORE-TRACE] restoreFromStorage invoked', snap);
-      } catch {
-        // intentional: ignore tracing error
-      }
-    }
     this.applySnapshot(snap, undefined, undefined);
-    if (RESTORE_TRACE) {
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('[RESTORE-TRACE] restoreFromStorage result', {
-          datasetId: this.datasetId(),
-          collectionId: this.collectionId(),
-        });
-      } catch {
-        // intentional: ignore tracing error
-      }
-    }
   }
 
   private applySnapshot(
@@ -727,31 +683,9 @@ export class ConnectComponent
     );
   }
 
-  private attemptFullRestore(context: string): void {
-    if (RESTORE_TRACE) {
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('[RESTORE-TRACE] attemptFullRestore start', {
-          context,
-          historyState: window?.history?.state,
-        });
-      } catch {
-        // intentional: ignore tracing error
-      }
-    }
+  private attemptFullRestore(_context: string): void {
     this.restoreFromSnapshot(window?.history?.state);
     if (!this.datasetId()) this.restoreFromStorage();
-    if (RESTORE_TRACE) {
-      try {
-        // eslint-disable-next-line no-console
-        console.debug('[RESTORE-TRACE] attemptFullRestore end', {
-          datasetId: this.datasetId(),
-          collectionId: this.collectionId(),
-        });
-      } catch {
-        // intentional: ignore tracing error
-      }
-    }
   }
 
   ngOnDestroy(): void {
@@ -921,9 +855,8 @@ export class ConnectComponent
             );
           }
         },
-        error: (err) => {
+        error: (_err) => {
           subscr?.unsubscribe();
-          console.error(err);
           this.notificationService.showError(
             'Error getting user: you need to generate a valid Dataverse API token first',
           );
@@ -1309,7 +1242,7 @@ export class ConnectComponent
       const nodes = convertToTreeNodes(items);
       node.children = nodes.treeNodes;
       // Increment refresh trigger to force change detection (zoneless Angular)
-      this.refreshTrigger.update((n) => n + 1);
+      bumpRefreshTrigger(this.refreshTrigger);
       this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else if (items && items.length > 0) {

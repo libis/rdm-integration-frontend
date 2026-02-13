@@ -27,13 +27,13 @@ describe('NotificationService', () => {
     service = TestBed.inject(NotificationService);
   });
 
-  it('shows success/info/warning', () => {
+  it('success/info/warning are no-op placeholders (no console output)', () => {
     service.showSuccess('ok');
     service.showInfo('info');
     service.showWarning('warn');
-    expect(consoleLogs.some((l) => l.includes('ok'))).toBeTrue();
-    expect(consoleLogs.some((l) => l.includes('info'))).toBeTrue();
-    expect(consoleWarnings.some((l) => l.includes('warn'))).toBeTrue();
+    expect(consoleLogs.length).toBe(0);
+    expect(consoleWarnings.length).toBe(0);
+    expect(consoleErrors.length).toBe(0);
   });
 
   it('handles plain error object with error field', () => {
