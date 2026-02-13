@@ -1133,14 +1133,6 @@ export class ConnectComponent
       this.notificationService.showError(`${this.tokenFieldName()} is missing`);
       return;
     }
-    if (
-      this.branchItems().length !== 0 &&
-      this.branchItems().find((x) => x === this.loadingItem) === undefined
-    ) {
-      return;
-    }
-
-    this.branchItems.set(this.loadingItems);
 
     return {
       pluginId: pId,
@@ -1195,12 +1187,22 @@ export class ConnectComponent
 
   getOptions(node?: TreeNode<string>): void {
     const req = this.getRepoLookupRequest(false);
+    if (
+      req !== undefined &&
+      !node &&
+      this.branchItems().length !== 0 &&
+      this.branchItems().find((x) => x === this.loadingItem) === undefined
+    ) {
+      return;
+    }
     if (req === undefined) {
       return;
     }
     if (node) {
       req.option = node.data;
       this.optionsLoading.set(true);
+    } else {
+      this.branchItems.set(this.loadingItems);
     }
 
     this.repoLookupService

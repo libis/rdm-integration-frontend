@@ -974,14 +974,6 @@ export class DownloadComponent
       );
       return;
     }
-    if (
-      this.branchItems().length !== 0 &&
-      this.branchItems().find((x) => x === this.loadingItem) === undefined
-    ) {
-      return;
-    }
-    this.branchItems.set(this.loadingItems);
-
     return {
       pluginId: 'globus',
       plugin: 'globus',
@@ -1006,12 +998,22 @@ export class DownloadComponent
 
   getOptions(node?: TreeNode<string>): void {
     const req = this.getRepoLookupRequest(false);
+    if (
+      req !== undefined &&
+      !node &&
+      this.branchItems().length !== 0 &&
+      this.branchItems().find((x) => x === this.loadingItem) === undefined
+    ) {
+      return;
+    }
     if (req === undefined) {
       return;
     }
     if (node) {
       req.option = node.data;
       this.optionsLoading.set(true);
+    } else {
+      this.branchItems.set(this.loadingItems);
     }
 
     let httpSubscription: Subscription;
