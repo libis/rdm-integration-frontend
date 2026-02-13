@@ -7,7 +7,11 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter, withDisabledInitialNavigation } from '@angular/router';
+import {
+  ActivatedRoute,
+  provideRouter,
+  withDisabledInitialNavigation,
+} from '@angular/router';
 import { of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';

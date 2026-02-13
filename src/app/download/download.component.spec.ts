@@ -8,7 +8,11 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { ActivatedRoute, provideRouter, withDisabledInitialNavigation } from '@angular/router';
+import {
+  ActivatedRoute,
+  provideRouter,
+  withDisabledInitialNavigation,
+} from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { DataService } from '../data.service';

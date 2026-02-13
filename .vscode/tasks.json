@@ -1,12 +1,12 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "Run Tests",
-			"type": "shell",
-			"command": "cd /home/eryk/projects/rdm-integration-frontend && npx ng test --no-watch --browsers=ChromeHeadless 2>&1 | tee /tmp/test-final.log",
-			"isBackground": false,
-			"group": "test"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "cd /home/eryk/projects/rdm-integration-frontend && npx ng test --no-watch --browsers=ChromeHeadless 2>&1 | tee /tmp/test-final.log",
+      "isBackground": false,
+      "group": "test"
+    }
+  ]
 }

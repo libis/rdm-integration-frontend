@@ -5,10 +5,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import {
-  provideRouter,
-  withDisabledInitialNavigation,
-} from '@angular/router';
+import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { NavigationService } from '../shared/navigation.service';
 
 import { ConnectComponent } from './connect.component';
