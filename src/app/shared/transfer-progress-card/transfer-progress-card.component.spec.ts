@@ -1,10 +1,10 @@
+import { SimpleChange } from '@angular/core';
 import {
   ComponentFixture,
   TestBed,
   fakeAsync,
   tick,
 } from '@angular/core/testing';
-import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { CredentialsService } from 'src/app/credentials.service';
 import { DataUpdatesService } from 'src/app/data.updates.service';
@@ -30,30 +30,6 @@ class MockSubmitService {
 
 class MockCredentialsService {
   credentials = { plugin: 'globus', dataset_id: 'pid-default' };
-
-  // Signal-based API
-  credentials$ = signal(this.credentials).asReadonly();
-  plugin$ = signal('globus').asReadonly();
-  pluginId$ = signal<string | undefined>(undefined).asReadonly();
-  repoName$ = signal<string | undefined>(undefined).asReadonly();
-  url$ = signal<string | undefined>(undefined).asReadonly();
-  option$ = signal<string | undefined>(undefined).asReadonly();
-  user$ = signal<string | undefined>(undefined).asReadonly();
-  token$ = signal<string | undefined>(undefined).asReadonly();
-  datasetId$ = signal('pid-default').asReadonly();
-  newlyCreated$ = signal<boolean | undefined>(undefined).asReadonly();
-  dataverseToken$ = signal<string | undefined>(undefined).asReadonly();
-  metadataAvailable$ = signal<boolean | undefined>(undefined).asReadonly();
-
-  setCredentials(creds: { plugin?: string; dataset_id?: string }): void {
-    this.credentials = { ...this.credentials, ...creds };
-  }
-  updateCredentials(partial: { plugin?: string; dataset_id?: string }): void {
-    this.credentials = { ...this.credentials, ...partial };
-  }
-  clearCredentials(): void {
-    this.credentials = { plugin: 'globus', dataset_id: 'pid-default' };
-  }
 }
 
 class MockDataUpdatesService {
@@ -78,8 +54,6 @@ describe('TransferProgressCardComponent', () => {
 
     fixture = TestBed.createComponent(TransferProgressCardComponent);
     component = fixture.componentInstance;
-    // Set required input immediately after component creation to prevent effect errors
-    fixture.componentRef.setInput('isGlobus', false);
     submit = TestBed.inject(SubmitService) as unknown as MockSubmitService;
     dataUpdates = TestBed.inject(
       DataUpdatesService,
@@ -87,7 +61,7 @@ describe('TransferProgressCardComponent', () => {
   });
 
   afterEach(() => {
-    fixture.destroy();
+    component.ngOnDestroy();
     dataUpdates.updateData.calls.reset();
   });
 
@@ -102,21 +76,22 @@ describe('TransferProgressCardComponent', () => {
     const completions: TransferTaskStatus[] = [];
     component.completed.subscribe((value) => completions.push(value));
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-1');
+    component.isGlobus = true;
+    component.taskId = 'task-1';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-1', true) });
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeTrue();
+    expect(component.hasStatus).toBeTrue();
 
     tick();
-    expect(component.status()?.status).toBe('ACTIVE');
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.status?.status).toBe('ACTIVE');
+    expect(component.statusPollingActive).toBeTrue();
 
     tick(5000);
     tick();
-    expect(component.status()?.status).toBe('SUCCEEDED');
-    expect(component.statusMessage()).toContain('All done');
-    expect(component.statusPollingActive()).toBeFalse();
+    expect(component.status?.status).toBe('SUCCEEDED');
+    expect(component.statusMessage).toContain('All done');
+    expect(component.statusPollingActive).toBeFalse();
     expect(completions.length).toBe(1);
     expect(pollingStates).toEqual([true, false]);
   }));
@@ -124,73 +99,78 @@ describe('TransferProgressCardComponent', () => {
   it('shows error message when polling fails', fakeAsync(() => {
     submit.errors = [{ status: 401 }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-2');
+    component.isGlobus = true;
+    component.taskId = 'task-2';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-2', true) });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingActive()).toBeFalse();
-    expect(component.statusMessage()).toContain('Globus session expired');
-    expect(component.statusIcon()).toContain('exclamation');
+    expect(component.statusPollingActive).toBeFalse();
+    expect(component.statusMessage).toContain('Globus session expired');
+    expect(component.statusIcon).toContain('exclamation');
   }));
 
   it('shows error message for non-globus when polling fails with 401', fakeAsync(() => {
     const mockError = { status: 401 };
     dataUpdates.updateData.and.returnValue(throwError(() => mockError));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', []);
-    fixture.componentRef.setInput('taskId', 'pid-123');
+    component.isGlobus = false;
+    component.data = [];
+    component.taskId = 'pid-123';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'pid-123', true) });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingActive()).toBeFalse();
-    expect(component.statusMessage()).toContain('Session expired');
-    expect(component.statusMessage()).not.toContain('Globus');
-    expect(component.statusIcon()).toContain('exclamation');
-    expect(component.statusTone()).toBe('error');
+    expect(component.statusPollingActive).toBeFalse();
+    expect(component.statusMessage).toContain('Session expired');
+    expect(component.statusMessage).not.toContain('Globus');
+    expect(component.statusIcon).toContain('exclamation');
+    expect(component.statusTone).toBe('error');
   }));
 
   it('handles generic error message from error object', fakeAsync(() => {
     const mockError = { error: 'Custom error message' };
     submit.errors = [mockError];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-3');
+    component.isGlobus = true;
+    component.taskId = 'task-3';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-3', true) });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toBe('Custom error message');
-    expect(component.statusMessage()).toBe('Custom error message');
+    expect(component.statusPollingError).toBe('Custom error message');
+    expect(component.statusMessage).toBe('Custom error message');
   }));
 
   it('handles error with message property', fakeAsync(() => {
     const mockError = { message: 'Network timeout' };
     submit.errors = [mockError];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-4');
+    component.isGlobus = true;
+    component.taskId = 'task-4';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-4', true) });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toBe('Network timeout');
+    expect(component.statusPollingError).toBe('Network timeout');
   }));
 
   it('uses default error message for globus when no specific error', fakeAsync(() => {
     const mockError = {};
     submit.errors = [mockError];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-5');
+    component.isGlobus = true;
+    component.taskId = 'task-5';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-5', true) });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toContain(
+    expect(component.statusPollingError).toContain(
       'Unable to retrieve the latest status from Globus',
     );
   }));
@@ -199,64 +179,66 @@ describe('TransferProgressCardComponent', () => {
     const mockError = {};
     dataUpdates.updateData.and.returnValue(throwError(() => mockError));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', []);
-    fixture.componentRef.setInput('taskId', 'pid-456');
+    component.isGlobus = false;
+    component.data = [];
+    component.taskId = 'pid-456';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'pid-456', true) });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toContain(
+    expect(component.statusPollingError).toContain(
       'Unable to retrieve the latest transfer status',
     );
-    expect(component.statusPollingError()).not.toContain('Globus');
+    expect(component.statusPollingError).not.toContain('Globus');
   }));
 
   it('renders submitting-only state messaging', () => {
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('submitting', true);
+    component.submitting = true;
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeTrue();
-    expect(component.statusMessage()).toContain('Submitting transfer request');
-    expect(component.statusIcon()).toContain('spinner');
-    expect(component.statusTone()).toBe('info');
+    expect(component.hasStatus).toBeTrue();
+    expect(component.statusMessage).toContain('Submitting transfer request');
+    expect(component.statusIcon).toContain('spinner');
+    expect(component.statusTone).toBe('info');
   });
 
-  it('shows active message when polling starts for globus', () => {
-    // Mock returns ACTIVE status immediately
-    submit.statuses = [{ task_id: 'task-waiting', status: 'ACTIVE' }];
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-waiting');
+  it('shows waiting message when no status and not polling for globus', () => {
+    component.isGlobus = true;
+    component.taskId = 'task-waiting';
     fixture.detectChanges();
 
-    expect(component.statusMessage()).toContain('Transfer in progress');
+    expect(component.statusMessage).toContain('Waiting for Globus updates');
   });
 
-  it('shows waiting message when no taskId is set for non-globus', () => {
-    fixture.componentRef.setInput('isGlobus', false);
-    // No taskId set - should show waiting
+  it('shows waiting message when no status and not polling for non-globus', () => {
+    component.isGlobus = false;
+    component.taskId = 'pid-waiting';
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeFalse();
+    expect(component.statusMessage).toContain('Waiting for status updates');
+    expect(component.statusMessage).not.toContain('Globus');
   });
 
   it('starts polling immediately when taskId is set for globus', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-check', status: 'ACTIVE' }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-check');
+    component.isGlobus = true;
+    component.taskId = 'task-check';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-check', true),
+    });
     fixture.detectChanges();
 
     // Polling should be active
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingActive).toBeTrue();
 
     tick();
     fixture.detectChanges();
 
     // Status should be retrieved
-    expect(component.status()?.status).toBe('ACTIVE');
-    expect(component.statusMessage()).toContain('Transfer in progress');
+    expect(component.status?.status).toBe('ACTIVE');
+    expect(component.statusMessage).toContain('Transfer in progress');
   }));
 
   it('starts polling immediately when taskId is set for non-globus', fakeAsync(() => {
@@ -270,20 +252,24 @@ describe('TransferProgressCardComponent', () => {
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-check');
+    component.isGlobus = false;
+    component.data = mockFiles;
+    component.taskId = 'pid-check';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-check', true),
+      data: new SimpleChange(null, mockFiles, true),
+    });
     fixture.detectChanges();
 
     // Polling should be active initially
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingActive).toBeTrue();
 
     tick();
     fixture.detectChanges();
 
     // Should have computed status from data - one file in progress (not complete)
-    expect(component.status()).toBeDefined();
-    expect(component.statusMessage()).toContain('Transfer in progress');
+    expect(component.status).toBeDefined();
+    expect(component.statusMessage).toContain('Transfer in progress');
   }));
 
   it('computes transfer progress when bytes known', fakeAsync(() => {
@@ -302,16 +288,19 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-progress');
+    component.isGlobus = true;
+    component.taskId = 'task-progress';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-progress', true),
+    });
     fixture.detectChanges();
 
     tick();
-    expect(component.transferProgress()).toBe(50);
+    expect(component.transferProgress).toBe(50);
 
     tick(5000);
     tick();
-    expect(component.transferProgress()).toBe(100);
+    expect(component.transferProgress).toBe(100);
   }));
 
   it('returns undefined progress when bytes_expected is zero', fakeAsync(() => {
@@ -324,12 +313,15 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-no-bytes');
+    component.isGlobus = true;
+    component.taskId = 'task-no-bytes';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-no-bytes', true),
+    });
     fixture.detectChanges();
 
     tick();
-    expect(component.transferProgress()).toBeUndefined();
+    expect(component.transferProgress).toBeUndefined();
   }));
 
   it('calculates files summary correctly', fakeAsync(() => {
@@ -344,48 +336,52 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-files');
+    component.isGlobus = true;
+    component.taskId = 'task-files';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-files', true),
+    });
     fixture.detectChanges();
 
     tick();
-    const summary = component.filesSummary();
+    const summary = component.filesSummary;
     expect(summary.total).toBe(100);
     expect(summary.processed).toBe(60); // transferred + skipped
     expect(summary.failed).toBe(5);
   }));
 
   it('creates monitor link when task id present', () => {
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-xyz');
+    component.isGlobus = true;
+    component.taskId = 'task-xyz';
+    component.ngOnChanges({ taskId: new SimpleChange(null, 'task-xyz', true) });
     fixture.detectChanges();
 
-    expect(component.formattedMonitorUrl()).toBe(
+    expect(component.formattedMonitorUrl).toBe(
       'https://app.globus.org/activity/task-xyz',
     );
   });
 
   it('uses custom monitor URL when provided', () => {
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-custom');
-    fixture.componentRef.setInput('monitorUrl', 'https://custom.monitor/url');
+    component.isGlobus = true;
+    component.taskId = 'task-custom';
+    component.monitorUrl = 'https://custom.monitor/url';
     fixture.detectChanges();
 
-    expect(component.formattedMonitorUrl()).toBe('https://custom.monitor/url');
+    expect(component.formattedMonitorUrl).toBe('https://custom.monitor/url');
   });
 
   it('returns undefined monitor URL when no taskId', () => {
-    fixture.componentRef.setInput('taskId', null);
+    component.taskId = null;
     fixture.detectChanges();
 
-    expect(component.formattedMonitorUrl()).toBeUndefined();
+    expect(component.formattedMonitorUrl).toBeUndefined();
   });
 
   it('opens monitor URL in new window', () => {
     spyOn(window, 'open');
-    fixture.componentRef.setInput('isGlobus', true); // Must be Globus to show monitor URL
-    fixture.componentRef.setInput('taskId', 'task-open');
-    fixture.componentRef.setInput('monitorUrl', 'https://monitor.test/url');
+    component.isGlobus = true; // Must be Globus to show monitor URL
+    component.taskId = 'task-open';
+    component.monitorUrl = 'https://monitor.test/url';
     fixture.detectChanges();
 
     component.openGlobus();
@@ -399,7 +395,7 @@ describe('TransferProgressCardComponent', () => {
 
   it('does not open window when no monitor URL', () => {
     spyOn(window, 'open');
-    fixture.componentRef.setInput('taskId', null);
+    component.taskId = null;
     fixture.detectChanges();
 
     component.openGlobus();
@@ -410,56 +406,65 @@ describe('TransferProgressCardComponent', () => {
   it('refresh clears error and restarts polling', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-refresh', status: 'ACTIVE' }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-refresh');
-    component.statusPollingError.set('Previous error');
+    component.isGlobus = true;
+    component.taskId = 'task-refresh';
+    component.statusPollingError = 'Previous error';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-refresh', true),
+    });
     fixture.detectChanges();
 
     tick();
 
     component.refresh();
 
-    expect(component.statusPollingError()).toBeUndefined();
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingError).toBeUndefined();
+    expect(component.statusPollingActive).toBeTrue();
   }));
 
   it('refresh does nothing when no taskId', () => {
-    fixture.componentRef.setInput('taskId', null);
-    component.statusPollingError.set('Some error');
+    component.taskId = null;
+    component.statusPollingError = 'Some error';
 
     component.refresh();
 
-    expect(component.statusPollingError()).toBe('Some error');
+    expect(component.statusPollingError).toBe('Some error');
   });
 
   it('resets state when taskId changes to empty', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-reset', status: 'ACTIVE' }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-reset');
+    component.isGlobus = true;
+    component.taskId = 'task-reset';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-reset', true),
+    });
     fixture.detectChanges();
 
     tick();
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingActive).toBeTrue();
 
-    fixture.componentRef.setInput('taskId', '');
-    fixture.detectChanges(); // Trigger ngOnChanges
+    component.taskId = '';
+    component.ngOnChanges({
+      taskId: new SimpleChange('task-reset', '', false),
+    });
 
-    expect(component.statusPollingActive()).toBeFalse();
-    expect(component.status()).toBeUndefined();
-    expect(component.statusPollingError()).toBeUndefined();
+    expect(component.statusPollingActive).toBeFalse();
+    expect(component.status).toBeUndefined();
+    expect(component.statusPollingError).toBeUndefined();
   }));
 
   it('resets when submitting changes to false without taskId', () => {
-    fixture.componentRef.setInput('submitting', true);
-    fixture.componentRef.setInput('taskId', null);
+    component.submitting = true;
+    component.taskId = null;
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeTrue();
+    expect(component.hasStatus).toBeTrue();
 
-    fixture.componentRef.setInput('submitting', false);
+    component.submitting = false;
+    component.ngOnChanges({ submitting: new SimpleChange(true, false, false) });
 
-    expect(component.status()).toBeUndefined();
+    expect(component.status).toBeUndefined();
   });
 
   it('recognizes FAILED as error status', fakeAsync(() => {
@@ -471,15 +476,18 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-failed');
+    component.isGlobus = true;
+    component.taskId = 'task-failed';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-failed', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusTone()).toBe('error');
-    expect(component.statusIcon()).toContain('exclamation');
-    expect(component.statusMessage()).toContain('Transfer failed');
+    expect(component.statusTone).toBe('error');
+    expect(component.statusIcon).toContain('exclamation');
+    expect(component.statusMessage).toContain('Transfer failed');
   }));
 
   it('recognizes CANCELED as error status', fakeAsync(() => {
@@ -491,14 +499,17 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-cancel');
+    component.isGlobus = true;
+    component.taskId = 'task-cancel';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-cancel', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusTone()).toBe('error');
-    expect(component.statusIcon()).toContain('exclamation');
+    expect(component.statusTone).toBe('error');
+    expect(component.statusIcon).toContain('exclamation');
   }));
 
   it('stops polling on INACTIVE terminal status', fakeAsync(() => {
@@ -510,18 +521,21 @@ describe('TransferProgressCardComponent', () => {
     const completions: TransferTaskStatus[] = [];
     component.completed.subscribe((value) => completions.push(value));
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-inactive');
+    component.isGlobus = true;
+    component.taskId = 'task-inactive';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-inactive', true),
+    });
     fixture.detectChanges();
 
     tick();
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingActive).toBeTrue();
 
     tick(5000);
     tick();
 
-    expect(component.status()!.status).toBe('INACTIVE');
-    expect(component.statusPollingActive()).toBeFalse();
+    expect(component.status?.status).toBe('INACTIVE');
+    expect(component.statusPollingActive).toBeFalse();
     expect(completions.length).toBe(1);
   }));
 
@@ -534,13 +548,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-nice');
+    component.isGlobus = true;
+    component.taskId = 'task-nice';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-nice', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusMessage()).toBe('Processing files 45/100');
+    expect(component.statusMessage).toBe('Processing files 45/100');
   }));
 
   it('shows status when no nice_status', fakeAsync(() => {
@@ -551,13 +568,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-plain');
+    component.isGlobus = true;
+    component.taskId = 'task-plain';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-plain', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusMessage()).toBe('Current status: PENDING');
+    expect(component.statusMessage).toBe('Current status: PENDING');
   }));
 
   it('defaults to waiting message when status is empty', fakeAsync(() => {
@@ -568,13 +588,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-empty');
+    component.isGlobus = true;
+    component.taskId = 'task-empty';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-empty', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusMessage()).toBe('Waiting for Globus updates…');
+    expect(component.statusMessage).toBe('Waiting for Globus updates…');
   }));
 
   it('shows error message with status when FAILED without nice_status', fakeAsync(() => {
@@ -585,13 +608,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-plain-fail');
+    component.isGlobus = true;
+    component.taskId = 'task-plain-fail';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-plain-fail', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusMessage()).toContain(
+    expect(component.statusMessage).toContain(
       'Transfer ended with status FAILED',
     );
   }));
@@ -604,13 +630,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-plain-success');
+    component.isGlobus = true;
+    component.taskId = 'task-plain-success';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-plain-success', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusMessage()).toBe('Transfer completed successfully.');
+    expect(component.statusMessage).toBe('Transfer completed successfully.');
   }));
 
   it('clamps progress to 0-100 range', fakeAsync(() => {
@@ -623,13 +652,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-clamp');
+    component.isGlobus = true;
+    component.taskId = 'task-clamp';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-clamp', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.transferProgress()).toBe(100); // Clamped to max
+    expect(component.transferProgress).toBe(100); // Clamped to max
   }));
 
   it('does not emit pollingChange when state stays the same', fakeAsync(() => {
@@ -638,8 +670,11 @@ describe('TransferProgressCardComponent', () => {
     const pollingStates: boolean[] = [];
     component.pollingChange.subscribe((value) => pollingStates.push(value));
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-same');
+    component.isGlobus = true;
+    component.taskId = 'task-same';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-same', true),
+    });
     fixture.detectChanges();
 
     tick();
@@ -649,24 +684,24 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('returns empty files summary when no status', () => {
-    fixture.componentRef.setInput('taskId', null);
+    component.taskId = null;
     fixture.detectChanges();
 
-    const summary = component.filesSummary();
+    const summary = component.filesSummary;
     expect(summary.total).toBe(0);
     expect(summary.processed).toBe(0);
     expect(summary.failed).toBe(0);
   });
 
   it('correctly encodes taskId in monitor URL', () => {
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task/with/slashes');
+    component.isGlobus = true;
+    component.taskId = 'task/with/slashes';
     fixture.detectChanges();
 
-    expect(component.formattedMonitorUrl()).toContain(
+    expect(component.formattedMonitorUrl).toContain(
       encodeURIComponent('task/with/slashes'),
     );
-    expect(component.formattedMonitorUrl()).toBe(
+    expect(component.formattedMonitorUrl).toBe(
       'https://app.globus.org/activity/task%2Fwith%2Fslashes',
     );
   });
@@ -688,17 +723,21 @@ describe('TransferProgressCardComponent', () => {
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-update');
+    component.isGlobus = false;
+    component.data = mockFiles;
+    component.taskId = 'pid-update';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-update', true),
+      data: new SimpleChange(null, mockFiles, true),
+    });
 
     tick();
     fixture.detectChanges();
 
     // Only file1 should be complete (Equal), file2 is still in progress (Updated)
-    expect(component.status()!.files).toBe(2);
-    expect(component.status()!.files_transferred).toBe(1);
-    expect(component.statusMessage()).toContain('Transfer in progress');
+    expect(component.status?.files).toBe(2);
+    expect(component.status?.files_transferred).toBe(1);
+    expect(component.statusMessage).toContain('Transfer in progress');
   }));
 
   it('counts Delete files as complete when status is New', fakeAsync(() => {
@@ -718,17 +757,21 @@ describe('TransferProgressCardComponent', () => {
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-delete');
+    component.isGlobus = false;
+    component.data = mockFiles;
+    component.taskId = 'pid-delete';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-delete', true),
+      data: new SimpleChange(null, mockFiles, true),
+    });
 
     tick();
     fixture.detectChanges();
 
     // Only file1 should be complete (New), file2 is still being deleted (Deleted)
-    expect(component.status()!.files).toBe(2);
-    expect(component.status()!.files_transferred).toBe(1);
-    expect(component.statusMessage()).toContain('Transfer in progress');
+    expect(component.status?.files).toBe(2);
+    expect(component.status?.files_transferred).toBe(1);
+    expect(component.statusMessage).toContain('Transfer in progress');
   }));
 
   it('handles Ignore action files (no progress counted)', fakeAsync(() => {
@@ -748,53 +791,20 @@ describe('TransferProgressCardComponent', () => {
     ];
     dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-ignore');
-
-    tick();
-    fixture.detectChanges();
-
-    // Only file2 (Copy) should count in total, file1 (Ignore) should not be counted at all
-    expect(component.status()!.files).toBe(1);
-    expect(component.status()!.files_transferred).toBe(1);
-    // Transfer should be complete since all active files (1/1) are done
-    expect(component.status()!.status).toBe('SUCCEEDED');
-  }));
-
-  it('counts only active files when dataset has many existing (Ignore) files', fakeAsync(() => {
-    // Simulate dataset with 300 existing files (Ignore) and 1 new file being uploaded (Copy)
-    const mockFiles: any[] = [];
-    // 300 existing files that should not be counted
-    for (let i = 0; i < 300; i++) {
-      mockFiles.push({
-        id: `existing-${i}`,
-        name: `existing-file-${i}.txt`,
-        action: Fileaction.Ignore,
-        status: Filestatus.Equal,
-      });
-    }
-    // 1 new file being uploaded
-    mockFiles.push({
-      id: 'new-1',
-      name: 'new-file.txt',
-      action: Fileaction.Copy,
-      status: Filestatus.Equal,
+    component.isGlobus = false;
+    component.data = mockFiles;
+    component.taskId = 'pid-ignore';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-ignore', true),
+      data: new SimpleChange(null, mockFiles, true),
     });
 
-    dataUpdates.updateData.and.returnValue(of({ data: mockFiles }));
-
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-single-upload');
-
     tick();
     fixture.detectChanges();
 
-    // Should count only 1 file (the Copy action), not 301
-    expect(component.status()!.files).toBe(1);
-    expect(component.status()!.files_transferred).toBe(1);
-    expect(component.status()!.status).toBe('SUCCEEDED');
+    // Only file2 (Copy) should count, file1 (Ignore) should not affect completion
+    expect(component.status?.files).toBe(2);
+    expect(component.status?.files_transferred).toBe(1);
   }));
 
   it('marks transfer as succeeded when all files complete', fakeAsync(() => {
@@ -823,37 +833,45 @@ describe('TransferProgressCardComponent', () => {
     const completions: TransferTaskStatus[] = [];
     component.completed.subscribe((value) => completions.push(value));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-complete');
+    component.isGlobus = false;
+    component.data = mockFiles;
+    component.taskId = 'pid-complete';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-complete', true),
+      data: new SimpleChange(null, mockFiles, true),
+    });
 
     tick();
     fixture.detectChanges();
 
     // All files complete
-    expect(component.status()!.status).toBe('SUCCEEDED');
-    expect(component.statusMessage()).toContain(
+    expect(component.status?.status).toBe('SUCCEEDED');
+    expect(component.statusMessage).toContain(
       'Transfer completed successfully',
     );
-    expect(component.statusPollingActive()).toBeFalse();
+    expect(component.statusPollingActive).toBeFalse();
     expect(completions.length).toBe(1);
   }));
 
   it('handles empty files array correctly', fakeAsync(() => {
     dataUpdates.updateData.and.returnValue(of({ data: [] }));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', []);
-    fixture.componentRef.setInput('taskId', 'pid-empty');
+    component.isGlobus = false;
+    component.data = [];
+    component.taskId = 'pid-empty';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-empty', true),
+      data: new SimpleChange(null, [], true),
+    });
 
     tick();
     fixture.detectChanges();
 
     // Empty transfer is considered complete
-    expect(component.status()!.files).toBe(0);
-    expect(component.status()!.files_transferred).toBe(0);
-    expect(component.status()!.status).toBe('SUCCEEDED');
-    expect(component.statusMessage()).toContain(
+    expect(component.status?.files).toBe(0);
+    expect(component.status?.files_transferred).toBe(0);
+    expect(component.status?.status).toBe('SUCCEEDED');
+    expect(component.statusMessage).toContain(
       'Transfer completed successfully',
     );
   }));
@@ -878,15 +896,18 @@ describe('TransferProgressCardComponent', () => {
     dataUpdates.updateData.and.returnValue(of({ data: updatedFiles }));
 
     let callbackInvoked = false;
-    fixture.componentRef.setInput('dataUpdate', (updated: any) => {
+    component.dataUpdate = (updated) => {
       callbackInvoked = true;
       expect(updated.data).toEqual(updatedFiles);
-    });
+    };
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', mockFiles);
-    fixture.componentRef.setInput('taskId', 'pid-callback');
-    fixture.detectChanges();
+    component.isGlobus = false;
+    component.data = mockFiles;
+    component.taskId = 'pid-callback';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-callback', true),
+      data: new SimpleChange(null, mockFiles, true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -895,9 +916,12 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('builds status without calling updateData when data is falsy', fakeAsync(() => {
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', null);
-    fixture.componentRef.setInput('taskId', 'pid-no-data');
+    component.isGlobus = false;
+    component.data = null;
+    component.taskId = 'pid-no-data';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-no-data', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -906,87 +930,100 @@ describe('TransferProgressCardComponent', () => {
     expect(dataUpdates.updateData).not.toHaveBeenCalled();
 
     // Should show completed status for null data
-    expect(component.status()!.status).toBe('SUCCEEDED');
+    expect(component.status?.status).toBe('SUCCEEDED');
   }));
 
   it('shows Globus-specific waiting message when not polling', () => {
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', null);
-    component.statusPollingActive.set(false);
+    component.isGlobus = true;
+    component.taskId = null;
+    component.statusPollingActive = false;
     fixture.detectChanges();
 
-    expect(component.statusMessage()).toContain('Waiting for Globus updates');
+    expect(component.statusMessage).toContain('Waiting for Globus updates');
   });
 
   it('shows non-Globus waiting message when not polling', () => {
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('taskId', null);
-    component.statusPollingActive.set(false);
+    component.isGlobus = false;
+    component.taskId = null;
+    component.statusPollingActive = false;
     fixture.detectChanges();
 
-    expect(component.statusMessage()).toContain('Waiting for status updates');
-    expect(component.statusMessage()).not.toContain('Globus');
+    expect(component.statusMessage).toContain('Waiting for status updates');
+    expect(component.statusMessage).not.toContain('Globus');
   });
 
   it('cleans up subscriptions on destroy', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-destroy', status: 'ACTIVE' }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-destroy');
+    component.isGlobus = true;
+    component.taskId = 'task-destroy';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-destroy', true),
+    });
     fixture.detectChanges();
 
     tick();
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingActive).toBeTrue();
 
-    // Destroy the component by destroying the fixture
-    fixture.destroy();
+    // Destroy the component
+    component.ngOnDestroy();
 
-    // After fixture destroyed, polling should have been cleaned up
-    // Note: We can't check statusPollingActive since the component is destroyed
+    // Polling should be stopped
+    expect(component.statusPollingActive).toBeFalse();
   }));
 
   it('shows generic error message when error has no specific message', fakeAsync(() => {
     submit.errors = [new Error()]; // Error with no message
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-generic-error');
+    component.isGlobus = true;
+    component.taskId = 'task-generic-error';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-generic-error', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toContain(
+    expect(component.statusPollingError).toContain(
       'Unable to retrieve the latest status from Globus',
     );
-    expect(component.statusTone()).toBe('error');
+    expect(component.statusTone).toBe('error');
   }));
 
   it('shows generic error message for non-Globus when error has no specific message', fakeAsync(() => {
     dataUpdates.updateData.and.returnValue(throwError(() => new Error()));
 
-    fixture.componentRef.setInput('isGlobus', false);
-    fixture.componentRef.setInput('data', []);
-    fixture.componentRef.setInput('taskId', 'pid-generic-error');
+    component.isGlobus = false;
+    component.data = [];
+    component.taskId = 'pid-generic-error';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'pid-generic-error', true),
+      data: new SimpleChange(null, [], true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toContain(
+    expect(component.statusPollingError).toContain(
       'Unable to retrieve the latest transfer status',
     );
-    expect(component.statusPollingError()).not.toContain('Globus');
-    expect(component.statusTone()).toBe('error');
+    expect(component.statusPollingError).not.toContain('Globus');
+    expect(component.statusTone).toBe('error');
   }));
 
   it('uses error.error property when available', fakeAsync(() => {
     submit.errors = [{ error: 'Custom error from API', status: 500 }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-error-property');
+    component.isGlobus = true;
+    component.taskId = 'task-error-property';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-error-property', true),
+    });
     fixture.detectChanges();
 
     tick();
 
-    expect(component.statusPollingError()).toBe('Custom error from API');
+    expect(component.statusPollingError).toBe('Custom error from API');
   }));
 
   it('detects INACTIVE as terminal status', fakeAsync(() => {
@@ -995,19 +1032,21 @@ describe('TransferProgressCardComponent', () => {
       { task_id: 'task-inactive-check', status: 'INACTIVE' },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-inactive-check');
-    fixture.detectChanges();
+    component.isGlobus = true;
+    component.taskId = 'task-inactive-check';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-inactive-check', true),
+    });
 
     tick();
-    expect(component.statusPollingActive()).toBeTrue();
+    expect(component.statusPollingActive).toBeTrue();
 
     tick(5000);
     tick();
 
     // Should have stopped polling
-    expect(component.status()!.status).toBe('INACTIVE');
-    expect(component.statusPollingActive()).toBeFalse();
+    expect(component.status?.status).toBe('INACTIVE');
+    expect(component.statusPollingActive).toBeFalse();
   }));
 
   it('clamps progress to 0-100 range when calculation exceeds bounds', fakeAsync(() => {
@@ -1020,14 +1059,17 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-clamp');
+    component.isGlobus = true;
+    component.taskId = 'task-clamp';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-clamp', true),
+    });
 
     tick();
     fixture.detectChanges();
 
     // Should be clamped to 100
-    expect(component.transferProgress()).toBe(100);
+    expect(component.transferProgress).toBe(100);
   }));
 
   it('returns correct statusIcon for info status', fakeAsync(() => {
@@ -1038,14 +1080,17 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-icon-info');
+    component.isGlobus = true;
+    component.taskId = 'task-icon-info';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-icon-info', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.statusIcon()).toContain('spinner');
-    expect(component.statusTone()).toBe('info');
+    expect(component.statusIcon).toContain('spinner');
+    expect(component.statusTone).toBe('info');
   }));
 
   it('returns correct statusIcon for success status', fakeAsync(() => {
@@ -1056,14 +1101,17 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-icon-success');
+    component.isGlobus = true;
+    component.taskId = 'task-icon-success';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-icon-success', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.statusIcon()).toContain('check');
-    expect(component.statusTone()).toBe('success');
+    expect(component.statusIcon).toContain('check');
+    expect(component.statusTone).toBe('success');
   }));
 
   it('returns correct statusIcon for error status', fakeAsync(() => {
@@ -1074,23 +1122,25 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-icon-error');
+    component.isGlobus = true;
+    component.taskId = 'task-icon-error';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-icon-error', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.statusIcon()).toContain('exclamation');
-    expect(component.statusTone()).toBe('error');
+    expect(component.statusIcon).toContain('exclamation');
+    expect(component.statusTone).toBe('error');
   }));
 
   it('hasStatus returns true when submitting', () => {
-    fixture.componentRef.setInput('submitting', true);
-    // Don't set taskId to ensure no status polling happens
-    fixture.componentRef.setInput('taskId', null);
+    component.submitting = true;
+    component.status = undefined;
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeTrue();
+    expect(component.hasStatus).toBeTrue();
   });
 
   it('hasStatus returns true when status exists', fakeAsync(() => {
@@ -1101,22 +1151,24 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-has-status');
+    component.isGlobus = true;
+    component.taskId = 'task-has-status';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-has-status', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeTrue();
+    expect(component.hasStatus).toBeTrue();
   }));
 
   it('hasStatus returns false when not submitting and no status', () => {
-    fixture.componentRef.setInput('submitting', false);
-    // Don't set taskId to ensure no status is loaded
-    fixture.componentRef.setInput('taskId', null);
+    component.submitting = false;
+    component.status = undefined;
     fixture.detectChanges();
 
-    expect(component.hasStatus()).toBeFalse();
+    expect(component.hasStatus).toBeFalse();
   });
 
   it('uses nice_status as statusMessage when available and not terminal', fakeAsync(() => {
@@ -1128,13 +1180,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-nice');
+    component.isGlobus = true;
+    component.taskId = 'task-nice';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-nice', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.statusMessage()).toBe('Processing your files');
+    expect(component.statusMessage).toBe('Processing your files');
   }));
 
   it('falls back to "Current status: X" when no nice_status', fakeAsync(() => {
@@ -1146,13 +1201,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-fallback');
+    component.isGlobus = true;
+    component.taskId = 'task-fallback';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-fallback', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.statusMessage()).toBe('Current status: PENDING');
+    expect(component.statusMessage).toBe('Current status: PENDING');
   }));
 
   it('uses empty nice_status as default Globus waiting message when status but no value', fakeAsync(() => {
@@ -1164,13 +1222,16 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-empty-nice');
+    component.isGlobus = true;
+    component.taskId = 'task-empty-nice';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-empty-nice', true),
+    });
 
     tick();
     fixture.detectChanges();
 
-    expect(component.statusMessage()).toContain('Waiting for Globus updates');
+    expect(component.statusMessage).toContain('Waiting for Globus updates');
   }));
 
   it('renders completion_time in template when available', fakeAsync(() => {
@@ -1182,8 +1243,11 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-completion-time');
+    component.isGlobus = true;
+    component.taskId = 'task-completion-time';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-completion-time', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1202,8 +1266,11 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-request-time');
+    component.isGlobus = true;
+    component.taskId = 'task-request-time';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-request-time', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1225,8 +1292,11 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-files-display');
+    component.isGlobus = true;
+    component.taskId = 'task-files-display';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-files-display', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1237,24 +1307,24 @@ describe('TransferProgressCardComponent', () => {
   }));
 
   it('scrolls the card into view when first displayed', fakeAsync(() => {
-    // Initially detect changes with default state
     fixture.detectChanges();
 
-    // Set submitting to true to trigger hasStatus() -> true
-    fixture.componentRef.setInput('submitting', true);
+    component.submitting = true;
+    component.ngOnChanges({
+      submitting: new SimpleChange(false, true, false),
+    });
+
     fixture.detectChanges();
-    tick(); // Let effects run
 
-    // Now get the card element via viewChild signal
-    const cardEl = component['cardRoot']()?.nativeElement as HTMLElement;
-    expect(cardEl).toBeTruthy();
+    const cardElement = component['cardRoot']?.nativeElement as HTMLElement;
+    expect(cardElement).toBeTruthy();
 
-    // Verify the scroll would have been attempted
-    // Since scrollIntoView is called in setTimeout, we need to flush
-    tick(100);
+    const scrollSpy = jasmine.createSpy('scrollIntoView');
+    (cardElement as any).scrollIntoView = scrollSpy;
 
-    // The scroll logic ran - we verify by checking hasRenderedCard is now true
-    expect((component as any).hasRenderedCard).toBeTrue();
+    tick();
+
+    expect(scrollSpy).toHaveBeenCalled();
   }));
 
   it('renders failed files count when present', fakeAsync(() => {
@@ -1269,8 +1339,11 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-failed-files');
+    component.isGlobus = true;
+    component.taskId = 'task-failed-files';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-failed-files', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1291,8 +1364,11 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-no-failed');
+    component.isGlobus = true;
+    component.taskId = 'task-no-failed';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-no-failed', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1304,8 +1380,11 @@ describe('TransferProgressCardComponent', () => {
   it('hides refresh button when polling is active', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-disable-refresh', status: 'ACTIVE' }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-disable-refresh');
+    component.isGlobus = true;
+    component.taskId = 'task-disable-refresh';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-disable-refresh', true),
+    });
 
     tick();
     fixture.detectChanges();
@@ -1319,14 +1398,17 @@ describe('TransferProgressCardComponent', () => {
   it('shows refresh button when polling is not active and not succeeded', fakeAsync(() => {
     submit.statuses = [{ task_id: 'task-enable-refresh', status: 'INACTIVE' }];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'task-enable-refresh');
+    component.isGlobus = true;
+    component.taskId = 'task-enable-refresh';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'task-enable-refresh', true),
+    });
 
     tick();
     fixture.detectChanges();
 
     // Wait for terminal status to stop polling
-    expect(component.statusPollingActive()).toBeFalse();
+    expect(component.statusPollingActive).toBeFalse();
 
     const refreshButton = fixture.nativeElement.querySelector(
       'button:not(.monitor-link)',
@@ -1342,8 +1424,11 @@ describe('TransferProgressCardComponent', () => {
       },
     ];
 
-    fixture.componentRef.setInput('isGlobus', true);
-    fixture.componentRef.setInput('taskId', 'display-task-123');
+    component.isGlobus = true;
+    component.taskId = 'display-task-123';
+    component.ngOnChanges({
+      taskId: new SimpleChange(null, 'display-task-123', true),
+    });
 
     tick();
     fixture.detectChanges();

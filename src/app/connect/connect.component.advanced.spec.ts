@@ -3,15 +3,14 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem, TreeNode } from 'primeng/api';
 import { Observable, of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
-import { CompareResult } from '../models/compare-result';
 import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
@@ -22,10 +21,15 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { ConnectComponent } from './connect.component';
 
 class MockDataStateService {
-  readonly state$ = signal<CompareResult | null>(null);
   initializeStateCalls: unknown[] = [];
   initializeState(creds: unknown) {
     this.initializeStateCalls.push(creds);
+  }
+  getObservableState() {
+    return of(null);
+  }
+  getCurrentValue() {
+    return null;
   }
   resetState() {}
 }
@@ -133,16 +137,6 @@ class MockPluginService {
   sendMails() {
     return false;
   }
-
-  // Signal properties for computed signal consumers
-  dataverseHeader$ = signal('Dataverse:').asReadonly();
-  showDVTokenGetter$ = signal(true).asReadonly();
-  showDVToken$ = signal(true).asReadonly();
-  collectionOptionsHidden$ = signal(false).asReadonly();
-  collectionFieldEditable$ = signal(true).asReadonly();
-  datasetFieldEditable$ = signal(true).asReadonly();
-  createNewDatasetEnabled$ = signal(true).asReadonly();
-  externalURL$ = signal('https://dataverse.example').asReadonly();
 }
 
 class MockRepoLookupService {
@@ -289,6 +283,7 @@ describe('ConnectComponent advanced behaviors', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: PluginService, useValue: pluginService },
         { provide: RepoLookupService, useValue: repoLookup },
         { provide: DvObjectLookupService, useValue: dvLookup },
@@ -353,7 +348,6 @@ describe('ConnectComponent advanced behaviors', () => {
     comp.plugin.set('github');
     comp.pluginId.set('github');
     comp.pluginIds.set([{ label: 'GitHub', value: 'github' }]);
-    comp.url.set('https://github.com'); // Required for window.open to be called
     const openSpy = spyOn(window, 'open');
     comp.getRepoToken();
     expect(openSpy).toHaveBeenCalled();
@@ -377,8 +371,8 @@ describe('ConnectComponent advanced behaviors', () => {
   // Callback parsing is now handled by AppComponent which redirects to /connect with datasetPid.
   // See app.component.spec.ts for tests of parseGlobusCallback and redirect handling.
 
-  it('restoreFromOauthState populates selections and fetches token', fakeAsync(() => {
-    const { comp } = createComponent();
+  it('restoreFromOauthState populates selections and fetches token', async () => {
+    const { comp, fixture } = createComponent();
     const state = {
       plugin: { label: 'GitHub', value: 'github' },
       pluginId: { label: 'GitHub', value: 'github', hidden: false },
@@ -403,16 +397,16 @@ describe('ConnectComponent advanced behaviors', () => {
       code: 'oauthCode',
       nonce: 'nonce-123',
     });
-    tick();
+    await fixture.whenStable();
     expect(comp.token()).toBe('session-123');
-  }));
+  });
 
-  it('getDvObjectOptions populates dropdowns and handles errors', fakeAsync(() => {
+  it('getDvObjectOptions populates dropdowns and handles errors', async () => {
     dvLookup.items = [
       { label: 'Dataset A', value: 'doi:AAA' },
       { label: 'Dataset B', value: 'doi:BBB' },
     ];
-    const { comp } = createComponent();
+    const { comp, fixture } = createComponent();
     comp['getDvObjectOptions'](
       'Dataset',
       comp.doiItems(),
@@ -420,7 +414,7 @@ describe('ConnectComponent advanced behaviors', () => {
         c.doiItems.set(items);
       },
     );
-    tick();
+    await fixture.whenStable();
     expect(comp.doiItems().length).toBe(2);
 
     comp.doiItems.set([]);
@@ -432,18 +426,18 @@ describe('ConnectComponent advanced behaviors', () => {
         c.doiItems.set(items);
       },
     );
-    tick();
+    await fixture.whenStable();
     expect(
       notification.errors.some((e) => e.includes('DOI lookup failed')),
     ).toBeTrue();
-  }));
+  });
 
-  it('getOptions populates branch items and handles nested nodes', fakeAsync(() => {
+  it('getOptions populates branch items and handles nested nodes', async () => {
     repoLookup.options = [
       { label: 'opt1', value: 'o1' },
       { label: 'opt2', value: 'o2' },
     ];
-    const { comp } = createComponent();
+    const { comp, fixture } = createComponent();
     comp.pluginId.set('github');
     comp.plugin.set('github');
     comp.repoName.set('owner/repo');
@@ -459,34 +453,20 @@ describe('ConnectComponent advanced behaviors', () => {
       selectable: true,
     };
     comp.getOptions(node);
-    tick();
+    await fixture.whenStable();
     expect(node.children?.length).toBe(2);
 
     repoLookup.error = 'Bad request';
     comp.branchItems.set([]);
     comp.getOptions();
-    tick();
+    await fixture.whenStable();
     expect(
       notification.errors.some((e) => e.includes('Branch lookup failed')),
     ).toBeTrue();
     expect(comp.branchItems().length).toBe(0);
-  }));
-
-  it('optionSelected sets selection for empty string (root folder)', () => {
-    const { comp } = createComponent();
-    comp.optionSelected({
-      data: 'branch',
-      selectable: true,
-    } as TreeNode<string>);
-    expect(comp.option()).toBe('branch');
-    expect(comp.selectedOption()?.data).toBe('branch');
-    // Empty string is now a valid selection (root folder)
-    comp.optionSelected({ data: '', selectable: true } as TreeNode<string>);
-    expect(comp.option()).toBe('');
-    expect(comp.selectedOption()?.data).toBe('');
   });
 
-  it('optionSelected clears selection when value is null or undefined', () => {
+  it('optionSelected clears selection when value empty', () => {
     const { comp } = createComponent();
     comp.optionSelected({
       data: 'branch',
@@ -494,11 +474,7 @@ describe('ConnectComponent advanced behaviors', () => {
     } as TreeNode<string>);
     expect(comp.option()).toBe('branch');
     expect(comp.selectedOption()?.data).toBe('branch');
-    // null/undefined should clear the selection
-    comp.optionSelected({
-      data: undefined,
-      selectable: true,
-    } as TreeNode<string>);
+    comp.optionSelected({ data: '', selectable: true } as TreeNode<string>);
     expect(comp.option()).toBeUndefined();
     expect(comp.selectedOption()).toBeUndefined();
   });
@@ -513,30 +489,20 @@ describe('ConnectComponent advanced behaviors', () => {
   });
 
   it('isOptionFieldInteractive respects plugin configuration', () => {
-    // Test with interactive = true (default)
-    pluginService.repoNameFieldInteractive = true;
-    const { comp: comp1 } = createComponent();
-    comp1.pluginId.set('github');
-    expect(comp1.isOptionFieldInteractive()).toBeTrue();
-
-    // Test with interactive = false - need fresh component since computed signals
-    // cache values and only re-evaluate when signal dependencies change
+    const { comp } = createComponent();
+    expect(comp.isOptionFieldInteractive()).toBeTrue();
     pluginService.repoNameFieldInteractive = false;
-    const { comp: comp2 } = createComponent();
-    comp2.pluginId.set('github');
-    expect(comp2.isOptionFieldInteractive()).toBeFalse();
+    expect(comp.isOptionFieldInteractive()).toBeFalse();
   });
 
-  it('validateUrl enforces well-formed source URL', () => {
+  it('validateUrlParsing enforces well-formed source URL', () => {
     const { comp } = createComponent();
-    // Need pluginId set for validation to be active
-    comp.pluginId.set('github');
     comp.sourceUrl.set(undefined);
-    expect(comp.validateUrl()).toBe('Malformed source url'); // undefined source is malformed
+    expect(comp['validateUrlParsing']()).toBe('Source URL is required');
     comp.sourceUrl.set('https://host/repo');
-    expect(comp.validateUrl()).toBe('Malformed source url');
+    expect(comp['validateUrlParsing']()).toBe('Malformed source url');
     comp.sourceUrl.set('https://host/owner/repo/path');
-    expect(comp.validateUrl()).toBeUndefined();
+    expect(comp['validateUrlParsing']()).toBeUndefined();
   });
 
   it('repoNameSearch returns error placeholder when request invalid', async () => {
@@ -563,27 +529,26 @@ describe('ConnectComponent advanced behaviors', () => {
     pluginService.repoNameFieldHasInit = true;
   });
 
-  it('sourceUrlValue computed signal prefers plugin-provided defaults over user input', () => {
+  it('getSourceUrlValue prefers plugin-provided defaults over user input', () => {
     pluginService.sourceUrlFieldValue = 'https://preconfigured';
     const { comp } = createComponent();
-    comp.pluginId.set('github'); // Must set pluginId for sourceUrlValue to check plugin config
     comp.sourceUrl.set('https://user/provided');
-    expect(comp.sourceUrlValue()).toBe('https://preconfigured');
+    expect(comp.getSourceUrlValue()).toBe('https://preconfigured');
     pluginService.sourceUrlFieldValue = undefined;
   });
 
-  it('computedRepoName falls back from repoName to selected and found names', () => {
+  it('getRepoName falls back from repoName to selected and found names', () => {
     const { comp } = createComponent();
     comp.repoName.set(undefined);
     comp.selectedRepoName.set('selected');
     comp.foundRepoName.set('found');
-    expect(comp.computedRepoName()).toBe('selected');
+    expect(comp.getRepoName()).toBe('selected');
     comp.selectedRepoName.set(undefined);
-    expect(comp.computedRepoName()).toBe('found');
+    expect(comp.getRepoName()).toBe('found');
   });
 
-  it('getOptions requests additional scopes via getRepoToken when signalled', fakeAsync(() => {
-    const { comp } = createComponent();
+  it('getOptions requests additional scopes via getRepoToken when signalled', async () => {
+    const { comp, fixture } = createComponent();
     comp.plugin.set('github');
     comp.pluginId.set('github');
     comp.sourceUrl.set('https://host/owner/repo');
@@ -599,9 +564,9 @@ describe('ConnectComponent advanced behaviors', () => {
       }),
     );
     comp.getOptions();
-    tick();
+    await fixture.whenStable();
     expect(comp.getRepoToken).toHaveBeenCalledWith('repo:read');
-  }));
+  });
 
   it('getDvObjectOptions returns immediately when items already loaded', () => {
     const { comp } = createComponent();
@@ -631,9 +596,9 @@ describe('ConnectComponent advanced behaviors', () => {
       { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
     ]);
     comp.newDataset();
-    expect(
-      comp.doiItems().filter((i: any) => i.value === newValue).length,
-    ).toBe(1);
+    expect(comp.doiItems().filter((i: any) => i.value === newValue).length).toBe(
+      1,
+    );
   });
 
   it('isNewDatasetId detects colon-prefixed values', () => {
@@ -705,7 +670,7 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(items.slice(1)).toEqual(dvLookup.items);
   });
 
-  it('onDatasetSelectionChange handles create-new sentinel and explicit selections', fakeAsync(() => {
+  it('onDatasetSelectionChange handles create-new sentinel and explicit selections', async () => {
     const { comp } = createComponent();
     comp.collectionId.set('root:COLL');
     comp.doiItems.set([
@@ -719,12 +684,12 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(comp.datasetId()).toContain('root:COLL');
     expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
 
-    tick(3000);
+    await new Promise(resolve => setTimeout(resolve, 3000));
     expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
 
     const previousValue = comp.datasetId();
     comp.onDatasetSelectionChange({ value: 'doi:567' });
     expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
     expect(comp.datasetId()).toBe(previousValue);
-  }));
+  });
 });

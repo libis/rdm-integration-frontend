@@ -17,7 +17,7 @@ describe('SubmittedFileComponent', () => {
     fixture = TestBed.createComponent(SubmittedFileComponent);
     component = fixture.componentInstance;
     credentialsService = TestBed.inject(CredentialsService);
-    credentialsService.clearCredentials();
+    credentialsService.setCredentials({});
   });
 
   const setDatafile = (overrides: Partial<Datafile>) => {

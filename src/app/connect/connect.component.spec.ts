@@ -3,8 +3,8 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 
 import { ConnectComponent } from './connect.component';
@@ -35,15 +35,6 @@ describe('ConnectComponent', () => {
       getRedirectUri: () => '',
       getExternalURL: () => '',
       getGlobusPlugin: () => undefined,
-      // Signal properties for computed signal consumers
-      dataverseHeader$: signal('Dataverse').asReadonly(),
-      showDVTokenGetter$: signal(false).asReadonly(),
-      showDVToken$: signal(false).asReadonly(),
-      collectionOptionsHidden$: signal(false).asReadonly(),
-      collectionFieldEditable$: signal(true).asReadonly(),
-      datasetFieldEditable$: signal(true).asReadonly(),
-      createNewDatasetEnabled$: signal(true).asReadonly(),
-      externalURL$: signal('').asReadonly(),
     } as Partial<PluginService> as PluginService;
 
     await TestBed.configureTestingModule({
@@ -52,6 +43,7 @@ describe('ConnectComponent', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: PluginService, useValue: pluginServiceStub },
       ],
     }).compileComponents();
@@ -70,9 +62,7 @@ describe('ConnectComponent', () => {
     const comp = fixture.componentInstance;
     fixture.detectChanges();
     expect(comp.datasetId()).toBe('doi:10.123/ABC');
-    expect(
-      comp.doiItems().some((i) => i.value === 'doi:10.123/ABC'),
-    ).toBeTrue();
+    expect(comp.doiItems().some((i) => i.value === 'doi:10.123/ABC')).toBeTrue();
   });
 
   it('falls back to datasetId in navigation state when missing in snapshot', async () => {

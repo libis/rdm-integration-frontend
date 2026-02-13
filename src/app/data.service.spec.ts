@@ -38,7 +38,7 @@ describe('DataService', () => {
   });
 
   it('should call getData with credentials', () => {
-    credentialsService.setCredentials({
+    credentialsService.credentials = {
       pluginId: 'test-plugin',
       plugin: 'github',
       repo_name: 'test/repo',
@@ -49,7 +49,7 @@ describe('DataService', () => {
       dataset_id: 'doi:123',
       newly_created: false,
       dataverse_token: 'dv-token',
-    });
+    };
 
     const mockResponse: Key = { key: 'test-key-123' };
 

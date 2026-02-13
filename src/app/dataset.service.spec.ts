@@ -53,7 +53,7 @@ describe('DatasetService', () => {
 
     const req = httpMock.expectOne('api/common/newdataset');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body.collection).toBe(collectionId);
+    expect(req.request.body.collectionId).toBe(collectionId);
     expect(req.request.body.dataverseKey).toBe(apiToken);
     expect(req.request.body.metadata).toEqual(metadata);
     req.flush(mockResponse);

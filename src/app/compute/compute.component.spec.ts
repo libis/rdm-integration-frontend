@@ -3,15 +3,9 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Observable, Subject } from 'rxjs';
-import { signal } from '@angular/core';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CompareResult, Key } from '../models/compare-result';
@@ -78,46 +72,25 @@ class MockUtilsService {
 }
 
 class MockPluginService {
-  private readonly _showDvToken = signal(false);
-  private readonly _datasetEditable = signal(true);
-  private readonly _mailEnabled = signal(false);
-  private readonly _storeDvToken = signal(false);
-
-  // Signals for computed signal consumers
-  readonly showDVToken$ = this._showDvToken.asReadonly();
-  readonly datasetFieldEditable$ = this._datasetEditable.asReadonly();
-  readonly sendMails$ = this._mailEnabled.asReadonly();
-  readonly storeDvToken$ = this._storeDvToken.asReadonly();
-  readonly dataverseHeader$ = signal('Dataverse:').asReadonly();
-
-  // Setters for test control
-  set showDvToken(v: boolean) {
-    this._showDvToken.set(v);
-  }
-  set datasetEditable(v: boolean) {
-    this._datasetEditable.set(v);
-  }
-  set mailEnabled(v: boolean) {
-    this._mailEnabled.set(v);
-  }
-  set storeDvToken(v: boolean) {
-    this._storeDvToken.set(v);
-  }
+  showDvToken = false;
+  datasetEditable = true;
+  mailEnabled = false;
+  storeDvToken = false;
 
   setConfig() {
     return Promise.resolve();
   }
   showDVToken() {
-    return this._showDvToken();
+    return this.showDvToken;
   }
   isStoreDvToken() {
-    return this._storeDvToken();
+    return this.storeDvToken;
   }
   datasetFieldEditable() {
-    return this._datasetEditable();
+    return this.datasetEditable;
   }
   sendMails() {
-    return this._mailEnabled();
+    return this.mailEnabled;
   }
   dataverseHeader() {
     return 'Dataverse:';
@@ -197,14 +170,14 @@ describe('ComputeComponent', () => {
 
   it('onDatasetSearch guards short terms then triggers search', () => {
     component.onDatasetSearch('ab');
-    expect(component.doiItems()[0].label).toContain('start typing');
+    expect(component.doiItems[0].label).toContain('start typing');
     component.onDatasetSearch('abcd');
-    expect(component.doiItems()[0].label).toContain('searching');
+    expect(component.doiItems[0].label).toContain('searching');
   });
 
   it('setData builds tree or stops when empty', () => {
     component.setData({ data: [] });
-    expect(component.loading()).toBeFalse();
+    expect(component.loading).toBeFalse();
     const file: Datafile = {
       id: 'f1',
       path: 'x',
@@ -214,30 +187,30 @@ describe('ComputeComponent', () => {
       action: Fileaction.Copy,
     };
     component.setData({ data: [file] });
-    expect(component.rowNodeMap().size).toBeGreaterThan(0);
+    expect(component.rowNodeMap.size).toBeGreaterThan(0);
   });
 
-  it('continueSubmit polls until ready', fakeAsync(() => {
+  it('continueSubmit polls until ready', async () => {
     component.submitCompute({
       persistentId: 'd1',
       queue: 'q',
       executable: 'run.sh',
       sendEmailOnSuccess: false,
     });
-    component.sendEmailOnSuccess.set(true);
+    component.sendEmailOnSuccess = true;
     component.continueSubmit();
     // flush compute() delayed emission to obtain key and trigger first getComputeData subscription
-    tick();
+    await fixture.whenStable();
     // first poll response: not ready yet
     mockData.emit({ ready: false, res: 'partial' });
     // allow microtasks (sleep immediate resolve) & re-subscription
-    tick();
+    await fixture.whenStable();
     // second poll response: ready
     mockData.emit({ ready: true, res: 'final', err: '' });
-    tick();
-    expect(component.output()).toBe('final');
-    expect(component.outputDisabled()).toBeFalse();
-  }));
+    await fixture.whenStable();
+    expect(component.output).toBe('final');
+    expect(component.outputDisabled).toBeFalse();
+  });
 
   it('back navigates by changing location href', () => {
     component.back();
@@ -253,42 +226,42 @@ describe('ComputeComponent', () => {
     expect(component.sendMails()).toBeTrue();
   });
 
-  it('getDoiOptions loads options and handles errors', fakeAsync(() => {
+  it('getDoiOptions loads options and handles errors', async () => {
     dvLookup.items = [
       { label: 'Dataset A', value: 'doi:A' },
       { label: 'Dataset B', value: 'doi:B' },
     ];
     component.getDoiOptions();
-    tick();
-    expect(component.doiItems().length).toBe(2);
+    await fixture.whenStable();
+    expect(component.doiItems.length).toBe(2);
 
-    component.doiItems.set([]);
+    component.doiItems = [];
     dvLookup.error = 'fail';
     component.getDoiOptions();
-    tick();
+    await fixture.whenStable();
     expect(
       notification.errors.some((e) => e.includes('DOI lookup failed')),
     ).toBeTrue();
-  }));
+  });
 
   it('getDoiOptions avoids reload when options already available', () => {
-    component.doiItems.set([{ label: 'existing', value: 'doi:X' }]);
-    component.datasetId.set('doi:X');
+    component.doiItems = [{ label: 'existing', value: 'doi:X' }];
+    component.datasetId = 'doi:X';
     dvLookup.items = [{ label: 'another', value: 'doi:Y' }];
     component.getDoiOptions();
-    expect(component.doiItems()[0].value).toBe('doi:X');
+    expect(component.doiItems[0].value).toBe('doi:X');
   });
 
   it('onUserChange clears selections', () => {
-    component.dataverseToken.set('dvTok');
-    component.doiItems.set([{ label: 'a', value: 'a' }]);
-    component.datasetId.set('a');
+    component.dataverseToken = 'dvTok';
+    component.doiItems = [{ label: 'a', value: 'a' }];
+    component.datasetId = 'a';
     component.onUserChange();
-    expect(component.doiItems().length).toBe(0);
-    expect(component.datasetId()).toBeUndefined();
+    expect(component.doiItems.length).toBe(0);
+    expect(component.datasetId).toBeUndefined();
   });
 
-  it('onDatasetChange populates map or reports error', fakeAsync(() => {
+  it('onDatasetChange populates map or reports error', async () => {
     const df: Datafile = {
       id: '1',
       name: 'file',
@@ -298,24 +271,24 @@ describe('ComputeComponent', () => {
       action: Fileaction.Copy,
     } as any;
     mockData.executableResponse = { data: [df] };
-    component.datasetId.set('doi:1');
+    component.datasetId = 'doi:1';
     component.onDatasetChange();
-    tick();
-    expect(component.loading()).toBeFalse();
-    expect(component.rowNodeMap().size).toBeGreaterThan(0);
+    await fixture.whenStable();
+    expect(component.loading).toBeFalse();
+    expect(component.rowNodeMap.size).toBeGreaterThan(0);
 
     mockData.executableError = 'boom';
     component.onDatasetChange();
-    tick();
+    await fixture.whenStable();
     expect(
       notification.errors.some((e) =>
         e.includes('Getting executable files failed'),
       ),
     ).toBeTrue();
     mockData.executableError = undefined;
-  }));
+  });
 
-  it('continueSubmit handles compute errors gracefully', fakeAsync(() => {
+  it('continueSubmit handles compute errors gracefully', async () => {
     mockData.computeError = { error: 'server down' };
     component.submitCompute({
       persistentId: 'doi:1',
@@ -324,11 +297,11 @@ describe('ComputeComponent', () => {
       sendEmailOnSuccess: false,
     });
     component.continueSubmit();
-    tick();
+    await fixture.whenStable();
     expect(notification.errors.length).toBeGreaterThan(0);
-  }));
+  });
 
-  it('compute polling surfaces backend error messages', fakeAsync(() => {
+  it('compute polling surfaces backend error messages', async () => {
     component.submitCompute({
       persistentId: 'doi:1',
       queue: 'q',
@@ -336,9 +309,9 @@ describe('ComputeComponent', () => {
       sendEmailOnSuccess: false,
     });
     component.continueSubmit();
-    tick();
+    await fixture.whenStable();
     mockData.emit({ ready: true, err: 'failure', res: '' });
-    tick();
+    await fixture.whenStable();
     expect(notification.errors.some((e) => e.includes('failure'))).toBeTrue();
-  }));
+  });
 });

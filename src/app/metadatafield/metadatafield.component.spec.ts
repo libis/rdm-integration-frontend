@@ -147,16 +147,4 @@ describe('MetadatafieldComponent', () => {
     expect(parentNode.data?.action).toBe(Fieldaction.Ignore);
     expect(parentNode.children?.[0].data?.action).toBe(Fieldaction.Ignore);
   });
-
-  it('emits changed event when toggleAction is called', () => {
-    const { parentNode, map } = buildFieldTree();
-    fixture.componentRef.setInput('field', parentNode.data);
-    fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', parentNode);
-    fixture.detectChanges();
-
-    const emitSpy = spyOn(component.changed, 'emit');
-    component.toggleAction();
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-  });
 });

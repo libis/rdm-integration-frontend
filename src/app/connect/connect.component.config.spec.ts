@@ -6,7 +6,8 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { TestBed, fakeAsync, flushMicrotasks } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
@@ -326,6 +327,7 @@ describe('ConnectComponent pilot plugin configuration', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: DataStateService, useClass: DataStateServiceStub },
         { provide: DatasetService, useClass: DatasetServiceStub },
         { provide: RepoLookupService, useClass: RepoLookupServiceStub },
@@ -353,18 +355,18 @@ describe('ConnectComponent pilot plugin configuration', () => {
     httpMock.verify();
   });
 
-  function createComponent(): ConnectComponent {
+  async function createComponent(): Promise<ConnectComponent> {
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
     const req = httpMock.expectOne('api/frontend/config');
     req.flush(PILOT_CONFIG);
-    flushMicrotasks();
+    await fixture.whenStable();
     fixture.detectChanges();
     return fixture.componentInstance;
   }
 
-  it('exposes pilot plugin families on demand', fakeAsync(() => {
-    const component = createComponent();
+  it('exposes pilot plugin families on demand', async () => {
+    const component = await createComponent();
     component.getPlugins();
     const actual = new Set(component.plugins().map((p) => p.value));
     expect(actual).toEqual(
@@ -380,10 +382,10 @@ describe('ConnectComponent pilot plugin configuration', () => {
       ]),
     );
     expect(component.dataverseHeader()).toBe(PILOT_CONFIG.dataverseHeader);
-  }));
+  });
 
-  it('requires explicit plugin instance selection when multiple options exist', fakeAsync(() => {
-    const component = createComponent();
+  it('requires explicit plugin instance selection when multiple options exist', async () => {
+    const component = await createComponent();
 
     component.plugin.set('gitlab');
     component.changePlugin();
@@ -400,11 +402,11 @@ describe('ConnectComponent pilot plugin configuration', () => {
     component.changePlugin();
     expect(component.pluginId()).toBe('github');
     expect(component.pluginIdSelectHidden()).toBeTrue();
-  }));
+  });
 
   PILOT_CONFIG.plugins.forEach((plugin) => {
-    it(`mirrors pilot configuration for plugin ${plugin.id}`, fakeAsync(() => {
-      const component = createComponent();
+    it(`mirrors pilot configuration for plugin ${plugin.id}`, async () => {
+      const component = await createComponent();
       component.plugin.set(plugin.plugin);
       component.changePlugin();
       component.pluginId.set(plugin.id);
@@ -419,37 +421,37 @@ describe('ConnectComponent pilot plugin configuration', () => {
         Boolean(plugin.tokenGetter?.oauth_client_id),
       );
 
-      expect(component.tokenFieldName()).toBe(plugin.tokenFieldName);
-      expect(component.tokenPlaceholder()).toBe(
-        plugin.tokenFieldPlaceholder ?? '',
+      expect(component.getTokenFieldName()).toBe(plugin.tokenFieldName);
+      expect(component.getTokenPlaceholder()).toBe(
+        plugin.tokenFieldPlaceholder,
       );
 
-      expect(component.usernameFieldName()).toBe(plugin.usernameFieldName);
-      expect(component.usernamePlaceholder()).toBe(
-        plugin.usernameFieldPlaceholder ?? '',
+      expect(component.getUsernameFieldName()).toBe(plugin.usernameFieldName);
+      expect(component.getUsernamePlaceholder()).toBe(
+        plugin.usernameFieldPlaceholder,
       );
 
       if (plugin.optionFieldName) {
-        expect(component.optionFieldName()).toBe(plugin.optionFieldName);
-        expect(component.optionPlaceholder()).toBe(
+        expect(component.getOptionFieldName()).toBe(plugin.optionFieldName);
+        expect(component.getOptionPlaceholder()).toBe(
           plugin.optionFieldPlaceholder ?? '',
         );
       } else {
-        expect(component.optionFieldName()).toBeUndefined();
-        expect(component.optionPlaceholder()).toBe('');
+        expect(component.getOptionFieldName()).toBeUndefined();
+        expect(component.getOptionPlaceholder()).toBe('');
       }
       expect(component.isOptionFieldInteractive()).toBe(
         Boolean(plugin.optionFieldInteractive),
       );
 
-      expect(component.sourceUrlFieldName()).toBe(plugin.sourceUrlFieldName);
-      expect(component.sourceUrlPlaceholder()).toBe(
-        plugin.sourceUrlFieldPlaceholder ?? '',
+      expect(component.getSourceUrlFieldName()).toBe(plugin.sourceUrlFieldName);
+      expect(component.getSourceUrlPlaceholder()).toBe(
+        plugin.sourceUrlFieldPlaceholder,
       );
-      expect(component.sourceUrlValue()).toBe(plugin.sourceUrlFieldValue);
+      expect(component.getSourceUrlValue()).toBe(plugin.sourceUrlFieldValue);
 
-      expect(component.repoNameFieldName()).toBe(plugin.repoNameFieldName);
-      expect(component.repoNamePlaceholder()).toBe(
+      expect(component.getRepoNameFieldName()).toBe(plugin.repoNameFieldName);
+      expect(component.getRepoNamePlaceholder()).toBe(
         plugin.repoNameFieldPlaceholder ?? '',
       );
       expect(component.repoNameFieldEditable()).toBe(
@@ -461,6 +463,6 @@ describe('ConnectComponent pilot plugin configuration', () => {
       expect(expectBoolean(component.repoNameSearchInitEnabled())).toBe(
         Boolean(plugin.repoNameFieldHasInit),
       );
-    }));
+    });
   });
 });

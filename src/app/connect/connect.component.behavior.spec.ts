@@ -6,13 +6,10 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
 import {
   TestBed,
-  fakeAsync,
-  flushMicrotasks,
-  tick,
 } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { SelectItem } from 'primeng/api';
 import { of, throwError } from 'rxjs';
@@ -100,16 +97,6 @@ class PluginServiceStub {
   getGlobusPlugin() {
     return undefined;
   }
-
-  // Signal properties for computed signal consumers
-  dataverseHeader$ = signal('Dataverse').asReadonly();
-  showDVTokenGetter$ = signal(false).asReadonly();
-  showDVToken$ = signal(false).asReadonly();
-  collectionOptionsHidden$ = signal(false).asReadonly();
-  collectionFieldEditable$ = signal(true).asReadonly();
-  datasetFieldEditable$ = signal(true).asReadonly();
-  createNewDatasetEnabled$ = signal(true).asReadonly();
-  externalURL$ = signal('').asReadonly();
 }
 
 class RepoLookupServiceStub {
@@ -197,6 +184,7 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         {
@@ -241,25 +229,18 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(nonce2).not.toBe(nonce); // very small probability of collision
   });
 
-  it('connect button classes react to validation state', async () => {
-    // First, test with invalid state
+  it('connect button classes react to validation state', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
     validation.valid = false;
-    let fixture = TestBed.createComponent(ConnectComponent);
-    let comp: any = fixture.componentInstance;
     fixture.detectChanges();
-    await fixture.whenStable();
-    expect(comp.isConnectReady()).toBeFalse();
-    expect(comp.connectButtonClass()).toContain('p-button-secondary');
-
-    // Destroy and recreate to test valid state (computed signals don't track plain object properties)
-    fixture.destroy();
+    expect(comp.isConnectReady).toBeFalse();
+    expect(comp.connectButtonClass).toContain('p-button-secondary');
     validation.valid = true;
-    fixture = TestBed.createComponent(ConnectComponent);
-    comp = fixture.componentInstance;
+    // trigger change detection again
     fixture.detectChanges();
-    await fixture.whenStable();
-    expect(comp.isConnectReady()).toBeTrue();
-    expect(comp.connectButtonClass()).toContain('p-button-primary');
+    expect(comp.isConnectReady).toBeTrue();
+    expect(comp.connectButtonClass).toContain('p-button-primary');
   });
 
   it('getRepoLookupRequest emits errors in expected order for missing fields and succeeds once populated', () => {
@@ -333,13 +314,13 @@ describe('ConnectComponent additional behavior/validation', () => {
     fixture.detectChanges();
     comp.newDataset();
     expect(comp.datasetId()).toBe('root:COLL:New Dataset');
-    const matches = comp
-      .doiItems()
-      .filter((i: any) => i.value === 'root:COLL:New Dataset');
+    const matches = comp.doiItems().filter(
+      (i: any) => i.value === 'root:COLL:New Dataset',
+    );
     expect(matches.length).toBe(1);
   });
 
-  it('onDatasetSelectionChange triggers new dataset creation flow and hides message after timeout', fakeAsync(() => {
+  it('onDatasetSelectionChange triggers new dataset creation flow and hides message after timeout', async () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     comp.collectionId.set('root:COLL');
@@ -350,9 +331,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
     expect(comp.datasetId()).toContain('root:COLL:New Dataset');
     expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
-    tick(3000);
+    await new Promise(resolve => setTimeout(resolve, 3000));
     expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
-  }));
+  });
 
   it('applySnapshot respects existing datasetId (precedence)', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
@@ -383,10 +364,10 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(req.request.method).toBe('POST');
     req.flush('user@example.com');
 
-    expect(credentialsService.newlyCreated$()).toBeTrue();
+    expect(credentialsService.credentials.newly_created).toBeTrue();
   });
 
-  it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', fakeAsync(() => {
+  it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', async () => {
     // Pre-populate snapshot with fields that should be cleared
     sessionStorage.setItem(
       'rdm-connect-snapshot',
@@ -408,6 +389,7 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         {
@@ -429,7 +411,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    tick(); // flush async setConfig promise
+    await fixture.whenStable();
     const comp: any = fixture.componentInstance;
 
     // Explicit deep-link values applied
@@ -443,9 +425,9 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.repoName()).toBeUndefined();
     // Session storage cleared
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
-  }));
+  });
 
-  it('explicit reset query param clears snapshot and all fields including datasetId', fakeAsync(() => {
+  it('explicit reset query param clears snapshot and all fields including datasetId', async () => {
     sessionStorage.setItem(
       'rdm-connect-snapshot',
       JSON.stringify({
@@ -461,6 +443,7 @@ describe('ConnectComponent additional behavior/validation', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         {
@@ -477,24 +460,22 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    tick();
+    await fixture.whenStable();
     const comp: any = fixture.componentInstance;
     expect(comp.datasetId()).toBeUndefined();
     expect(comp.plugin()).toBeUndefined();
     expect(sessionStorage.getItem('rdm-connect-snapshot')).toBeNull();
-  }));
+  });
 
-  it('validateUrl requires complete repo path', () => {
+  it('validateUrlParsing requires complete repo path', () => {
     const comp = TestBed.createComponent(ConnectComponent)
       .componentInstance as any;
-    // Set pluginId so validation is active (plugin config has parseSourceUrlField)
-    comp.pluginId.set('github');
     comp.sourceUrl.set(undefined);
-    expect(comp.validateUrl()).toBe('Malformed source url'); // undefined source is malformed
+    expect(comp['validateUrlParsing']()).toBe('Source URL is required');
     comp.sourceUrl.set('https://host/only');
-    expect(comp.validateUrl()).toBe('Malformed source url');
+    expect(comp['validateUrlParsing']()).toBe('Malformed source url');
     comp.sourceUrl.set('https://host/owner/repo');
-    expect(comp.validateUrl()).toBeUndefined();
+    expect(comp['validateUrlParsing']()).toBeUndefined();
   });
 
   it('changePlugin handles single and multiple plugin ids', () => {
@@ -533,7 +514,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(comp.pluginIdSelectHidden()).toBeTrue();
   });
 
-  it('repoNameSearch handles service errors by presenting failure message', fakeAsync(() => {
+  it('repoNameSearch handles service errors by presenting failure message', async () => {
     pluginService.pluginConfig.repoNameFieldHasSearch = true;
     pluginService.pluginConfig.parseSourceUrlField = true;
     pluginService.pluginIds = [{ label: 'GitHub', value: 'github' }];
@@ -543,9 +524,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
-    flushMicrotasks();
-    tick();
-    flushMicrotasks();
+    await fixture.whenStable();
 
     comp.plugin.set('github');
     comp.pluginId.set('github');
@@ -555,14 +534,12 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     comp.startRepoSearch();
     comp.onRepoNameSearch('repo');
-    tick(comp.DEBOUNCE_TIME + 1);
-    flushMicrotasks();
-    tick();
-    flushMicrotasks();
+    await new Promise(resolve => setTimeout(resolve, comp.DEBOUNCE_TIME + 50));
+    await fixture.whenStable();
 
     expect(repoLookup.searchSpy).toHaveBeenCalled();
     expect(comp.repoNames()[0].label).toContain('search failed: boom');
-  }));
+  });
 
   it('getOptions requests oauth scopes when branch lookup returns scopes marker', () => {
     pluginService.pluginConfig.repoNameFieldHasSearch = true;

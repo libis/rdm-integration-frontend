@@ -3,16 +3,14 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
 import {
   ComponentFixture,
   TestBed,
-  fakeAsync,
-  tick,
 } from '@angular/core/testing';
 
 import { Router } from '@angular/router';
-import { Observable, Observer, Subscription, of } from 'rxjs';
+import { TreeNode } from 'primeng/api';
+import { BehaviorSubject, Observable, Observer, Subscription, of } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
@@ -23,23 +21,30 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { CompareComponent } from './compare.component';
 
 class StubDataStateService {
-  // Signal-based API (primary)
-  state$ = signal<CompareResult | null>(null);
+  private readonly state$ = new BehaviorSubject<CompareResult | null>(null);
 
   initializeState(): void {}
 
   cancelInitialization(resetState = true): void {
     if (resetState) {
-      this.state$.set(null);
+      this.state$.next(null);
     }
   }
 
+  getObservableState(): Observable<CompareResult | null> {
+    return this.state$.asObservable();
+  }
+
   updateState(state: CompareResult): void {
-    this.state$.set(state);
+    this.state$.next(state);
+  }
+
+  getCurrentValue(): CompareResult | null {
+    return this.state$.getValue();
   }
 
   resetState(): void {
-    this.state$.set(null);
+    this.state$.next(null);
   }
 }
 
@@ -49,74 +54,25 @@ class StubDataUpdatesService {
   }
 }
 
-// Create a factory function for creating properly synced credential stub
-function createCredentialsStub() {
-  // Internal signals that can be updated
-  const credentialsSignal = signal<any>({
+class StubCredentialsService {
+  private _credentials: any = {
     pluginId: 'local',
     plugin: 'local',
     repo_name: 'owner/repo',
-  });
-  const pluginIdSignal = signal<string | undefined>('local');
-  const pluginSignal = signal<string | undefined>('local');
-  const repoNameSignal = signal<string | undefined>('owner/repo');
-  const urlSignal = signal<string | undefined>(undefined);
-  const optionSignal = signal<string | undefined>(undefined);
-  const userSignal = signal<string | undefined>(undefined);
-  const tokenSignal = signal<string | undefined>(undefined);
-  const datasetIdSignal = signal<string | undefined>(undefined);
-  const newlyCreatedSignal = signal<boolean | undefined>(undefined);
-  const dataverseTokenSignal = signal<string | undefined>(undefined);
-  const metadataAvailableSignal = signal<boolean | undefined>(undefined);
-
-  // Helper to sync all signals from credentials object
-  function syncSignals(creds: any) {
-    pluginIdSignal.set(creds.pluginId);
-    pluginSignal.set(creds.plugin);
-    repoNameSignal.set(creds.repo_name);
-    urlSignal.set(creds.url);
-    optionSignal.set(creds.option);
-    userSignal.set(creds.user);
-    tokenSignal.set(creds.token);
-    datasetIdSignal.set(creds.dataset_id);
-    newlyCreatedSignal.set(creds.newly_created);
-    dataverseTokenSignal.set(creds.dataverse_token);
-    metadataAvailableSignal.set(creds.metadata_available);
-    credentialsSignal.set(creds);
-  }
-
-  return {
-    get credentials() {
-      return credentialsSignal();
-    },
-    set credentials(value: any) {
-      syncSignals(value);
-    },
-    // Signal-based API
-    credentials$: credentialsSignal.asReadonly(),
-    plugin$: pluginSignal.asReadonly(),
-    pluginId$: pluginIdSignal.asReadonly(),
-    repoName$: repoNameSignal.asReadonly(),
-    url$: urlSignal.asReadonly(),
-    option$: optionSignal.asReadonly(),
-    user$: userSignal.asReadonly(),
-    token$: tokenSignal.asReadonly(),
-    datasetId$: datasetIdSignal.asReadonly(),
-    newlyCreated$: newlyCreatedSignal.asReadonly(),
-    dataverseToken$: dataverseTokenSignal.asReadonly(),
-    metadataAvailable$: metadataAvailableSignal.asReadonly(),
-
-    setCredentials(creds: any): void {
-      syncSignals(creds);
-    },
-    updateCredentials(partial: any): void {
-      const current = credentialsSignal();
-      syncSignals({ ...current, ...partial });
-    },
-    clearCredentials(): void {
-      syncSignals({});
-    },
   };
+
+  credentials$ = () => this._credentials;
+  pluginId$ = () => this._credentials.pluginId;
+  plugin$ = () => this._credentials.plugin;
+  repoName$ = () => this._credentials.repo_name;
+  option$ = () => this._credentials.option;
+  datasetId$ = () => this._credentials.dataset_id;
+  newlyCreated$ = () => this._credentials.newly_created;
+  metadataAvailable$ = () => this._credentials.metadata_available;
+
+  setCredentials(creds: any) {
+    this._credentials = creds;
+  }
 }
 
 class StubPluginService {
@@ -124,12 +80,9 @@ class StubPluginService {
     return { name: 'Test Plugin' };
   }
 
-  dataverseHeader() {
+  dataverseHeader$() {
     return 'Dataverse:';
   }
-
-  // Signal property for computed signal consumers
-  dataverseHeader$ = signal('Dataverse:').asReadonly();
 }
 
 class StubSnapshotStorageService {
@@ -146,11 +99,9 @@ describe('CompareComponent', () => {
   let component: CompareComponent;
   let fixture: ComponentFixture<CompareComponent>;
   let dataStateStub: StubDataStateService;
-  let credentialsStub: ReturnType<typeof createCredentialsStub>;
+  let credentialsStub: StubCredentialsService;
 
   beforeEach(async () => {
-    credentialsStub = createCredentialsStub();
-
     await TestBed.configureTestingModule({
       imports: [CompareComponent],
       providers: [
@@ -158,7 +109,7 @@ describe('CompareComponent', () => {
         provideHttpClientTesting(),
         { provide: DataStateService, useClass: StubDataStateService },
         { provide: DataUpdatesService, useClass: StubDataUpdatesService },
-        { provide: CredentialsService, useValue: credentialsStub },
+        { provide: CredentialsService, useClass: StubCredentialsService },
         { provide: PluginService, useClass: StubPluginService },
         {
           provide: SnapshotStorageService,
@@ -171,6 +122,9 @@ describe('CompareComponent', () => {
     dataStateStub = TestBed.inject(
       DataStateService,
     ) as unknown as StubDataStateService;
+    credentialsStub = TestBed.inject(
+      CredentialsService,
+    ) as unknown as StubCredentialsService;
 
     fixture = TestBed.createComponent(CompareComponent);
     component = fixture.componentInstance;
@@ -190,8 +144,8 @@ describe('CompareComponent', () => {
     if (window && window.history && window.history.replaceState) {
       window.history.replaceState({}, '', '/');
     }
-    credentialsStub.credentials = { dataset_id: 'doi:10.777/TEST' };
-    component.data.set({ id: 'doiFallback' } as any);
+    credentialsStub.setCredentials({ dataset_id: 'doi:10.777/TEST' });
+    component['data'].set({ id: 'doiFallback' } as any);
     component.back();
     expect(mergeSpy).toHaveBeenCalledWith(
       jasmine.objectContaining({ dataset_id: 'doi:10.777/TEST' }),
@@ -202,8 +156,13 @@ describe('CompareComponent', () => {
   it('submit() navigates to metadata-selector when new dataset path', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = spyOn(router, 'navigate');
-    credentialsStub.credentials = { newly_created: true };
-    component.data.set({ id: '' } as any); // new dataset heuristic
+    // Stub required services/fields for submit()
+    (component as any).dataStateService = {
+      updateState: jasmine.createSpy('updateState'),
+      cancelInitialization: jasmine.createSpy('cancelInitialization'),
+    };
+    credentialsStub.setCredentials({ newly_created: true });
+    component['data'].set({ id: '' } as any); // new dataset heuristic
     component.submit();
     expect(navigateSpy).toHaveBeenCalledWith(['/metadata-selector']);
   });
@@ -237,246 +196,207 @@ describe('CompareComponent', () => {
 
   describe('canProceed() logic', () => {
     function setCreds(creds: any) {
-      credentialsStub.credentials = creds;
+      credentialsStub.setCredentials(creds);
     }
-    function addFileSelectionViaData() {
-      // Setup data with a file that has non-Ignore action
-      const datafile = {
-        id: 'file1',
-        name: 'test.txt',
-        path: '',
-        hidden: false,
-        attributes: { isFile: true },
-        action: Fileaction.Copy,
-      } as any;
-      component.data.set({ id: 'doi:test', data: [datafile] } as any);
+    function addFileSelection() {
+      // simulate one selected file node with non-Ignore action
+      const currentData = component['data']();
+      currentData.data = [
+        { id: 'file1', attributes: { isFile: true }, action: 1 } as any,
+      ];
+      component['data'].set(currentData);
     }
 
     it('non-new dataset requires selection', () => {
       setCreds({ newly_created: false });
-      // Empty data - no selection
-      component.data.set({ id: 'doi:10/EXISTING', data: [] } as any);
+      component['data'].set({ id: 'doi:10/EXISTING' } as any);
       expect(component.canProceed()).toBeFalse();
-      // Add file selection
-      addFileSelectionViaData();
+      addFileSelection();
       expect(component.canProceed()).toBeTrue();
     });
 
     it('new dataset with metadata_available true can proceed without selection', () => {
       setCreds({ newly_created: true, metadata_available: true });
-      component.data.set({ id: '', data: [] } as any); // new dataset scenario with no files
+      component['data'].set({ id: '' } as any); // new dataset scenario
       expect(component.canProceed()).toBeTrue();
     });
 
     it('new dataset without metadata_available requires selection', () => {
-      // Need fresh fixture with credentials set before component creation
-      fixture.destroy();
-      credentialsStub.credentials = {
-        newly_created: true,
-        metadata_available: false,
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
-
-      component.data.set({ id: '', data: [] } as any);
+      setCreds({ newly_created: true, metadata_available: false });
+      component['data'].set({ id: '' } as any);
       expect(component.canProceed()).toBeFalse();
-      addFileSelectionViaData();
+      addFileSelection();
       expect(component.canProceed()).toBeTrue();
     });
 
     it('proceedTitle reflects metadata-only vs blocked states', () => {
-      // Test 1: Blocked - new dataset, no metadata, no files
-      fixture.destroy();
-      credentialsStub.credentials = {
-        newly_created: true,
-        metadata_available: false,
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
-      component.data.set({ id: '', data: [] } as any);
+      // Blocked: new dataset, no metadata, no files
+      setCreds({ newly_created: true, metadata_available: false });
+      component['data'].set({ id: '' } as any);
       expect(component.proceedTitle()).toContain('Select at least one file');
 
-      // Test 2: Metadata-only allowed - new dataset, metadata available, no files
-      fixture.destroy();
-      credentialsStub.credentials = {
-        newly_created: true,
-        metadata_available: true,
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
-      component.data.set({ id: '', data: [] } as any);
+      // Metadata-only allowed: new dataset, metadata available, no files
+      setCreds({ newly_created: true, metadata_available: true });
+      component['data'].set({ id: '' } as any);
+      // Ensure no selection yet
+      component['data'].set({ id: '', data: [] } as any);
       expect(component.canProceed()).toBeTrue();
       expect(component.proceedTitle()).toContain('metadata-only');
 
-      // Test 3: Existing dataset - need selection
-      fixture.destroy();
-      credentialsStub.credentials = { newly_created: false };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
-      component.data.set({ id: 'doi:10/EXISTING', data: [] } as any);
+      // Existing dataset: need selection
+      setCreds({ newly_created: false });
+      component['data'].set({ id: 'doi:10/EXISTING' } as any);
       expect(component.canProceed()).toBeFalse();
       expect(component.proceedTitle()).toBe('Action not available yet');
     });
 
     it('new dataset with undefined metadata_available allowed metadata-only', () => {
-      fixture.destroy();
-      credentialsStub.credentials = { newly_created: true };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
-      component.data.set({ id: '', data: [] } as any);
+      setCreds({ newly_created: true });
+      component['data'].set({ id: '' } as any);
       expect(component.canProceed()).toBeTrue();
       expect(component.proceedTitle()).toContain('metadata-only');
     });
 
     it('isNewDataset() falls back to dataset id heuristic when flag missing', () => {
       // No newly_created flag, id includes New Dataset (case-insensitive)
-      credentialsStub.credentials = {};
-      component.data.set({ id: 'root:COLL:New Dataset' } as any);
+      credentialsStub.setCredentials({});
+      component['data'].set({ id: 'root:COLL:New Dataset' } as any);
       expect(component['isNewDataset']()).toBeTrue();
 
       // Plain empty id treated as new
-      component.data.set({ id: '' } as any);
+      component['data'].set({ id: '' } as any);
       expect(component['isNewDataset']()).toBeTrue();
 
       // Non-new id without flag
-      component.data.set({ id: 'doi:10.123/EXISTING' } as any);
+      component['data'].set({ id: 'doi:10.123/EXISTING' } as any);
       expect(component['isNewDataset']()).toBeFalse();
     });
   });
 
   describe('row operations and filtering', () => {
-    const makeDatafile = (
-      id: string,
+    const makeNode = (
       status: Filestatus,
       action: Fileaction = Fileaction.Ignore,
       hidden = false,
-    ): Datafile =>
-      ({
-        id,
+    ): TreeNode<Datafile> => ({
+      data: {
+        id: Math.random().toString(),
         name: 'f',
         path: '',
         hidden,
         status,
         action,
         attributes: { isFile: true },
-      }) as unknown as Datafile;
+      } as unknown as Datafile,
+      children: [],
+    });
 
     it('noActionSelection resets only visible nodes', () => {
-      const visible = makeDatafile('v', Filestatus.New, Fileaction.Copy, false);
-      const hidden = makeDatafile('h', Filestatus.New, Fileaction.Delete, true);
-      component.data.set({ id: 'test', data: [visible, hidden] } as any);
-
+      const visible = makeNode(Filestatus.New, Fileaction.Copy, false);
+      const hidden = makeNode(Filestatus.New, Fileaction.Delete, true);
+      component['data'].set({
+        data: [visible.data!, hidden.data!],
+      } as any);
       component.noActionSelection();
-      const map = component.rowNodeMap();
-      expect(map.get('v:file')?.data?.action).toBe(Fileaction.Ignore);
-      expect(map.get('h:file')?.data?.action).toBe(Fileaction.Delete);
+      expect(visible.data!.action).toBe(Fileaction.Ignore);
+      expect(hidden.data!.action).toBe(Fileaction.Delete);
     });
 
     it('updateSelection and mirrorSelection apply status-specific actions', () => {
-      const files = [
-        makeDatafile('new', Filestatus.New),
-        makeDatafile('equal', Filestatus.Equal),
-        makeDatafile('upd', Filestatus.Updated),
-        makeDatafile('del', Filestatus.Deleted),
+      const nodes = [
+        makeNode(Filestatus.New),
+        makeNode(Filestatus.Equal),
+        makeNode(Filestatus.Updated),
+        makeNode(Filestatus.Deleted),
       ];
-      component.data.set({ id: 'test', data: files } as any);
-      const map = component.rowNodeMap();
-
+      component['data'].set({
+        data: nodes.map((n) => n.data!),
+      } as any);
       component.updateSelection();
-      expect(map.get('new:file')?.data?.action).toBe(Fileaction.Copy);
-      expect(map.get('equal:file')?.data?.action).toBe(Fileaction.Ignore);
-      expect(map.get('upd:file')?.data?.action).toBe(Fileaction.Update);
-      expect(map.get('del:file')?.data?.action).toBe(Fileaction.Ignore);
+      expect(nodes[0].data!.action).toBe(Fileaction.Copy);
+      expect(nodes[1].data!.action).toBe(Fileaction.Ignore);
+      expect(nodes[2].data!.action).toBe(Fileaction.Update);
+      expect(nodes[3].data!.action).toBe(Fileaction.Ignore);
 
       component.mirrorSelection();
-      expect(map.get('del:file')?.data?.action).toBe(Fileaction.Delete);
+      expect(nodes[3].data!.action).toBe(Fileaction.Delete);
     });
 
-    it('isInFilterMode is computed based on selectedFilterItems', () => {
-      // Default state has all filter items selected
-      expect(component.selectedFilterItems().length).toBe(4);
-      expect(component.isInFilterMode()).toBeFalse();
+    it('filterOn hides non-matching rows and filterOff restores them', () => {
+      const includeNode = makeNode(Filestatus.New, Fileaction.Copy);
+      const excludeNode = makeNode(Filestatus.Equal, Fileaction.Ignore);
+      component['data'].set({
+        data: [includeNode.data!, excludeNode.data!],
+      } as any);
 
-      // Selecting fewer items enables filter mode
-      component.selectedFilterItems.set([component.filterItems[0]]);
+      component.selectedFilterItems.set([{ fileStatus: Filestatus.New } as any]);
+      fixture.detectChanges();
+
+      const visibleNodes = component.rootNodeChildrenView();
+      expect(includeNode.data!.hidden).toBeFalse();
+      expect(excludeNode.data!.hidden).toBeTrue();
+      expect(visibleNodes.length).toBe(1);
       expect(component.isInFilterMode()).toBeTrue();
 
-      // Selecting all items disables filter mode
       component.selectedFilterItems.set([...component.filterItems]);
+      fixture.detectChanges();
+
+      expect(includeNode.data!.hidden).toBeFalse();
+      expect(excludeNode.data!.hidden).toBeFalse();
       expect(component.isInFilterMode()).toBeFalse();
     });
 
-    it('rootNodeChildrenView returns empty array when no data', () => {
-      component.data.set({});
-      expect(component.rootNodeChildrenView()).toEqual([]);
+    it('updateFilters toggles between filtered and full views', async () => {
+      const includeNode = makeNode(Filestatus.New, Fileaction.Copy);
+      const excludeNode = makeNode(Filestatus.Equal, Fileaction.Ignore);
+      component['data'].set({
+        data: [includeNode.data!, excludeNode.data!],
+      } as any);
+
+      component.selectedFilterItems.set([component.filterItems[0]]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(component.isInFilterMode()).toBeTrue();
+      expect(component.rootNodeChildrenView().length).toBe(1);
+
+      component.selectedFilterItems.set([...component.filterItems]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(component.isInFilterMode()).toBeFalse();
     });
 
-    it('rootNodeChildrenView filters based on selectedFilterItems', () => {
-      // Set up data with multiple file statuses
-      const files: Datafile[] = [
-        {
-          id: 'file1',
-          name: 'newfile',
-          path: '',
-          status: Filestatus.New,
-          action: Fileaction.Copy,
-          hidden: false,
-          attributes: { isFile: true },
-        } as unknown as Datafile,
-        {
-          id: 'file2',
-          name: 'equalfile',
-          path: '',
-          status: Filestatus.Equal,
-          action: Fileaction.Ignore,
-          hidden: false,
-          attributes: { isFile: true },
-        } as unknown as Datafile,
-      ];
-      component.data.set({ id: 'test', data: files } as CompareResult);
+    it('updateFilters with all items selected resets filter mode', async () => {
+      // Start in filtered mode with only one filter selected
+      component['data'].set({
+        data: [],
+      } as any);
+      component.selectedFilterItems.set([component.filterItems[0]]);
+      await fixture.whenStable();
+      fixture.detectChanges();
 
-      // With all filters selected, all files should be visible
+      // Now select all filter items (simulating "show all")
       component.selectedFilterItems.set([...component.filterItems]);
-      const allVisible = component.rootNodeChildrenView();
-      expect(allVisible.length).toBeGreaterThan(0);
+      await fixture.whenStable();
+      fixture.detectChanges();
 
-      // Filter to only show new files
-      component.selectedFilterItems.set([
-        component.filterItems.find((f) => f.fileStatus === Filestatus.New)!,
-      ]);
-      const filteredVisible = component.rootNodeChildrenView();
-      const visibleStatuses = filteredVisible
-        .filter((n) => n.data?.attributes?.isFile)
-        .map((n) => n.data?.status);
-      expect(visibleStatuses.every((s) => s === Filestatus.New)).toBeTrue();
+      expect(component.selectedFilterItems().length).toBe(4);
+      expect(component.isInFilterMode()).toBeFalse();
     });
 
     it('hasSelection detects files with non-ignore actions', () => {
-      const copyFile: Datafile = {
-        id: 'file1',
-        name: 'f',
-        path: '',
-        hidden: false,
-        status: Filestatus.New,
-        action: Fileaction.Copy,
-        attributes: { isFile: true },
-      } as unknown as Datafile;
-
-      component.data.set({ id: 'test', data: [copyFile] } as any);
+      const node = makeNode(Filestatus.New, Fileaction.Copy);
+      component['data'].set({
+        data: [node.data!],
+      } as any);
       expect(component.hasSelection()).toBeTrue();
-
-      // Change to ignore action
-      copyFile.action = Fileaction.Ignore;
-      component.data.set({ id: 'test', data: [copyFile] } as any);
+      node.data!.action = Fileaction.Ignore;
+      component['data'].set({
+        data: [node.data!],
+      } as any);
       expect(component.hasSelection()).toBeFalse();
     });
 
-    it('rowNodeMap is computed from data signal', () => {
+    it('setData maps rows and notifies folder status service', () => {
       const df: Datafile = {
         id: 'id',
         name: 'File',
@@ -485,22 +405,23 @@ describe('CompareComponent', () => {
         attributes: { isFile: true },
       } as unknown as Datafile;
 
-      // Set data via the signal
-      component.data.set({ data: [df], id: 'root' } as CompareResult);
+      component['data'].set({ data: [df], id: 'root' } as CompareResult);
+      fixture.detectChanges();
 
-      // rowNodeMap should be computed from the data
       const map = component.rowNodeMap();
-      expect(map.size).toBeGreaterThan(0);
+      const root = map.get('');
+      expect(root).toBeTruthy();
+      expect(component.rootNodeChildrenView().length).toBeGreaterThan(0);
     });
 
     it('restores folder aggregate actions after returning from metadata', () => {
       fixture.destroy();
-      credentialsStub.credentials = {
+      credentialsStub.setCredentials({
         pluginId: 'local',
         plugin: 'local',
         repo_name: 'owner/repo',
         newly_created: true,
-      };
+      });
       const compareResult: CompareResult = {
         id: 'new-dataset',
         status: ResultStatus.Finished,
@@ -537,7 +458,7 @@ describe('CompareComponent', () => {
       );
 
       (firstComponent as any).dataStateService.updateState(
-        firstComponent.data(),
+        firstComponent['data'](),
       );
 
       firstComponent.loading.set(false);
@@ -547,8 +468,8 @@ describe('CompareComponent', () => {
       const secondComponent = secondFixture.componentInstance;
       secondFixture.detectChanges();
 
-      const restoredFolderAction = secondComponent.rowNodeMap().get('folder')
-        ?.data?.action;
+      const restoredFolderAction =
+        secondComponent.rowNodeMap().get('folder')?.data?.action;
       expect(restoredFolderAction).toBe(Fileaction.Copy);
       compareResult.data?.forEach((file) => {
         expect(
@@ -560,102 +481,62 @@ describe('CompareComponent', () => {
     });
 
     it('folderName derives labels based on plugin context', () => {
-      // Test 1: GitHub with just owner/repo - no subfolder
-      fixture.destroy();
-      credentialsStub.credentials = {
+      credentialsStub.setCredentials({
         pluginId: 'github',
         repo_name: 'owner/repo',
         option: '',
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      });
       expect(component.folderName()).toBeUndefined();
 
-      // Test 2: GitHub with subfolder
-      fixture.destroy();
-      credentialsStub.credentials = {
+      credentialsStub.setCredentials({
         pluginId: 'github',
         repo_name: 'owner/repo/subfolder',
         option: '',
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      });
       expect(component.folderName()).toBe('subfolder');
 
-      // Test 3: Globus
-      fixture.destroy();
-      credentialsStub.credentials = {
+      credentialsStub.setCredentials({
         pluginId: 'globus',
         option: '/path/to/folder/',
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      });
       expect(component.folderName()).toBe('folder');
 
-      // Test 4: OneDrive
-      fixture.destroy();
-      credentialsStub.credentials = {
+      credentialsStub.setCredentials({
         pluginId: 'onedrive',
         option: 'driveId/path/to/folder',
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      });
       expect(component.folderName()).toBe('folder');
 
-      // Test 5: SFTP
-      fixture.destroy();
-      credentialsStub.credentials = {
+      credentialsStub.setCredentials({
         pluginId: 'sftp',
         option: 'dir/sub',
-      };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      });
       expect(component.folderName()).toBe('sub');
     });
 
     it('displayDatasetId normalizes new dataset labels', () => {
-      component.data.set({ id: '' } as CompareResult);
+      component['data'].set({ id: '' } as CompareResult);
       expect(component.displayDatasetId()).toBe('New Dataset');
-      component.data.set({ id: ':New Dataset' } as CompareResult);
+      component['data'].set({ id: ':New Dataset' } as CompareResult);
       expect(component.displayDatasetId()).toBe('New Dataset');
-      component.data.set({ id: 'doi:10.1/ABC' } as CompareResult);
+      component['data'].set({ id: 'doi:10.1/ABC' } as CompareResult);
       expect(component.displayDatasetId()).toBe('doi:10.1/ABC');
     });
 
     it('repo and dataverseHeaderNoColon use plugin service helpers', () => {
-      fixture.destroy();
-      credentialsStub.credentials = { pluginId: 'github' };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      credentialsStub.setCredentials({ pluginId: 'github' });
       expect(component.repo()).toBe('Test Plugin');
       expect(component.dataverseHeaderNoColon()).toBe('Dataverse');
     });
 
     it('newlyCreated and hasSelection cooperate with credentials', () => {
-      // Test with newly_created: true
-      fixture.destroy();
-      credentialsStub.credentials = { newly_created: true };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      credentialsStub.setCredentials({ newly_created: true });
       expect(component.newlyCreated()).toBeTrue();
-
-      // Test with newly_created: false
-      fixture.destroy();
-      credentialsStub.credentials = { newly_created: false };
-      fixture = TestBed.createComponent(CompareComponent);
-      component = fixture.componentInstance;
-      fixture.detectChanges();
+      credentialsStub.setCredentials({ newly_created: false });
       expect(component.newlyCreated()).toBeFalse();
     });
 
-    it('getUpdatedData and refresh process data update responses', fakeAsync(() => {
+    it('getUpdatedData and refresh process data update responses', async () => {
       const updates: CompareResult = {
         data: [],
         id: 'id',
@@ -683,9 +564,9 @@ describe('CompareComponent', () => {
       };
       (component as any).dataUpdatesService = dataUpdatesStub;
       (component as any).utils = utilsStub;
-      component.data.set(updating);
+      component['data'].set(updating);
       component['getUpdatedData'](0);
-      tick();
+      await fixture.whenStable();
       expect(component.loading()).toBeFalse();
 
       dataUpdatesStub.updateData.and.returnValue(
@@ -698,10 +579,8 @@ describe('CompareComponent', () => {
       );
       component.refreshHidden.set(false);
       component.refresh();
-      // refresh() immediately sets refreshHidden to true
+      await fixture.whenStable();
       expect(component.refreshHidden()).toBeTrue();
-      // After tick, the polling loop may change it based on retries
-      tick();
-    }));
+    });
   });
 });

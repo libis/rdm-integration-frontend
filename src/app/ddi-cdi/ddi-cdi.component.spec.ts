@@ -5,8 +5,9 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -29,19 +30,7 @@ import { SelectItem, TreeNode } from 'primeng/api';
 describe('DdiCdiComponent', () => {
   let dataServiceStub: jasmine.SpyObj<DataService>;
   let dvObjectLookupServiceStub: jasmine.SpyObj<DvObjectLookupService>;
-  let pluginServiceStub: Partial<PluginService> & {
-    showDVToken$: WritableSignal<boolean>;
-    datasetFieldEditable$: WritableSignal<boolean>;
-    dataverseHeader$: WritableSignal<string>;
-    sendMails$: WritableSignal<boolean>;
-    externalURL$: WritableSignal<string>;
-    setConfig: jasmine.Spy;
-    showDVToken: jasmine.Spy;
-    isStoreDvToken: jasmine.Spy;
-    datasetFieldEditable: jasmine.Spy;
-    dataverseHeader: jasmine.Spy;
-    sendMails: jasmine.Spy;
-  };
+  let pluginServiceStub: jasmine.SpyObj<PluginService>;
   let navigationServiceStub: jasmine.SpyObj<NavigationService>;
   let notificationServiceStub: jasmine.SpyObj<NotificationService>;
   let utilsServiceStub: jasmine.SpyObj<UtilsService>;
@@ -84,28 +73,14 @@ describe('DdiCdiComponent', () => {
     dvObjectLookupServiceStub = jasmine.createSpyObj('DvObjectLookupService', [
       'getItems',
     ]);
-    // Create pluginService stub with both methods and signals
-    pluginServiceStub = {
-      showDVToken$: signal(false),
-      datasetFieldEditable$: signal(true),
-      dataverseHeader$: signal('Dataverse'),
-      sendMails$: signal(false),
-      externalURL$: signal(''),
-      setConfig: jasmine
-        .createSpy('setConfig')
-        .and.returnValue(Promise.resolve()),
-      showDVToken: jasmine.createSpy('showDVToken').and.returnValue(false),
-      isStoreDvToken: jasmine
-        .createSpy('isStoreDvToken')
-        .and.returnValue(false),
-      datasetFieldEditable: jasmine
-        .createSpy('datasetFieldEditable')
-        .and.returnValue(true),
-      dataverseHeader: jasmine
-        .createSpy('dataverseHeader')
-        .and.returnValue('Dataverse'),
-      sendMails: jasmine.createSpy('sendMails').and.returnValue(false),
-    };
+    pluginServiceStub = jasmine.createSpyObj('PluginService', [
+      'setConfig',
+      'showDVToken',
+      'isStoreDvToken',
+      'datasetFieldEditable',
+      'dataverseHeader',
+      'sendMails',
+    ]);
     navigationServiceStub = jasmine.createSpyObj('NavigationService', [
       'assign',
     ]);
@@ -121,8 +96,13 @@ describe('DdiCdiComponent', () => {
     ]);
 
     // Default stub behaviors
+    pluginServiceStub.setConfig.and.returnValue(Promise.resolve());
+    pluginServiceStub.showDVToken.and.returnValue(false);
+    pluginServiceStub.isStoreDvToken.and.returnValue(false);
+    pluginServiceStub.sendMails.and.returnValue(false);
+    pluginServiceStub.datasetFieldEditable.and.returnValue(true);
+    pluginServiceStub.dataverseHeader.and.returnValue('Dataverse');
     utilsServiceStub.sleep.and.returnValue(Promise.resolve());
-    dvObjectLookupServiceStub.getItems.and.returnValue(of([]));
     dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
       throwError(() => ({ status: 404 })),
     );
@@ -137,6 +117,7 @@ describe('DdiCdiComponent', () => {
         provideRouter([]),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
+        provideNoopAnimations(),
         { provide: DataService, useValue: dataServiceStub },
         { provide: DvObjectLookupService, useValue: dvObjectLookupServiceStub },
         { provide: PluginService, useValue: pluginServiceStub },
@@ -187,10 +168,10 @@ describe('DdiCdiComponent', () => {
         'unsubscribe',
       ]);
       // Access private field through bracket notation for testing
-      (component as any).subscriptions.add(mockSubscription);
+      (component as any).subscriptions().add(mockSubscription);
       component.ngOnDestroy();
       expect(mockSubscription.unsubscribe).toHaveBeenCalled();
-      expect((component as any).subscriptions.size).toBe(0);
+      expect((component as any).subscriptions().size).toBe(0);
     });
   });
 
@@ -357,11 +338,7 @@ describe('DdiCdiComponent', () => {
     it('isFileSelected should check selectedFiles set', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component.selectedFiles.update((files) => {
-        const s = new Set(files);
-        s.add('file.csv');
-        return s;
-      });
+      component.selectedFiles().add('file.csv');
       expect(component.isFileSelected('file.csv')).toBe(true);
       expect(component.isFileSelected('other.csv')).toBe(false);
     });
@@ -412,11 +389,7 @@ describe('DdiCdiComponent', () => {
       fixture.detectChanges();
       component.datasetId.set('doi:123');
       component.dataverseToken.set('token');
-      component.selectedFiles.update((files) => {
-        const s = new Set(files);
-        s.add('file.csv');
-        return s;
-      });
+      component.selectedFiles().add('file.csv');
       component.continueSubmitGenerate();
       // loading is set to false after synchronous observable completion
       setTimeout(() => {
@@ -439,11 +412,7 @@ describe('DdiCdiComponent', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.datasetId.set('doi:123');
-      component.selectedFiles.update((files) => {
-        const s = new Set(files);
-        s.add('file.csv');
-        return s;
-      });
+      component.selectedFiles().add('file.csv');
       component.continueSubmitGenerate();
       setTimeout(() => {
         expect(notificationServiceStub.showError).toHaveBeenCalledWith(
@@ -567,7 +536,7 @@ describe('DdiCdiComponent', () => {
       expect(window.open).not.toHaveBeenCalled();
     });
 
-    it('should add file to dataset and open viewer with fileId', fakeAsync(() => {
+    it('should add file to dataset and open viewer with fileId', async () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi.set(GENERATED_TURTLE);
@@ -575,13 +544,15 @@ describe('DdiCdiComponent', () => {
       component.dataverseToken.set('test-token');
 
       spyOn(window, 'open');
-      pluginServiceStub.externalURL$.set('https://demo.dataverse.org');
+      pluginServiceStub.getExternalURL = jasmine
+        .createSpy('getExternalURL')
+        .and.returnValue('https://demo.dataverse.org');
       dataServiceStub.addFileToDataset.and.returnValue(
         of({ fileId: 12345, key: 'test-key' }),
       );
 
       component.openInViewer();
-      tick();
+      await fixture.whenStable();
 
       expect(dataServiceStub.addFileToDataset).toHaveBeenCalledWith({
         persistentId: 'doi:10.5072/test',
@@ -593,7 +564,7 @@ describe('DdiCdiComponent', () => {
         'https://demo.dataverse.org/file.xhtml?fileId=12345&version=DRAFT',
         '_blank',
       );
-    }));
+    });
 
     it('should show error when baseUrl is not configured', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
@@ -603,7 +574,9 @@ describe('DdiCdiComponent', () => {
       component.dataverseToken.set('test-token');
 
       spyOn(window, 'open');
-      pluginServiceStub.externalURL$.set('');
+      pluginServiceStub.getExternalURL = jasmine
+        .createSpy('getExternalURL')
+        .and.returnValue(null);
 
       component.openInViewer();
 
@@ -613,7 +586,7 @@ describe('DdiCdiComponent', () => {
       expect(window.open).not.toHaveBeenCalled();
     });
 
-    it('should show error when addFileToDataset fails', fakeAsync(() => {
+    it('should show error when addFileToDataset fails', async () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       component.generatedDdiCdi.set(GENERATED_TURTLE);
@@ -621,32 +594,35 @@ describe('DdiCdiComponent', () => {
       component.dataverseToken.set('test-token');
 
       spyOn(window, 'open');
-      pluginServiceStub.externalURL$.set('https://demo.dataverse.org');
+      pluginServiceStub.getExternalURL = jasmine
+        .createSpy('getExternalURL')
+        .and.returnValue('https://demo.dataverse.org');
       dataServiceStub.addFileToDataset.and.returnValue(
         throwError(() => new Error('Network error')),
       );
 
       component.openInViewer();
-      tick();
+      await fixture.whenStable();
 
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'Failed to add file to dataset',
       );
       expect(window.open).not.toHaveBeenCalled();
-    }));
+    });
   });
 
   describe('Additional Coverage Tests', () => {
     describe('showDVToken', () => {
-      it('should return value from plugin service signal', () => {
-        pluginServiceStub.showDVToken$.set(true);
+      it('should delegate to plugin service', () => {
+        pluginServiceStub.showDVToken.and.returnValue(true);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.showDVToken()).toBe(true);
+        expect(pluginServiceStub.showDVToken).toHaveBeenCalled();
       });
 
-      it('should return false when plugin service signal is false', () => {
-        pluginServiceStub.showDVToken$.set(false);
+      it('should return false when plugin service returns false', () => {
+        pluginServiceStub.showDVToken.and.returnValue(false);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.showDVToken()).toBe(false);
@@ -654,15 +630,16 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('datasetFieldEditable', () => {
-      it('should return value from plugin service signal', () => {
-        pluginServiceStub.datasetFieldEditable$.set(true);
+      it('should delegate to plugin service', () => {
+        pluginServiceStub.datasetFieldEditable.and.returnValue(true);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.datasetFieldEditable()).toBe(true);
+        expect(pluginServiceStub.datasetFieldEditable).toHaveBeenCalled();
       });
 
       it('should return false when not editable', () => {
-        pluginServiceStub.datasetFieldEditable$.set(false);
+        pluginServiceStub.datasetFieldEditable.and.returnValue(false);
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.datasetFieldEditable()).toBe(false);
@@ -670,11 +647,12 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('dataverseHeader', () => {
-      it('should return header from plugin service signal', () => {
-        pluginServiceStub.dataverseHeader$.set('Test Header');
+      it('should return header from plugin service', () => {
+        pluginServiceStub.dataverseHeader.and.returnValue('Test Header');
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         expect(component.dataverseHeader()).toBe('Test Header');
+        expect(pluginServiceStub.dataverseHeader).toHaveBeenCalled();
       });
     });
 
@@ -1122,11 +1100,7 @@ describe('DdiCdiComponent', () => {
       it('should remove file when already selected', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        component.selectedFiles.update((files) => {
-          const s = new Set(files);
-          s.add('file.csv');
-          return s;
-        });
+        component.selectedFiles().add('file.csv');
         component.toggleFileSelection('file.csv');
         expect(component.selectedFiles().has('file.csv')).toBe(false);
       });
@@ -1192,12 +1166,8 @@ describe('DdiCdiComponent', () => {
         component.output.set('previous output');
         component.outputDisabled.set(false);
         component.generatedDdiCdi.set('previous ddiCdi');
-        component.selectedFiles.update((files) => {
-          const s = new Set(files);
-          s.add('file1.csv');
-          s.add('file2.csv');
-          return s;
-        });
+        component.selectedFiles().add('file1.csv');
+        component.selectedFiles().add('file2.csv');
 
         dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(
           of({ id: 'doi:new', data: [] } as CompareResult),
@@ -1325,11 +1295,7 @@ describe('DdiCdiComponent', () => {
         fixture.detectChanges();
         component.datasetId.set('doi:123');
         component.dataverseToken.set('token');
-        component.selectedFiles.update((files) => {
-          const s = new Set(files);
-          s.add('file.csv');
-          return s;
-        });
+        component.selectedFiles().add('file.csv');
         component.submitPopup.set(true);
 
         component.continueSubmitGenerate();
@@ -1360,11 +1326,7 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.datasetId.set('doi:123');
-        component.selectedFiles.update((files) => {
-          const s = new Set(files);
-          s.add('file.csv');
-          return s;
-        });
+        component.selectedFiles().add('file.csv');
 
         component.continueSubmitGenerate();
 
@@ -1380,11 +1342,7 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         component.datasetId.set('doi:123');
-        component.selectedFiles.update((files) => {
-          const s = new Set(files);
-          s.add('file.csv');
-          return s;
-        });
+        component.selectedFiles().add('file.csv');
 
         component.submitGenerate();
 

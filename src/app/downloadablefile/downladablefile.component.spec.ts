@@ -208,16 +208,4 @@ describe('DownladablefileComponent', () => {
     expect(result).toBe(Fileaction.Download);
     expect(leaf.data?.action).toBe(Fileaction.Download);
   });
-
-  it('emits changed event when toggleAction is called', () => {
-    const { child, map } = buildTree();
-    fixture.componentRef.setInput('datafile', child.data);
-    fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', child);
-    fixture.detectChanges();
-
-    const emitSpy = spyOn(component.changed, 'emit');
-    component.toggleAction();
-    expect(emitSpy).toHaveBeenCalledTimes(1);
-  });
 });

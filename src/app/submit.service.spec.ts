@@ -7,7 +7,6 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
 import { CredentialsService } from './credentials.service';
 import { Datafile } from './models/datafile';
 import { SubmitService, TransferTaskStatus } from './submit.service';
@@ -24,30 +23,6 @@ class MockCredentialsService {
     dataset_id: 'doi:10/ABC',
     dataverse_token: 'dvTok',
   };
-
-  // Signal-based API
-  credentials$ = signal(this.credentials).asReadonly();
-  plugin$ = signal('p1').asReadonly();
-  pluginId$ = signal('p1id').asReadonly();
-  repoName$ = signal('repoX').asReadonly();
-  url$ = signal('http://repo').asReadonly();
-  option$ = signal('optA').asReadonly();
-  user$ = signal('u1').asReadonly();
-  token$ = signal('tok').asReadonly();
-  datasetId$ = signal('doi:10/ABC').asReadonly();
-  newlyCreated$ = signal<boolean | undefined>(undefined).asReadonly();
-  dataverseToken$ = signal('dvTok').asReadonly();
-  metadataAvailable$ = signal<boolean | undefined>(undefined).asReadonly();
-
-  setCredentials(creds: any): void {
-    this.credentials = creds;
-  }
-  updateCredentials(partial: any): void {
-    this.credentials = { ...this.credentials, ...partial };
-  }
-  clearCredentials(): void {
-    this.credentials = {};
-  }
 }
 
 describe('SubmitService', () => {
