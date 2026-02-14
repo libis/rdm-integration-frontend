@@ -30,11 +30,19 @@ import { DownloadComponent } from './download.component';
 class MockNotificationService {
   errors: string[] = [];
   successes: string[] = [];
+  warnings: string[] = [];
+  infos: string[] = [];
   showError(msg: string) {
     this.errors.push(msg);
   }
   showSuccess(msg: string) {
     this.successes.push(msg);
+  }
+  showWarning(msg: string) {
+    this.warnings.push(msg);
+  }
+  showInfo(msg: string) {
+    this.infos.push(msg);
   }
 }
 

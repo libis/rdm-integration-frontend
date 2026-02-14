@@ -15,6 +15,11 @@ const primeNgMock = {
   csp: () => ({ nonce: undefined }),
   unstyled: () => false,
   theme: () => 'none',
+  translation: {
+    aria: {
+      close: 'Close',
+    },
+  },
 };
 
 describe('AppComponent', () => {

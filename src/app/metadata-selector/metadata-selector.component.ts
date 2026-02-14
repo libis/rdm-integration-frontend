@@ -43,6 +43,7 @@ import {
   mutateWithRefresh,
 } from '../shared/refresh-trigger';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { NotificationService } from '../shared/notification.service';
 
 @Component({
   selector: 'app-metadata-selector',
@@ -63,6 +64,7 @@ export class MetadataSelectorComponent implements OnDestroy {
   private readonly credentialsService = inject(CredentialsService);
   private readonly datasetService = inject(DatasetService);
   private readonly snapshotStorage = inject(SnapshotStorageService);
+  private readonly notificationService = inject(NotificationService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -132,6 +134,9 @@ export class MetadataSelectorComponent implements OnDestroy {
       error: (_err) => {
         this.subscriptions.delete(subscription);
         subscription?.unsubscribe();
+        this.notificationService.showError(
+          'Loading metadata failed. Please try again.',
+        );
       },
     });
     this.subscriptions.add(subscription!);

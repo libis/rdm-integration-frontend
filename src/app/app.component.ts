@@ -12,6 +12,7 @@ import { DataService } from './data.service';
 import { DatasetService } from './dataset.service';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { PluginService } from './plugin.service';
+import { NotificationService } from './shared/notification.service';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +28,7 @@ export class AppComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private pluginService = inject(PluginService);
+  private notificationService = inject(NotificationService);
 
   title = 'datasync';
 
@@ -363,6 +365,9 @@ export class AppComponent implements OnInit {
         if (!userInfo.loggedIn) {
           // Check for redirect loop before redirecting
           if (this.isRedirectLoop()) {
+            this.notificationService.showWarning(
+              'Login redirect loop detected. Please refresh and try again.',
+            );
             return;
           }
           this.pluginService.redirectToLogin();
@@ -374,6 +379,9 @@ export class AppComponent implements OnInit {
       error: () => {
         // Check for redirect loop before redirecting
         if (this.isRedirectLoop()) {
+          this.notificationService.showWarning(
+            'Login redirect loop detected. Please refresh and try again.',
+          );
           return;
         }
         this.pluginService.redirectToLogin();

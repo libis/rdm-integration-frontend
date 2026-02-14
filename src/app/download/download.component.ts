@@ -454,6 +454,9 @@ export class DownloadComponent
     // User chose to continue with preview URL - extract token and datasetDbId, then fetch DOI
     const parsed = this.extractFromPreviewUrl(this.previewUrlInput());
     if (!parsed?.token) {
+      this.notificationService.showWarning(
+        'Invalid preview URL or token. Please check the value and try again.',
+      );
       return;
     }
     this.dataverseToken.set(parsed.token);
@@ -492,6 +495,9 @@ export class DownloadComponent
             },
             error: (_err) => {
               this.loading.set(false);
+              this.notificationService.showInfo(
+                'Could not prefill dataset information from the preview URL. Continuing with OAuth.',
+              );
 
               // Proceed anyway - might work without DOI
               this.getRepoToken();
