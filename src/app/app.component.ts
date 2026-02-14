@@ -7,6 +7,7 @@ import {
   inject,
 } from '@angular/core';
 import { PrimeNG } from 'primeng/config';
+import { Toast } from 'primeng/toast';
 import { DataService } from './data.service';
 import { DatasetService } from './dataset.service';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
@@ -16,7 +17,7 @@ import { PluginService } from './plugin.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, Toast],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {

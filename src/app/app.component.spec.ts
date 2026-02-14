@@ -5,8 +5,17 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { PrimeNG } from 'primeng/config';
 import { AppComponent } from './app.component';
+
+const primeNgMock = {
+  ripple: { set: () => {} },
+  pt: () => ({}),
+  csp: () => ({ nonce: undefined }),
+  unstyled: () => false,
+  theme: () => 'none',
+};
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -16,7 +25,8 @@ describe('AppComponent', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
   });
@@ -148,7 +158,8 @@ describe('AppComponent isDownloadFlow', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 
@@ -263,7 +274,8 @@ describe('AppComponent parseGlobusCallback', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 
@@ -329,7 +341,8 @@ describe('AppComponent redirect handling', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 
@@ -421,7 +434,8 @@ describe('AppComponent redirect loop detection', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 
@@ -478,7 +492,8 @@ describe('AppComponent navigateWithFallback', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 
@@ -516,7 +531,8 @@ describe('AppComponent checkLoginRequired', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 
@@ -653,7 +669,8 @@ describe('AppComponent fetchAndRedirect', () => {
         provideRouter([], withDisabledInitialNavigation()),
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
-        { provide: PrimeNG, useValue: { ripple: { set: () => {} } } },
+        { provide: PrimeNG, useValue: primeNgMock },
+        MessageService,
       ],
     }).compileComponents();
 

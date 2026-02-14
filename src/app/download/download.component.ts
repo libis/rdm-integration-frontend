@@ -320,7 +320,26 @@ export class DownloadComponent
 
         const code = params['code'];
         if (code !== undefined) {
-          const loginState: LoginState = JSON.parse(params['state']);
+          const stateRaw = params['state'];
+          if (typeof stateRaw !== 'string') {
+            this.notificationService.showError(
+              'OAuth callback is missing required state. Please retry login.',
+            );
+            this.globusPlugin.set(this.pluginService.getGlobusPlugin());
+            return;
+          }
+
+          let loginState: LoginState;
+          try {
+            loginState = JSON.parse(stateRaw) as LoginState;
+          } catch {
+            this.notificationService.showError(
+              'OAuth callback state is invalid. Please retry login.',
+            );
+            this.globusPlugin.set(this.pluginService.getGlobusPlugin());
+            return;
+          }
+
           if (loginState.nonce) {
             const doi = loginState.datasetId?.value
               ? loginState.datasetId?.value
