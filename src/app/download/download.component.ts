@@ -5,6 +5,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnDestroy,
   OnInit,
@@ -125,10 +126,9 @@ export class DownloadComponent
   doiItems = signal<SelectItem<string>[]>([]);
 
   // INTERNAL STATE VARIABLES
+  private readonly subscriptions = new Set<Subscription>();
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
-  datasetSearchResultsSubscription?: Subscription;
-  queryParamsSubscription?: Subscription;
   downloadRequested = signal(false);
   downloadInProgress = signal(false);
   lastTransferTaskId = signal<string | undefined>(undefined);
@@ -143,6 +143,8 @@ export class DownloadComponent
   accessMode = signal<'guest' | 'preview' | 'login'>('guest');
   // Track if guest access was denied (e.g., draft dataset or restricted data)
   accessDeniedForGuest = signal(false);
+  // Track pending guest continue action (replaces setInterval polling pattern)
+  private readonly pendingGuestContinue = signal(false);
 
   // globus (signals)
   token = signal<string | undefined>(undefined);
@@ -151,7 +153,6 @@ export class DownloadComponent
   foundRepoName = signal<string | undefined>(undefined);
   repoSearchSubject: Subject<string> = new Subject();
   repoSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
-  repoSearchResultsSubscription?: Subscription;
   branchItems = signal<HierarchicalSelectItem<string>[]>([]);
   option = signal<string | undefined>(undefined);
   // Internal storage for tree nodes; use rootOptions() computed for reading
@@ -237,6 +238,27 @@ export class DownloadComponent
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.repoNameSearch(searchText)),
     );
+
+    // React to loading becoming false when guest continue is pending.
+    // Replaces a setInterval polling pattern with a reactive signal-based approach.
+    effect(() => {
+      if (this.pendingGuestContinue() && !this.loading()) {
+        this.pendingGuestContinue.set(false);
+        this.accessMode.set('guest');
+        this.showGuestLoginPopup.set(false);
+        this.getRepoToken();
+      }
+    });
+  }
+
+  private trackSubscription(subscription: Subscription): void {
+    this.subscriptions.add(subscription);
+    subscription.add(() => this.subscriptions.delete(subscription));
+  }
+
+  private clearSubscriptions(): void {
+    this.subscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.subscriptions.clear();
   }
 
   async ngOnInit() {
@@ -274,8 +296,8 @@ export class DownloadComponent
       }
     }
 
-    this.queryParamsSubscription = this.route.queryParams.subscribe(
-      (params) => {
+    this.trackSubscription(
+      this.route.queryParams.subscribe((params) => {
         const apiToken = params['apiToken'];
         if (apiToken) {
           this.dataverseToken.set(apiToken);
@@ -327,13 +349,13 @@ export class DownloadComponent
               this.onDatasetChange();
             }
 
-            const tokenSubscription = this.oauth
-              .getToken('globus', code, loginState.nonce)
-              .subscribe((x) => {
-                this.token.set(x.session_id);
-
-                tokenSubscription?.unsubscribe();
-              });
+            this.trackSubscription(
+              this.oauth
+                .getToken('globus', code, loginState.nonce)
+                .subscribe((x) => {
+                  this.token.set(x.session_id);
+                }),
+            );
           }
           this.globusPlugin.set(this.pluginService.getGlobusPlugin());
         } else {
@@ -343,9 +365,9 @@ export class DownloadComponent
             this.getRepoToken();
           }
         }
-      },
+      }),
     );
-    this.datasetSearchResultsSubscription =
+    this.trackSubscription(
       this.datasetSearchResultsObservable.subscribe({
         next: (x) =>
           x
@@ -362,8 +384,9 @@ export class DownloadComponent
           this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]),
-      });
-    this.repoSearchResultsSubscription =
+      }),
+    );
+    this.trackSubscription(
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
           x
@@ -380,16 +403,15 @@ export class DownloadComponent
           this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]),
-      });
+      }),
+    );
 
     // Auto-load dataset options on init
     this.getDoiOptions();
   }
 
   ngOnDestroy() {
-    this.queryParamsSubscription?.unsubscribe();
-    this.datasetSearchResultsSubscription?.unsubscribe();
-    this.repoSearchResultsSubscription?.unsubscribe();
+    this.clearSubscriptions();
   }
 
   redirectToLogin(): void {
@@ -399,16 +421,9 @@ export class DownloadComponent
   continueAsGuest(): void {
     // User chose to continue as guest - now redirect to Globus OAuth
     this.accessDeniedForGuest.set(false);
-    // If still loading DOI, wait for it to complete
+    // If still loading DOI, signal the effect to continue when loading completes
     if (this.loading()) {
-      const checkInterval = setInterval(() => {
-        if (!this.loading()) {
-          clearInterval(checkInterval);
-          this.accessMode.set('guest');
-          this.showGuestLoginPopup.set(false);
-          this.getRepoToken();
-        }
-      }, 100);
+      this.pendingGuestContinue.set(true);
       return;
     }
     this.accessMode.set('guest');
@@ -433,35 +448,37 @@ export class DownloadComponent
     if (this.datasetDbId() && this.downloadId()) {
       this.loading.set(true);
       const dataverseUrl = this.externalURL();
-      this.dataService
-        .getGlobusDownloadParams(
-          dataverseUrl,
-          this.datasetDbId()!,
-          this.downloadId()!,
-          this.dataverseToken(),
-        )
-        .subscribe({
-          next: (response) => {
-            this.loading.set(false);
-            const pid = response.data?.queryParameters?.datasetPid;
-            if (pid) {
-              this.datasetId.set(pid);
-              this.doiItems.set([{ label: pid, value: pid }]);
-            }
-            // Extract pre-selected file IDs from the files field
-            this.extractPreSelectedFileIds(
-              response.data?.queryParameters?.files,
-            );
-            // Now proceed to OAuth with DOI already known
-            this.getRepoToken();
-          },
-          error: (_err) => {
-            this.loading.set(false);
+      this.trackSubscription(
+        this.dataService
+          .getGlobusDownloadParams(
+            dataverseUrl,
+            this.datasetDbId()!,
+            this.downloadId()!,
+            this.dataverseToken(),
+          )
+          .subscribe({
+            next: (response) => {
+              this.loading.set(false);
+              const pid = response.data?.queryParameters?.datasetPid;
+              if (pid) {
+                this.datasetId.set(pid);
+                this.doiItems.set([{ label: pid, value: pid }]);
+              }
+              // Extract pre-selected file IDs from the files field
+              this.extractPreSelectedFileIds(
+                response.data?.queryParameters?.files,
+              );
+              // Now proceed to OAuth with DOI already known
+              this.getRepoToken();
+            },
+            error: (_err) => {
+              this.loading.set(false);
 
-            // Proceed anyway - might work without DOI
-            this.getRepoToken();
-          },
-        });
+              // Proceed anyway - might work without DOI
+              this.getRepoToken();
+            },
+          }),
+      );
     } else {
       // No datasetDbId available, just proceed
       this.getRepoToken();
@@ -488,34 +505,36 @@ export class DownloadComponent
     }
     this.loading.set(true);
     const dataverseUrl = this.externalURL();
-    this.dataService
-      .getGlobusDownloadParams(
-        dataverseUrl,
-        this.datasetDbId()!,
-        this.downloadId()!,
-        this.dataverseToken(),
-      )
-      .subscribe({
-        next: (response) => {
-          this.loading.set(false);
-          const pid = response.data?.queryParameters?.datasetPid;
-          if (pid) {
-            this.datasetId.set(pid);
-            this.doiItems.set([{ label: pid, value: pid }]);
-            // Extract pre-selected file IDs from the files field
-            this.extractPreSelectedFileIds(
-              response.data?.queryParameters?.files,
-            );
-            // Now that we have DOI, proceed to OAuth if popup not shown
-            if (!this.showGuestLoginPopup()) {
-              this.getRepoToken();
+    this.trackSubscription(
+      this.dataService
+        .getGlobusDownloadParams(
+          dataverseUrl,
+          this.datasetDbId()!,
+          this.downloadId()!,
+          this.dataverseToken(),
+        )
+        .subscribe({
+          next: (response) => {
+            this.loading.set(false);
+            const pid = response.data?.queryParameters?.datasetPid;
+            if (pid) {
+              this.datasetId.set(pid);
+              this.doiItems.set([{ label: pid, value: pid }]);
+              // Extract pre-selected file IDs from the files field
+              this.extractPreSelectedFileIds(
+                response.data?.queryParameters?.files,
+              );
+              // Now that we have DOI, proceed to OAuth if popup not shown
+              if (!this.showGuestLoginPopup()) {
+                this.getRepoToken();
+              }
             }
-          }
-        },
-        error: (_err) => {
-          this.loading.set(false);
-        },
-      });
+          },
+          error: (_err) => {
+            this.loading.set(false);
+          },
+        }),
+    );
   }
 
   /**
@@ -602,42 +621,44 @@ export class DownloadComponent
     this.doiItems.set(this.loadingItems);
     this.datasetId.set(undefined);
 
-    const httpSubscription = this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, this.dataverseToken(), true)
-      .subscribe({
-        next: (items: SelectItem<string>[]) => {
-          httpSubscription?.unsubscribe();
-          // Don't overwrite if a valid DOI was set while we were loading
-          if (
-            this.datasetId() &&
-            this.datasetId() !== '?' &&
-            this.datasetId() !== 'undefined'
-          ) {
-            return;
-          }
-          if (items && items.length > 0) {
-            this.doiItems.set(items);
-            this.datasetId.set(undefined);
-          } else {
+    this.trackSubscription(
+      this.dvObjectLookupService
+        .getItems('', 'Dataset', undefined, this.dataverseToken(), true)
+        .subscribe({
+          next: (items: SelectItem<string>[]) => {
+            // Don't overwrite if a valid DOI was set while we were loading
+            if (
+              this.datasetId() &&
+              this.datasetId() !== '?' &&
+              this.datasetId() !== 'undefined'
+            ) {
+              return;
+            }
+            if (items && items.length > 0) {
+              this.doiItems.set(items);
+              this.datasetId.set(undefined);
+            } else {
+              this.doiItems.set([]);
+              this.datasetId.set(undefined);
+            }
+          },
+          error: (err) => {
+            // Don't show error if a valid DOI was set while we were loading
+            if (
+              this.datasetId() &&
+              this.datasetId() !== '?' &&
+              this.datasetId() !== 'undefined'
+            ) {
+              return;
+            }
+            this.notificationService.showError(
+              `DOI lookup failed: ${err.error}`,
+            );
             this.doiItems.set([]);
             this.datasetId.set(undefined);
-          }
-        },
-        error: (err) => {
-          httpSubscription?.unsubscribe();
-          // Don't show error if a valid DOI was set while we were loading
-          if (
-            this.datasetId() &&
-            this.datasetId() !== '?' &&
-            this.datasetId() !== 'undefined'
-          ) {
-            return;
-          }
-          this.notificationService.showError(`DOI lookup failed: ${err.error}`);
-          this.doiItems.set([]);
-          this.datasetId.set(undefined);
-        },
-      });
+          },
+        }),
+    );
   }
 
   onDatasetSearch(searchTerm: string | null) {
@@ -670,44 +691,42 @@ export class DownloadComponent
 
   onDatasetChange() {
     this.loading.set(true);
-    let subscription: Subscription;
-    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
-    subscription = this.dataService
-      .getDownloadableFiles(this.datasetId()!, this.dataverseToken())
-      .subscribe({
-        next: (data) => {
-          subscription?.unsubscribe();
-          data.data = data.data?.sort((o1, o2) =>
-            (o1.id === undefined ? '' : o1.id) <
-            (o2.id === undefined ? '' : o2.id)
-              ? -1
-              : 1,
-          );
-          this.setData(data);
-        },
-        error: (err) => {
-          subscription?.unsubscribe();
-          this.loading.set(false);
-          // Check if this is an anonymized preview URL case
-          if (this.accessMode() === 'preview' && this.dataverseToken()) {
-            this.notificationService.showError(
-              'Anonymous Preview URLs are not supported for Globus downloads. ' +
-                'Please ask the dataset owner to create a General Preview URL instead. ' +
-                'Anonymous Preview URLs (for blind peer review) are restricted by Dataverse ' +
-                'and cannot access the Globus file transfer APIs.',
+    this.trackSubscription(
+      this.dataService
+        .getDownloadableFiles(this.datasetId()!, this.dataverseToken())
+        .subscribe({
+          next: (data) => {
+            data.data = data.data?.sort((o1, o2) =>
+              (o1.id === undefined ? '' : o1.id) <
+              (o2.id === undefined ? '' : o2.id)
+                ? -1
+                : 1,
             );
-          } else if (this.accessMode() === 'guest') {
-            // Guest access was denied - show preview URL option
-            this.accessDeniedForGuest.set(true);
-            this.showGuestLoginPopup.set(true);
-            this.showPreviewUrlInput.set(true);
-          } else {
-            this.notificationService.showError(
-              `Getting downloadable files failed: ${err.error}`,
-            );
-          }
-        },
-      });
+            this.setData(data);
+          },
+          error: (err) => {
+            this.loading.set(false);
+            // Check if this is an anonymized preview URL case
+            if (this.accessMode() === 'preview' && this.dataverseToken()) {
+              this.notificationService.showError(
+                'Anonymous Preview URLs are not supported for Globus downloads. ' +
+                  'Please ask the dataset owner to create a General Preview URL instead. ' +
+                  'Anonymous Preview URLs (for blind peer review) are restricted by Dataverse ' +
+                  'and cannot access the Globus file transfer APIs.',
+              );
+            } else if (this.accessMode() === 'guest') {
+              // Guest access was denied - show preview URL option
+              this.accessDeniedForGuest.set(true);
+              this.showGuestLoginPopup.set(true);
+              this.showPreviewUrlInput.set(true);
+            } else {
+              this.notificationService.showError(
+                `Getting downloadable files failed: ${err.error}`,
+              );
+            }
+          },
+        }),
+    );
   }
 
   setData(data: CompareResult): void {
@@ -832,50 +851,54 @@ export class DownloadComponent
     this.globusMonitorUrl.set(undefined);
     this.statusPollingActive.set(false);
 
-    this.submit
-      .download(
-        selected,
-        this.repoName(),
-        this.option(),
-        this.token(),
-        this.datasetId(),
-        this.dataverseToken(),
-        this.downloadId(),
-      )
-      .subscribe({
-        next: (response) => {
-          this.downloadRequested.set(false);
-          this.downloadInProgress.set(false);
+    this.trackSubscription(
+      this.submit
+        .download(
+          selected,
+          this.repoName(),
+          this.option(),
+          this.token(),
+          this.datasetId(),
+          this.dataverseToken(),
+          this.downloadId(),
+        )
+        .subscribe({
+          next: (response) => {
+            this.downloadRequested.set(false);
+            this.downloadInProgress.set(false);
 
-          const taskId = response?.taskId ?? '';
-          if (!taskId) {
-            this.notificationService.showSuccess('Download request submitted.');
-            return;
-          }
+            const taskId = response?.taskId ?? '';
+            if (!taskId) {
+              this.notificationService.showSuccess(
+                'Download request submitted.',
+              );
+              return;
+            }
 
-          this.lastTransferTaskId.set(taskId);
-          this.globusMonitorUrl.set(
-            response.monitorUrl ?? this.buildGlobusMonitorUrl(taskId),
-          );
-          this.notificationService.showSuccess(
-            `Download request started. Globus task ID: ${taskId}`,
-          );
-        },
-        error: (err: unknown) => {
-          this.downloadRequested.set(false);
-          this.downloadInProgress.set(false);
-          this.statusPollingActive.set(false);
+            this.lastTransferTaskId.set(taskId);
+            this.globusMonitorUrl.set(
+              response.monitorUrl ?? this.buildGlobusMonitorUrl(taskId),
+            );
+            this.notificationService.showSuccess(
+              `Download request started. Globus task ID: ${taskId}`,
+            );
+          },
+          error: (err: unknown) => {
+            this.downloadRequested.set(false);
+            this.downloadInProgress.set(false);
+            this.statusPollingActive.set(false);
 
-          const fallbackError = 'unknown error';
-          const message =
-            (err as { error?: string; message?: string })?.error ??
-            (err as { message?: string })?.message ??
-            fallbackError;
-          this.notificationService.showError(
-            `Download request failed: ${message}`,
-          );
-        },
-      });
+            const fallbackError = 'unknown error';
+            const message =
+              (err as { error?: string; message?: string })?.error ??
+              (err as { message?: string })?.message ??
+              fallbackError;
+            this.notificationService.showError(
+              `Download request failed: ${message}`,
+            );
+          },
+        }),
+    );
   }
 
   onStatusPollingChange(active: boolean): void {
@@ -978,22 +1001,21 @@ export class DownloadComponent
       this.branchItems.set(this.loadingItems);
     }
 
-    let httpSubscription: Subscription;
-    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
-    httpSubscription = this.repoLookupService.getOptions(req).subscribe({
-      next: (items: HierarchicalSelectItem<string>[]) => {
-        this.handleOptionsResponse(items, node);
-        httpSubscription?.unsubscribe();
-      },
-      error: (err) => {
-        this.notificationService.showError(
-          `Branch lookup failed: ${err.error}`,
-        );
-        this.branchItems.set([]);
-        this.option.set(undefined);
-        this.optionsLoading.set(false);
-      },
-    });
+    this.trackSubscription(
+      this.repoLookupService.getOptions(req).subscribe({
+        next: (items: HierarchicalSelectItem<string>[]) => {
+          this.handleOptionsResponse(items, node);
+        },
+        error: (err) => {
+          this.notificationService.showError(
+            `Branch lookup failed: ${err.error}`,
+          );
+          this.branchItems.set([]);
+          this.option.set(undefined);
+          this.optionsLoading.set(false);
+        },
+      }),
+    );
   }
 
   /**

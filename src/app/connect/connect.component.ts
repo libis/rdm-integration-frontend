@@ -379,9 +379,11 @@ export class ConnectComponent
     );
 
     // Idempotent restoration on each navigation end to /connect (component reuse scenario)
-    this.router.events
-      .pipe(filter((e) => e instanceof NavigationEnd))
-      .subscribe(() => this.attemptFullRestore('[NavigationEnd]'));
+    this.subscriptions.add(
+      this.router.events
+        .pipe(filter((e) => e instanceof NavigationEnd))
+        .subscribe(() => this.attemptFullRestore('[NavigationEnd]')),
+    );
   }
 
   async ngOnInit() {

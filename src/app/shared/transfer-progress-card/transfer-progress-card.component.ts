@@ -31,7 +31,6 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
  */
 @Component({
   selector: 'app-transfer-progress-card',
-  standalone: true,
   imports: [CommonModule, ButtonDirective, ProgressBarModule],
   templateUrl: './transfer-progress-card.component.html',
   styleUrls: ['./transfer-progress-card.component.scss'],
