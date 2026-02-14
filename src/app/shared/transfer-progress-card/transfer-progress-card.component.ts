@@ -27,8 +27,7 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
 
 /**
  * Universal transfer progress card that works with all transfer plugins.
- * Uses Angular Signals for reactive state management with lifecycle hooks for
- * compatibility with Zone.js testing.
+ * Uses Angular Signals for reactive state management in zoneless mode.
  */
 @Component({
   selector: 'app-transfer-progress-card',
