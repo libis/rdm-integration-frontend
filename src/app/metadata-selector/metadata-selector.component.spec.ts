@@ -15,12 +15,16 @@ import {
   Metadata,
   MetadataField,
 } from '../models/field';
+import { NotificationService } from '../shared/notification.service';
 import { MetadataSelectorComponent } from './metadata-selector.component';
 
 describe('MetadataSelectorComponent', () => {
   let component: MetadataSelectorComponent;
   let fixture: ComponentFixture<MetadataSelectorComponent>;
   let routerNavigateSpy: jasmine.Spy;
+  const notificationStub = {
+    showError: jasmine.createSpy('showError'),
+  };
   // Removed unused locationBackSpy variable to satisfy lint
 
   // Build a realistic metadata response with primitive, array, and compound fields
@@ -102,6 +106,7 @@ describe('MetadataSelectorComponent', () => {
         { provide: Router, useValue: routerStub },
         { provide: DatasetService, useValue: datasetStub },
         { provide: Location, useValue: locationStub },
+        { provide: NotificationService, useValue: notificationStub },
       ],
     })
       // Keep template as-is; component uses PrimeNG lightweightly
@@ -110,6 +115,7 @@ describe('MetadataSelectorComponent', () => {
     fixture = TestBed.createComponent(MetadataSelectorComponent);
     component = fixture.componentInstance;
     routerNavigateSpy = TestBed.inject(Router).navigate as jasmine.Spy;
+    notificationStub.showError.calls.reset();
     // Accessing Location back spy not needed for current expectations
     fixture.detectChanges();
   });
@@ -258,5 +264,21 @@ describe('MetadataSelectorComponent', () => {
     const args = (routerNavigateSpy.calls.mostRecent().args || []) as any[];
     expect(args[0][0]).toBe('/compare');
     expect(args[1]?.state?.preserveCompare).toBeTrue();
+  });
+
+  it('loadData should show error notification on metadata fetch failure', () => {
+    const datasetService = TestBed.inject(DatasetService);
+    spyOn(datasetService, 'getMetadata').and.returnValue({
+      subscribe: (callbacks: any) => {
+        callbacks.error(new Error('metadata failed'));
+        return { unsubscribe: () => {} };
+      },
+    } as any);
+
+    component.loadData();
+
+    expect(notificationStub.showError).toHaveBeenCalledWith(
+      'Loading metadata failed. Please try again.',
+    );
   });
 });

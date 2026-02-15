@@ -15,6 +15,9 @@ const primeNgMock = {
   csp: () => ({ nonce: undefined }),
   unstyled: () => false,
   theme: () => 'none',
+  zIndex: {
+    modal: 1100,
+  },
   translation: {
     aria: {
       close: 'Close',
@@ -222,6 +225,20 @@ describe('AppComponent isDownloadFlow', () => {
       );
       expect(callIsDownloadFlow({})).toBe(false);
     });
+
+    it('should return false when callback is invalid base64', () => {
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/connect',
+      );
+      expect(callIsDownloadFlow({ callback: 'invalid!!!' })).toBe(false);
+    });
+
+    it('should return false when state is invalid JSON', () => {
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/connect',
+      );
+      expect(callIsDownloadFlow({ state: '{invalid-json' })).toBe(false);
+    });
   });
 
   describe('when Angular routing fails (route not matched)', () => {
@@ -260,6 +277,33 @@ describe('AppComponent isDownloadFlow', () => {
         {},
         `https://www.rdm.libis.kuleuven.be/integration/connect/upload?dvLocale=en&callback=${uploadCallback}`,
       );
+      expect(result).toBe(false);
+    });
+
+    it('should ignore upload URL when router already points to /connect', () => {
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+        '/connect',
+      );
+      const result = callIsDownloadFlow(
+        {},
+        'https://example.com/integration/connect/upload?callback=abc',
+      );
+      expect(result).toBe(false);
+    });
+
+    it('should return true when state in URL indicates download and params are empty', () => {
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/');
+      const state = encodeURIComponent(JSON.stringify({ download: true }));
+      const result = callIsDownloadFlow(
+        {},
+        `https://example.com/integration/connect/callback?state=${state}`,
+      );
+      expect(result).toBe(true);
+    });
+
+    it('should safely return false when window.location is malformed', () => {
+      spyOnProperty(component['router'], 'url', 'get').and.returnValue('/');
+      const result = callIsDownloadFlow({}, '%%%');
       expect(result).toBe(false);
     });
   });
@@ -390,6 +434,24 @@ describe('AppComponent redirect handling', () => {
         done();
       }, 10);
     });
+
+    it('should navigate to /connect when callback is missing', () => {
+      const locationHref = 'https://example.com/integration/connect/upload';
+      (component as any).redirectToConnect(locationHref);
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect']);
+    });
+
+    it('should navigate to /connect when callback cannot be parsed', () => {
+      const locationHref =
+        'https://example.com/integration/connect/upload?callback=invalid-base64';
+      (component as any).redirectToConnect(locationHref);
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect']);
+    });
+
+    it('should navigate to /connect on invalid location URL', () => {
+      (component as any).redirectToConnect('%%%');
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect']);
+    });
   });
 
   describe('redirectToDownload', () => {
@@ -421,6 +483,24 @@ describe('AppComponent redirect handling', () => {
         });
         done();
       }, 10);
+    });
+
+    it('should navigate to /download when callback is missing', () => {
+      const locationHref = 'https://example.com/integration/connect/download';
+      (component as any).redirectToDownload(locationHref);
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/download']);
+    });
+
+    it('should navigate to /download when callback cannot be parsed', () => {
+      const locationHref =
+        'https://example.com/integration/connect/download?callback=invalid-base64';
+      (component as any).redirectToDownload(locationHref);
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/download']);
+    });
+
+    it('should navigate to /download on invalid location URL', () => {
+      (component as any).redirectToDownload('%%%');
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/download']);
     });
   });
 });
@@ -480,6 +560,25 @@ describe('AppComponent redirect loop detection', () => {
     );
     (component as any).clearRedirectCounter();
     expect(sessionStorage.getItem('loginRedirectAttempt')).toBeNull();
+  });
+
+  it('should allow redirect when sessionStorage read throws', () => {
+    const getItemSpy = spyOn(sessionStorage, 'getItem').and.throwError(
+      'storage unavailable',
+    );
+
+    expect((component as any).isRedirectLoop()).toBe(false);
+    expect(getItemSpy).toHaveBeenCalled();
+  });
+
+  it('clearRedirectCounter should ignore removeItem errors', () => {
+    const removeSpy = spyOn(sessionStorage, 'removeItem').and.throwError(
+      'storage unavailable',
+    );
+
+    expect(() => (component as any).clearRedirectCounter()).not.toThrow();
+    // Prevent afterEach cleanup from failing in this describe block.
+    removeSpy.and.callFake(() => {});
   });
 });
 
@@ -655,6 +754,94 @@ describe('AppComponent checkLoginRequired', () => {
 
     setTimeout(() => {
       expect(redirectSpy).not.toHaveBeenCalled();
+      done();
+    }, 100);
+  });
+
+  it('should skip login check entirely for download flow', (done) => {
+    spyOn(component as any, 'isDownloadFlow').and.returnValue(true);
+    const setConfigSpy = spyOn(
+      component['pluginService'],
+      'setConfig',
+    ).and.returnValue(Promise.resolve());
+    const getUserInfoSpy = spyOn(
+      component.dataService,
+      'getUserInfo',
+    ).and.returnValue({
+      subscribe: () => ({ unsubscribe: () => {} }),
+    } as any);
+    const redirectSpy = spyOn(component['pluginService'], 'redirectToLogin');
+
+    (component as any).checkLoginRequired({});
+
+    setTimeout(() => {
+      expect(setConfigSpy).not.toHaveBeenCalled();
+      expect(getUserInfoSpy).not.toHaveBeenCalled();
+      expect(redirectSpy).not.toHaveBeenCalled();
+      done();
+    }, 20);
+  });
+
+  it('should show warning when redirect loop is detected for logged-out user', (done) => {
+    for (let i = 0; i < 3; i++) {
+      (component as any).isRedirectLoop();
+    }
+
+    const warningSpy = spyOn(
+      (component as any).notificationService,
+      'showWarning',
+    );
+    spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+      '/connect',
+    );
+    spyOn(component['pluginService'], 'setConfig').and.returnValue(
+      Promise.resolve(),
+    );
+    spyOn(component.dataService, 'getUserInfo').and.returnValue({
+      subscribe: (callbacks: any) => {
+        callbacks.next({ loggedIn: false });
+        return { unsubscribe: () => {} };
+      },
+    } as any);
+
+    (component as any).checkLoginRequired({});
+
+    setTimeout(() => {
+      expect(warningSpy).toHaveBeenCalledWith(
+        'Login redirect loop detected. Please refresh and try again.',
+      );
+      done();
+    }, 100);
+  });
+
+  it('should show warning when redirect loop is detected after getUserInfo error', (done) => {
+    for (let i = 0; i < 3; i++) {
+      (component as any).isRedirectLoop();
+    }
+
+    const warningSpy = spyOn(
+      (component as any).notificationService,
+      'showWarning',
+    );
+    spyOnProperty(component['router'], 'url', 'get').and.returnValue(
+      '/connect',
+    );
+    spyOn(component['pluginService'], 'setConfig').and.returnValue(
+      Promise.resolve(),
+    );
+    spyOn(component.dataService, 'getUserInfo').and.returnValue({
+      subscribe: (callbacks: any) => {
+        callbacks.error(new Error('Network error'));
+        return { unsubscribe: () => {} };
+      },
+    } as any);
+
+    (component as any).checkLoginRequired({});
+
+    setTimeout(() => {
+      expect(warningSpy).toHaveBeenCalledWith(
+        'Login redirect loop detected. Please refresh and try again.',
+      );
       done();
     }, 100);
   });

@@ -105,6 +105,8 @@ class MockDataService {
   response: any = { data: [] };
   error?: string;
   userLoggedIn = false;
+  globusParamsError?: unknown;
+  globusParamsResponse: any = { data: { queryParameters: {} } };
 
   getDownloadableFiles() {
     return new Observable<any>((obs) => {
@@ -121,6 +123,13 @@ class MockDataService {
 
   getUserInfo() {
     return of({ loggedIn: this.userLoggedIn });
+  }
+
+  getGlobusDownloadParams() {
+    if (this.globusParamsError) {
+      return throwError(() => this.globusParamsError);
+    }
+    return of(this.globusParamsResponse);
   }
 }
 
@@ -1240,6 +1249,9 @@ describe('DownloadComponent', () => {
       comp.continueWithPreviewUrl();
 
       expect(comp.getRepoToken).not.toHaveBeenCalled();
+      expect(notification.warnings).toContain(
+        'Invalid preview URL or token. Please check the value and try again.',
+      );
     });
 
     it('should set token and accessMode from valid preview URL', async () => {
@@ -1258,6 +1270,82 @@ describe('DownloadComponent', () => {
       expect(comp.accessMode()).toBe('preview');
       expect(comp.showGuestLoginPopup()).toBeFalse();
       expect(comp.getRepoToken).toHaveBeenCalled();
+    });
+
+    it('should show info and continue when DOI prefill request fails', () => {
+      const comp = initComponent();
+      comp.downloadId.set('dl-123');
+      dataService.globusParamsError = new Error('Server Error');
+      comp.previewUrlInput.set(
+        'https://example.com/api/v1/datasets/999/globusDownloadParameters?downloadId=dl-123&token=12345678-1234-1234-1234-123456789012',
+      );
+      spyOn(comp, 'getRepoToken');
+
+      comp.continueWithPreviewUrl();
+
+      expect(notification.infos).toContain(
+        'Could not prefill dataset information from the preview URL. Continuing with OAuth.',
+      );
+      expect(comp.getRepoToken).toHaveBeenCalled();
+      expect(comp.loading()).toBeFalse();
+      dataService.globusParamsError = undefined;
+    });
+  });
+
+  describe('fetchDoiFromGlobusParams', () => {
+    it('should set DOI, extract preselected files, and continue when popup is closed', () => {
+      const comp = initComponent();
+      comp.datasetDbId.set('999');
+      comp.downloadId.set('dl-123');
+      comp.showGuestLoginPopup.set(false);
+      dataService.globusParamsResponse = {
+        data: {
+          queryParameters: {
+            datasetPid: 'doi:10.1234/ABC',
+            files: { '11': 'file-a.txt' },
+          },
+        },
+      };
+      spyOn(comp, 'getRepoToken');
+
+      (comp as any).fetchDoiFromGlobusParams();
+
+      expect(comp.datasetId()).toBe('doi:10.1234/ABC');
+      expect(comp.doiItems()).toEqual([
+        { label: 'doi:10.1234/ABC', value: 'doi:10.1234/ABC' },
+      ]);
+      expect(comp.preSelectedFileIds().has('11')).toBeTrue();
+      expect(comp.getRepoToken).toHaveBeenCalled();
+      expect(comp.loading()).toBeFalse();
+    });
+
+    it('should not continue to OAuth when popup is open', () => {
+      const comp = initComponent();
+      comp.datasetDbId.set('999');
+      comp.downloadId.set('dl-123');
+      comp.showGuestLoginPopup.set(true);
+      dataService.globusParamsResponse = {
+        data: { queryParameters: { datasetPid: 'doi:10.1234/ABC' } },
+      };
+      spyOn(comp, 'getRepoToken');
+
+      (comp as any).fetchDoiFromGlobusParams();
+
+      expect(comp.datasetId()).toBe('doi:10.1234/ABC');
+      expect(comp.getRepoToken).not.toHaveBeenCalled();
+      expect(comp.loading()).toBeFalse();
+    });
+
+    it('should reset loading on API error', () => {
+      const comp = initComponent();
+      comp.datasetDbId.set('999');
+      comp.downloadId.set('dl-123');
+      dataService.globusParamsError = new Error('lookup failed');
+
+      (comp as any).fetchDoiFromGlobusParams();
+
+      expect(comp.loading()).toBeFalse();
+      dataService.globusParamsError = undefined;
     });
   });
 });

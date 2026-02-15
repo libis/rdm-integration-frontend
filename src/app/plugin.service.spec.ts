@@ -185,4 +185,50 @@ describe('PluginService', () => {
   it('getQueues returns empty array when queues not configured', () => {
     expect(service.getQueues('.zip')).toEqual([]);
   });
+
+  it('redirectToLogin is a no-op when loginRedirectUrl is missing', async () => {
+    const cfg = mockConfig({ loginRedirectUrl: undefined });
+    const promise = service.setConfig();
+    httpMock.expectOne('api/frontend/config').flush(cfg);
+    await promise;
+
+    const assignSpy = spyOn((service as any).navigation, 'assign');
+    service.redirectToLogin();
+
+    expect(assignSpy).not.toHaveBeenCalled();
+  });
+
+  it('redirectToLogin rewrites target parameter to current URL', async () => {
+    const cfg = mockConfig({
+      loginRedirectUrl:
+        'https://login.example.org/login?target=https://old.example.org',
+    });
+    const promise = service.setConfig();
+    httpMock.expectOne('api/frontend/config').flush(cfg);
+    await promise;
+
+    const assignSpy = spyOn((service as any).navigation, 'assign');
+    service.redirectToLogin();
+
+    expect(assignSpy).toHaveBeenCalled();
+    const finalUrl = assignSpy.calls.mostRecent().args[0] as string;
+    expect(finalUrl).toContain('https://login.example.org/login?');
+    expect(finalUrl).toContain(
+      `target=${encodeURIComponent(window.location.href)}`,
+    );
+  });
+
+  it('redirectToLogin uses original URL when target parameter is absent', async () => {
+    const cfg = mockConfig({
+      loginRedirectUrl: 'https://login.example.org/login',
+    });
+    const promise = service.setConfig();
+    httpMock.expectOne('api/frontend/config').flush(cfg);
+    await promise;
+
+    const assignSpy = spyOn((service as any).navigation, 'assign');
+    service.redirectToLogin();
+
+    expect(assignSpy).toHaveBeenCalledWith('https://login.example.org/login');
+  });
 });

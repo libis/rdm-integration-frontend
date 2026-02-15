@@ -34,7 +34,9 @@ module.exports = function (config) {
       require("karma-coverage"),
     ],
     client: {
-      jasmine: {},
+      jasmine: {
+        random: false,
+      },
       clearContext: !headless, // keep reporter UI only when not headless
     },
     jasmineHtmlReporter: {

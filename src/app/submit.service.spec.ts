@@ -138,4 +138,16 @@ describe('SubmitService', () => {
     req.flush({ task_id: 'task-42', status: 'ACTIVE', nice_status: 'Active' });
     expect(status?.status).toBe('ACTIVE');
   });
+
+  it('getGlobusTransferStatus includes oauthSessionId when provided', () => {
+    service.getGlobusTransferStatus('task-77', 'oauth-session-1').subscribe();
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === 'api/common/globus/status' &&
+        r.params.get('taskId') === 'task-77' &&
+        r.params.get('oauthSessionId') === 'oauth-session-1',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({ task_id: 'task-77', status: 'SUCCEEDED' });
+  });
 });

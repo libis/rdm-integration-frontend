@@ -31,6 +31,20 @@ describe('buildInlineStyle', () => {
     });
   });
 
+  it('treats undefined includeTableVariables as enabled', () => {
+    const style = buildInlineStyle(getFileActionStyle('COPY'), {
+      includeTableVariables: undefined,
+    });
+
+    expect(() =>
+      expectBootstrapTableStyle(
+        style,
+        'var(--app-file-action-copy-bg)',
+        'var(--app-file-action-copy-color)',
+      ),
+    ).not.toThrow();
+  });
+
   it('only injects color-related table variables when background is missing', () => {
     const style = buildInlineStyle({ color: 'var(--app-token-text)' });
 

@@ -56,3 +56,24 @@ describe('NotificationService', () => {
     );
   });
 });
+
+describe('NotificationService without MessageService', () => {
+  let service: NotificationService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(NotificationService);
+  });
+
+  it('showError falls back to alert', () => {
+    const alertSpy = spyOn(window, 'alert');
+    service.showError('boom');
+    expect(alertSpy).toHaveBeenCalledWith('boom');
+  });
+
+  it('showSuccess/showInfo/showWarning do not throw', () => {
+    expect(() => service.showSuccess('ok')).not.toThrow();
+    expect(() => service.showInfo('info')).not.toThrow();
+    expect(() => service.showWarning('warn')).not.toThrow();
+  });
+});

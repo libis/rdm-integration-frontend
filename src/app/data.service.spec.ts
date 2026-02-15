@@ -167,4 +167,127 @@ describe('DataService', () => {
     expect(req.request.body.dataverseKey).toBe(token);
     req.flush(mockResponse);
   });
+
+  it('should call generateDdiCdi', () => {
+    const reqBody = {
+      persistentId: 'doi:ddi',
+      dataverseKey: 'dv-token',
+    } as any;
+    const mockResponse: Key = { key: 'ddi-key' };
+
+    service.generateDdiCdi(reqBody).subscribe((response) => {
+      expect(response).toEqual(mockResponse);
+    });
+
+    const req = httpMock.expectOne('api/common/ddicdi');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(reqBody);
+    req.flush(mockResponse);
+  });
+
+  it('should call getCachedDdiCdiData', () => {
+    const key: Key = { key: 'ddi-key' };
+    const mockResponse = { key: 'ddi-key', ready: true, res: 'result' };
+
+    service.getCachedDdiCdiData(key).subscribe((response) => {
+      expect(response.key).toBe('ddi-key');
+      expect(response.ready).toBeTrue();
+    });
+
+    const req = httpMock.expectOne('api/common/cachedddicdi');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(key);
+    req.flush(mockResponse);
+  });
+
+  it('should call getDdiCdiCompatibleFiles', () => {
+    const pid = 'doi:compatible';
+    const token = 'dv-token';
+    const mockResponse = { id: 'cmp', data: [] };
+
+    service.getDdiCdiCompatibleFiles(pid, token).subscribe((response) => {
+      expect(response.id).toBe('cmp');
+    });
+
+    const req = httpMock.expectOne('api/common/ddicdicompatible');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      persistentId: pid,
+      dataverseKey: token,
+    });
+    req.flush(mockResponse);
+  });
+
+  it('should call getCachedDdiCdiOutput', () => {
+    const pid = 'doi:output';
+    const mockResponse = { data: { ok: true } };
+
+    service.getCachedDdiCdiOutput(pid).subscribe((response) => {
+      expect(response).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('api/common/cachedddicdioutput');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ persistentId: pid });
+    req.flush(mockResponse);
+  });
+
+  it('should call addFileToDataset', () => {
+    const addReq = {
+      persistentId: 'doi:add',
+      dataverseKey: 'dv-token',
+      filePid: 'file-1',
+    } as any;
+    const mockResponse = { message: 'ok' };
+
+    service.addFileToDataset(addReq).subscribe((response) => {
+      expect(response).toEqual(mockResponse as any);
+    });
+
+    const req = httpMock.expectOne('api/common/addfile');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(addReq);
+    req.flush(mockResponse);
+  });
+
+  it('should call getUserInfo', () => {
+    service.getUserInfo().subscribe((response) => {
+      expect(response.loggedIn).toBeTrue();
+    });
+
+    const req = httpMock.expectOne('api/common/userinfo');
+    expect(req.request.method).toBe('GET');
+    req.flush({ loggedIn: true });
+  });
+
+  it('should call getGlobusDownloadParams with X-Dataverse-key when preview token is provided', () => {
+    service
+      .getGlobusDownloadParams(
+        'https://dv.example',
+        '123',
+        'download-1',
+        'preview-token',
+      )
+      .subscribe();
+
+    const req = httpMock.expectOne(
+      'https://dv.example/api/datasets/123/globusDownloadParameters?downloadId=download-1',
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('X-Dataverse-key')).toBe('preview-token');
+    req.flush({ data: { queryParameters: {} } });
+  });
+
+  it('should call getGlobusDownloadParams without X-Dataverse-key when preview token is missing', () => {
+    service
+      .getGlobusDownloadParams('https://dv.example', '123', 'download-1')
+      .subscribe();
+
+    const req = httpMock.expectOne(
+      'https://dv.example/api/datasets/123/globusDownloadParameters?downloadId=download-1',
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.has('X-Dataverse-key')).toBeFalse();
+    req.flush({ data: { queryParameters: {} } });
+  });
 });
