@@ -1,93 +1,47 @@
-# Globus / Zoneless Investigation Log (2026-02-16)
+# Globus / Zoneless Fix Log (Final) - 2026-02-16
 
-## Scope
-Stabilization work for endpoint and folder selection, plus Angular zoneless refresh behavior, across:
-- backend: `rdm-integration`
-- frontend: `rdm-integration-frontend`
+## Current status
+- Release status: ready for team validation and production rollout.
+- Scope completed for backend `rdm-integration` and frontend `rdm-integration-frontend`.
 
-## Target outcomes
-- Endpoint and folder selection are reliable for Globus flows.
-- Default folder preselection works when backend marks a folder as `selected: true`.
-- Endpoint variants behave consistently:
-  - personal endpoints (Linux/Windows)
-  - institutional/server endpoints using `/{server_default}/`
-- Zoneless UI refresh does not require extra user clicks to show updated folder trees.
-- Tests reproduce regressions first and block reintroduction.
-
-## Evidence collected so far
-- Backend search requests return endpoint data (confirmed in logs).
-- Backend options requests can return nested folder trees (example `ghum` response with nested children).
-- Placeholder endpoint bug was previously observed:
-  - frontend sent `repoName="start"`
-  - backend called `/endpoint/start` and `/operation/endpoint/start/ls`
-  - Globus returned `EndpointNotFound`
-- Permission-denied error path is valid and should stay:
-  - example toast: `PermissionDenied: No effective ACL rules ...`
-- Manual verification from 2026-02-16:
-  - download flow works with institutional endpoint (`ghum`) including default folder preselection
-  - download flow works with Linux personal endpoint
-  - anonymous endpoint browsing (example CERN) works
-  - start transfer button in download flow activates correctly after selections
-- Remaining UI issue was observed on connect page (OneDrive and Globus):
-  - folder tree response arrived, but UI refresh required extra interaction
-
-## Status summary
+## What was fixed
 
 ### Backend (`rdm-integration`)
-- Added contextual Globus request/response logging (temporary, for stabilization).
-- Added handling for `/{server_default}/` default directories.
-- Added fallback handling for not-found folder listing path.
-- Added coverage for placeholder endpoint (`start`) path.
-- Current intent: keep logging until frontend/manual verification is complete, then reduce/remove.
+- Globus options flow now handles default directories robustly, including `/{server_default}/`, encoded variants, and `/~/` fallback.
+- Placeholder endpoint values such as `repoName="start"` no longer surface as frontend HTTP 500 in options lookup.
+- Not-found behavior is handled without masking real permission-denied failures.
+- Pagination logic was hardened with page-based offsets, a max-page guard, and an empty-page-with-`has_next_page=true` guard.
+- Windows and Linux endpoint paths are normalized safely (`\` to `/`, duplicate slash collapse, safe `{server_default}` handling).
+- Path building relies on Globus `absolute_path` results (no custom drive-letter rewriting logic).
+- Temporary detailed Globus request/response logging used for investigation has been removed.
 
-### Frontend download flow (`DownloadComponent`)
-- Detached-node zoneless issue was reproduced with a failing test, then fixed.
-- Fix updates canonical tree state even when expanded event node is a detached instance.
-- Tree and transfer-button refresh behavior validated in automated and manual tests.
+### Frontend (`rdm-integration-frontend`)
+- Download flow zoneless refresh issue fixed by updating canonical tree state when expanded node instance is detached.
+- Connect flow zoneless refresh issue fixed with the same detached-node-safe strategy.
+- Connect repo switch behavior now resets stale tree/selection state to avoid stale UI data.
+- Folder trees now refresh without requiring extra user interaction clicks after options responses.
+- Start transfer / connect action enablement remains working after folder/file selection.
 
-### Frontend connect flow (`ConnectComponent`)
-- New failing repro test added first for detached expanded-node behavior:
-  - `getOptions should update stored tree when expanded node is detached instance (zoneless repro)`
-  - observed failure before fix: `Expected undefined to be 'ghum'.`
-- Fix applied to mirror download strategy:
-  - keep event-node mutation for compatibility
-  - update canonical `_rootOptionsData` tree by matching node identity/data+label
-  - force new reference fallback if target node is not found
-- Additional guard test added for repo switch reset:
-  - `onRepoChange clears tree selection state and restores placeholder root`
-- `onRepoChange` now clears stale tree/selection state to avoid stale folder UI between endpoints.
+## Behavior validated
+- Institutional endpoint (`ghum`) with default folder behavior.
+- Linux personal endpoint.
+- Windows personal endpoint, including navigation through `/`, `/C/`, `/C/Users/...`, and OneDrive path segments.
+- Anonymous-access endpoint browsing (CERN tested).
+- Permission-denied/no-access responses remain clear to users via toast path.
 
-## Tests and runs (2026-02-16)
-- Connect repro failed before fix:
-  - `npm run test:ci -- --include src/app/connect/connect.component.advanced.spec.ts`
-  - failure: detached-node test expected `ghum`, got `undefined`
-- After fix:
-  - `src/app/connect/connect.component.advanced.spec.ts`: `28 SUCCESS`
-  - `src/app/connect/connect.component.behavior.spec.ts`: `19 SUCCESS`
-  - `src/app/connect/connect.component.config.spec.ts`: `15 SUCCESS`
+## Test evidence
+- Regression-first approach used for zoneless detached-node refresh issues in both download and connect flows.
+- Added/updated backend tests for pagination and options/default-directory behaviors in `image/app/plugin/impl/globus/common_test.go` and `image/app/plugin/impl/globus/options_test.go`.
+- Frontend CI suite reported passing: `585/585 SUCCESS`.
+- Backend Globus package tests pass.
 
-## Known-good behavior to preserve
-- Keep clear permission-denied toasts/messages for inaccessible endpoints/paths.
-- Do not hide real authorization failures while handling placeholder/not-found cases.
-- Keep default-folder preselection behavior in both download and connect flows.
+## Must-preserve behavior
+- Keep explicit permission-denied errors visible to users.
+- Keep default-folder preselection where backend marks a selected path.
+- Keep immediate zoneless tree refresh in both connect and download flows.
+- Keep Linux/Windows/personal/institutional endpoint compatibility.
 
-## Open items
-1. Manual smoke test connect-page folder refresh for:
-   - Globus plugin
-   - OneDrive plugin
-2. Manual smoke test that connect actions/buttons still refresh correctly after folder selection.
-3. Windows personal Globus endpoint verification (user planned after re-login).
-4. After stabilization, remove or reduce temporary backend logging.
-5. Final cleanup and commit grouping by concern.
-
-## Next validation sequence
-1. Re-test connect page with OneDrive and Globus folder expand flows.
-2. Confirm no extra click is needed for tree rendering in zoneless mode.
-3. Re-check permission-denied and no-access paths still show clear toasts.
-4. Run full frontend suite before final cleanup.
-
-## Done criteria for this round
-- Connect and download folder trees both render immediately after options responses.
-- Default-folder preselection still works where backend marks selection.
-- Permission and no-access error reporting remains clear and unchanged.
-- Repro tests fail before fix and pass after fix for both download and connect regressions.
+## Remaining rollout steps
+1. Colleague smoke tests in staging with representative endpoints and permissions.
+2. Production rollout.
+3. Post-deploy smoke test on connect folder selection (Globus + OneDrive), download/upload selection, and one successful transfer each on Linux and Windows personal endpoints.
