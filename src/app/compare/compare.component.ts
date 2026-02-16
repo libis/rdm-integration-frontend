@@ -80,6 +80,10 @@ export class CompareComponent
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
+  private updatePollingSubscription?: Subscription;
+  private updatePollingGeneration = 0;
+  private updatePollingDatasetId?: string;
+  private updatePollingActive = false;
 
   // Icon constants
   readonly icon_noaction = APP_CONSTANTS.ICONS.NO_ACTION;
@@ -302,10 +306,11 @@ export class CompareComponent
         this.data.set(data);
         if (data.data && data.id) {
           if (data.status !== ResultStatus.Updating) {
+            this.stopUpdatePolling();
             this.disabled.set(false);
             this.loading.set(false);
           } else {
-            this.getUpdatedData(0);
+            this.startUpdatePolling(false, data.id);
           }
         }
       }
@@ -319,13 +324,46 @@ export class CompareComponent
   }
 
   ngOnDestroy(): void {
+    this.stopUpdatePolling();
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
     const shouldReset = this.loading();
     this.dataStateService.cancelInitialization(shouldReset);
   }
 
-  private getUpdatedData(cnt: number): void {
+  private startUpdatePolling(forceRestart = false, datasetId?: string): void {
+    const currentDatasetId = datasetId ?? this.data().id;
+    const shouldRestart =
+      forceRestart ||
+      this.updatePollingDatasetId !== currentDatasetId ||
+      !this.updatePollingActive;
+
+    if (!shouldRestart) {
+      return;
+    }
+
+    this.stopUpdatePolling();
+    this.updatePollingActive = true;
+    this.updatePollingDatasetId = currentDatasetId;
+    this.updatePollingGeneration++;
+    this.getUpdatedData(0, this.updatePollingGeneration);
+  }
+
+  private stopUpdatePolling(): void {
+    this.updatePollingGeneration++;
+    this.updatePollingActive = false;
+    this.updatePollingDatasetId = undefined;
+    this.updatePollingSubscription?.unsubscribe();
+    this.updatePollingSubscription = undefined;
+  }
+
+  private getUpdatedData(cnt: number, generation = this.updatePollingGeneration): void {
+    if (
+      generation !== this.updatePollingGeneration ||
+      !this.updatePollingActive
+    ) {
+      return;
+    }
     const id = this.data().id!;
     const dataItems = this.data().data!;
 
@@ -334,33 +372,54 @@ export class CompareComponent
     subscription = this.dataUpdatesService
       .updateData(dataItems, id)
       .subscribe(async (data: CompareResult) => {
+        if (
+          generation !== this.updatePollingGeneration ||
+          !this.updatePollingActive
+        ) {
+          this.subscriptions.delete(subscription);
+          if (this.updatePollingSubscription === subscription) {
+            this.updatePollingSubscription = undefined;
+          }
+          return;
+        }
         cnt++;
         this.subscriptions.delete(subscription);
-        subscription?.unsubscribe();
+        if (this.updatePollingSubscription === subscription) {
+          this.updatePollingSubscription = undefined;
+        }
         if (data.data && data.id) {
           this.data.set(data);
         }
         if (this.data().status !== ResultStatus.Updating) {
+          this.stopUpdatePolling();
           this.disabled.set(false);
           this.loading.set(false);
         } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
+          this.stopUpdatePolling();
           this.loading.set(false);
           this.refreshHidden.set(false);
         } else {
           await this.utils.sleep(APP_CONSTANTS.RETRY_SLEEP_DURATION);
-          this.getUpdatedData(cnt);
+          if (
+            generation === this.updatePollingGeneration &&
+            this.updatePollingActive
+          ) {
+            this.getUpdatedData(cnt, generation);
+          }
         }
       });
+    this.updatePollingSubscription = subscription;
     this.subscriptions.add(subscription);
   }
 
   refresh(): void {
     // Reset state as if just arrived on the page
+    this.stopUpdatePolling();
     this.refreshHidden.set(true);
     this.loading.set(true);
     this.disabled.set(true);
     // Restart the polling loop from count 0
-    this.getUpdatedData(0);
+    this.startUpdatePolling(true, this.data().id);
   }
 
   noActionSelection(): void {

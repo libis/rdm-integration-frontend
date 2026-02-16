@@ -15,6 +15,7 @@ import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { APP_CONSTANTS } from '../shared/constants';
 import { CompareComponent } from './compare.component';
 
 class StubDataStateService {
@@ -679,7 +680,7 @@ describe('CompareComponent', () => {
       (component as any).dataUpdatesService = dataUpdatesStub;
       (component as any).utils = utilsStub;
       component.data.set(updating);
-      component['getUpdatedData'](0);
+      component['startUpdatePolling'](true);
       await new Promise<void>((r) => setTimeout(r));
       expect(component.loading()).toBeFalse();
 
@@ -697,6 +698,105 @@ describe('CompareComponent', () => {
       expect(component.refreshHidden()).toBeTrue();
       // After yielding, the polling loop may change it based on retries
       await new Promise<void>((r) => setTimeout(r));
+    });
+
+    it('does not start parallel compare polling loops on repeated updating state emissions', () => {
+      const updating: CompareResult = {
+        data: [],
+        id: 'id',
+        status: ResultStatus.Updating,
+      };
+      const dataUpdatesStub = {
+        updateData: jasmine
+          .createSpy('updateData')
+          .and.returnValue(of(updating)),
+      };
+      const utilsStub = {
+        mapDatafiles: () => new Map([['', { data: {}, children: [] } as any]]),
+        addChild: () => undefined,
+        sleep: jasmine
+          .createSpy('sleep')
+          .and.returnValue(new Promise<void>(() => undefined)),
+      };
+      (component as any).dataUpdatesService = dataUpdatesStub;
+      (component as any).utils = utilsStub;
+
+      dataStateStub.updateState({ ...updating });
+      fixture.detectChanges();
+      expect(dataUpdatesStub.updateData.calls.count()).toBe(1);
+
+      dataStateStub.updateState({ ...updating });
+      fixture.detectChanges();
+      expect(dataUpdatesStub.updateData.calls.count()).toBe(1);
+
+      component.ngOnDestroy();
+    });
+
+    it('stops recursive compare polling after destroy', async () => {
+      const updating: CompareResult = {
+        data: [],
+        id: 'id',
+        status: ResultStatus.Updating,
+      };
+      const dataUpdatesStub = {
+        updateData: jasmine
+          .createSpy('updateData')
+          .and.returnValue(of(updating)),
+      };
+      let resolveSleep: (() => void) | undefined;
+      const utilsStub = {
+        mapDatafiles: () => new Map([['', { data: {}, children: [] } as any]]),
+        addChild: () => undefined,
+        sleep: jasmine.createSpy('sleep').and.callFake(
+          () =>
+            new Promise<void>((resolve) => {
+              resolveSleep = resolve;
+            }),
+        ),
+      };
+      (component as any).dataUpdatesService = dataUpdatesStub;
+      (component as any).utils = utilsStub;
+
+      dataStateStub.updateState({ ...updating });
+      fixture.detectChanges();
+      expect(dataUpdatesStub.updateData.calls.count()).toBe(1);
+
+      component.ngOnDestroy();
+      resolveSleep?.();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(dataUpdatesStub.updateData.calls.count()).toBe(1);
+      expect((component as any).updatePollingActive).toBeFalse();
+    });
+
+    it('caps compare polling retries for updating status', async () => {
+      const updating: CompareResult = {
+        data: [],
+        id: 'id',
+        status: ResultStatus.Updating,
+      };
+      const dataUpdatesStub = {
+        updateData: jasmine
+          .createSpy('updateData')
+          .and.returnValue(of(updating)),
+      };
+      const utilsStub = {
+        mapDatafiles: () => new Map([['', { data: {}, children: [] } as any]]),
+        addChild: () => undefined,
+        sleep: () => Promise.resolve(),
+      };
+      (component as any).dataUpdatesService = dataUpdatesStub;
+      (component as any).utils = utilsStub;
+
+      dataStateStub.updateState({ ...updating });
+      fixture.detectChanges();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(dataUpdatesStub.updateData.calls.count()).toBe(
+        APP_CONSTANTS.MAX_UPDATE_RETRIES + 1,
+      );
+      expect(component.refreshHidden()).toBeFalse();
+      expect(component.loading()).toBeFalse();
     });
   });
 });
