@@ -369,6 +369,30 @@ describe('DownloadComponent', () => {
     expect(req).toBeDefined();
   });
 
+  it('getRepoLookupRequest ignores placeholder repo values without toast', () => {
+    initComponent();
+    component.foundRepoName.set('start');
+
+    const req = component.getRepoLookupRequest(false);
+
+    expect(req).toBeUndefined();
+    expect(notification.errors.length).toBe(0);
+  });
+
+  it('getRepoLookupRequest ignores placeholder repo values even when label config is absent', () => {
+    initComponent();
+    component.globusPlugin.set({
+      sourceUrlFieldValue: 'https://x',
+      repoNameFieldName: '',
+    } as any);
+    component.foundRepoName.set('loading');
+
+    const req = component.getRepoLookupRequest(false);
+
+    expect(req).toBeUndefined();
+    expect(notification.errors.length).toBe(0);
+  });
+
   it('getOptions populates node children for nested request', async () => {
     initComponent();
     component.selectedRepoName.set('repoA');
@@ -385,6 +409,83 @@ describe('DownloadComponent', () => {
     await new Promise<void>((r) => setTimeout(r));
     expect(parent.children?.length).toBe(2);
     expect(component.optionsLoading()).toBeFalse();
+  });
+
+  it('getOptions nested request should update rootOptions reference for zoneless refresh', async () => {
+    initComponent();
+    component.selectedRepoName.set('repoA');
+    repoLookup.options = [{ label: 'folderA', value: '/folderA/' }];
+
+    const before = component.rootOptions();
+    const parent = before[0];
+
+    component.getOptions(parent);
+    await new Promise<void>((r) => setTimeout(r));
+
+    const after = component.rootOptions();
+    expect(after[0]?.children?.length).toBe(1);
+    expect(after).not.toBe(before);
+  });
+
+  it('getOptions should update stored tree when expanded node is detached instance (zoneless repro)', async () => {
+    initComponent();
+    component.selectedRepoName.set('repoA');
+    repoLookup.options = [
+      {
+        label: 'ghum',
+        value: '/ghum/',
+        expanded: true,
+        children: [
+          {
+            label: 'home',
+            value: '/ghum/home/',
+            expanded: true,
+            children: [
+              {
+                label: 'u0050020',
+                value: '/ghum/home/u0050020/',
+                selected: true,
+                expanded: true,
+                children: [
+                  {
+                    label: 'Reports_PROD',
+                    value: '/ghum/home/u0050020/Reports_PROD/',
+                  },
+                  { label: 'corpora', value: '/ghum/home/u0050020/corpora/' },
+                  {
+                    label: 'dataset_1',
+                    value: '/ghum/home/u0050020/dataset_1/',
+                  },
+                  { label: 'github', value: '/ghum/home/u0050020/github/' },
+                  { label: 'image', value: '/ghum/home/u0050020/image/' },
+                  { label: 'vscode', value: '/ghum/home/u0050020/vscode/' },
+                  {
+                    label: 'workflows',
+                    value: '/ghum/home/u0050020/workflows/',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ] as any;
+
+    // Repro: PrimeNG can emit a node instance that is not referentially equal
+    // to the node stored in component state.
+    const detachedExpandedNode: TreeNode<string> = {
+      label: 'Expand and select',
+      data: '',
+      selectable: true,
+      expanded: true,
+    };
+
+    component.getOptions(detachedExpandedNode);
+    await new Promise<void>((r) => setTimeout(r));
+
+    // Expected: stored tree should include returned folders immediately.
+    const storedRoot = component.rootOptions()[0];
+    expect(storedRoot.children?.[0]?.label).toBe('ghum');
   });
 
   it('getOptions handles error path', async () => {

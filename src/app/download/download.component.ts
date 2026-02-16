@@ -954,9 +954,15 @@ export class DownloadComponent
   }
 
   getRepoLookupRequest(isSearch: boolean): RepoLookupRequest | undefined {
+    const repoName = this.repoName();
+    const hasPlaceholderRepoName =
+      repoName === 'start' || repoName === 'loading';
+    if (!isSearch && hasPlaceholderRepoName) {
+      return;
+    }
     if (
       this.repoNameFieldName() &&
-      (this.repoName() === undefined || this.repoName() === '') &&
+      (repoName === undefined || repoName === '') &&
       !isSearch
     ) {
       this.notificationService.showError(
@@ -967,7 +973,7 @@ export class DownloadComponent
     return {
       pluginId: 'globus',
       plugin: 'globus',
-      repoName: this.repoName(),
+      repoName: repoName,
       url: this.globusPlugin()?.sourceUrlFieldValue,
       token: this.token(),
     };
@@ -1054,9 +1060,20 @@ export class DownloadComponent
     if (items && node) {
       // Expanding an existing node - add children
       const nodes = convertToTreeNodes(items);
+      // Keep event-node mutation for compatibility with callers relying on
+      // immediate node object changes, then synchronize canonical tree state.
       node.children = nodes.treeNodes;
-      // Bump trigger so zoneless templates pick up in-place node mutation.
-      bumpRefreshTrigger(this.refreshTrigger);
+      const updated = this.updateExpandedNodeChildren(
+        this._rootOptionsData(),
+        node,
+        nodes.treeNodes,
+      );
+      if (updated.found) {
+        this._rootOptionsData.set(updated.tree);
+      } else {
+        // Fallback when matching node is not found in stored tree.
+        this._rootOptionsData.set([...this._rootOptionsData()]);
+      }
       this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else if (items && items.length > 0) {
@@ -1064,10 +1081,42 @@ export class DownloadComponent
       const nodes = convertToTreeNodes(items);
       this._rootOptionsData.set(nodes.treeNodes);
       this.branchItems.set(items);
+      this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else {
       this.branchItems.set([]);
+      this.optionsLoading.set(false);
     }
+  }
+
+  private updateExpandedNodeChildren(
+    currentTree: TreeNode<string>[],
+    target: TreeNode<string>,
+    children: TreeNode<string>[],
+  ): { tree: TreeNode<string>[]; found: boolean } {
+    let found = false;
+    const updatedTree = currentTree.map((node) => {
+      const isTarget =
+        node === target ||
+        (node.data === target.data && node.label === target.label);
+      if (isTarget) {
+        found = true;
+        return { ...node, children };
+      }
+      if (node.children && node.children.length > 0) {
+        const nested = this.updateExpandedNodeChildren(
+          node.children,
+          target,
+          children,
+        );
+        if (nested.found) {
+          found = true;
+          return { ...node, children: nested.tree };
+        }
+      }
+      return node;
+    });
+    return { tree: updatedTree, found };
   }
 
   /**
@@ -1094,6 +1143,8 @@ export class DownloadComponent
 
   onRepoChange() {
     this.branchItems.set([]);
+    this._rootOptionsData.set(createPlaceholderRootOptions());
+    this.selectedOption.set(undefined);
     this.option.set(undefined);
   }
 
