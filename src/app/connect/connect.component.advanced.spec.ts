@@ -476,6 +476,104 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(comp.branchItems().length).toBe(0);
   });
 
+  it('getOptions should update stored tree when expanded node is detached instance (zoneless repro)', async () => {
+    repoLookup.options = [
+      {
+        label: 'ghum',
+        value: '/ghum/',
+        expanded: true,
+        children: [
+          {
+            label: 'home',
+            value: '/ghum/home/',
+            expanded: true,
+            children: [
+              {
+                label: 'u0050020',
+                value: '/ghum/home/u0050020/',
+                selected: true,
+                expanded: true,
+                children: [
+                  {
+                    label: 'Reports_PROD',
+                    value: '/ghum/home/u0050020/Reports_PROD/',
+                  },
+                  { label: 'corpora', value: '/ghum/home/u0050020/corpora/' },
+                  {
+                    label: 'dataset_1',
+                    value: '/ghum/home/u0050020/dataset_1/',
+                  },
+                  { label: 'github', value: '/ghum/home/u0050020/github/' },
+                  { label: 'image', value: '/ghum/home/u0050020/image/' },
+                  { label: 'vscode', value: '/ghum/home/u0050020/vscode/' },
+                  {
+                    label: 'workflows',
+                    value: '/ghum/home/u0050020/workflows/',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ] as any;
+
+    const { comp } = createComponent();
+    comp.pluginId.set('github');
+    comp.plugin.set('github');
+    comp.repoName.set('owner/repo');
+    comp.user.set('alice');
+    comp.token.set('tok');
+    comp.url.set('https://host');
+    comp.sourceUrl.set('https://host/owner/repo/path');
+    comp.option.set(undefined);
+    comp.branchItems.set([]);
+
+    // Repro: PrimeNG can emit an expanded node instance that is detached from
+    // the canonical tree held in component state.
+    const detachedExpandedNode: TreeNode<string> = {
+      label: 'Expand and select',
+      data: '',
+      selectable: true,
+      expanded: true,
+    };
+
+    comp.getOptions(detachedExpandedNode);
+    await new Promise<void>((r) => setTimeout(r));
+
+    const storedRoot = comp.rootOptions()[0];
+    expect(storedRoot.children?.[0]?.label).toBe('ghum');
+  });
+
+  it('onRepoChange clears tree selection state and restores placeholder root', () => {
+    const { comp } = createComponent();
+    (comp as any)._rootOptionsData.set([
+      {
+        label: 'ghum',
+        data: '/ghum/',
+        selectable: true,
+        children: [{ label: 'home', data: '/ghum/home/', selectable: true }],
+      },
+    ] as TreeNode<string>[]);
+    comp.selectedOption.set({
+      label: 'home',
+      data: '/ghum/home/',
+      selectable: true,
+    } as TreeNode<string>);
+    comp.option.set('/ghum/home/');
+    comp.branchItems.set([{ label: 'home', value: '/ghum/home/' }]);
+    comp.url.set('https://host');
+
+    comp.onRepoChange();
+
+    expect(comp.branchItems()).toEqual([]);
+    expect(comp.option()).toBeUndefined();
+    expect(comp.selectedOption()).toBeUndefined();
+    expect(comp.url()).toBeUndefined();
+    expect(comp.rootOptions()[0]?.label).toBe('Expand and select');
+    expect(comp.rootOptions()[0]?.children ?? []).toEqual([]);
+  });
+
   it('optionSelected sets selection for empty string (root folder)', () => {
     const { comp } = createComponent();
     comp.optionSelected({

@@ -63,7 +63,6 @@ import {
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
-import { bumpRefreshTrigger } from '../shared/refresh-trigger';
 import {
   convertToTreeNodes,
   createPlaceholderRootOptions,
@@ -1124,6 +1123,8 @@ export class ConnectComponent
 
   onRepoChange() {
     this.branchItems.set([]);
+    this._rootOptionsData.set(createPlaceholderRootOptions());
+    this.selectedOption.set(undefined);
     this.option.set(undefined);
     this.url.set(undefined);
     if (this.repoNameFieldName() === undefined) {
@@ -1242,9 +1243,20 @@ export class ConnectComponent
     if (items && node) {
       // Expanding an existing node - add children
       const nodes = convertToTreeNodes(items);
+      // Keep event-node mutation for compatibility, then synchronize
+      // canonical tree state in case expanded node instance is detached.
       node.children = nodes.treeNodes;
-      // Increment refresh trigger to force change detection (zoneless Angular)
-      bumpRefreshTrigger(this.refreshTrigger);
+      const updated = this.updateExpandedNodeChildren(
+        this._rootOptionsData(),
+        node,
+        nodes.treeNodes,
+      );
+      if (updated.found) {
+        this._rootOptionsData.set(updated.tree);
+      } else {
+        // Fallback: still force a new reference for zoneless refresh.
+        this._rootOptionsData.set([...this._rootOptionsData()]);
+      }
       this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else if (items && items.length > 0) {
@@ -1252,10 +1264,42 @@ export class ConnectComponent
       const nodes = convertToTreeNodes(items);
       this._rootOptionsData.set(nodes.treeNodes);
       this.branchItems.set(items);
+      this.optionsLoading.set(false);
       this.autoSelectNode(nodes.selectedNode);
     } else {
       this.branchItems.set([]);
+      this.optionsLoading.set(false);
     }
+  }
+
+  private updateExpandedNodeChildren(
+    currentTree: TreeNode<string>[],
+    target: TreeNode<string>,
+    children: TreeNode<string>[],
+  ): { tree: TreeNode<string>[]; found: boolean } {
+    let found = false;
+    const updatedTree = currentTree.map((node) => {
+      const isTarget =
+        node === target ||
+        (node.data === target.data && node.label === target.label);
+      if (isTarget) {
+        found = true;
+        return { ...node, children };
+      }
+      if (node.children && node.children.length > 0) {
+        const nested = this.updateExpandedNodeChildren(
+          node.children,
+          target,
+          children,
+        );
+        if (nested.found) {
+          found = true;
+          return { ...node, children: nested.tree };
+        }
+      }
+      return node;
+    });
+    return { tree: updatedTree, found };
   }
 
   /**
