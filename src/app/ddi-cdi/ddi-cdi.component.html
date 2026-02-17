@@ -1,73 +1,75 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 <div class="row justify-content-between align-items-center sticky-menu">
-  <div class="col-auto">
-    @if (generatedDdiCdi()) {
-      <button
-        pButton
-        type="button"
-        class="p-button-sm p-button-raised p-button-primary header-button"
-        (click)="submitGenerate()"
-      >
-        <i class="pi pi-angle-double-left"></i>&nbsp;Regenerate
-      </button>
-    }
-  </div>
-  @if (showDVToken()) {
+  @if (configLoaded()) {
     <div class="col-auto">
-      <div class="input-group">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Token:&nbsp;</span>
+      @if (generatedDdiCdi()) {
+        <button
+          pButton
+          type="button"
+          class="p-button-sm p-button-raised p-button-primary header-button"
+          (click)="submitGenerate()"
+        >
+          <i class="pi pi-angle-double-left"></i>&nbsp;Regenerate
+        </button>
+      }
+    </div>
+    @if (showDVToken()) {
+      <div class="col-auto">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text">Token:&nbsp;</span>
+          </div>
+          <input
+            type="password"
+            class="form-control"
+            id="dataverseToken"
+            placeholder="Dataverse API token"
+            [ngModel]="dataverseToken()"
+            (ngModelChange)="dataverseToken.set($event)"
+            #ctrl="ngModel"
+            (onChange)="onUserChange()"
+          />
         </div>
-        <input
-          type="password"
-          class="form-control"
-          id="dataverseToken"
-          placeholder="Dataverse API token"
-          [ngModel]="dataverseToken()"
-          (ngModelChange)="dataverseToken.set($event)"
-          #ctrl="ngModel"
-          (onChange)="onUserChange()"
-        />
       </div>
+    }
+    <div class="col text-center">
+      <h2 class="page-title m-0">Generate DDI-CDI Metadata</h2>
+    </div>
+    <div class="col-auto d-flex" style="gap: 0.5rem">
+      @if (generatedDdiCdi()) {
+        <button
+          pButton
+          type="button"
+          class="p-button-sm p-button-raised p-button-secondary header-button"
+          [disabled]="loading()"
+          (click)="downloadDdiCdi()"
+          title="Download the generated DDI-CDI JSON-LD file"
+        >
+          <i class="pi pi-download"></i>&nbsp;Download
+        </button>
+        <button
+          pButton
+          type="button"
+          class="p-button-sm p-button-raised p-button-primary header-button"
+          [disabled]="loading()"
+          (click)="openInViewer()"
+          title="Saves the DDI-CDI file to your dataset and opens the file page in Dataverse"
+        >
+          Save &amp; Edit&nbsp;<i class="pi pi-external-link"></i>
+        </button>
+      } @else {
+        <button
+          pButton
+          type="button"
+          class="p-button-sm p-button-raised p-button-primary header-button"
+          [disabled]="generateDisabled()"
+          (click)="submitGenerate()"
+        >
+          Generate DDI-CDI&nbsp;<i class="pi pi-angle-double-right"></i>
+        </button>
+      }
     </div>
   }
-  <div class="col text-center">
-    <h2 class="page-title m-0">Generate DDI-CDI Metadata</h2>
-  </div>
-  <div class="col-auto d-flex" style="gap: 0.5rem">
-    @if (generatedDdiCdi()) {
-      <button
-        pButton
-        type="button"
-        class="p-button-sm p-button-raised p-button-secondary header-button"
-        [disabled]="loading()"
-        (click)="downloadDdiCdi()"
-        title="Download the generated DDI-CDI JSON-LD file"
-      >
-        <i class="pi pi-download"></i>&nbsp;Download
-      </button>
-      <button
-        pButton
-        type="button"
-        class="p-button-sm p-button-raised p-button-primary header-button"
-        [disabled]="loading()"
-        (click)="openInViewer()"
-        title="Saves the DDI-CDI file to your dataset and opens the file page in Dataverse"
-      >
-        Save &amp; Edit&nbsp;<i class="pi pi-external-link"></i>
-      </button>
-    } @else {
-      <button
-        pButton
-        type="button"
-        class="p-button-sm p-button-raised p-button-primary header-button"
-        [disabled]="generateDisabled()"
-        (click)="submitGenerate()"
-      >
-        Generate DDI-CDI&nbsp;<i class="pi pi-angle-double-right"></i>
-      </button>
-    }
-  </div>
 </div>
 
 <br />
@@ -115,26 +117,30 @@
     Click on "OK" to start the DDI-CDI generation. The job will run
     asynchronously.
   </p>
-  <p class="m-0" [hidden]="!sendMails()">
-    You will receive an email notification if the generation fails.
-  </p>
+  @if (configLoaded() && sendMails()) {
+    <p class="m-0">
+      You will receive an email notification if the generation fails.
+    </p>
+  }
   <p class="m-0">
     <strong>You can close the browser window</strong> and the generation will
     continue in the background.
   </p>
   <br /><br />
   <div style="text-align: right">
-    <div class="field-checkbox" [hidden]="!sendMails()">
-      <p-checkbox
-        [ngModel]="sendEmailOnSuccess()"
-        (ngModelChange)="sendEmailOnSuccess.set($event)"
-        [binary]="true"
-        inputId="sendEmailOnSuccessCB"
-      ></p-checkbox>
-      <label for="sendEmailOnSuccessCB"
-        >Email me when the generation is completed</label
-      >
-    </div>
+    @if (configLoaded() && sendMails()) {
+      <div class="field-checkbox">
+        <p-checkbox
+          [ngModel]="sendEmailOnSuccess()"
+          (ngModelChange)="sendEmailOnSuccess.set($event)"
+          [binary]="true"
+          inputId="sendEmailOnSuccessCB"
+        ></p-checkbox>
+        <label for="sendEmailOnSuccessCB"
+          >Email me when the generation is completed</label
+        >
+      </div>
+    }
   </div>
   <ng-template pTemplate="footer">
     <p-button

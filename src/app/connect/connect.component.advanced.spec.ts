@@ -142,6 +142,7 @@ class MockPluginService {
   dataverseHeader$ = signal('Dataverse:').asReadonly();
   showDVTokenGetter$ = signal(true).asReadonly();
   showDVToken$ = signal(true).asReadonly();
+  configLoaded$ = signal(true).asReadonly();
   collectionOptionsHidden$ = signal(false).asReadonly();
   collectionFieldEditable$ = signal(true).asReadonly();
   datasetFieldEditable$ = signal(true).asReadonly();

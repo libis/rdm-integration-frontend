@@ -358,10 +358,15 @@ describe('ConnectComponent pilot plugin configuration', () => {
   });
 
   async function createComponent(): Promise<ConnectComponent> {
-    const fixture = TestBed.createComponent(ConnectComponent);
-    fixture.detectChanges();
+    // Simulate APP_INITIALIZER: load config before component creation
+    const pluginService = TestBed.inject(PluginService);
+    const configPromise = pluginService.setConfig();
     const req = httpMock.expectOne('api/frontend/config');
     req.flush(PILOT_CONFIG);
+    await configPromise;
+
+    const fixture = TestBed.createComponent(ConnectComponent);
+    fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
     return fixture.componentInstance;

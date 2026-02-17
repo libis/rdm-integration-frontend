@@ -11,23 +11,27 @@
       <i class="pi pi-angle-double-left"></i>&nbsp;Home
     </button>
   </span>
-  <span class="col-auto" [hidden]="!showDVToken()">
-    <div class="input-group">
-      <div class="input-group-prepend">
-        <span class="input-group-text" style="height: 3rem">Token:&nbsp;</span>
+  @if (configLoaded() && showDVToken()) {
+    <span class="col-auto">
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text" style="height: 3rem"
+            >Token:&nbsp;</span
+          >
+        </div>
+        <input
+          type="password"
+          class="form-control"
+          id="dataverseToken"
+          placeholder="Dataverse API token"
+          [ngModel]="dataverseToken()"
+          (ngModelChange)="dataverseToken.set($event)"
+          #ctrl="ngModel"
+          (onChange)="onUserChange()"
+        />
       </div>
-      <input
-        type="password"
-        class="form-control"
-        id="dataverseToken"
-        placeholder="Dataverse API token"
-        [ngModel]="dataverseToken()"
-        (ngModelChange)="dataverseToken.set($event)"
-        #ctrl="ngModel"
-        (onChange)="onUserChange()"
-      />
-    </div>
-  </span>
+    </span>
+  }
   <span
     class="col-auto"
     style="width: 30rem; position: relative; top: 0.275rem"
@@ -66,23 +70,27 @@
     Click on "OK" to start the computation. You can close the window and the
     computation will continue.
   </p>
-  <p class="m-0" [hidden]="!sendMails()">
-    You will receive an email to notify you if the computation has been
-    unsuccessful.
-  </p>
+  @if (configLoaded() && sendMails()) {
+    <p class="m-0">
+      You will receive an email to notify you if the computation has been
+      unsuccessful.
+    </p>
+  }
   <br /><br />
   <div style="text-align: right">
-    <div class="field-checkbox" [hidden]="!sendMails()">
-      <p-checkbox
-        [ngModel]="sendEmailOnSuccess()"
-        (ngModelChange)="sendEmailOnSuccess.set($event)"
-        [binary]="true"
-        inputId="sendEmailOnSuccessCB"
-      ></p-checkbox>
-      <label for="sendEmailOnSuccesCB"
-        >Email me when the computation is completed</label
-      >
-    </div>
+    @if (configLoaded() && sendMails()) {
+      <div class="field-checkbox">
+        <p-checkbox
+          [ngModel]="sendEmailOnSuccess()"
+          (ngModelChange)="sendEmailOnSuccess.set($event)"
+          [binary]="true"
+          inputId="sendEmailOnSuccessCB"
+        ></p-checkbox>
+        <label for="sendEmailOnSuccesCB"
+          >Email me when the computation is completed</label
+        >
+      </div>
+    }
   </div>
   <ng-template pTemplate="footer">
     <p-button

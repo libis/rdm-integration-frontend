@@ -42,6 +42,8 @@ export class PluginService {
   // Internal signals for reactive state
   private readonly configSignal = signal<Config>(DEFAULT_CONFIG);
   private readonly pluginsMap = signal<Map<string, RepoPlugin>>(new Map());
+  private readonly _configLoaded = signal<boolean>(false);
+  public readonly configLoaded$ = computed(() => this._configLoaded());
 
   // Computed signals for public access (cleaner reactive API)
   readonly dataverseHeader$ = computed(
@@ -90,6 +92,11 @@ export class PluginService {
     });
     this.configSignal.set(c);
     this.pluginsMap.set(newMap);
+    this._configLoaded.set(true);
+  }
+
+  markConfigLoaded(): void {
+    this._configLoaded.set(true);
   }
 
   getGlobusPlugin(): RepoPlugin | undefined {

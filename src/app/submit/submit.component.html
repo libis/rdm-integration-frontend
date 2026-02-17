@@ -82,27 +82,33 @@
     Click on "OK" to start the update/transfer. You can close the window and the
     transfer will continue.
   </p>
-  <p class="m-0" [hidden]="!sendMails() || isGlobus()">
-    You will receive an email to notify you if the update/transfer has been
-    unsuccessful.
-  </p>
-  <p class="m-0" [hidden]="!isGlobus()">
-    Globus transfers run asynchronously; email on success may not be available
-    for this source.
-  </p>
+  @if (sendMails() && !isGlobus()) {
+    <p class="m-0">
+      You will receive an email to notify you if the update/transfer has been
+      unsuccessful.
+    </p>
+  }
+  @if (isGlobus()) {
+    <p class="m-0">
+      Globus transfers run asynchronously; email on success may not be available
+      for this source.
+    </p>
+  }
   <br /><br />
   <div style="text-align: right">
-    <div class="field-checkbox" [hidden]="!sendMails() || isGlobus()">
-      <p-checkbox
-        [ngModel]="sendEmailOnSuccess()"
-        (ngModelChange)="sendEmailOnSuccess.set($event)"
-        [binary]="true"
-        inputId="sendEmailOnSuccessCB"
-      ></p-checkbox>
-      <label for="sendEmailOnSuccesCB"
-        >Email me when the update/transfer is completed</label
-      >
-    </div>
+    @if (sendMails() && !isGlobus()) {
+      <div class="field-checkbox">
+        <p-checkbox
+          [ngModel]="sendEmailOnSuccess()"
+          (ngModelChange)="sendEmailOnSuccess.set($event)"
+          [binary]="true"
+          inputId="sendEmailOnSuccessCB"
+        ></p-checkbox>
+        <label for="sendEmailOnSuccesCB"
+          >Email me when the update/transfer is completed</label
+        >
+      </div>
+    }
   </div>
   <ng-template pTemplate="footer">
     <p-button

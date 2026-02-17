@@ -40,6 +40,7 @@ describe('ConnectComponent', () => {
       dataverseHeader$: signal('Dataverse').asReadonly(),
       showDVTokenGetter$: signal(false).asReadonly(),
       showDVToken$: signal(false).asReadonly(),
+      configLoaded$: signal(true).asReadonly(),
       collectionOptionsHidden$: signal(false).asReadonly(),
       collectionFieldEditable$: signal(true).asReadonly(),
       datasetFieldEditable$: signal(true).asReadonly(),

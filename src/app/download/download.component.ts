@@ -228,6 +228,7 @@ export class DownloadComponent
     this.pluginService.datasetFieldEditable$(),
   );
   readonly externalURL = computed(() => this.pluginService.externalURL$());
+  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
@@ -262,8 +263,6 @@ export class DownloadComponent
   }
 
   async ngOnInit() {
-    await this.pluginService.setConfig();
-
     // Load dataverseToken from localStorage if storeDvToken is enabled
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');

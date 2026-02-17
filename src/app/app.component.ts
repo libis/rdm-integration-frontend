@@ -356,8 +356,10 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    // Ensure config is loaded before checking login
-    await this.pluginService.setConfig();
+    // Config is expected to be loaded via APP_INITIALIZER; keep this guard for tests and fallbacks.
+    if (!this.pluginService.configLoaded$()) {
+      await this.pluginService.setConfig();
+    }
 
     // Check if user is logged in
     this.dataService.getUserInfo().subscribe({

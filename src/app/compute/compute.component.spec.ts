@@ -80,6 +80,7 @@ class MockPluginService {
 
   // Signals for computed signal consumers
   readonly showDVToken$ = this._showDvToken.asReadonly();
+  readonly configLoaded$ = signal(true).asReadonly();
   readonly datasetFieldEditable$ = this._datasetEditable.asReadonly();
   readonly sendMails$ = this._mailEnabled.asReadonly();
   readonly storeDvToken$ = this._storeDvToken.asReadonly();

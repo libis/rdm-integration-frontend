@@ -149,6 +149,7 @@ describe('SubmitComponent', () => {
     pluginServiceStub = {
       sendMails: () => true,
       sendMails$: signal(true).asReadonly(),
+      configLoaded$: signal(true).asReadonly(),
     };
 
     routerStub = {

@@ -2,7 +2,9 @@
 
 import {
   enableProdMode,
+  inject,
   importProvidersFrom,
+  provideAppInitializer,
   provideZonelessChangeDetection,
 } from '@angular/core';
 
@@ -35,9 +37,21 @@ import { TreeTableModule } from 'primeng/treetable';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routs';
 import { environment } from './environments/environment';
+import { PluginService } from './app/plugin.service';
 
 if (environment.production) {
   enableProdMode();
+}
+
+async function initializeApp(): Promise<void> {
+  const pluginService = inject(PluginService);
+  try {
+    await pluginService.setConfig();
+  } catch (error) {
+    console.error('Failed to load config:', error);
+    // Allow app to continue with defaults
+    pluginService.markConfigLoaded();
+  }
 }
 
 bootstrapApplication(AppComponent, {
@@ -65,6 +79,7 @@ bootstrapApplication(AppComponent, {
     ),
     provideHttpClient(withInterceptorsFromDi()),
     provideZonelessChangeDetection(),
+    provideAppInitializer(initializeApp),
     providePrimeNG({
       ripple: false, // disable ripple effects globally
       theme: {

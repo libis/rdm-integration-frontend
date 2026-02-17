@@ -31,6 +31,7 @@ describe('DdiCdiComponent', () => {
   let dvObjectLookupServiceStub: jasmine.SpyObj<DvObjectLookupService>;
   let pluginServiceStub: Partial<PluginService> & {
     showDVToken$: WritableSignal<boolean>;
+    configLoaded$: WritableSignal<boolean>;
     datasetFieldEditable$: WritableSignal<boolean>;
     dataverseHeader$: WritableSignal<string>;
     sendMails$: WritableSignal<boolean>;
@@ -87,6 +88,7 @@ describe('DdiCdiComponent', () => {
     // Create pluginService stub with both methods and signals
     pluginServiceStub = {
       showDVToken$: signal(false),
+      configLoaded$: signal(true),
       datasetFieldEditable$: signal(true),
       dataverseHeader$: signal('Dataverse'),
       sendMails$: signal(false),
@@ -158,11 +160,11 @@ describe('DdiCdiComponent', () => {
   });
 
   describe('ngOnInit', () => {
-    it('should initialize and call setConfig', async () => {
+    it('should initialize without calling setConfig (loaded via APP_INITIALIZER)', async () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
       await component.ngOnInit();
-      expect(pluginServiceStub.setConfig).toHaveBeenCalled();
+      expect(pluginServiceStub.setConfig).not.toHaveBeenCalled();
     });
 
     it('should set datasetId from query params', async () => {

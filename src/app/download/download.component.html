@@ -80,23 +80,25 @@
 </p-dialog>
 
 <div class="row justify-content-between align-items-center sticky-menu">
-  <div class="col-auto" [hidden]="!showDVToken()">
-    <div class="input-group">
-      <div class="input-group-prepend">
-        <span class="input-group-text">Token:&nbsp;</span>
+  @if (configLoaded() && showDVToken()) {
+    <div class="col-auto">
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text">Token:&nbsp;</span>
+        </div>
+        <input
+          type="password"
+          class="form-control"
+          id="dataverseToken"
+          placeholder="Dataverse API token"
+          [ngModel]="dataverseToken()"
+          (ngModelChange)="dataverseToken.set($event)"
+          #ctrl="ngModel"
+          (onChange)="onUserChange()"
+        />
       </div>
-      <input
-        type="password"
-        class="form-control"
-        id="dataverseToken"
-        placeholder="Dataverse API token"
-        [ngModel]="dataverseToken()"
-        (ngModelChange)="dataverseToken.set($event)"
-        #ctrl="ngModel"
-        (onChange)="onUserChange()"
-      />
     </div>
-  </div>
+  }
   <div class="col text-center">
     <h2 class="page-title m-0">Download to Globus endpoint</h2>
   </div>

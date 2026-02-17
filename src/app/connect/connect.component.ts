@@ -351,6 +351,7 @@ export class ConnectComponent
     this.pluginService.createNewDatasetEnabled$(),
   );
   readonly externalURL = computed(() => this.pluginService.externalURL$());
+  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
 
   repoSearchSubject: Subject<string> = new Subject();
   collectionSearchSubject: Subject<string> = new Subject();
@@ -387,7 +388,6 @@ export class ConnectComponent
 
   async ngOnInit() {
     this.attemptFullRestore('[ngOnInit]');
-    await this.pluginService.setConfig();
 
     // Load dataverseToken from localStorage if storeDvToken is enabled
     if (this.pluginService.isStoreDvToken()) {

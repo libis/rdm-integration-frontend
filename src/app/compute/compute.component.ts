@@ -130,6 +130,7 @@ export class ComputeComponent
     this.pluginService.dataverseHeader$(),
   );
   readonly sendMails = computed(() => this.pluginService.sendMails$());
+  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
@@ -139,8 +140,6 @@ export class ComputeComponent
   }
 
   async ngOnInit() {
-    await this.pluginService.setConfig();
-
     // Load dataverseToken from localStorage if storeDvToken is enabled
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');

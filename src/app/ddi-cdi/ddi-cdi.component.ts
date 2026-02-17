@@ -134,6 +134,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   );
   readonly sendMails = computed(() => this.pluginService.sendMails$());
   readonly externalURL = computed(() => this.pluginService.externalURL$());
+  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -154,8 +155,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   async ngOnInit() {
-    await this.pluginService.setConfig();
-
     // Load dataverseToken from localStorage if storeDvToken is enabled
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');
