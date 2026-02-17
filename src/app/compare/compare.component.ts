@@ -357,7 +357,10 @@ export class CompareComponent
     this.updatePollingSubscription = undefined;
   }
 
-  private getUpdatedData(cnt: number, generation = this.updatePollingGeneration): void {
+  private getUpdatedData(
+    cnt: number,
+    generation = this.updatePollingGeneration,
+  ): void {
     if (
       generation !== this.updatePollingGeneration ||
       !this.updatePollingActive
