@@ -168,6 +168,37 @@ describe('DataService', () => {
     req.flush(mockResponse);
   });
 
+  it('should call getDownloadableFiles with downloadId', () => {
+    const pid = 'doi:456';
+    const token = 'dv-token';
+    const dlId = 'dl-abc-123';
+    const mockResponse = { id: '3', data: [], preSelectedIds: [10, 20] };
+
+    service.getDownloadableFiles(pid, token, dlId).subscribe((response) => {
+      expect(response.id).toBe('3');
+      expect(response.preSelectedIds).toEqual([10, 20]);
+    });
+
+    const req = httpMock.expectOne('api/common/downloadable');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.persistentId).toBe(pid);
+    expect(req.request.body.dataverseKey).toBe(token);
+    expect(req.request.body.downloadId).toBe(dlId);
+    req.flush(mockResponse);
+  });
+
+  it('should not send downloadId when undefined', () => {
+    const pid = 'doi:789';
+    const token = 'dv-token';
+    const mockResponse = { id: '4', data: [] };
+
+    service.getDownloadableFiles(pid, token).subscribe();
+
+    const req = httpMock.expectOne('api/common/downloadable');
+    expect(req.request.body.downloadId).toBeUndefined();
+    req.flush(mockResponse);
+  });
+
   it('should call generateDdiCdi', () => {
     const reqBody = {
       persistentId: 'doi:ddi',

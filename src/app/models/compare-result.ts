@@ -18,6 +18,7 @@ export interface CompareResult {
   rejectedName?: string[];
   allowedFileNamePattern?: string;
   allowedFolderPathPattern?: string;
+  preSelectedIds?: number[];
 }
 
 export interface CachedResponse {

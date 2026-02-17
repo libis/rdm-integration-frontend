@@ -105,11 +105,15 @@ export class DataService {
   getDownloadableFiles(
     pid: string,
     dataverse_token?: string,
+    downloadId?: string,
   ): Observable<CompareResult> {
-    const req = {
+    const req: Record<string, string | undefined> = {
       persistentId: pid,
       dataverseKey: dataverse_token,
     };
+    if (downloadId) {
+      req['downloadId'] = downloadId;
+    }
     return this.http.post<CompareResult>(
       this.common_get_downloadable_files_url,
       req,

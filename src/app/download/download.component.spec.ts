@@ -883,6 +883,206 @@ describe('DownloadComponent', () => {
     expect(component.rootNodeChildren()[0].data?.id).toBe('a');
   });
 
+  it('onDatasetChange applies preSelectedIds from response', async () => {
+    initComponent();
+    const payload: CompareResult = {
+      data: [
+        {
+          id: 'file1.txt',
+          name: 'file1.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 42 },
+          },
+        } as Datafile,
+        {
+          id: 'data/file2.csv',
+          name: 'file2.csv',
+          path: 'data',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 99 },
+          },
+        } as Datafile,
+        {
+          id: 'file3.dat',
+          name: 'file3.dat',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 7 },
+          },
+        } as Datafile,
+      ],
+      id: 'root',
+      preSelectedIds: [42, 99],
+    };
+    dataService.response = payload;
+    component.datasetId.set('doi:test');
+    component.downloadId.set('dl-abc');
+    component.onDatasetChange();
+    await new Promise<void>((r) => setTimeout(r));
+    // File IDs 42 and 99 should be preselected (action=Download)
+    const map = component.rowNodeMap();
+    const node42 = map.get('file1.txt');
+    const node99 = map.get('data/file2.csv');
+    const node7 = map.get('file3.dat');
+    expect(node42?.data?.action).toBe(Fileaction.Download);
+    expect(node99?.data?.action).toBe(Fileaction.Download);
+    expect(node7?.data?.action).toBe(Fileaction.Ignore);
+  });
+
+  it('onDatasetChange without preSelectedIds leaves all files as-is', async () => {
+    initComponent();
+    const payload: CompareResult = {
+      data: [
+        {
+          id: 'file1.txt',
+          name: 'file1.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 42 },
+          },
+        } as Datafile,
+      ],
+      id: 'root',
+    };
+    dataService.response = payload;
+    component.datasetId.set('doi:test');
+    component.onDatasetChange();
+    await new Promise<void>((r) => setTimeout(r));
+    const map = component.rowNodeMap();
+    const node = map.get('file1.txt');
+    expect(node?.data?.action).toBe(Fileaction.Ignore);
+  });
+
+  it('onDatasetChange clears stale preSelected ids when no downloadId is present', async () => {
+    initComponent();
+    component.preSelectedFileIds.set(new Set(['42']));
+    component.downloadId.set(undefined);
+    const payload: CompareResult = {
+      data: [
+        {
+          id: 'file1.txt',
+          name: 'file1.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 42 },
+          },
+        } as Datafile,
+      ],
+      id: 'root',
+    };
+    dataService.response = payload;
+    component.datasetId.set('doi:test');
+    component.onDatasetChange();
+    await new Promise<void>((r) => setTimeout(r));
+    const map = component.rowNodeMap();
+    const node = map.get('file1.txt');
+    expect(component.preSelectedFileIds().size).toBe(0);
+    expect(node?.data?.action).toBe(Fileaction.Ignore);
+  });
+
+  it('onDatasetChange clears stale client-side preselection when downloadId is set but server returns no preSelectedIds', async () => {
+    initComponent();
+    // Simulate client-side preselection from extractPreSelectedFileIds (preview URL flow)
+    component.preSelectedFileIds.set(new Set(['42']));
+    component.downloadId.set('dl-abc');
+    const payload: CompareResult = {
+      data: [
+        {
+          id: 'file1.txt',
+          name: 'file1.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 42 },
+          },
+        } as Datafile,
+      ],
+      id: 'root',
+      // No preSelectedIds — server-side resolution failed
+    };
+    dataService.response = payload;
+    component.datasetId.set('doi:test');
+    component.onDatasetChange();
+    await new Promise<void>((r) => setTimeout(r));
+    // Server is authoritative: stale client-side preselection must be cleared
+    expect(component.preSelectedFileIds().size).toBe(0);
+    const map = component.rowNodeMap();
+    expect(map.get('file1.txt')?.data?.action).toBe(Fileaction.Ignore);
+  });
+
+  it('onDatasetChange clears stale preselection when dataset changes even if downloadId remains', async () => {
+    initComponent();
+
+    const oldPayload: CompareResult = {
+      data: [
+        {
+          id: 'file-old.txt',
+          name: 'file-old.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 42 },
+          },
+        } as Datafile,
+      ],
+      id: 'root',
+      preSelectedIds: [42],
+    };
+    component.downloadId.set('dl-abc');
+    component.datasetId.set('doi:old');
+    dataService.response = oldPayload;
+    component.onDatasetChange();
+    await new Promise<void>((r) => setTimeout(r));
+    let map = component.rowNodeMap();
+    expect(map.get('file-old.txt')?.data?.action).toBe(Fileaction.Download);
+    expect(component.preSelectedFileIds().size).toBe(1);
+
+    const newPayload: CompareResult = {
+      data: [
+        {
+          id: 'file-new.txt',
+          name: 'file-new.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: {
+            isFile: true,
+            destinationFile: { id: 42 },
+          },
+        } as Datafile,
+      ],
+      id: 'root',
+    };
+    component.datasetId.set('doi:new');
+    dataService.response = newPayload;
+    component.onDatasetChange();
+    await new Promise<void>((r) => setTimeout(r));
+
+    map = component.rowNodeMap();
+    expect(component.preSelectedFileIds().size).toBe(0);
+    expect(map.get('file-new.txt')?.data?.action).toBe(Fileaction.Ignore);
+  });
+
   it('onDatasetChange surfaces errors from service', async () => {
     initComponent();
     dataService.error = 'service-down';

@@ -127,6 +127,7 @@ export class DownloadComponent
 
   // INTERNAL STATE VARIABLES
   private readonly subscriptions = new Set<Subscription>();
+  private lastLoadedDatasetId: string | undefined = undefined;
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   downloadRequested = signal(false);
@@ -714,10 +715,24 @@ export class DownloadComponent
   }
 
   onDatasetChange() {
+    const currentDatasetId = this.datasetId();
+    // If user switched dataset, drop stale preselection from previous dataset.
+    if (
+      currentDatasetId &&
+      this.lastLoadedDatasetId &&
+      this.lastLoadedDatasetId !== currentDatasetId
+    ) {
+      this.preSelectedFileIds.set(new Set());
+    }
+
     this.loading.set(true);
     this.trackSubscription(
       this.dataService
-        .getDownloadableFiles(this.datasetId()!, this.dataverseToken())
+        .getDownloadableFiles(
+          currentDatasetId!,
+          this.dataverseToken(),
+          this.downloadId(),
+        )
         .subscribe({
           next: (data) => {
             data.data = data.data?.sort((o1, o2) =>
@@ -727,6 +742,7 @@ export class DownloadComponent
                 : 1,
             );
             this.setData(data);
+            this.lastLoadedDatasetId = currentDatasetId;
           },
           error: (err) => {
             this.loading.set(false);
@@ -766,6 +782,17 @@ export class DownloadComponent
     this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
       this.rootNodeChildren.set(rootNode.children);
+    }
+
+    // The backend response is the single source of truth for pre-selection.
+    // If the server returned preSelectedIds, use them; otherwise clear any
+    // stale client-side preselection (e.g. from extractPreSelectedFileIds
+    // before OAuth) so that an expired or failed server-side resolution does
+    // not silently apply outdated file selections.
+    if (data.preSelectedIds && data.preSelectedIds.length > 0) {
+      this.preSelectedFileIds.set(new Set(data.preSelectedIds.map(String)));
+    } else {
+      this.preSelectedFileIds.set(new Set());
     }
 
     // Apply pre-selection from downloadId if available
