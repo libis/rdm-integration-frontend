@@ -242,6 +242,14 @@
       </div>
     </div>
   </div>
+} @else if (loading()) {
+  <div class="mb-4 mt-4 text-center">
+    <p-progressSpinner
+      strokeWidth="4"
+      [style]="{ width: '3rem', height: '3rem' }"
+    ></p-progressSpinner>
+    <p class="text-muted mt-2">Loading dataset files&hellip;</p>
+  </div>
 } @else {
   <div class="mb-4 mt-4 text-center">
     <p class="text-muted">
