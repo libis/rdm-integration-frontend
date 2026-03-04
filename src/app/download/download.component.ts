@@ -231,7 +231,6 @@ export class DownloadComponent
     this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
   }
 
-
   readonly hasDownloadSelection = computed(() => {
     // Row actions are mutated in place; track explicit trigger for zoneless refresh.
     this.refreshTrigger();
