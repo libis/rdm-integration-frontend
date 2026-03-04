@@ -1098,6 +1098,82 @@ describe('DownloadComponent', () => {
     ).toBeTrue();
   });
 
+  it('onDatasetChange guards against stale result when datasetId changes before response arrives', async () => {
+    initComponent();
+    const stalePayload: CompareResult = {
+      data: [
+        {
+          id: 'stale-file',
+          name: 'stale-file.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+        } as Datafile,
+      ],
+      id: 'stale-root',
+    };
+    dataService.response = stalePayload;
+    component.datasetId.set('doi:first');
+    component.onDatasetChange();
+
+    // Switch datasetId BEFORE the async timeout fires (no second onDatasetChange call).
+    // The guard in the `next` callback must detect the mismatch and discard.
+    component.datasetId.set('doi:second');
+
+    await new Promise<void>((r) => setTimeout(r, 10));
+
+    // Stale result must have been discarded; data stays undefined and loading stays true.
+    expect(component.data()).toBeUndefined();
+    expect(component.loading()).toBeTrue();
+  });
+
+  it('onDatasetChange cancels in-flight request and only applies second response', async () => {
+    initComponent();
+    const firstPayload: CompareResult = {
+      data: [
+        {
+          id: 'first-file',
+          name: 'first-file.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+        } as Datafile,
+      ],
+      id: 'first-root',
+    };
+    const secondPayload: CompareResult = {
+      data: [
+        {
+          id: 'second-file',
+          name: 'second-file.txt',
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+        } as Datafile,
+      ],
+      id: 'second-root',
+    };
+
+    // Start first request for doi:first.
+    dataService.response = firstPayload;
+    component.datasetId.set('doi:first');
+    component.onDatasetChange();
+
+    // Switch to doi:second and start a new request before the first completes.
+    // onDatasetChange must unsubscribe the first in-flight subscription.
+    dataService.response = secondPayload;
+    component.datasetId.set('doi:second');
+    component.onDatasetChange();
+
+    await new Promise<void>((r) => setTimeout(r, 10));
+
+    // Only the second dataset's result should be applied.
+    expect(component.data()?.id).toBe('second-root');
+    expect(component.loading()).toBeFalse();
+    // First dataset's file must not appear in the tree.
+    expect(component.rowNodeMap().has('first-file')).toBeFalse();
+  });
+
   it('ngOnInit processes globus callback state and fetches token', async () => {
     let datasetSpy!: jasmine.Spy<() => void>;
     initComponent(

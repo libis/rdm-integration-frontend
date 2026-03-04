@@ -128,6 +128,8 @@ export class DownloadComponent
   // INTERNAL STATE VARIABLES
   private readonly subscriptions = new Set<Subscription>();
   private lastLoadedDatasetId: string | undefined = undefined;
+  /** Subscription for the currently in-flight getDownloadableFiles request. */
+  private listingSubscription: Subscription | null = null;
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   downloadRequested = signal(false);
@@ -737,57 +739,80 @@ export class DownloadComponent
 
   onDatasetChange() {
     const currentDatasetId = this.datasetId();
-    // If user switched dataset, drop stale preselection from previous dataset.
+
+    // Cancel any in-flight listing from a previous dataset selection so it
+    // can never overwrite the current view when it eventually resolves.
+    if (this.listingSubscription) {
+      this.listingSubscription.unsubscribe();
+      this.listingSubscription = null;
+    }
+
+    // If user switched dataset, drop stale preselection and clear stale tree
+    // data so the old dataset's files never remain visible during the load.
     if (
       currentDatasetId &&
       this.lastLoadedDatasetId &&
       this.lastLoadedDatasetId !== currentDatasetId
     ) {
       this.preSelectedFileIds.set(new Set());
+      this.data.set(undefined);
+      this.rootNodeChildren.set([]);
+      this.rowNodeMap.set(new Map<string, TreeNode<Datafile>>());
     }
 
     this.loading.set(true);
-    this.trackSubscription(
-      this.dataService
-        .getDownloadableFiles(
-          currentDatasetId!,
-          this.dataverseToken(),
-          this.downloadId(),
-        )
-        .subscribe({
-          next: (data) => {
-            data.data = data.data?.sort((o1, o2) =>
-              (o1.id === undefined ? '' : o1.id) <
-              (o2.id === undefined ? '' : o2.id)
-                ? -1
-                : 1,
+    const sub = this.dataService
+      .getDownloadableFiles(
+        currentDatasetId!,
+        this.dataverseToken(),
+        this.downloadId(),
+      )
+      .subscribe({
+        next: (data) => {
+          this.listingSubscription = null;
+          // Guard: if the user switched datasets while this request was
+          // in-flight, discard the stale result entirely.
+          if (this.datasetId() !== currentDatasetId) {
+            return;
+          }
+          data.data = data.data?.sort((o1, o2) =>
+            (o1.id === undefined ? '' : o1.id) <
+            (o2.id === undefined ? '' : o2.id)
+              ? -1
+              : 1,
+          );
+          this.setData(data);
+          this.lastLoadedDatasetId = currentDatasetId;
+        },
+        error: (err) => {
+          this.listingSubscription = null;
+          // Guard: ignore stale errors if the dataset has already changed.
+          if (this.datasetId() !== currentDatasetId) {
+            return;
+          }
+          this.loading.set(false);
+          // Check if this is an anonymized preview URL case
+          if (this.accessMode() === 'preview' && this.dataverseToken()) {
+            this.notificationService.showError(
+              'Anonymous Preview URLs are not supported for Globus downloads. ' +
+                'Please ask the dataset owner to create a General Preview URL instead. ' +
+                'Anonymous Preview URLs (for blind peer review) are restricted by Dataverse ' +
+                'and cannot access the Globus file transfer APIs.',
             );
-            this.setData(data);
-            this.lastLoadedDatasetId = currentDatasetId;
-          },
-          error: (err) => {
-            this.loading.set(false);
-            // Check if this is an anonymized preview URL case
-            if (this.accessMode() === 'preview' && this.dataverseToken()) {
-              this.notificationService.showError(
-                'Anonymous Preview URLs are not supported for Globus downloads. ' +
-                  'Please ask the dataset owner to create a General Preview URL instead. ' +
-                  'Anonymous Preview URLs (for blind peer review) are restricted by Dataverse ' +
-                  'and cannot access the Globus file transfer APIs.',
-              );
-            } else if (this.accessMode() === 'guest') {
-              // Guest access was denied - show preview URL option
-              this.accessDeniedForGuest.set(true);
-              this.showGuestLoginPopup.set(true);
-              this.showPreviewUrlInput.set(true);
-            } else {
-              this.notificationService.showError(
-                `Getting downloadable files failed: ${err.error}`,
-              );
-            }
-          },
-        }),
-    );
+          } else if (this.accessMode() === 'guest') {
+            // Guest access was denied - show preview URL option
+            this.accessDeniedForGuest.set(true);
+            this.showGuestLoginPopup.set(true);
+            this.showPreviewUrlInput.set(true);
+          } else {
+            this.notificationService.showError(
+              `Getting downloadable files failed: ${err.error}`,
+            );
+          }
+        },
+      });
+    this.listingSubscription = sub;
+    this.trackSubscription(sub);
   }
 
   setData(data: CompareResult): void {
