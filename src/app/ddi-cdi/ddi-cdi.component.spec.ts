@@ -9,7 +9,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Observable, Subscription, of, throwError } from 'rxjs';
 
 import { DdiCdiComponent } from './ddi-cdi.component';
 import { DataService } from '../data.service';
@@ -193,6 +193,29 @@ describe('DdiCdiComponent', () => {
       component.ngOnDestroy();
       expect(mockSubscription.unsubscribe).toHaveBeenCalled();
       expect((component as any).subscriptions.size).toBe(0);
+    });
+
+    it('should cancel active polling without showing an error', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      let pollUnsubscribed = false;
+      dataServiceStub.getCachedDdiCdiData.and.returnValue(
+        new Observable(() => {
+          return new Subscription(() => {
+            pollUnsubscribed = true;
+          });
+        }),
+      );
+
+      component.loading.set(true);
+      void component['getDdiCdiData']({ key: 'job-123' });
+      await Promise.resolve();
+
+      component.ngOnDestroy();
+      await Promise.resolve();
+
+      expect(pollUnsubscribed).toBeTrue();
+      expect(notificationServiceStub.showError).not.toHaveBeenCalled();
     });
   });
 
@@ -465,7 +488,8 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component['getDdiCdiData'](mockKey);
+      component.loading.set(true);
+      void component['getDdiCdiData'](mockKey);
       await new Promise((resolve) => setTimeout(resolve, 100));
       expect(utilsServiceStub.sleep).toHaveBeenCalled();
     });
@@ -477,7 +501,8 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component['getDdiCdiData'](mockKey);
+      component.loading.set(true);
+      void component['getDdiCdiData'](mockKey);
       setTimeout(() => {
         expect(component.generatedDdiCdi()).toBe(GENERATED_TURTLE);
         expect(component.output()).toBe('output');
@@ -496,7 +521,8 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component['getDdiCdiData'](mockKey);
+      component.loading.set(true);
+      void component['getDdiCdiData'](mockKey);
       setTimeout(() => {
         expect(notificationServiceStub.showError).toHaveBeenCalledWith(
           'Generation error',
@@ -512,7 +538,8 @@ describe('DdiCdiComponent', () => {
       );
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      component['getDdiCdiData'](mockKey);
+      component.loading.set(true);
+      void component['getDdiCdiData'](mockKey);
       setTimeout(() => {
         expect(notificationServiceStub.showError).toHaveBeenCalledWith(
           'Getting DDI-CDI results failed: Fetch failed',
@@ -852,8 +879,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-
-        component['getDdiCdiData'](mockKey);
+        component.loading.set(true);
+        void component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
           expect(callCount).toBeGreaterThanOrEqual(3);
@@ -876,8 +903,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-
-        component['getDdiCdiData'](mockKey);
+        component.loading.set(true);
+        void component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
           expect(notificationServiceStub.showError).toHaveBeenCalledWith(
@@ -901,8 +928,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-
-        component['getDdiCdiData'](mockKey);
+        component.loading.set(true);
+        void component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
           expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
@@ -935,8 +962,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-
-        component['getDdiCdiData'](mockKey);
+        component.loading.set(true);
+        void component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
           expect(component.output()).toBe('Final output');
@@ -1034,8 +1061,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-
-        component['getDdiCdiData'](mockKey);
+        component.loading.set(true);
+        void component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
           expect(component.loading()).toBe(false);
@@ -1057,8 +1084,8 @@ describe('DdiCdiComponent', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
         fixture.detectChanges();
-
-        component['getDdiCdiData'](mockKey);
+        component.loading.set(true);
+        void component['getDdiCdiData'](mockKey);
 
         setTimeout(() => {
           expect(notificationServiceStub.showSuccess).not.toHaveBeenCalled();

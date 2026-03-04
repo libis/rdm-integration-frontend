@@ -40,7 +40,15 @@ import { TabsModule } from 'primeng/tabs';
 import { AutosizeModule } from 'ngx-autosize';
 
 // RxJS
-import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
+import {
+  EmptyError,
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 
 // Constants and types
 import {
@@ -81,6 +89,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
+  private readonly cancelPoll$ = new Subject<void>();
+  private pollGeneration = 0;
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
@@ -199,6 +209,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   ngOnDestroy(): void {
+    this.cancelPolling();
+    this.cancelPoll$.complete();
+
     // Clean up all subscriptions
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
@@ -362,6 +375,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   onDatasetChange() {
+    this.cancelPolling();
+
     this.loading.set(true);
     this.output.set('');
     this.outputDisabled.set(true);
@@ -495,6 +510,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   continueSubmitGenerate(): void {
+    this.cancelPolling();
+
     this.submitPopup.set(false);
     this.activeTab.set('console');
     const currentSendEmail = this.sendEmailOnSuccess();
@@ -538,11 +555,17 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   private async getDdiCdiData(key: Key): Promise<void> {
-    while (this.loading()) {
+    const generation = ++this.pollGeneration;
+    while (this.loading() && generation === this.pollGeneration) {
       try {
         const res = await firstValueFrom(
-          this.dataService.getCachedDdiCdiData(key),
+          this.dataService
+            .getCachedDdiCdiData(key)
+            .pipe(takeUntil(this.cancelPoll$)),
         );
+        if (generation !== this.pollGeneration) {
+          return;
+        }
         if (res.ready === true) {
           this.loading.set(false);
           if (res.res) {
@@ -568,6 +591,9 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         }
         await this.utils.sleep(1000);
       } catch (err: unknown) {
+        if (err instanceof EmptyError || generation !== this.pollGeneration) {
+          return;
+        }
         const error = err as { error?: string };
         this.loading.set(false);
         this.notificationService.showError(
@@ -575,6 +601,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         );
       }
     }
+  }
+
+  private cancelPolling(): void {
+    this.pollGeneration++;
+    this.cancelPoll$.next();
   }
 
   private resetOutputState(): void {
