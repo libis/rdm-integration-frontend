@@ -169,12 +169,22 @@ export class TransferProgressCardComponent
 
   readonly filesSummary = computed(() => {
     const s = this.status();
-    const total = s?.files ?? 0;
+    const reportedTotal = s?.files ?? 0;
     const transferred = s?.files_transferred ?? 0;
     const skipped = s?.files_skipped ?? 0;
     const failed = s?.files_failed ?? 0;
+    const expectedGlobusTotal = this.isGlobus()
+      ? this.countGlobusPlannedUploads(this.data())
+      : 0;
+    const total = Math.max(reportedTotal, expectedGlobusTotal);
+    let processed = transferred + skipped;
+    if (this.isSuccessStatus(s?.status) && total > 0 && processed < total) {
+      // Globus can report a smaller "files" value while still returning SUCCEEDED.
+      // Keep the visual summary aligned with the selected upload set.
+      processed = total;
+    }
     return {
-      processed: transferred + skipped,
+      processed,
       total,
       failed,
     };
@@ -406,6 +416,19 @@ export class TransferProgressCardComponent
       skipped,
       failed,
     };
+  }
+
+  private countGlobusPlannedUploads(datafiles?: Datafile[] | null): number {
+    if (!datafiles || datafiles.length === 0) {
+      return 0;
+    }
+    let total = 0;
+    for (const file of datafiles) {
+      if (file.action === Fileaction.Copy || file.action === Fileaction.Update) {
+        total++;
+      }
+    }
+    return total;
   }
 
   private isTerminalStatus(status?: string): boolean {

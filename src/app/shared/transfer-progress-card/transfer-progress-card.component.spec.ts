@@ -359,6 +359,63 @@ describe('TransferProgressCardComponent', () => {
     expect(summary.failed).toBe(5);
   });
 
+  it('uses selected globus upload count as a stable denominator', async () => {
+    submit.statuses = [
+      {
+        task_id: 'task-files-stable',
+        status: 'ACTIVE',
+        files: 2,
+        files_transferred: 1,
+        files_skipped: 0,
+        files_failed: 0,
+      },
+    ];
+    const selected = [
+      { id: '1', action: Fileaction.Copy } as any,
+      { id: '2', action: Fileaction.Update } as any,
+      { id: '3', action: Fileaction.Copy } as any,
+      { id: '4', action: Fileaction.Delete } as any,
+    ];
+
+    fixture.componentRef.setInput('isGlobus', true);
+    fixture.componentRef.setInput('data', selected);
+    fixture.componentRef.setInput('taskId', 'task-files-stable');
+    fixture.detectChanges();
+
+    await new Promise<void>((r) => setTimeout(r));
+    const summary = component.filesSummary();
+    expect(summary.total).toBe(3); // Copy + Update only
+    expect(summary.processed).toBe(1);
+  });
+
+  it('shows full processed count on successful globus completion', async () => {
+    submit.statuses = [
+      {
+        task_id: 'task-files-success',
+        status: 'SUCCEEDED',
+        files: 2,
+        files_transferred: 1,
+        files_skipped: 0,
+        files_failed: 0,
+      },
+    ];
+    const selected = [
+      { id: '1', action: Fileaction.Copy } as any,
+      { id: '2', action: Fileaction.Update } as any,
+      { id: '3', action: Fileaction.Copy } as any,
+    ];
+
+    fixture.componentRef.setInput('isGlobus', true);
+    fixture.componentRef.setInput('data', selected);
+    fixture.componentRef.setInput('taskId', 'task-files-success');
+    fixture.detectChanges();
+
+    await new Promise<void>((r) => setTimeout(r));
+    const summary = component.filesSummary();
+    expect(summary.total).toBe(3);
+    expect(summary.processed).toBe(3);
+  });
+
   it('creates monitor link when task id present', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-xyz');
