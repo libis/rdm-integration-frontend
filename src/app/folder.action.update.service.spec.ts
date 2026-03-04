@@ -94,4 +94,51 @@ describe('FolderActionUpdateService', () => {
     service.updateFoldersAction(map);
     expect(map.get('')!.data!.action).toBe(Fileaction.Update);
   });
+
+  it('updateSubtreeAndAncestorsAction recalculates only changed branch upwards', () => {
+    const file1: TreeNode<Datafile> = {
+      data: {
+        id: 'folder/f1',
+        name: 'f1',
+        path: 'folder',
+        hidden: false,
+        action: Fileaction.Copy,
+        status: Filestatus.New,
+        attributes: { isFile: true },
+      },
+    };
+    const file2: TreeNode<Datafile> = {
+      data: {
+        id: 'folder/f2',
+        name: 'f2',
+        path: 'folder',
+        hidden: false,
+        action: Fileaction.Ignore,
+        status: Filestatus.Equal,
+        attributes: { isFile: true },
+      },
+    };
+    const folder: TreeNode<Datafile> = {
+      data: {
+        id: 'folder',
+        name: 'folder',
+        path: '',
+        hidden: false,
+        action: Fileaction.Ignore,
+      },
+      children: [file1, file2],
+    };
+    const root: TreeNode<Datafile> = {
+      data: { id: '', name: '', path: '', hidden: false, action: Fileaction.Ignore },
+      children: [folder],
+    };
+    file1.parent = folder;
+    file2.parent = folder;
+    folder.parent = root;
+
+    service.updateSubtreeAndAncestorsAction(file1);
+
+    expect(folder.data?.action).toBe(Fileaction.Update);
+    expect(root.data?.action).toBe(Fileaction.Custom);
+  });
 });

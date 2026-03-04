@@ -21,9 +21,18 @@ export class UtilsService {
     if (v.data!.id === '') {
       return;
     }
-    const parent = rowDataMap.get(v.data!.path!)!;
-    const children = parent.children ? parent.children : [];
-    parent.children = children.concat(v);
+    const parentKey =
+      v.data?.path
+        ?.split('/')
+        .map((segment) => segment.trim())
+        .filter((segment) => segment.length > 0)
+        .join('/') ?? '';
+    const parent = rowDataMap.get(parentKey)!;
+    if (!parent.children) {
+      parent.children = [];
+    }
+    parent.children.push(v);
+    v.parent = parent;
   }
 
   mapDatafiles(data: Datafile[]): Map<string, TreeNode<Datafile>> {
@@ -41,22 +50,31 @@ export class UtilsService {
     >();
     rowDataMap.set('', {
       data: rootData,
+      children: [],
     });
 
     data.forEach((d) => {
       let path = '';
-      d.path!.split('/').forEach((folder) => {
+      const folders =
+        d.path
+          ?.split('/')
+          .map((folder) => folder.trim())
+          .filter((folder) => folder.length > 0) ?? [];
+      folders.forEach((folder) => {
         const id = path != '' ? `${path}/${folder}` : folder;
-        const folderData: Datafile = {
-          path: path,
-          name: folder,
-          action: Fileaction.Ignore,
-          hidden: false,
-          id: id,
-        };
-        rowDataMap.set(id, {
-          data: folderData,
-        });
+        if (!rowDataMap.has(id)) {
+          const folderData: Datafile = {
+            path: path,
+            name: folder,
+            action: Fileaction.Ignore,
+            hidden: false,
+            id: id,
+          };
+          rowDataMap.set(id, {
+            data: folderData,
+            children: [],
+          });
+        }
         path = id;
       });
       rowDataMap.set(`${d.id!}:file`, {

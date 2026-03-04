@@ -13,46 +13,71 @@ export class FolderActionUpdateService {
   }
 
   updateFoldersAction(rowNodeMap: Map<string, TreeNode<Datafile>>): void {
-    rowNodeMap.forEach((v) => {
-      if (!v.data?.attributes?.isFile) {
-        v.data!.action = undefined;
-      }
-    });
-    this.doUpdateFoldersAction(rowNodeMap.get('')!);
-  }
-
-  doUpdateFoldersAction(node: TreeNode<Datafile>): void {
-    if (node.data?.action !== undefined) {
+    const root = rowNodeMap.get('');
+    if (!root) {
       return;
     }
-    node.children?.forEach((v) => this.doUpdateFoldersAction(v));
+    this.doUpdateFoldersAction(root);
+  }
 
+  /**
+   * Recompute folder action for a changed subtree and then walk ancestors only.
+   * This avoids recomputing the entire tree on single-row interaction.
+   */
+  updateSubtreeAndAncestorsAction(node: TreeNode<Datafile> | undefined): void {
+    if (!node) {
+      return;
+    }
+    this.doUpdateFoldersAction(node);
+    let parent = node.parent;
+    while (parent) {
+      this.updateFolderActionFromChildren(parent);
+      parent = parent.parent;
+    }
+  }
+
+  doUpdateFoldersAction(node: TreeNode<Datafile>): Fileaction {
+    if (!node.data) {
+      return Fileaction.Ignore;
+    }
+    if (node.data.attributes?.isFile || !node.children || node.children.length === 0) {
+      return node.data.action ?? Fileaction.Ignore;
+    }
+    for (const child of node.children) {
+      this.doUpdateFoldersAction(child);
+    }
+    return this.updateFolderActionFromChildren(node);
+  }
+
+  private updateFolderActionFromChildren(node: TreeNode<Datafile>): Fileaction {
+    if (!node.children || node.children.length === 0) {
+      return node.data?.action ?? Fileaction.Ignore;
+    }
     let allDeleted = true;
     let allNew = true;
     let allEqual = true;
     let allUpdated = true;
-    node.children?.forEach((v) => {
-      allDeleted = allDeleted && v.data?.action === Fileaction.Delete;
-      allNew = allNew && v.data?.action === Fileaction.Copy;
-      allEqual = allEqual && v.data?.action === Fileaction.Ignore;
+    for (const child of node.children) {
+      const action = child.data?.action ?? Fileaction.Ignore;
+      const status = child.data?.status;
+      allDeleted = allDeleted && action === Fileaction.Delete;
+      allNew = allNew && action === Fileaction.Copy;
+      allEqual = allEqual && action === Fileaction.Ignore;
       allUpdated =
         allUpdated &&
-        ((v.data?.status == Filestatus.Equal &&
-          v.data?.action === Fileaction.Ignore) ||
-          (v.data?.status == Filestatus.New &&
-            v.data?.action === Fileaction.Copy) ||
-          (v.data?.status == Filestatus.Updated &&
-            v.data?.action === Fileaction.Update) ||
-          (v.data?.status == Filestatus.Deleted &&
-            v.data?.action === Fileaction.Delete));
-    });
+        ((status == Filestatus.Equal && action === Fileaction.Ignore) ||
+          (status == Filestatus.New && action === Fileaction.Copy) ||
+          (status == Filestatus.Updated && action === Fileaction.Update) ||
+          (status == Filestatus.Deleted && action === Fileaction.Delete));
+    }
 
-    let action;
+    let action: Fileaction;
     if (allEqual) action = Fileaction.Ignore;
     else if (allDeleted) action = Fileaction.Delete;
     else if (allNew) action = Fileaction.Copy;
     else if (allUpdated) action = Fileaction.Update;
     else action = Fileaction.Custom;
     node.data!.action = action;
+    return action;
   }
 }

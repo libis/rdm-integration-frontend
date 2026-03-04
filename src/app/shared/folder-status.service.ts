@@ -16,19 +16,29 @@ export class FolderStatusService {
     if (!node.children || node.children.length === 0) {
       return node.data?.status;
     }
-    // Recurse first
-    const childStatuses = node.children.map((c) => this.visit(c));
+    // Folder statuses are derived from compare results, which are stable while
+    // users toggle actions. Re-use the computed value.
     if (node.data?.status !== undefined) {
-      return node.data.status; // already computed
+      return node.data.status;
     }
+
+    let anyUnknown = false;
+    let allEqual = true;
+    let allDeleted = true;
+    let allNew = true;
+
+    for (const child of node.children) {
+      const status = this.visit(child);
+      anyUnknown = anyUnknown || status === Filestatus.Unknown;
+      allEqual = allEqual && status === Filestatus.Equal;
+      allDeleted = allDeleted && status === Filestatus.Deleted;
+      allNew = allNew && status === Filestatus.New;
+    }
+
     // Aggregate status rules (mirror original logic)
-    const anyUnknown = childStatuses.some((s) => s === Filestatus.Unknown);
     if (anyUnknown) return (node.data!.status = Filestatus.Unknown);
-    const allEqual = childStatuses.every((s) => s === Filestatus.Equal);
     if (allEqual) return (node.data!.status = Filestatus.Equal);
-    const allDeleted = childStatuses.every((s) => s === Filestatus.Deleted);
     if (allDeleted) return (node.data!.status = Filestatus.Deleted);
-    const allNew = childStatuses.every((s) => s === Filestatus.New);
     if (allNew) return (node.data!.status = Filestatus.New);
     return (node.data!.status = Filestatus.Updated);
   }

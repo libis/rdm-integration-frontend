@@ -218,7 +218,7 @@ export class DatafileComponent {
         this.setNodeAction(node, Fileaction.Ignore);
         break;
     }
-    this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap());
+    this.folderActionUpdateService.updateSubtreeAndAncestorsAction(node);
     this.changed.emit();
   }
 

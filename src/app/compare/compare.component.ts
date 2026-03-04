@@ -47,6 +47,11 @@ import {
 } from '../shared/refresh-trigger';
 import { FilterItem, SubscriptionManager } from '../shared/types';
 
+interface FileNodeBuckets {
+  all: TreeNode<Datafile>[];
+  byStatus: Map<Filestatus, TreeNode<Datafile>[]>;
+}
+
 @Component({
   selector: 'app-compare',
   templateUrl: './compare.component.html',
@@ -152,27 +157,41 @@ export class CompareComponent
     return rowDataMap;
   });
 
+  readonly fileNodeBuckets = computed<FileNodeBuckets>(() => {
+    const buckets: FileNodeBuckets = { all: [], byStatus: new Map() };
+    this.rowNodeMap().forEach((node) => {
+      const data = node.data;
+      if (!data?.attributes?.isFile) {
+        return;
+      }
+      buckets.all.push(node);
+      if (data.status !== undefined) {
+        const byStatus = buckets.byStatus.get(data.status) ?? [];
+        byStatus.push(node);
+        buckets.byStatus.set(data.status, byStatus);
+      }
+    });
+    return buckets;
+  });
+
   // Filtered/Visible Nodes
   readonly rootNodeChildrenView = computed(() => {
-    this.refreshTrigger(); // Add dependency to trigger re-evaluation on refresh
     const map = this.rowNodeMap();
     const root = map.get('');
     if (!root) return [];
 
     const filters = this.selectedFilterItems();
-    const isFiltering = filters.length < 4;
+    const isFiltering = filters.length < this.filterItems.length;
 
     if (isFiltering) {
-      return Array.from(map.values()).filter((node) =>
-        this.isVisibleInFilter(node, filters),
-      );
+      return this.getVisibleFileNodes(filters);
     } else {
       return root.children || [];
     }
   });
 
   readonly isInFilterMode = computed(
-    () => this.selectedFilterItems().length < 4,
+    () => this.selectedFilterItems().length < this.filterItems.length,
   );
 
   readonly maxFileSize = computed(() => this.data().maxFileSize);
@@ -250,9 +269,6 @@ export class CompareComponent
     const newDs = this.isNewDataset();
     const hasMetadata = this.credentialsService.metadataAvailable$() !== false;
 
-    // We need to re-evaluate this when refreshTrigger changes (actions mutated)
-    this.refreshTrigger();
-
     if (!newDs) {
       return this.hasSelection();
     }
@@ -263,7 +279,8 @@ export class CompareComponent
     const newDs = this.isNewDataset();
     const hasMetadata = this.credentialsService.metadataAvailable$() !== false;
     const can = this.canProceed();
-    if (newDs && !this.hasSelection()) {
+    const hasSel = this.hasSelection();
+    if (newDs && !hasSel) {
       if (hasMetadata) return 'Proceed with metadata-only submission';
       if (!can)
         return 'Select at least one file to proceed (no metadata available).';
@@ -276,27 +293,12 @@ export class CompareComponent
     // Effect to update folder statuses when tree data changes.
     // This must be an effect (not inside a computed) because it mutates tree nodes.
     effect(() => {
-      this.refreshTrigger(); // Track refresh trigger
       const map = this.rowNodeMap();
       const root = map.get('');
       if (root?.children) {
         this.folderStatusService.updateTreeRoot(root);
         this.folderActionUpdateService.updateFoldersAction(map);
       }
-    });
-
-    // Keep hidden flags synchronized with current filters.
-    effect(() => {
-      const map = this.rowNodeMap();
-      const filters = this.selectedFilterItems();
-      const isFiltering = filters.length < 4;
-      map.forEach((node) => {
-        const data = node.data;
-        if (!data) return;
-        data.hidden = isFiltering
-          ? !this.isVisibleInFilter(node, filters)
-          : false;
-      });
     });
 
     // Effect to react to state changes
@@ -427,19 +429,26 @@ export class CompareComponent
 
   noActionSelection(): void {
     mutateWithRefresh(this.refreshTrigger, () => {
-      this.rowNodeMap().forEach((rowNode) => {
-        const datafile = rowNode.data!;
-        if (datafile.hidden) return;
+      const visibleFiles = this.getVisibleFileNodes();
+      visibleFiles.forEach((rowNode) => {
+        const datafile = rowNode.data;
+        if (!datafile || datafile.hidden) {
+          return;
+        }
         datafile.action = Fileaction.Ignore;
       });
+      this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap());
     });
   }
 
   updateSelection(): void {
     mutateWithRefresh(this.refreshTrigger, () => {
-      this.rowNodeMap().forEach((rowNode) => {
-        const datafile = rowNode.data!;
-        if (datafile.hidden) return;
+      const visibleFiles = this.getVisibleFileNodes();
+      visibleFiles.forEach((rowNode) => {
+        const datafile = rowNode.data;
+        if (!datafile || datafile.hidden) {
+          return;
+        }
         switch (datafile.status) {
           case Filestatus.New:
             datafile.action = Fileaction.Copy;
@@ -455,14 +464,18 @@ export class CompareComponent
             break;
         }
       });
+      this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap());
     });
   }
 
   mirrorSelection(): void {
     mutateWithRefresh(this.refreshTrigger, () => {
-      this.rowNodeMap().forEach((rowNode) => {
-        const datafile = rowNode.data!;
-        if (datafile.hidden) return;
+      const visibleFiles = this.getVisibleFileNodes();
+      visibleFiles.forEach((rowNode) => {
+        const datafile = rowNode.data;
+        if (!datafile || datafile.hidden) {
+          return;
+        }
         switch (datafile.status) {
           case Filestatus.New:
             datafile.action = Fileaction.Copy;
@@ -478,6 +491,7 @@ export class CompareComponent
             break;
         }
       });
+      this.folderActionUpdateService.updateFoldersAction(this.rowNodeMap());
     });
   }
 
@@ -494,17 +508,18 @@ export class CompareComponent
     }
   }
 
-  hasSelection(): boolean {
-    for (const [, node] of this.rowNodeMap()) {
-      const d = node.data;
-      if (d?.attributes?.isFile && d.action !== undefined) {
-        if (d.action !== Fileaction.Ignore) {
-          return true;
-        }
-      }
+  readonly hasSelection = computed(() => {
+    // Re-evaluate when actions change via mutation
+    this.refreshTrigger();
+    const rootAction = this.rowNodeMap().get('')?.data?.action;
+    if (rootAction !== undefined && rootAction !== Fileaction.Ignore) {
+      return true;
     }
-    return false;
-  }
+    return this.fileNodeBuckets().all.some(
+      (node) =>
+        (node.data?.action ?? Fileaction.Ignore) !== Fileaction.Ignore,
+    );
+  });
 
   // Computed signals for service-derived values
   readonly repo = computed(() => {
@@ -534,14 +549,20 @@ export class CompareComponent
     this.router.navigate(['/connect']);
   }
 
-  private isVisibleInFilter(
-    node: TreeNode<Datafile>,
-    filters: FilterItem[],
-  ): boolean {
-    const data = node.data;
-    if (!data?.attributes?.isFile) {
-      return false;
+  private getVisibleFileNodes(
+    filters: FilterItem[] = this.selectedFilterItems(),
+  ): TreeNode<Datafile>[] {
+    const buckets = this.fileNodeBuckets();
+    if (filters.length >= this.filterItems.length) {
+      return buckets.all;
     }
-    return filters.some((item) => data.status === item.fileStatus);
+    const visibleFiles: TreeNode<Datafile>[] = [];
+    for (const filter of filters) {
+      const nodes = buckets.byStatus.get(filter.fileStatus);
+      if (nodes) {
+        visibleFiles.push(...nodes);
+      }
+    }
+    return visibleFiles;
   }
 }
