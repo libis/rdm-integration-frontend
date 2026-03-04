@@ -7,7 +7,7 @@ textarea {
 .compute-split {
   display: flex;
   gap: 1rem;
-  height: calc(100vh - 14rem);
+  max-height: calc(100vh - 14rem);
   overflow: hidden;
 }
 

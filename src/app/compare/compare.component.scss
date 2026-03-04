@@ -21,11 +21,7 @@
   }
 }
 
-// Virtual-scrolling container: fill remaining viewport height
+// Virtual-scrolling container
 .treetable-container {
-  display: flex;
-  flex-direction: column;
-  // Subtract approximate height of sticky menu + action row + any margins
-  height: calc(100vh - 10rem);
   overflow: hidden;
 }
