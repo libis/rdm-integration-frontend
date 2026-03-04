@@ -128,7 +128,7 @@
       <td class="inner-table-cell">
         <table class="table table-theme-adaptive">
           <tbody>
-            @for (datafile of created(); track datafile) {
+            @for (datafile of created(); track datafile.id ?? $index) {
               <tr
                 app-submitted-file
                 #submittedRow="appSubmittedFile"
@@ -148,7 +148,7 @@
       <td class="inner-table-cell">
         <table class="table table-theme-adaptive">
           <tbody>
-            @for (datafile of updated(); track datafile) {
+            @for (datafile of updated(); track datafile.id ?? $index) {
               <tr
                 app-submitted-file
                 #submittedRow="appSubmittedFile"
@@ -168,7 +168,7 @@
       <td class="inner-table-cell">
         <table class="table table-theme-adaptive">
           <tbody>
-            @for (datafile of deleted(); track datafile) {
+            @for (datafile of deleted(); track datafile.id ?? $index) {
               <tr
                 app-submitted-file
                 #submittedRow="appSubmittedFile"

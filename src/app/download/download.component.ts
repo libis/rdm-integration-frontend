@@ -160,9 +160,8 @@ export class DownloadComponent
   private readonly _rootOptionsData = signal<TreeNode<string>[]>(
     createPlaceholderRootOptions(),
   );
-  // Computed signal that tracks refreshTrigger for change detection
+  // Read-only view of current root options data.
   readonly rootOptions = computed(() => {
-    this.refreshTrigger(); // Track refresh trigger to force re-render
     return this._rootOptionsData();
   });
   selectedOption = signal<TreeNode<string> | undefined>(undefined);
@@ -183,17 +182,41 @@ export class DownloadComponent
     return DownladablefileComponent.icon_ignore;
   });
 
-  readonly downloadDisabled = computed(() => {
+  readonly fileNodes = computed(() => {
+    const files: TreeNode<Datafile>[] = [];
+    this.rowNodeMap().forEach((node) => {
+      const data = node.data;
+      if (!data || data.id === '') {
+        return;
+      }
+      const explicitlyFolder = data.attributes?.isFile === false;
+      const hasChildren = !!node.children && node.children.length > 0;
+      if (!explicitlyFolder && !hasChildren) {
+        files.push(node);
+      }
+    });
+    return files;
+  });
+
+  readonly hasDownloadSelection = computed(() => {
     // Row actions are mutated in place; track explicit trigger for zoneless refresh.
     this.refreshTrigger();
+    const rootAction = this.rowNodeMap().get('')?.data?.action;
+    if (rootAction !== undefined && rootAction !== Fileaction.Ignore) {
+      return true;
+    }
+    return this.fileNodes().some(
+      (node) => node.data?.action === Fileaction.Download,
+    );
+  });
+
+  readonly downloadDisabled = computed(() => {
     return (
       this.downloadRequested() ||
       this.downloadInProgress() ||
       this.statusPollingActive() ||
       !this.option() ||
-      !Array.from(this.rowNodeMap().values()).some(
-        (x) => x.data?.action === Fileaction.Download,
-      )
+      !this.hasDownloadSelection()
     );
   });
 
@@ -883,9 +906,9 @@ export class DownloadComponent
 
   async download(): Promise<void> {
     const selected: Datafile[] = [];
-    this.rowNodeMap().forEach((datafile) => {
-      if (datafile.data?.action === Fileaction.Download) {
-        selected.push(datafile.data);
+    this.fileNodes().forEach((node) => {
+      if (node.data?.action === Fileaction.Download) {
+        selected.push(node.data);
       }
     });
 

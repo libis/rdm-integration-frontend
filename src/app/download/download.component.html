@@ -159,12 +159,16 @@
 
 <br />
 @if (datasetId() && data()?.id) {
-  <div style="height: 100% - 2rem; overflow: hidden">
-    <div style="float: left; width: 50%">
+  <div class="download-split">
+    <div class="download-split-left">
       <p-treeTable
         [value]="rootNodeChildren()"
         [loading]="loading()"
         loadingIcon=" pi pi-spin pi-spinner"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [virtualScroll]="true"
+        [virtualScrollItemSize]="41"
       >
         <ng-template pTemplate="header">
           <tr>
@@ -198,7 +202,7 @@
         ></ng-template>
       </p-treeTable>
     </div>
-    <div style="float: right; width: 50%">
+    <div class="download-split-right">
       <div style="margin: 0.2rem; padding-left: 2rem">
         <div class="mb-3">
           <label for="repoNameSearch" class="form-label">{{

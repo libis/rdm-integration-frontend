@@ -88,29 +88,57 @@ export class DownladablefileComponent {
   });
 
   toggleAction(): void {
-    DownladablefileComponent.toggleNodeAction(this.node());
-    this.updateFolderActions(this.rowNodeMap().get('')!);
+    const node = this.node();
+    DownladablefileComponent.toggleNodeAction(node);
+    this.updateSubtreeAndAncestors(node);
     this.changed.emit();
+  }
+
+  private updateSubtreeAndAncestors(node: TreeNode<Datafile>): void {
+    this.updateFolderActions(node);
+    if (!node.parent) {
+      const root = this.rowNodeMap().get('');
+      if (root) {
+        this.updateFolderActions(root);
+      }
+      return;
+    }
+    let parent: TreeNode<Datafile> | undefined = node.parent;
+    while (parent) {
+      this.updateFolderActionFromChildren(parent);
+      parent = parent.parent;
+    }
   }
 
   updateFolderActions(node: TreeNode<Datafile>): Fileaction {
     if (node.children && node.children.length > 0) {
-      let res: Fileaction | undefined = undefined;
       for (const child of node.children) {
-        const childAction = this.updateFolderActions(child);
-        if (res !== undefined && res !== childAction) {
-          res = Fileaction.Custom;
-        } else if (res === undefined) {
-          res = childAction;
-        }
+        this.updateFolderActions(child);
       }
-      if (node.data) {
-        node.data.action = res;
-      }
-      return res ? res : Fileaction.Ignore;
+      return this.updateFolderActionFromChildren(node);
     } else {
       return node.data?.action ? node.data.action : Fileaction.Ignore;
     }
+  }
+
+  private updateFolderActionFromChildren(node: TreeNode<Datafile>): Fileaction {
+    if (!node.children || node.children.length === 0) {
+      return node.data?.action ?? Fileaction.Ignore;
+    }
+    let res: Fileaction | undefined = undefined;
+    for (const child of node.children) {
+      const childAction = child.data?.action ?? Fileaction.Ignore;
+      if (res !== undefined && res !== childAction) {
+        res = Fileaction.Custom;
+      } else if (res === undefined) {
+        res = childAction;
+      }
+    }
+    const result = res ?? Fileaction.Ignore;
+    if (node.data) {
+      node.data.action = result;
+    }
+    return result;
   }
 
   public static toggleNodeAction(node: TreeNode<Datafile>): void {

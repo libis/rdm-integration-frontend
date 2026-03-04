@@ -86,15 +86,29 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly pid = signal('');
   readonly datasetUrl = signal('');
 
-  readonly created = computed(() =>
-    this.data().filter((f) => f.action === Fileaction.Copy),
-  );
-  readonly updated = computed(() =>
-    this.data().filter((f) => f.action === Fileaction.Update),
-  );
-  readonly deleted = computed(() =>
-    this.data().filter((f) => f.action === Fileaction.Delete),
-  );
+  readonly groupedFiles = computed(() => {
+    const created: Datafile[] = [];
+    const updated: Datafile[] = [];
+    const deleted: Datafile[] = [];
+    for (const file of this.data()) {
+      switch (file.action) {
+        case Fileaction.Copy:
+          created.push(file);
+          break;
+        case Fileaction.Update:
+          updated.push(file);
+          break;
+        case Fileaction.Delete:
+          deleted.push(file);
+          break;
+      }
+    }
+    return { created, updated, deleted };
+  });
+
+  readonly created = computed(() => this.groupedFiles().created);
+  readonly updated = computed(() => this.groupedFiles().updated);
+  readonly deleted = computed(() => this.groupedFiles().deleted);
 
   readonly disabled = signal(false);
   readonly submitted = signal(false);

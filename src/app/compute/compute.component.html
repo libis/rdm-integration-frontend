@@ -100,12 +100,16 @@
     >
   </ng-template>
 </p-dialog>
-<div style="height: 100% - 2rem; overflow: hidden">
-  <div style="float: left; width: 50%">
+<div class="compute-split">
+  <div class="compute-split-left">
     <p-treeTable
       [value]="rootNodeChildren()"
       [loading]="loading()"
       loadingIcon=" pi pi-spin pi-spinner"
+      [scrollable]="true"
+      scrollHeight="flex"
+      [virtualScroll]="true"
+      [virtualScrollItemSize]="41"
     >
       <ng-template pTemplate="header">
         <tr>
@@ -131,7 +135,7 @@
       ></ng-template>
     </p-treeTable>
   </div>
-  <div style="float: right; width: 50%">
+  <div class="compute-split-right">
     <div [style.width]="'100%'" [style.margin]="'0.2rem'">
       <textarea
         [disabled]="outputDisabled()"

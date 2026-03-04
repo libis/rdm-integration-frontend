@@ -18,3 +18,21 @@
 .text-muted {
   color: var(--p-text-muted-color) !important;
 }
+
+.download-split {
+  display: flex;
+  gap: 1rem;
+  height: calc(100vh - 14rem);
+  overflow: hidden;
+}
+
+.download-split-left,
+.download-split-right {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.download-split-left {
+  display: flex;
+  flex-direction: column;
+}
