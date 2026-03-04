@@ -124,6 +124,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly selectAllIcon = computed(() =>
     this.allFilesSelected() ? 'pi pi-check-square' : 'pi pi-square',
   );
+  readonly visibleRowCount = signal(0);
+  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
   readonly generateDisabled = computed(
     () =>
       this.loading() || this.selectedFiles().size === 0 || !this.datasetId(),
@@ -426,6 +428,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
       this.rootNodeChildren.set(rootNode.children);
+      this.visibleRowCount.set(this.countVisibleRows(rootNode.children));
     }
     this.totalSelectableFiles.set(
       this.countSelectableFiles(this.rootNodeChildren()),
@@ -437,6 +440,21 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     });
 
     this.loading.set(false);
+  }
+
+  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      count++;
+      if (node.expanded && node.children?.length) {
+        count += this.countVisibleRows(node.children);
+      }
+    }
+    return count;
+  }
+
+  recountVisibleRows(): void {
+    this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
   }
 
   autoSelectAllFiles(node: TreeNode<Datafile>): void {

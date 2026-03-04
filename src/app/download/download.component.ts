@@ -200,6 +200,38 @@ export class DownloadComponent
     return files;
   });
 
+  /**
+   * Tracks the number of currently rendered (visible) tree rows.
+   * Updated on data load and on every expand/collapse event so it always
+   * reflects the actual DOM row count, even for 40 000-file datasets where
+   * two collapsed top-level folder nodes would otherwise look like 2 rows.
+   */
+  readonly visibleRowCount = signal(0);
+
+  /** Enable virtual scroll only when rows are numerous enough to overflow. */
+  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
+
+  /**
+   * Count every currently rendered row by walking the tree and recursing into
+   * expanded nodes.  Runs in O(visible rows) — fast even for very large trees.
+   */
+  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      count++;
+      if (node.expanded && node.children?.length) {
+        count += this.countVisibleRows(node.children);
+      }
+    }
+    return count;
+  }
+
+  /** Called from the template on (onNodeExpand) and (onNodeCollapse). */
+  recountVisibleRows(): void {
+    this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
+  }
+
+
   readonly hasDownloadSelection = computed(() => {
     // Row actions are mutated in place; track explicit trigger for zoneless refresh.
     this.refreshTrigger();
@@ -758,6 +790,7 @@ export class DownloadComponent
       this.data.set(undefined);
       this.rootNodeChildren.set([]);
       this.rowNodeMap.set(new Map<string, TreeNode<Datafile>>());
+      this.visibleRowCount.set(0);
     }
 
     this.loading.set(true);
@@ -828,6 +861,9 @@ export class DownloadComponent
     this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
       this.rootNodeChildren.set(rootNode.children);
+      // At load time nothing is expanded, so visible rows == top-level children.
+      // Use countVisibleRows() anyway to handle any pre-expanded nodes correctly.
+      this.visibleRowCount.set(this.countVisibleRows(rootNode.children));
     }
 
     // The backend response is the single source of truth for pre-selection.

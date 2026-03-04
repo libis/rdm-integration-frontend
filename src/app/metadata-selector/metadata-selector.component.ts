@@ -80,9 +80,11 @@ export class MetadataSelectorComponent implements OnDestroy {
 
   // Used to trigger view updates when row actions are mutated
   readonly refreshTrigger = signal(0);
+  readonly visibleRowCount = signal(0);
 
   // Computed
   readonly rootNodeChildren = computed(() => this.root()?.children ?? []);
+  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
   readonly action = computed(() => {
     // Read refreshTrigger to re-evaluate when row actions change
     this.refreshTrigger();
@@ -108,6 +110,28 @@ export class MetadataSelectorComponent implements OnDestroy {
         this.rowNodeMap.set(rowDataMap);
       }
     });
+
+    // Recount visible rows whenever the tree root changes (metadata reload).
+    // Expand/collapse mutations are handled via recountVisibleRows() called
+    // from template events.
+    effect(() => {
+      this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
+    });
+  }
+
+  private countVisibleRows(nodes: TreeNode<Field>[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      count++;
+      if (node.expanded && node.children?.length) {
+        count += this.countVisibleRows(node.children);
+      }
+    }
+    return count;
+  }
+
+  recountVisibleRows(): void {
+    this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
   }
 
   loadData() {

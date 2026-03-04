@@ -3,6 +3,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -102,6 +103,8 @@ export class ComputeComponent
     new Map<string, TreeNode<Datafile>>(),
   );
   readonly loading = signal(false);
+  readonly visibleRowCount = signal(0);
+  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
   readonly popup = signal(false);
   readonly outputDisabled = signal(true);
   readonly sendEmailOnSuccess = signal(false);
@@ -293,8 +296,24 @@ export class ComputeComponent
     this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
       this.rootNodeChildren.set(rootNode.children);
+      this.visibleRowCount.set(this.countVisibleRows(rootNode.children));
     }
     this.loading.set(false);
+  }
+
+  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      count++;
+      if (node.expanded && node.children?.length) {
+        count += this.countVisibleRows(node.children);
+      }
+    }
+    return count;
+  }
+
+  recountVisibleRows(): void {
+    this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
   }
 
   submitCompute(req: ComputeRequest): void {

@@ -156,8 +156,10 @@
     loadingIcon=" pi pi-spin pi-spinner"
     [scrollable]="true"
     scrollHeight="calc(100vh - 12rem)"
-    [virtualScroll]="true"
+    [virtualScroll]="useVirtualScroll()"
     [virtualScrollItemSize]="41"
+    (onNodeExpand)="recountVisibleRows()"
+    (onNodeCollapse)="recountVisibleRows()"
   >
     <ng-template pTemplate="header">
       <tr>

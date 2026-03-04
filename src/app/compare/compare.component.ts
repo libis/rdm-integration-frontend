@@ -190,6 +190,9 @@ export class CompareComponent
     }
   });
 
+  readonly visibleRowCount = signal(0);
+  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
+
   readonly isInFilterMode = computed(
     () => this.selectedFilterItems().length < this.filterItems.length,
   );
@@ -317,6 +320,32 @@ export class CompareComponent
         }
       }
     });
+
+    // Recount visible rows whenever the displayed node array changes (new data
+    // load or filter change).  Expand/collapse mutations are handled via
+    // recountVisibleRows() called from template events.
+    effect(() => {
+      this.visibleRowCount.set(
+        this.countVisibleRows(this.rootNodeChildrenView()),
+      );
+    });
+  }
+
+  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
+    let count = 0;
+    for (const node of nodes) {
+      count++;
+      if (node.expanded && node.children?.length) {
+        count += this.countVisibleRows(node.children);
+      }
+    }
+    return count;
+  }
+
+  recountVisibleRows(): void {
+    this.visibleRowCount.set(
+      this.countVisibleRows(this.rootNodeChildrenView()),
+    );
   }
 
   ngOnInit(): void {

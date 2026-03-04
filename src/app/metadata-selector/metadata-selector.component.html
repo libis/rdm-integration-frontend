@@ -42,8 +42,10 @@
           [value]="rootNodeChildren()"
           [scrollable]="true"
           scrollHeight="calc(100vh - 12rem)"
-          [virtualScroll]="true"
+          [virtualScroll]="useVirtualScroll()"
           [virtualScrollItemSize]="41"
+          (onNodeExpand)="recountVisibleRows()"
+          (onNodeCollapse)="recountVisibleRows()"
         >
           <ng-template pTemplate="header">
             <tr>
