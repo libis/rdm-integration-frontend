@@ -209,6 +209,7 @@ export class TransferProgressCardComponent
   private hasRenderedCard = false;
   private viewInitialized = false;
   private currentPollingSubscription?: Subscription;
+  private scrollTimeout?: ReturnType<typeof setTimeout>;
   private previousTaskId?: string | null;
   private previousSubmitting?: boolean;
 
@@ -249,6 +250,7 @@ export class TransferProgressCardComponent
   ngOnDestroy(): void {
     this.currentPollingSubscription?.unsubscribe();
     this.setPollingState(false);
+    clearTimeout(this.scrollTimeout);
   }
 
   ngAfterViewInit(): void {
@@ -424,7 +426,10 @@ export class TransferProgressCardComponent
     }
     let total = 0;
     for (const file of datafiles) {
-      if (file.action === Fileaction.Copy || file.action === Fileaction.Update) {
+      if (
+        file.action === Fileaction.Copy ||
+        file.action === Fileaction.Update
+      ) {
         total++;
       }
     }
@@ -458,7 +463,7 @@ export class TransferProgressCardComponent
   private maybeScrollCardIntoView(): void {
     const visible = this.hasStatus();
     if (visible && !this.hasRenderedCard) {
-      setTimeout(() => {
+      this.scrollTimeout = setTimeout(() => {
         this.cardRoot()?.nativeElement.scrollIntoView({
           behavior: 'smooth',
           block: 'start',

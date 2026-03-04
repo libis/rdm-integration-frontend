@@ -111,6 +111,7 @@ export class ConnectComponent
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
+  private newDatasetMessageTimeout?: ReturnType<typeof setTimeout>;
 
   readonly repoNameSelect = viewChild.required<Select>('repoSelect');
 
@@ -170,55 +171,48 @@ export class ConnectComponent
   readonly showNewDatasetCreatedMessage = signal(false);
   // Computed Properties for UI - these must read all signals they depend on
 
+  // Single lookup for the current plugin – avoids 18 independent getPlugin() calls
+  private readonly currentPlugin = computed(() =>
+    this.pluginService.getPlugin(this.pluginId()),
+  );
+
   // OAuth/Token computed signals
   readonly hasOauthConfig = computed(() => {
-    const pId = this.pluginId();
-    if (pId === undefined) return false;
-    return (
-      this.pluginService.getPlugin(pId).tokenGetter?.oauth_client_id !==
-      undefined
-    );
+    if (this.pluginId() === undefined) return false;
+    return this.currentPlugin().tokenGetter?.oauth_client_id !== undefined;
   });
 
   readonly isAuthorized = computed(() => this.token() !== undefined);
 
   readonly showRepoTokenGetter = computed(() => {
-    const pId = this.pluginId();
-    if (pId === undefined) return false;
-    return !!this.pluginService.getPlugin(pId).showTokenGetter;
+    if (this.pluginId() === undefined) return false;
+    return !!this.currentPlugin().showTokenGetter;
   });
 
   // Repo name computed signals
   readonly repoNameFieldName = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return undefined;
-    return this.pluginService.getPlugin(pId).repoNameFieldName;
+    if (!this.pluginId()) return undefined;
+    return this.currentPlugin().repoNameFieldName;
   });
 
   readonly repoNamePlaceholder = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return '';
-    const v = this.pluginService.getPlugin(pId).repoNameFieldPlaceholder;
-    return v === undefined ? '' : v;
+    if (!this.pluginId()) return '';
+    return this.currentPlugin().repoNameFieldPlaceholder ?? '';
   });
 
   readonly repoNameFieldEditable = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return false;
-    const v = this.pluginService.getPlugin(pId).repoNameFieldEditable;
-    return v === undefined ? false : v;
+    if (!this.pluginId()) return false;
+    return this.currentPlugin().repoNameFieldEditable ?? false;
   });
 
   readonly repoNameSearchEnabled = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return false;
-    return !!this.pluginService.getPlugin(pId).repoNameFieldHasSearch;
+    if (!this.pluginId()) return false;
+    return !!this.currentPlugin().repoNameFieldHasSearch;
   });
 
   readonly repoNameSearchInitEnabled = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return false;
-    return !!this.pluginService.getPlugin(pId).repoNameFieldHasInit;
+    if (!this.pluginId()) return false;
+    return !!this.currentPlugin().repoNameFieldHasInit;
   });
 
   readonly computedRepoName = computed(() => {
@@ -229,75 +223,63 @@ export class ConnectComponent
 
   // Plugin repo names computed signal
   readonly pluginRepoNames = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return [];
-    const values = this.pluginService.getPlugin(pId).repoNameFieldValues;
+    if (!this.pluginId()) return [];
+    const values = this.currentPlugin().repoNameFieldValues;
     return values?.map((x) => ({ label: x, value: x })) ?? [];
   });
 
   // Option field computed signals
   readonly optionFieldName = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return undefined;
-    return this.pluginService.getPlugin(pId).optionFieldName;
+    if (!this.pluginId()) return undefined;
+    return this.currentPlugin().optionFieldName;
   });
 
   readonly optionPlaceholder = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return '';
-    const v = this.pluginService.getPlugin(pId).optionFieldPlaceholder;
-    return v === undefined ? '' : v;
+    if (!this.pluginId()) return '';
+    return this.currentPlugin().optionFieldPlaceholder ?? '';
   });
 
   readonly isOptionFieldInteractive = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return false;
-    return !!this.pluginService.getPlugin(pId).optionFieldInteractive;
+    if (!this.pluginId()) return false;
+    return !!this.currentPlugin().optionFieldInteractive;
   });
 
   // Username field computed signals
   readonly usernameFieldName = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return undefined;
-    return this.pluginService.getPlugin(pId).usernameFieldName;
+    if (!this.pluginId()) return undefined;
+    return this.currentPlugin().usernameFieldName;
   });
 
   readonly usernamePlaceholder = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return '';
-    return this.pluginService.getPlugin(pId).usernameFieldPlaceholder ?? '';
+    if (!this.pluginId()) return '';
+    return this.currentPlugin().usernameFieldPlaceholder ?? '';
   });
 
   // Token field computed signals
   readonly tokenFieldName = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return undefined;
-    return this.pluginService.getPlugin(pId).tokenFieldName;
+    if (!this.pluginId()) return undefined;
+    return this.currentPlugin().tokenFieldName;
   });
 
   readonly tokenPlaceholder = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return '';
-    return this.pluginService.getPlugin(pId).tokenFieldPlaceholder ?? '';
+    if (!this.pluginId()) return '';
+    return this.currentPlugin().tokenFieldPlaceholder ?? '';
   });
 
   // Source URL computed signals
   readonly sourceUrlFieldName = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return undefined;
-    return this.pluginService.getPlugin(pId).sourceUrlFieldName;
+    if (!this.pluginId()) return undefined;
+    return this.currentPlugin().sourceUrlFieldName;
   });
 
   readonly sourceUrlPlaceholder = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return '';
-    return this.pluginService.getPlugin(pId).sourceUrlFieldPlaceholder ?? '';
+    if (!this.pluginId()) return '';
+    return this.currentPlugin().sourceUrlFieldPlaceholder ?? '';
   });
 
   readonly sourceUrlValue = computed(() => {
-    const pId = this.pluginId();
-    if (!pId) return undefined;
-    const res = this.pluginService.getPlugin(pId).sourceUrlFieldValue;
+    if (!this.pluginId()) return undefined;
+    const res = this.currentPlugin().sourceUrlFieldValue;
     return res !== undefined ? res : this.sourceUrl();
   });
   // Validation computed signal
@@ -330,28 +312,19 @@ export class ConnectComponent
       ),
   );
 
-  // Computed signals for pluginService data
-  readonly dataverseHeader = computed(() =>
-    this.pluginService.dataverseHeader$(),
-  );
-  readonly showDVTokenGetter = computed(() =>
-    this.pluginService.showDVTokenGetter$(),
-  );
-  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
-  readonly collectionOptionsHidden = computed(() =>
-    this.pluginService.collectionOptionsHidden$(),
-  );
-  readonly collectionFieldEditable = computed(() =>
-    this.pluginService.collectionFieldEditable$(),
-  );
-  readonly datasetFieldEditable = computed(() =>
-    this.pluginService.datasetFieldEditable$(),
-  );
-  readonly createNewDatasetEnabled = computed(() =>
-    this.pluginService.createNewDatasetEnabled$(),
-  );
-  readonly externalURL = computed(() => this.pluginService.externalURL$());
-  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
+  // Direct references to pluginService signals (no wrapper computed needed)
+  readonly dataverseHeader = this.pluginService.dataverseHeader$;
+  readonly showDVTokenGetter = this.pluginService.showDVTokenGetter$;
+  readonly showDVToken = this.pluginService.showDVToken$;
+  readonly collectionOptionsHidden =
+    this.pluginService.collectionOptionsHidden$;
+  readonly collectionFieldEditable =
+    this.pluginService.collectionFieldEditable$;
+  readonly datasetFieldEditable = this.pluginService.datasetFieldEditable$;
+  readonly createNewDatasetEnabled =
+    this.pluginService.createNewDatasetEnabled$;
+  readonly externalURL = this.pluginService.externalURL$;
+  readonly configLoaded = this.pluginService.configLoaded$;
 
   repoSearchSubject: Subject<string> = new Subject();
   collectionSearchSubject: Subject<string> = new Subject();
@@ -698,6 +671,9 @@ export class ConnectComponent
     this.repoSearchResultsSubscription?.unsubscribe();
     this.collectionSearchResultsSubscription?.unsubscribe();
     this.datasetSearchResultsSubscription?.unsubscribe();
+
+    // Clean up timers
+    clearTimeout(this.newDatasetMessageTimeout);
   }
 
   /***********************
@@ -1379,13 +1355,17 @@ export class ConnectComponent
           } else {
             setter(this, []);
           }
+          this.subscriptions.delete(httpSubscription);
           httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           setter(this, []);
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
         },
       });
+    this.subscriptions.add(httpSubscription);
   }
 
   // COLLECTIONS
@@ -1541,7 +1521,8 @@ export class ConnectComponent
       this.showNewDatasetCreatedMessage.set(true);
 
       // Hide the message after 3 seconds
-      setTimeout(() => {
+      clearTimeout(this.newDatasetMessageTimeout);
+      this.newDatasetMessageTimeout = setTimeout(() => {
         this.showNewDatasetCreatedMessage.set(false);
       }, 3000);
     } else {

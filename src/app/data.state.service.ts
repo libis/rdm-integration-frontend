@@ -2,9 +2,15 @@
 
 import { Injectable, Signal, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import {
+  EmptyError,
+  firstValueFrom,
+  Subject,
+  Subscription,
+  takeUntil,
+} from 'rxjs';
 import { DataService } from './data.service';
-import { CachedResponse, CompareResult, Key } from './models/compare-result';
+import { CompareResult, Key } from './models/compare-result';
 import { NotificationService } from './shared/notification.service';
 import { UtilsService } from './utils.service';
 
@@ -25,7 +31,7 @@ export class DataStateService {
 
   private pollGeneration = 0;
   private dataSubscription?: Subscription;
-  private compareSubscription?: Subscription;
+  private readonly cancelPoll$ = new Subject<void>();
 
   constructor() {}
 
@@ -49,10 +55,9 @@ export class DataStateService {
 
   cancelInitialization(resetState = true): void {
     this.pollGeneration++;
+    this.cancelPoll$.next();
     this.dataSubscription?.unsubscribe();
-    this.compareSubscription?.unsubscribe();
     this.dataSubscription = undefined;
-    this.compareSubscription = undefined;
     if (resetState) {
       this.resetState();
     }
@@ -62,12 +67,12 @@ export class DataStateService {
     return generation === this.pollGeneration;
   }
 
-  private getCompareData(key: Key, generation: number): void {
-    if (!this.isCurrentGeneration(generation)) {
-      return;
-    }
-    this.compareSubscription = this.dataService.getCachedData(key).subscribe({
-      next: async (res: CachedResponse) => {
+  private async getCompareData(key: Key, generation: number): Promise<void> {
+    while (this.isCurrentGeneration(generation)) {
+      try {
+        const res = await firstValueFrom(
+          this.dataService.getCachedData(key).pipe(takeUntil(this.cancelPoll$)),
+        );
         if (!this.isCurrentGeneration(generation)) {
           return;
         }
@@ -86,27 +91,30 @@ export class DataStateService {
           if (res.err && res.err !== '') {
             this.notificationService.showError(res.err);
           }
-          this.compareSubscription = undefined;
-        } else {
-          await this.utils.sleep(1000);
-          if (this.isCurrentGeneration(generation)) {
-            this.getCompareData(key, generation);
-          }
-        }
-      },
-      error: (err) => {
-        if (!this.isCurrentGeneration(generation)) {
           return;
         }
+        if (res.res) {
+          // Partial result from server, could update state if needed
+        }
+        await this.utils.sleep(1000);
+      } catch (err: unknown) {
+        // Observable completed without emitting (cancelled via takeUntil)
+        if (
+          err instanceof EmptyError ||
+          !this.isCurrentGeneration(generation)
+        ) {
+          return;
+        }
+        const error = err as { status?: number; error?: string };
         const is401 =
-          err.status === 401 || (err.error && err.error.includes('401'));
-        this.notificationService.showError(`Comparing failed: ${err.error}`);
+          error.status === 401 || (error.error && error.error.includes('401'));
+        this.notificationService.showError(`Comparing failed: ${error.error}`);
         this.router.navigate(['/connect'], {
           queryParams: is401 ? { reset: 'true' } : {},
         });
-        this.compareSubscription = undefined;
-      },
-    });
+        return;
+      }
+    }
   }
 
   updateState(state: CompareResult): void {

@@ -21,12 +21,7 @@ import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
 
 // Models
-import {
-  CachedComputeResponse,
-  CompareResult,
-  DdiCdiRequest,
-  Key,
-} from '../models/compare-result';
+import { CompareResult, DdiCdiRequest, Key } from '../models/compare-result';
 import { Datafile } from '../models/datafile';
 
 // PrimeNG
@@ -124,17 +119,13 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.loading() || this.selectedFiles().size === 0 || !this.datasetId(),
   );
 
-  // Computed signals for pluginService data
-  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
-  readonly datasetFieldEditable = computed(() =>
-    this.pluginService.datasetFieldEditable$(),
-  );
-  readonly dataverseHeader = computed(() =>
-    this.pluginService.dataverseHeader$(),
-  );
-  readonly sendMails = computed(() => this.pluginService.sendMails$());
-  readonly externalURL = computed(() => this.pluginService.externalURL$());
-  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
+  // Direct references to pluginService signals (no wrapper computed needed)
+  readonly showDVToken = this.pluginService.showDVToken$;
+  readonly datasetFieldEditable = this.pluginService.datasetFieldEditable$;
+  readonly dataverseHeader = this.pluginService.dataverseHeader$;
+  readonly sendMails = this.pluginService.sendMails$;
+  readonly externalURL = this.pluginService.externalURL$;
+  readonly configLoaded = this.pluginService.configLoaded$;
 
   // ITEMS IN SELECTS
   loadingItem: SelectItem<string> = { label: `Loading...`, value: 'loading' };
@@ -470,6 +461,10 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     return this.selectedFiles().has(filename);
   }
 
+  // Pre-computed constant style strings to avoid per-row method calls in template
+  readonly selectedFileStyle = buildInlineStyle(getFileActionStyle('SELECTED'));
+  readonly ignoredFileStyle = buildInlineStyle(getFileActionStyle('IGNORE'));
+
   toggleFileSelection(filename: string): void {
     this.selectedFiles.update((files) => {
       const newFiles = new Set(files);
@@ -542,13 +537,12 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.subscriptions.add(generateSubscription);
   }
 
-  private getDdiCdiData(key: Key): void {
-    let subscription: Subscription;
-    // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
-    subscription = this.dataService.getCachedDdiCdiData(key).subscribe({
-      next: async (res: CachedComputeResponse) => {
-        this.subscriptions.delete(subscription);
-        subscription?.unsubscribe();
+  private async getDdiCdiData(key: Key): Promise<void> {
+    while (this.loading()) {
+      try {
+        const res = await firstValueFrom(
+          this.dataService.getCachedDdiCdiData(key),
+        );
         if (res.ready === true) {
           this.loading.set(false);
           if (res.res) {
@@ -567,24 +561,20 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
               );
             }
           }
-        } else {
-          if (res.res) {
-            this.output.set(res.res);
-          }
-          await this.utils.sleep(1000);
-          this.getDdiCdiData(key);
+          return;
         }
-      },
-      error: (err) => {
-        this.subscriptions.delete(subscription);
-        subscription?.unsubscribe();
+        if (res.res) {
+          this.output.set(res.res);
+        }
+        await this.utils.sleep(1000);
+      } catch (err: unknown) {
+        const error = err as { error?: string };
         this.loading.set(false);
         this.notificationService.showError(
-          `Getting DDI-CDI results failed: ${err.error}`,
+          `Getting DDI-CDI results failed: ${error.error}`,
         );
-      },
-    });
-    this.subscriptions.add(subscription!);
+      }
+    }
   }
 
   private resetOutputState(): void {

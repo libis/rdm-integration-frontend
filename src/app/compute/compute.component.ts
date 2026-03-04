@@ -3,7 +3,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -121,16 +120,12 @@ export class ComputeComponent
   datasetSearchResultsSubscription?: Subscription;
   req?: ComputeRequest;
 
-  // Computed signals for template bindings
-  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
-  readonly datasetFieldEditable = computed(() =>
-    this.pluginService.datasetFieldEditable$(),
-  );
-  readonly dataverseHeader = computed(() =>
-    this.pluginService.dataverseHeader$(),
-  );
-  readonly sendMails = computed(() => this.pluginService.sendMails$());
-  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
+  // Direct references to pluginService signals (no wrapper computed needed)
+  readonly showDVToken = this.pluginService.showDVToken$;
+  readonly datasetFieldEditable = this.pluginService.datasetFieldEditable$;
+  readonly dataverseHeader = this.pluginService.dataverseHeader$;
+  readonly sendMails = this.pluginService.sendMails$;
+  readonly configLoaded = this.pluginService.configLoaded$;
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(

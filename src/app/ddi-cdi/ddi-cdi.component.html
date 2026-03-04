@@ -169,6 +169,10 @@
             [value]="rootNodeChildren()"
             [loading]="loading()"
             loadingIcon=" pi pi-spin pi-spinner"
+            [scrollable]="true"
+            scrollHeight="calc(100vh - 20rem)"
+            [virtualScroll]="true"
+            [virtualScrollItemSize]="41"
           >
             <ng-template pTemplate="header">
               <tr>
@@ -189,14 +193,21 @@
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-              <tr [ttRow]="rowNode" [style]="getFileStyle(rowData.name || '')">
+              <tr
+                [ttRow]="rowNode"
+                [style]="
+                  selectedFiles().has(rowData.name || '')
+                    ? selectedFileStyle
+                    : ignoredFileStyle
+                "
+              >
                 <td>
                   {{ rowData.name }}
                 </td>
                 <td style="text-align: center">
                   <p-checkbox
                     [binary]="true"
-                    [ngModel]="isFileSelected(rowData.name || '')"
+                    [ngModel]="selectedFiles().has(rowData.name || '')"
                     (ngModelChange)="toggleFileSelection(rowData.name || '')"
                   ></p-checkbox>
                 </td>

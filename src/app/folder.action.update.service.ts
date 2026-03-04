@@ -40,7 +40,11 @@ export class FolderActionUpdateService {
     if (!node.data) {
       return Fileaction.Ignore;
     }
-    if (node.data.attributes?.isFile || !node.children || node.children.length === 0) {
+    if (
+      node.data.attributes?.isFile ||
+      !node.children ||
+      node.children.length === 0
+    ) {
       return node.data.action ?? Fileaction.Ignore;
     }
     for (const child of node.children) {

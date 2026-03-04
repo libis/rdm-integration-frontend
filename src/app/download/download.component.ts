@@ -246,13 +246,11 @@ export class DownloadComponent
     this.selectedRepoName() ? this.selectedRepoName() : this.foundRepoName(),
   );
 
-  // Computed signals for pluginService data
-  readonly showDVToken = computed(() => this.pluginService.showDVToken$());
-  readonly datasetFieldEditable = computed(() =>
-    this.pluginService.datasetFieldEditable$(),
-  );
-  readonly externalURL = computed(() => this.pluginService.externalURL$());
-  readonly configLoaded = computed(() => this.pluginService.configLoaded$());
+  // Direct references to pluginService signals (no wrapper computed needed)
+  readonly showDVToken = this.pluginService.showDVToken$;
+  readonly datasetFieldEditable = this.pluginService.datasetFieldEditable$;
+  readonly externalURL = this.pluginService.externalURL$;
+  readonly configLoaded = this.pluginService.configLoaded$;
 
   constructor() {
     this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(

@@ -129,7 +129,13 @@ describe('FolderActionUpdateService', () => {
       children: [file1, file2],
     };
     const root: TreeNode<Datafile> = {
-      data: { id: '', name: '', path: '', hidden: false, action: Fileaction.Ignore },
+      data: {
+        id: '',
+        name: '',
+        path: '',
+        hidden: false,
+        action: Fileaction.Ignore,
+      },
       children: [folder],
     };
     file1.parent = folder;

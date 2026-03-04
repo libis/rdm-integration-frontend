@@ -301,7 +301,7 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.router.navigate(['/compute'], { queryParams: { pid: this.pid() } });
   }
 
-  readonly sendMails = computed(() => this.pluginService.sendMails$());
+  readonly sendMails = this.pluginService.sendMails$;
 
   async newDataset(collectionId: string): Promise<boolean> {
     const data = await firstValueFrom(

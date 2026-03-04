@@ -67,17 +67,26 @@ describe('DataStateService', () => {
   }
 
   it('initializes and polls until ready true then stores result', async () => {
+    // Mock getCachedData to return different values on successive calls
+    let callCount = 0;
+    data.getCachedData = () => {
+      callCount++;
+      if (callCount === 1) {
+        return of({ ready: false });
+      }
+      return of({
+        ready: true,
+        res: {
+          data: [
+            { id: 'b', name: 'b', path: '', hidden: false },
+            { id: 'a', name: 'a', path: '', hidden: false },
+          ],
+        },
+      });
+    };
     init();
-    data.cached$.next({ ready: false });
-    data.cached$.next({
-      ready: true,
-      res: {
-        data: [
-          { id: 'b', name: 'b', path: '', hidden: false },
-          { id: 'a', name: 'a', path: '', hidden: false },
-        ],
-      },
-    });
+    // Allow async polling loop to complete
+    await new Promise<void>((r) => setTimeout(r));
     await new Promise<void>((r) => setTimeout(r));
     const v = service.state$();
     expect(v?.data?.map((f) => f.id)).toEqual(['a', 'b']);
@@ -133,7 +142,7 @@ describe('DataStateService', () => {
     ).toBeTrue();
   });
 
-  it('cancelInitialization unsubscribes and resets by default', () => {
+  it('cancelInitialization unsubscribes and resets by default', async () => {
     let dataObserver: any;
     let dataUnsubscribed = false;
     let cachedUnsubscribed = false;
@@ -157,6 +166,8 @@ describe('DataStateService', () => {
     service.updateState({ id: 'to-reset' } as any);
 
     service.cancelInitialization();
+    // Allow microtasks from takeUntil/firstValueFrom to flush
+    await Promise.resolve();
 
     expect(dataUnsubscribed).toBeTrue();
     expect(cachedUnsubscribed).toBeTrue();

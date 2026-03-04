@@ -38,7 +38,13 @@
     </tr>
     <tr>
       <td class="treetable-cell" [attr.colspan]="treeTableColumnCount()">
-        <p-treeTable [value]="rootNodeChildren()">
+        <p-treeTable
+          [value]="rootNodeChildren()"
+          [scrollable]="true"
+          scrollHeight="calc(100vh - 12rem)"
+          [virtualScroll]="true"
+          [virtualScrollItemSize]="41"
+        >
           <ng-template pTemplate="header">
             <tr>
               <th style="width: 16rem; text-align: left">Metadata field</th>

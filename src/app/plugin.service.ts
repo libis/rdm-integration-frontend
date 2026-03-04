@@ -74,9 +74,7 @@ export class PluginService {
     () => this.configSignal().loginRedirectUrl,
   );
   readonly sendMails$ = computed(() => this.configSignal().sendMails);
-  readonly globusPlugin$ = computed(() =>
-    this.configSignal().plugins.find((p) => p.id === 'globus'),
-  );
+  readonly globusPlugin$ = computed(() => this.pluginsMap().get('globus'));
 
   async setConfig(): Promise<void> {
     const c = await firstValueFrom(

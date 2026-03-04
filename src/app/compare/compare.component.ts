@@ -516,8 +516,7 @@ export class CompareComponent
       return true;
     }
     return this.fileNodeBuckets().all.some(
-      (node) =>
-        (node.data?.action ?? Fileaction.Ignore) !== Fileaction.Ignore,
+      (node) => (node.data?.action ?? Fileaction.Ignore) !== Fileaction.Ignore,
     );
   });
 
