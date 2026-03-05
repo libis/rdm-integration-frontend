@@ -1,5 +1,4 @@
 import pluginJs from "@eslint/js";
-import deprecation from "eslint-plugin-deprecation";
 import globals from "globals";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,11 +24,8 @@ export default [
         tsconfigRootDir: __dirname,
       },
     },
-    plugins: {
-      deprecation: deprecation,
-    },
     rules: {
-      "deprecation/deprecation": "warn",
+      "@typescript-eslint/no-deprecated": "warn",
       // TypeScript specific rules (without type information)
       "@typescript-eslint/no-unused-vars": [
         "error",
