@@ -797,6 +797,7 @@ export class ConnectComponent
               repo_name: this.computedRepoName(),
               url: this.url(),
               option: this.option(),
+              plugin_options: undefined,
               user: this.user(),
               token: token,
               dataset_id: this.datasetId(),
@@ -820,7 +821,9 @@ export class ConnectComponent
             this.dataStateService.resetState();
             this.credentialsService.setCredentials(creds);
 
-            this.router.navigate(['/compare', this.datasetId()], {
+            const destination =
+              this.plugin() === 'redcap2' ? '/redcap2-export' : '/compare';
+            this.router.navigate([destination, this.datasetId()], {
               state: {
                 collectionId: this.collectionId(),
                 collectionItems: this.collectionItems(),

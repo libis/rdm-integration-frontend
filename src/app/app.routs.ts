@@ -9,6 +9,13 @@ export const routes: Routes = [
       import('./connect/connect.component').then((m) => m.ConnectComponent),
   },
   {
+    path: 'redcap2-export/:id',
+    loadComponent: () =>
+      import('./redcap2-export/redcap2-export.component').then(
+        (m) => m.Redcap2ExportComponent,
+      ),
+  },
+  {
     path: 'compare/:id',
     loadComponent: () =>
       import('./compare/compare.component').then((m) => m.CompareComponent),

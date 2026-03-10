@@ -1,0 +1,307 @@
+<div class="row justify-content-between align-items-center sticky-menu">
+  <div class="col-auto">
+    <button
+      pButton
+      type="button"
+      class="p-button p-button-text p-button-sm"
+      (click)="goBack()"
+      title="Back to connect"
+    >
+      <i class="pi pi-arrow-left"></i>&nbsp;Back
+    </button>
+  </div>
+  <div class="col text-center">
+    <h2 class="page-title m-0">REDCap export settings</h2>
+  </div>
+  <div class="col-auto">
+    <button
+      pButton
+      type="button"
+      class="p-button p-button-sm p-button-raised p-button-primary"
+      (click)="continueToCompare()"
+      title="Save settings and continue"
+    >
+      Continue to compare&nbsp;<i class="pi pi-angle-double-right"></i>
+    </button>
+  </div>
+</div>
+
+<div class="redcap2-export container-fluid mt-3">
+  <div class="card shadow-sm p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="m-0">Export mode</h5>
+      <div class="btn-group" role="group" aria-label="Export mode">
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="exportMode() === 'report'"
+          [class.btn-outline-secondary]="exportMode() !== 'report'"
+          (click)="setExportMode('report')"
+        >
+          Report
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="exportMode() === 'records'"
+          [class.btn-outline-secondary]="exportMode() !== 'records'"
+          (click)="setExportMode('records')"
+        >
+          All records
+        </button>
+      </div>
+    </div>
+
+    @if (exportMode() === 'report') {
+      <p class="text-muted small mb-3">
+        Export a saved REDCap report by ID. The report definition controls which fields and records are included.
+      </p>
+    } @else {
+      <p class="text-muted small mb-3">
+        Export all project records directly via the REDCap API. Use the filters below to narrow the result.
+      </p>
+    }
+
+    <div class="row g-3">
+      @if (exportMode() === 'report') {
+        <div class="col-md-3">
+          <label class="form-label">Report ID</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="reportId()"
+            (ngModelChange)="reportId.set($event)"
+            placeholder="e.g. 3010"
+          />
+          <small class="text-muted">Find this in REDCap under My Reports &amp; Exports.</small>
+        </div>
+      }
+
+      <div class="col-md-3">
+        <label class="form-label">Data format</label>
+        <p-select
+          appendTo="body"
+          [options]="dataFormatItems"
+          [ngModel]="dataFormat()"
+          (ngModelChange)="dataFormat.set($event)"
+        ></p-select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Record type</label>
+        <p-select
+          appendTo="body"
+          [options]="recordTypeItems"
+          [ngModel]="recordType()"
+          (ngModelChange)="recordType.set($event)"
+        ></p-select>
+      </div>
+
+      <div class="col-md-3" [hidden]="dataFormat() !== 'csv'">
+        <label class="form-label">CSV delimiter</label>
+        <p-select
+          appendTo="body"
+          [options]="csvDelimiterItems"
+          [ngModel]="csvDelimiter()"
+          (ngModelChange)="csvDelimiter.set($event)"
+        ></p-select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Raw / Label</label>
+        <p-select
+          appendTo="body"
+          [options]="rawOrLabelItems"
+          [ngModel]="rawOrLabel()"
+          (ngModelChange)="rawOrLabel.set($event)"
+        ></p-select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label">Header labels</label>
+        <p-select
+          appendTo="body"
+          [options]="rawOrLabelHeadersItems"
+          [ngModel]="rawOrLabelHeaders()"
+          (ngModelChange)="rawOrLabelHeaders.set($event)"
+        ></p-select>
+      </div>
+
+      @if (exportMode() === 'records') {
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="exportSurveyFields"
+              [ngModel]="exportSurveyFields()"
+              (ngModelChange)="exportSurveyFields.set($event)"
+            />
+            <label class="form-check-label" for="exportSurveyFields">Include survey fields</label>
+            <br /><small class="text-muted">Survey identifier &amp; timestamps</small>
+          </div>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="exportDataAccessGroups"
+              [ngModel]="exportDataAccessGroups()"
+              (ngModelChange)="exportDataAccessGroups.set($event)"
+            />
+            <label class="form-check-label" for="exportDataAccessGroups">Include Data Access Groups</label>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Fields (comma separated)</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="fieldsInput()"
+            (ngModelChange)="fieldsInput.set($event)"
+            placeholder="record_id, age, diagnosis"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Forms (comma separated)</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="formsInput()"
+            (ngModelChange)="formsInput.set($event)"
+            placeholder="baseline_form, followup_form"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Events (comma separated)</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="eventsInput()"
+            (ngModelChange)="eventsInput.set($event)"
+            placeholder="event_1_arm_1, event_2_arm_1"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Records (comma separated)</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="recordsInput()"
+            (ngModelChange)="recordsInput.set($event)"
+            placeholder="1, 2, 3"
+          />
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label">Filter logic</label>
+          <input
+            type="text"
+            class="form-control"
+            [ngModel]="filterLogic()"
+            (ngModelChange)="filterLogic.set($event)"
+            placeholder="[status] = 1"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Date range begin</label>
+          <input
+            type="date"
+            class="form-control"
+            [ngModel]="dateRangeBegin()"
+            (ngModelChange)="dateRangeBegin.set($event)"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Date range end</label>
+          <input
+            type="date"
+            class="form-control"
+            [ngModel]="dateRangeEnd()"
+            (ngModelChange)="dateRangeEnd.set($event)"
+          />
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="card shadow-sm p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="m-0">Variable anonymization</h5>
+      <span class="text-muted small">Only "none" and "blank" are enabled.</span>
+    </div>
+
+    @if (loadingVariables()) {
+      <p class="text-muted mb-0">Loading variables...</p>
+    } @else if (variables().length === 0) {
+      <p class="text-muted mb-0">
+        @if (exportMode() === 'report') {
+          No variables were returned for this report.
+        } @else {
+          No variables found in this project.
+        }
+      </p>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Variable</th>
+              <th scope="col" class="anonymization-col">Anonymization</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (variable of variables(); track variable.name) {
+              <tr>
+                <td>
+                  <code>{{ variable.name }}</code>
+                </td>
+                <td class="anonymization-col">
+                  <p-select
+                    appendTo="body"
+                    [options]="anonymizationItems"
+                    [ngModel]="variable.anonymization"
+                    (ngModelChange)="
+                      setVariableAnonymization(variable.name, $event)
+                    "
+                  ></p-select>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <div class="card shadow-sm p-3">
+    <h5 class="mb-2">Generated files</h5>
+    @if (exportMode() === 'report') {
+      <ul class="mb-0 generated-files">
+        <li><code>redcap/report-&lt;id&gt;/data.&lt;csv|json&gt;</code></li>
+        <li><code>redcap/report-&lt;id&gt;/metadata.csv</code></li>
+        <li><code>redcap/report-&lt;id&gt;/project_info.json</code></li>
+        <li><code>redcap/report-&lt;id&gt;/events.csv</code> (longitudinal only)</li>
+        <li><code>redcap/report-&lt;id&gt;/form_event_mapping.csv</code> (longitudinal only)</li>
+        <li><code>redcap/report-&lt;id&gt;/manifest.json</code></li>
+      </ul>
+    } @else {
+      <ul class="mb-0 generated-files">
+        <li><code>redcap/records/data.&lt;csv|json&gt;</code></li>
+        <li><code>redcap/records/metadata.csv</code></li>
+        <li><code>redcap/records/project_info.json</code></li>
+        <li><code>redcap/records/events.csv</code> (longitudinal only)</li>
+        <li><code>redcap/records/form_event_mapping.csv</code> (longitudinal only)</li>
+        <li><code>redcap/records/manifest.json</code></li>
+      </ul>
+    }
+  </div>
+</div>

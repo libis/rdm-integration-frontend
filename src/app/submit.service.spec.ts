@@ -32,6 +32,7 @@ class MockCredentialsService {
   repoName$ = signal('repoX').asReadonly();
   url$ = signal('http://repo').asReadonly();
   option$ = signal('optA').asReadonly();
+  pluginOptions$ = signal<string | undefined>(undefined).asReadonly();
   user$ = signal('u1').asReadonly();
   token$ = signal('tok').asReadonly();
   datasetId$ = signal('doi:10/ABC').asReadonly();
