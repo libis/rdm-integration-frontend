@@ -779,6 +779,15 @@ export class ConnectComponent
               this.notificationService.showError(err);
               return;
             }
+            // Ensure this.url() is populated. onRepoChange() resets it when a
+            // repository is selected, and parseAndCheckFields only performs a
+            // pure validation without writing to signals. Call parseUrl() here
+            // so the compare request receives a valid source URL.
+            const parseErr = this.parseUrl();
+            if (parseErr !== undefined) {
+              this.notificationService.showError(parseErr);
+              return;
+            }
             const pId = this.pluginId();
             if (!pId) return;
 
