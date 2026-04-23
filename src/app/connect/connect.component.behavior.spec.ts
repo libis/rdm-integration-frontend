@@ -396,6 +396,8 @@ describe('ConnectComponent additional behavior/validation', () => {
     comp.pluginId.set('github');
     comp.plugin.set('github');
     comp.datasetId.set('root:COLL:New Dataset');
+    // sourceUrl must be parseable so connect()'s parseUrl() call succeeds
+    comp.sourceUrl.set('https://host/owner/repo');
     const httpMock = TestBed.inject(HttpTestingController);
 
     comp.connect();
