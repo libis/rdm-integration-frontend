@@ -378,6 +378,7 @@ export class ConnectComponent
               this.repoNames.set(v);
             })
             .catch((err) => {
+              if (this.handleScopesError(err)) return;
               this.repoNames.set([
                 {
                   label: `search failed: ${err.message}`,
@@ -386,6 +387,7 @@ export class ConnectComponent
               ]);
             }),
         error: (err) => {
+          if (this.handleScopesError(err)) return;
           this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]);
@@ -1215,6 +1217,29 @@ export class ConnectComponent
           }
         },
       });
+  }
+
+  /**
+   * Inspect a failed HTTP response for the `*scopes*<scope list>*scopes*`
+   * marker returned by plugins that need additional OAuth scopes (GitHub,
+   * Globus, ...). When present, trigger a re-authorization with the extra
+   * scopes appended to the authorize URL. Returns true when the marker was
+   * detected and re-auth was triggered so callers can skip regular error
+   * handling.
+   */
+  private handleScopesError(err: unknown): boolean {
+    const errStr =
+      (err as { error?: string } | undefined)?.error ??
+      (err as { message?: string } | undefined)?.message ??
+      '';
+    if (typeof errStr !== 'string') return false;
+    const scopesStr = '*scopes*';
+    const first = errStr.indexOf(scopesStr);
+    const last = errStr.lastIndexOf(scopesStr);
+    if (first < 0 || last <= first) return false;
+    const scopes = errStr.substring(first + scopesStr.length, last);
+    this.getRepoToken(scopes);
+    return true;
   }
 
   /**
