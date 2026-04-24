@@ -115,6 +115,8 @@ export class ConnectComponent
 
   readonly repoNameSelect = viewChild.required<Select>('repoSelect');
 
+  private tokenExchangeInProgress = false;
+
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
   readonly DOI_SELECT_WIDTH: SafeStyle =
@@ -378,6 +380,7 @@ export class ConnectComponent
               this.repoNames.set(v);
             })
             .catch((err) => {
+              if (this.handleScopesError(err)) return;
               this.repoNames.set([
                 {
                   label: `search failed: ${err.message}`,
@@ -386,6 +389,7 @@ export class ConnectComponent
               ]);
             }),
         error: (err) => {
+          if (this.handleScopesError(err)) return;
           this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]);
@@ -538,13 +542,24 @@ export class ConnectComponent
     }
     const code = params['code'];
     const pId = this.pluginId();
-    if (loginState.nonce && pId && code) {
+    if (loginState.nonce && pId && code && !this.tokenExchangeInProgress) {
+      this.tokenExchangeInProgress = true;
+      
       const tokenSubscription = this.oauth
         .getToken(pId, code, loginState.nonce)
-        .subscribe((x) => {
+        .subscribe({
+          next: (x) => {
           this.token.set(x.session_id);
-          this.subscriptions.delete(tokenSubscription);
-          tokenSubscription?.unsubscribe();
+          this.tokenExchangeInProgress = false;
+        },
+          error: () => {
+            // Do NOT reset tokenExchangeInProgress here. An OAuth code is
+            // single-use: resetting the flag on error would allow a stale
+            // queryParams re-emission (e.g., after a Dataverse login
+            // redirect) to fire a second getToken call with the same code.
+            // The user can retry by clicking "Authorize" again, which calls
+            // getRepoToken() → navigation.assign() → fresh page/instance.
+          }
         });
       this.subscriptions.add(tokenSubscription);
     }
@@ -1215,6 +1230,29 @@ export class ConnectComponent
           }
         },
       });
+  }
+
+  /**
+   * Inspect a failed HTTP response for the `*scopes*<scope list>*scopes*`
+   * marker returned by plugins that need additional OAuth scopes (GitHub,
+   * Globus, ...). When present, trigger a re-authorization with the extra
+   * scopes appended to the authorize URL. Returns true when the marker was
+   * detected and re-auth was triggered so callers can skip regular error
+   * handling.
+   */
+  private handleScopesError(err: unknown): boolean {
+    const errStr =
+      (err as { error?: string } | undefined)?.error ??
+      (err as { message?: string } | undefined)?.message ??
+      '';
+    if (typeof errStr !== 'string') return false;
+    const scopesStr = '*scopes*';
+    const first = errStr.indexOf(scopesStr);
+    const last = errStr.lastIndexOf(scopesStr);
+    if (first < 0 || last <= first) return false;
+    const scopes = errStr.substring(first + scopesStr.length, last);
+    this.getRepoToken(scopes);
+    return true;
   }
 
   /**
