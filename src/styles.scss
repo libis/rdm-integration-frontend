@@ -307,3 +307,30 @@ label {
     );
   }
 }
+
+/*
+ * Loading overlays for PrimeNG tables, tree-tables and trees.
+ *
+ * PrimeNG's default mask has no backdrop and its spinner inherits the
+ * surrounding text color, which makes "loading" state almost invisible in
+ * dark mode (no tint over the content, low-contrast icon). These rules add
+ * a subtle theme-aware backdrop and ensure the spinner uses the primary
+ * color so the loading state is clearly legible in both light and dark
+ * themes. CSS variables come from the PrimeNG theme, so no media query is
+ * needed.
+ */
+.p-treetable-mask,
+.p-datatable-mask,
+.p-tree-mask {
+  background-color: color-mix(
+    in srgb,
+    var(--p-content-background) 65%,
+    transparent
+  );
+}
+
+.p-treetable-loading-icon,
+.p-datatable-loading-icon,
+.p-tree-loading-icon {
+  color: var(--p-primary-color, var(--p-text-color));
+}

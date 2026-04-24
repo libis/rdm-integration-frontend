@@ -76,6 +76,12 @@
       </button>
     </div>
   </div>
+  @if (showHashProgress()) {
+    <div class="col-12 text-center hashing-progress" aria-live="polite">
+      <i class="pi pi-spin pi-spinner"></i>&nbsp;Hashing files...
+      {{ hashedCount() }} / {{ totalHashCount() }}
+    </div>
+  }
 </div>
 
 @if (
