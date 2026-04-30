@@ -8,7 +8,7 @@ export const APP_CONSTANTS = {
   DEBOUNCE_TIME: 750,
 
   // Maximum retry attempts for data updates
-  MAX_UPDATE_RETRIES: 10,
+  MAX_UPDATE_RETRIES: 100,
 
   // Sleep duration between retries (ms)
   RETRY_SLEEP_DURATION: 1000,

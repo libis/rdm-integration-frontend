@@ -21,7 +21,7 @@
       [ngClass]="canProceed() ? 'p-button-primary' : 'p-button-secondary'"
       (click)="submit()"
       [title]="proceedTitle()"
-      [attr.disabled]="!canProceed() || disabled() ? '' : null"
+      [attr.disabled]="!canProceed() || loading() ? '' : null"
     >
       Confirm file actions&nbsp;<i class="pi pi-angle-double-right"></i>
     </button>
@@ -37,7 +37,7 @@
         class="p-button-sm p-button-raised"
         (click)="mirrorSelection()"
         title="Copy all new and changed files; remove missing"
-        [attr.disabled]="disabled() ? '' : null"
+        [attr.disabled]="loading() ? '' : null"
         style="margin-right: 0.5rem"
       >
         <i [class]="icon_mirror"></i>&nbsp;Mirror
@@ -48,7 +48,7 @@
         class="p-button-sm p-button-raised"
         (click)="updateSelection()"
         title="Copy new and changed files"
-        [attr.disabled]="disabled() ? '' : null"
+        [attr.disabled]="loading() ? '' : null"
         style="margin-right: 0.5rem"
       >
         <i [class]="icon_update"></i>&nbsp;Copy
@@ -59,7 +59,7 @@
         class="p-button-sm p-button-raised"
         (click)="noActionSelection()"
         title="Clear selection (no actions)"
-        [attr.disabled]="disabled() ? '' : null"
+        [attr.disabled]="loading() ? '' : null"
         style="margin-right: 0.5rem"
       >
         <i [class]="icon_noaction"></i>&nbsp;Clear
@@ -205,7 +205,7 @@
               class="p-button-sm p-button-raised"
               icon="pi pi-filter"
               (click)="op.toggle($event)"
-              [attr.disabled]="disabled() ? '' : null"
+              [attr.disabled]="loading() ? '' : null"
             ></button>
           </span>
         </th>

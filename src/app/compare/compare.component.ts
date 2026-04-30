@@ -85,10 +85,7 @@ export class CompareComponent
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
-  private updatePollingSubscription?: Subscription;
-  private updatePollingGeneration = 0;
-  private updatePollingDatasetId?: string;
-  private updatePollingActive = false;
+  private pollingActive = false;
 
   // Icon constants
   readonly icon_noaction = APP_CONSTANTS.ICONS.NO_ACTION;
@@ -103,7 +100,6 @@ export class CompareComponent
   // Signals for state
   readonly data = signal<CompareResult>({});
   readonly loading = signal(true);
-  readonly disabled = signal(true);
   readonly refreshHidden = signal(true);
   readonly refreshTrigger = signal(0); // Used to trigger updates in children when actions mirror/copy occur
 
@@ -311,11 +307,9 @@ export class CompareComponent
         this.data.set(data);
         if (data.data && data.id) {
           if (data.status !== ResultStatus.Updating) {
-            this.stopUpdatePolling();
-            this.disabled.set(false);
             this.loading.set(false);
           } else {
-            this.startUpdatePolling(false, data.id);
+            this.startUpdatePolling();
           }
         }
       }
@@ -355,47 +349,23 @@ export class CompareComponent
   }
 
   ngOnDestroy(): void {
-    this.stopUpdatePolling();
+    this.pollingActive = false;
     this.subscriptions.forEach((sub) => sub.unsubscribe());
     this.subscriptions.clear();
     const shouldReset = this.loading();
     this.dataStateService.cancelInitialization(shouldReset);
   }
 
-  private startUpdatePolling(forceRestart = false, datasetId?: string): void {
-    const currentDatasetId = datasetId ?? this.data().id;
-    const shouldRestart =
-      forceRestart ||
-      this.updatePollingDatasetId !== currentDatasetId ||
-      !this.updatePollingActive;
-
-    if (!shouldRestart) {
+  private startUpdatePolling(): void {
+    if (!this.loading() || this.pollingActive) {
       return;
     }
-
-    this.stopUpdatePolling();
-    this.updatePollingActive = true;
-    this.updatePollingDatasetId = currentDatasetId;
-    this.updatePollingGeneration++;
-    this.getUpdatedData(0, this.updatePollingGeneration);
+    this.pollingActive = true;
+    this.getUpdatedData(0);
   }
 
-  private stopUpdatePolling(): void {
-    this.updatePollingGeneration++;
-    this.updatePollingActive = false;
-    this.updatePollingDatasetId = undefined;
-    this.updatePollingSubscription?.unsubscribe();
-    this.updatePollingSubscription = undefined;
-  }
-
-  private getUpdatedData(
-    cnt: number,
-    generation = this.updatePollingGeneration,
-  ): void {
-    if (
-      generation !== this.updatePollingGeneration ||
-      !this.updatePollingActive
-    ) {
+  private getUpdatedData(cnt: number): void {
+    if (!this.loading() || !this.pollingActive) {
       return;
     }
     const id = this.data().id!;
@@ -406,54 +376,40 @@ export class CompareComponent
     subscription = this.dataUpdatesService
       .updateData(dataItems, id)
       .subscribe(async (data: CompareResult) => {
-        if (
-          generation !== this.updatePollingGeneration ||
-          !this.updatePollingActive
-        ) {
-          this.subscriptions.delete(subscription);
-          if (this.updatePollingSubscription === subscription) {
-            this.updatePollingSubscription = undefined;
-          }
+        this.subscriptions.delete(subscription);
+        if (!this.loading() || !this.pollingActive) {
           return;
         }
         cnt++;
-        this.subscriptions.delete(subscription);
-        if (this.updatePollingSubscription === subscription) {
-          this.updatePollingSubscription = undefined;
-        }
         if (data.data && data.id) {
           this.data.set(data);
         }
         if (this.data().status !== ResultStatus.Updating) {
-          this.stopUpdatePolling();
-          this.disabled.set(false);
+          this.pollingActive = false;
           this.loading.set(false);
         } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
-          this.stopUpdatePolling();
+          this.pollingActive = false;
           this.loading.set(false);
           this.refreshHidden.set(false);
         } else {
           await this.utils.sleep(APP_CONSTANTS.RETRY_SLEEP_DURATION);
-          if (
-            generation === this.updatePollingGeneration &&
-            this.updatePollingActive
-          ) {
-            this.getUpdatedData(cnt, generation);
+          if (this.loading() && this.pollingActive) {
+            this.getUpdatedData(cnt);
           }
         }
       });
-    this.updatePollingSubscription = subscription;
     this.subscriptions.add(subscription);
   }
 
   refresh(): void {
     // Reset state as if just arrived on the page
-    this.stopUpdatePolling();
+    this.pollingActive = false;
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
+    this.subscriptions.clear();
     this.refreshHidden.set(true);
     this.loading.set(true);
-    this.disabled.set(true);
     // Restart the polling loop from count 0
-    this.startUpdatePolling(true, this.data().id);
+    this.startUpdatePolling();
   }
 
   noActionSelection(): void {

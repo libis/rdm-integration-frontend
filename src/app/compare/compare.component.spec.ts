@@ -680,7 +680,7 @@ describe('CompareComponent', () => {
       (component as any).dataUpdatesService = dataUpdatesStub;
       (component as any).utils = utilsStub;
       component.data.set(updating);
-      component['startUpdatePolling'](true);
+      component['startUpdatePolling']();
       await new Promise<void>((r) => setTimeout(r));
       expect(component.loading()).toBeFalse();
 
@@ -766,7 +766,7 @@ describe('CompareComponent', () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
       expect(dataUpdatesStub.updateData.calls.count()).toBe(1);
-      expect((component as any).updatePollingActive).toBeFalse();
+      expect((component as any).pollingActive).toBeFalse();
     });
 
     it('caps compare polling retries for updating status', async () => {
