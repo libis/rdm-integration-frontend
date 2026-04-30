@@ -82,13 +82,13 @@
 <div class="row justify-content-between align-items-center sticky-menu">
   @if (configLoaded() && showDVToken()) {
     <div class="col-auto">
-      <div class="input-group">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Token:&nbsp;</span>
+      <div class="app-input-group">
+        <div class="app-input-addon">
+          <span>Token:&nbsp;</span>
         </div>
         <input
           type="password"
-          class="form-control"
+          class="app-input"
           id="dataverseToken"
           placeholder="Dataverse API token"
           [ngModel]="dataverseToken()"
@@ -128,7 +128,7 @@
 <br />
 
 <div class="mb-3">
-  <label for="datasetId" class="form-label">Dataset DOI</label>
+  <label for="datasetId" class="app-field-label">Dataset DOI</label>
   <p-select
     appendTo="body"
     autoWidth="false"
@@ -207,7 +207,7 @@
     <div class="download-split-right">
       <div style="margin: 0.2rem; padding-left: 2rem">
         <div class="mb-3">
-          <label for="repoNameSearch" class="form-label">{{
+          <label for="repoNameSearch" class="app-field-label">{{
             repoNameFieldName()
           }}</label>
           <p-select
@@ -227,7 +227,7 @@
           ></p-select>
         </div>
         <div class="mb-3">
-          <label for="repoBranchTree" class="form-label">{{
+          <label for="repoBranchTree" class="app-field-label">{{
             optionFieldName()
           }}</label
           ><br />

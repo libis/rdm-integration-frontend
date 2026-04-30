@@ -33,10 +33,7 @@ export function parseInlineStyle(style: string): InlineStyleMap {
   }, {});
 }
 
-/**
- * Convenience helper for tests to verify Bootstrap table CSS variables are present.
- */
-export function expectBootstrapTableStyle(
+export function expectInlineActionStyle(
   style: string,
   expectedBackground: string | undefined,
   expectedColor: string | undefined,
@@ -46,11 +43,6 @@ export function expectBootstrapTableStyle(
   if (expectedBackground) {
     const entries: Record<string, string> = {
       'background-color': expectedBackground,
-      '--bs-table-bg': expectedBackground,
-      '--bs-table-striped-bg': expectedBackground,
-      '--bs-table-hover-bg': expectedBackground,
-      '--bs-table-active-bg': expectedBackground,
-      '--bs-table-accent-bg': expectedBackground,
     };
 
     for (const [key, value] of Object.entries(entries)) {
@@ -64,18 +56,13 @@ export function expectBootstrapTableStyle(
       }
     }
   } else {
-    const offending = [
-      'background-color',
-      '--bs-table-bg',
-      '--bs-table-striped-bg',
-      '--bs-table-hover-bg',
-      '--bs-table-active-bg',
-      '--bs-table-accent-bg',
-    ].filter((key) => Object.prototype.hasOwnProperty.call(map, key));
+    const offending = ['background-color'].filter((key) =>
+      Object.prototype.hasOwnProperty.call(map, key),
+    );
 
     if (offending.length > 0) {
       throw new Error(
-        `Expected no Bootstrap background variables but found: ${offending.join(', ')}`,
+        `Expected no background declarations but found: ${offending.join(', ')}`,
       );
     }
   }
@@ -83,10 +70,6 @@ export function expectBootstrapTableStyle(
   if (expectedColor) {
     const entries: Record<string, string> = {
       color: expectedColor,
-      '--bs-table-color': expectedColor,
-      '--bs-table-striped-color': expectedColor,
-      '--bs-table-hover-color': expectedColor,
-      '--bs-table-active-color': expectedColor,
     };
 
     for (const [key, value] of Object.entries(entries)) {
@@ -100,17 +83,13 @@ export function expectBootstrapTableStyle(
       }
     }
   } else {
-    const offending = [
-      'color',
-      '--bs-table-color',
-      '--bs-table-striped-color',
-      '--bs-table-hover-color',
-      '--bs-table-active-color',
-    ].filter((key) => Object.prototype.hasOwnProperty.call(map, key));
+    const offending = ['color'].filter((key) =>
+      Object.prototype.hasOwnProperty.call(map, key),
+    );
 
     if (offending.length > 0) {
       throw new Error(
-        `Expected no Bootstrap color variables but found: ${offending.join(', ')}`,
+        `Expected no color declarations but found: ${offending.join(', ')}`,
       );
     }
   }

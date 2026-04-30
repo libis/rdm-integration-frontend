@@ -165,7 +165,7 @@ describe('DownladablefileComponent', () => {
       'background-color: var(--app-file-action-custom-bg)',
     );
     expect(style).toContain(
-      '--bs-table-color: var(--app-file-action-custom-color)',
+      'color: var(--app-file-action-custom-color)',
     );
   });
 

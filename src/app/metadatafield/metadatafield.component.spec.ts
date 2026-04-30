@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TreeNode } from 'primeng/api';
-import { expectBootstrapTableStyle } from '../../testing/inline-style-test-helpers';
+import { expectInlineActionStyle } from '../../testing/inline-style-test-helpers';
 import { Field, Fieldaction } from '../models/field';
 import { MetadatafieldComponent } from './metadatafield.component';
 
@@ -67,7 +67,7 @@ describe('MetadatafieldComponent', () => {
     fixture.detectChanges();
 
     expect(() =>
-      expectBootstrapTableStyle(
+      expectInlineActionStyle(
         component.hostStyle(),
         'var(--app-file-action-copy-bg)',
         'var(--app-file-action-copy-color)',

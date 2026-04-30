@@ -15,13 +15,13 @@
     </div>
     @if (showDVToken()) {
       <div class="col-auto">
-        <div class="input-group">
-          <div class="input-group-prepend">
-            <span class="input-group-text">Token:&nbsp;</span>
+        <div class="app-input-group">
+          <div class="app-input-addon">
+            <span>Token:&nbsp;</span>
           </div>
           <input
             type="password"
-            class="form-control"
+            class="app-input"
             id="dataverseToken"
             placeholder="Dataverse API token"
             [ngModel]="dataverseToken()"
@@ -75,7 +75,7 @@
 <br />
 
 <div class="mb-3">
-  <label for="datasetId" class="form-label">Dataset DOI</label>
+  <label for="datasetId" class="app-field-label">Dataset DOI</label>
   <p-select
     appendTo="body"
     autoWidth="false"
@@ -96,7 +96,7 @@
 
 <!-- Info box about file filtering -->
 @if (datasetId()) {
-  <div class="alert alert-info" role="alert">
+  <div class="app-message app-message-info" role="alert">
     <i class="pi pi-info-circle"></i>&nbsp; <strong>DDI-CDI Generation</strong
     ><br />
     Only compatible files are shown below (csv, tsv, tab, sps, sas, dct). All

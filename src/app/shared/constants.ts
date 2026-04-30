@@ -54,10 +54,6 @@ export type FileActionStyle = Readonly<{
   color?: string;
 }>;
 
-type InlineStyleOptions = Readonly<{
-  includeTableVariables?: boolean;
-}>;
-
 const FILE_ACTION_STYLES: Record<FileActionStyleKey, FileActionStyle> = {
   IGNORE: {},
   COPY: {
@@ -98,36 +94,16 @@ export function getFileActionStyle(
 
 /**
  * Convert a file-action style definition to an inline style string.
- * Optionally inject Bootstrap table CSS variables so descendant cells inherit the colors.
  */
-export function buildInlineStyle(
-  style: FileActionStyle,
-  options: InlineStyleOptions = { includeTableVariables: true },
-): string {
+export function buildInlineStyle(style: FileActionStyle): string {
   const declarations: string[] = [];
-  const includeTableVariables = options.includeTableVariables ?? true;
 
   if (style.backgroundColor) {
-    const bg = style.backgroundColor;
-    declarations.push(`background-color: ${bg}`);
-    if (includeTableVariables) {
-      declarations.push(`--bs-table-bg: ${bg}`);
-      declarations.push(`--bs-table-striped-bg: ${bg}`);
-      declarations.push(`--bs-table-hover-bg: ${bg}`);
-      declarations.push(`--bs-table-active-bg: ${bg}`);
-      declarations.push(`--bs-table-accent-bg: ${bg}`);
-    }
+    declarations.push(`background-color: ${style.backgroundColor}`);
   }
 
   if (style.color) {
-    const color = style.color;
-    declarations.push(`color: ${color}`);
-    if (includeTableVariables) {
-      declarations.push(`--bs-table-color: ${color}`);
-      declarations.push(`--bs-table-striped-color: ${color}`);
-      declarations.push(`--bs-table-hover-color: ${color}`);
-      declarations.push(`--bs-table-active-color: ${color}`);
-    }
+    declarations.push(`color: ${style.color}`);
   }
 
   return declarations.length ? `${declarations.join('; ')};` : '';

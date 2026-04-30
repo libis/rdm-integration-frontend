@@ -42,7 +42,7 @@
         <p-accordion-content>
           <div>
             <div class="mb-3">
-              <label for="plugin" class="form-label">Repository type</label
+              <label for="plugin" class="app-field-label">Repository type</label
               ><br />
               <p-select
                 appendTo="body"
@@ -56,7 +56,7 @@
               ></p-select>
             </div>
             <div class="mb-3" [hidden]="pluginIdSelectHidden()">
-              <label for="pluginId" class="form-label"
+              <label for="pluginId" class="app-field-label"
                 >Repository instance</label
               ><br />
               <p-select
@@ -83,12 +83,12 @@
             </button>
             <div [hidden]="hasOauthConfig() && !isAuthorized()">
               <div class="mb-3" [hidden]="usernameFieldName() === undefined">
-                <label for="username" class="form-label">{{
+                <label for="username" class="app-field-label">{{
                   usernameFieldName()
                 }}</label>
                 <input
                   type="text"
-                  class="form-control"
+                  class="app-input"
                   id="username"
                   [placeholder]="usernamePlaceholder()"
                   [ngModel]="user()"
@@ -97,20 +97,20 @@
                 />
               </div>
               <div class="mb-3" [hidden]="tokenFieldName() === undefined">
-                <label for="repoToken" class="form-label">{{
+                <label for="repoToken" class="app-field-label">{{
                   tokenFieldName()
                 }}</label>
-                <div class="input-group">
+                <div class="app-input-group">
                   <input
                     type="password"
-                    class="form-control"
+                    class="app-input"
                     id="repoToken"
                     [placeholder]="tokenPlaceholder()"
                     [ngModel]="token()"
                     (ngModelChange)="token.set($event)"
                     #ctrl="ngModel"
                   />
-                  <div class="input-group-append">
+                  <div class="app-input-action">
                     <button
                       style="
                         width: 12rem;
@@ -130,12 +130,12 @@
                 </div>
               </div>
               <div class="mb-3" [hidden]="sourceUrlFieldName() === undefined">
-                <label for="baseUrl" class="form-label">{{
+                <label for="baseUrl" class="app-field-label">{{
                   sourceUrlFieldName()
                 }}</label>
                 <input
                   type="text"
-                  class="form-control"
+                  class="app-input"
                   id="baseUrl"
                   [placeholder]="sourceUrlPlaceholder()"
                   [ngModel]="sourceUrl()"
@@ -152,12 +152,12 @@
                   repoNameSearchEnabled()
                 "
               >
-                <label for="repoName" class="form-label">{{
+                <label for="repoName" class="app-field-label">{{
                   repoNameFieldName()
                 }}</label>
                 <input
                   type="text"
-                  class="form-control"
+                  class="app-input"
                   id="repoName"
                   [placeholder]="repoNamePlaceholder()"
                   [ngModel]="repoName()"
@@ -173,7 +173,7 @@
                   pluginRepoNames().length === 0
                 "
               >
-                <label for="repoNameSelect" class="form-label">{{
+                <label for="repoNameSelect" class="app-field-label">{{
                   repoNameFieldName()
                 }}</label>
                 <p-select
@@ -190,7 +190,7 @@
                 ></p-select>
               </div>
               <div class="mb-3" [hidden]="!repoNameSearchEnabled()">
-                <label for="repoNameSearch" class="form-label">{{
+                <label for="repoNameSearch" class="app-field-label">{{
                   repoNameFieldName()
                 }}</label>
                 <p-select
@@ -215,7 +215,7 @@
                   optionFieldName() === undefined || isOptionFieldInteractive()
                 "
               >
-                <label for="repoBranch" class="form-label">{{
+                <label for="repoBranch" class="app-field-label">{{
                   optionFieldName()
                 }}</label
                 ><br />
@@ -247,7 +247,7 @@
                   optionFieldName() === undefined || !isOptionFieldInteractive()
                 "
               >
-                <label for="repoBranchTree" class="form-label">{{
+                <label for="repoBranchTree" class="app-field-label">{{
                   optionFieldName()
                 }}</label
                 ><br />
@@ -271,11 +271,11 @@
           <div>
             @if (showDVToken()) {
               <div class="mb-3">
-                <label for="dataverseToken" class="form-label">Token</label>
-                <div class="input-group">
+                <label for="dataverseToken" class="app-field-label">Token</label>
+                <div class="app-input-group">
                   <input
                     type="password"
-                    class="form-control"
+                    class="app-input"
                     id="dataverseToken"
                     placeholder="Dataverse API token"
                     [ngModel]="dataverseToken()"
@@ -284,7 +284,7 @@
                     (onChange)="onUserChange()"
                   />
                   @if (showDVTokenGetter()) {
-                    <div class="input-group-append">
+                    <div class="app-input-action">
                       <button
                         style="
                           width: 12rem;
@@ -306,7 +306,7 @@
             }
             @if (!collectionOptionsHidden()) {
               <div class="mb-3">
-                <label for="collectionId" class="form-label"
+                <label for="collectionId" class="app-field-label"
                   >Dataverse collection</label
                 >
                 <p-select
@@ -327,7 +327,7 @@
               </div>
             }
             <div class="mb-3">
-              <label for="datasetId" class="form-label">Dataset DOI</label>
+              <label for="datasetId" class="app-field-label">Dataset DOI</label>
               <p-select
                 appendTo="body"
                 [editable]="datasetFieldEditable()"

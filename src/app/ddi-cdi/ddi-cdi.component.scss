@@ -1,13 +1,13 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-.alert {
+.app-message {
   padding: 1rem;
   margin-bottom: 1rem;
   border-radius: var(--p-border-radius);
   border: 1px solid;
 }
 
-.alert-info {
+.app-message-info {
   background-color: color-mix(
     in srgb,
     var(--p-primary-color) 10%,
@@ -46,28 +46,6 @@
     background-color: var(--p-form-field-disabled-background);
     color: var(--p-form-field-disabled-color);
     cursor: not-allowed;
-  }
-}
-
-// Ensure TreeTable inherits theme-aware colors (matches compare component pattern)
-::ng-deep {
-  .p-treetable {
-    .p-treetable-thead > tr > th {
-      background-color: var(--p-content-background);
-      color: var(--p-text-color);
-      border-color: var(--p-surface-border);
-    }
-
-    .p-treetable-tbody > tr {
-      background-color: var(--p-content-background);
-      color: var(--p-text-color);
-
-      > td {
-        background-color: inherit;
-        color: inherit;
-        border-color: var(--p-surface-border);
-      }
-    }
   }
 }
 
