@@ -25,10 +25,3 @@
 .treetable-container {
   overflow: hidden;
 }
-
-// Hashing progress indicator shown while files are being hashed.
-.hashing-progress {
-  font-size: 0.9rem;
-  color: var(--p-text-muted-color, var(--p-text-color));
-  margin-top: 0.25rem;
-}

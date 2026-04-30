@@ -107,18 +107,6 @@ export class CompareComponent
   readonly refreshHidden = signal(true);
   readonly refreshTrigger = signal(0); // Used to trigger updates in children when actions mirror/copy occur
 
-  // Hashing progress signals: number of files still awaiting hashing, and the
-  // peak pending count observed during the current polling cycle (used as the
-  // denominator for the "X / Y files hashed" progress counter).
-  readonly pendingHashCount = signal(0);
-  readonly totalHashCount = signal(0);
-  readonly hashedCount = computed(() =>
-    Math.max(0, this.totalHashCount() - this.pendingHashCount()),
-  );
-  readonly showHashProgress = computed(
-    () => this.loading() && this.totalHashCount() > 0,
-  );
-
   // Filter configuration
   readonly filterItems: FilterItem[] = [
     {
@@ -326,9 +314,7 @@ export class CompareComponent
             this.stopUpdatePolling();
             this.disabled.set(false);
             this.loading.set(false);
-            this.resetHashProgress();
           } else {
-            this.updateHashProgress(data);
             this.startUpdatePolling(false, data.id);
           }
         }
@@ -438,20 +424,10 @@ export class CompareComponent
         if (data.data && data.id) {
           this.data.set(data);
         }
-        // Track hashing progress: if the number of pending files decreased,
-        // reset the retry counter so polling keeps going as long as the
-        // backend is making progress. The retry cap only applies when no
-        // progress is being made.
-        const prevPending = this.pendingHashCount();
-        this.updateHashProgress(data);
-        if (this.pendingHashCount() < prevPending) {
-          cnt = 0;
-        }
         if (this.data().status !== ResultStatus.Updating) {
           this.stopUpdatePolling();
           this.disabled.set(false);
           this.loading.set(false);
-          this.resetHashProgress();
         } else if (cnt > APP_CONSTANTS.MAX_UPDATE_RETRIES) {
           this.stopUpdatePolling();
           this.loading.set(false);
@@ -476,43 +452,8 @@ export class CompareComponent
     this.refreshHidden.set(true);
     this.loading.set(true);
     this.disabled.set(true);
-    this.resetHashProgress();
     // Restart the polling loop from count 0
     this.startUpdatePolling(true, this.data().id);
-  }
-
-  /**
-   * Count files that are still awaiting a hash (status Unknown or undefined).
-   * Folders are excluded.
-   */
-  private countPendingHashes(data: CompareResult | undefined): number {
-    if (!data?.data) return 0;
-    let count = 0;
-    for (const d of data.data) {
-      if (!d.attributes?.isFile) continue;
-      if (d.status === undefined || d.status === Filestatus.Unknown) {
-        count++;
-      }
-    }
-    return count;
-  }
-
-  /**
-   * Update the pending/total hash counters from a poll response. The total is
-   * locked to the peak pending count observed so the progress ratio never
-   * goes backwards if the backend reports a larger pending set mid-polling.
-   */
-  private updateHashProgress(data: CompareResult | undefined): void {
-    const pending = this.countPendingHashes(data);
-    this.pendingHashCount.set(pending);
-    if (pending > this.totalHashCount()) {
-      this.totalHashCount.set(pending);
-    }
-  }
-
-  private resetHashProgress(): void {
-    this.pendingHashCount.set(0);
-    this.totalHashCount.set(0);
   }
 
   noActionSelection(): void {
