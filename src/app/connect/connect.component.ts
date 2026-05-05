@@ -544,14 +544,14 @@ export class ConnectComponent
     const pId = this.pluginId();
     if (loginState.nonce && pId && code && !this.tokenExchangeInProgress) {
       this.tokenExchangeInProgress = true;
-      
+
       const tokenSubscription = this.oauth
         .getToken(pId, code, loginState.nonce)
         .subscribe({
           next: (x) => {
-          this.token.set(x.session_id);
-          this.tokenExchangeInProgress = false;
-        },
+            this.token.set(x.session_id);
+            this.tokenExchangeInProgress = false;
+          },
           error: () => {
             // Do NOT reset tokenExchangeInProgress here. An OAuth code is
             // single-use: resetting the flag on error would allow a stale
@@ -559,7 +559,7 @@ export class ConnectComponent
             // redirect) to fire a second getToken call with the same code.
             // The user can retry by clicking "Authorize" again, which calls
             // getRepoToken() → navigation.assign() → fresh page/instance.
-          }
+          },
         });
       this.subscriptions.add(tokenSubscription);
     }
