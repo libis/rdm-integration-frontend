@@ -1,3 +1,26 @@
+// Ensure table sections inherit theme-aware colors while inline row styles override when provided
+
+.table {
+  tbody,
+  thead,
+  td,
+  th {
+    background-color: var(--p-content-background);
+    color: var(--p-text-color);
+  }
+
+  tr {
+    background-color: var(--p-content-background);
+    color: var(--p-text-color);
+
+    td,
+    th {
+      background-color: inherit;
+      color: inherit;
+    }
+  }
+}
+
 // Virtual-scrolling container
 .treetable-container {
   overflow: hidden;

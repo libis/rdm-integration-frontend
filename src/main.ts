@@ -15,6 +15,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { definePreset } from '@primeuix/themes';
 import { MessageService } from 'primeng/api';
 import Lara from '@primeuix/themes/lara';
@@ -59,6 +60,7 @@ bootstrapApplication(AppComponent, {
     MessageService,
     importProvidersFrom(
       BrowserModule,
+      NgbModule,
       AccordionModule,
       FormsModule,
       TreeTableModule,

@@ -13,15 +13,15 @@
   </span>
   @if (configLoaded() && showDVToken()) {
     <span class="col-auto">
-      <div class="app-input-group">
-        <div class="app-input-addon">
-          <span style="height: 3rem"
+      <div class="input-group">
+        <div class="input-group-prepend">
+          <span class="input-group-text" style="height: 3rem"
             >Token:&nbsp;</span
           >
         </div>
         <input
           type="password"
-          class="app-input"
+          class="form-control"
           id="dataverseToken"
           placeholder="Dataverse API token"
           [ngModel]="dataverseToken()"
@@ -146,7 +146,7 @@
         [maxRows]="15"
         [value]="output()"
         [placeholder]="output() ? '' : 'Console output...'"
-        class="console-output"
+        style="font-family: monospace"
       ></textarea>
     </div>
   </div>

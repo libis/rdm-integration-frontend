@@ -193,8 +193,17 @@ button {
   z-index: 1;
 }
 
-.app-input {
-  width: 100%;
+/* Theme-aware styling for Bootstrap form-control to match PrimeNG form fields */
+.form-control,
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+select {
   background: var(--p-form-field-background);
   color: var(--p-form-field-color);
   border: 0.0625rem solid var(--p-form-field-border-color);
@@ -226,65 +235,75 @@ button {
   }
 }
 
-.app-field-label {
-  display: inline-block;
-  margin-bottom: 0.5rem;
+/* Ensure form labels use theme colors */
+.form-label,
+label {
   color: var(--p-text-color);
   font-weight: 500;
 }
 
-.app-input-group {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-
-  .app-input {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-}
-
-.app-input-addon,
-.app-input-action {
-  display: flex;
-  align-items: center;
-}
-
-.app-input-addon {
-  padding: var(--p-form-field-padding-y) var(--p-form-field-padding-x);
-  color: var(--p-text-muted-color, var(--p-text-color));
-  background: var(--p-content-background);
-  border: 0.0625rem solid var(--p-form-field-border-color);
-  border-right: 0;
-  border-radius: var(--p-form-field-border-radius) 0 0
-    var(--p-form-field-border-radius);
-}
-
-.app-input-group > .app-input:not(:first-child) {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.app-input-group > .app-input:not(:last-child) {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.app-static-table {
-  width: 100%;
-  margin-bottom: 1rem;
-  border-collapse: collapse;
+/* Submit component table background - ensure it uses theme background in dark mode */
+::ng-deep .p-datatable .p-datatable-tbody > tr {
+  background-color: var(--p-content-background);
   color: var(--p-text-color);
-  background: var(--p-content-background);
+}
 
-  :is(th, td) {
-    padding: 0.5rem;
-    color: inherit;
-    background: inherit;
-    border: 0.0625rem solid var(--p-surface-border);
-  }
+::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  background-color: var(--p-content-background);
+  color: var(--p-text-color);
+  border-color: var(--p-surface-border);
+}
 
-  th {
-    font-weight: 600;
+/* Light/dark adaptive helper for Bootstrap tables */
+.table-theme-adaptive {
+  --bs-table-color: var(--p-text-color);
+  --bs-table-bg: var(--p-content-background);
+  --bs-table-border-color: var(--p-surface-border, rgba(0, 0, 0, 0.08));
+  --bs-table-striped-bg: var(--p-content-background);
+  --bs-table-striped-color: var(--p-text-color);
+  --bs-table-hover-bg: var(--p-content-background);
+  --bs-table-hover-color: var(--p-text-color);
+  --bs-table-active-bg: var(--p-content-background);
+  --bs-table-active-color: var(--p-text-color);
+  --bs-table-accent-bg: var(--p-content-background);
+}
+
+.table-theme-adaptive :is(thead, tbody, tfoot) > tr {
+  background-color: inherit;
+  color: inherit;
+}
+
+.table-theme-adaptive :is(thead, tbody, tfoot) > tr > * {
+  background-color: inherit;
+  color: inherit;
+}
+
+@supports (color: color-mix(in srgb, #000 50%, #fff 50%)) {
+  .table-theme-adaptive {
+    --bs-table-striped-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 96%,
+      #ffffff 4%
+    );
+    --bs-table-hover-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 92%,
+      #ffffff 8%
+    );
+    --bs-table-active-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 88%,
+      #ffffff 12%
+    );
+    --bs-table-accent-bg: color-mix(
+      in srgb,
+      var(--p-content-background) 94%,
+      #ffffff 6%
+    );
+    --bs-table-border-color: color-mix(
+      in srgb,
+      var(--p-surface-border, var(--p-content-background)) 70%,
+      var(--p-content-background) 30%
+    );
   }
 }

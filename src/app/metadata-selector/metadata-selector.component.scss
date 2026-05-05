@@ -1,3 +1,30 @@
+// Metadata selector component styles
+// Ensure PrimeNG tables inherit theme-aware colors while allowing inline row styles to take precedence
+
+:host ::ng-deep {
+  .table {
+    background-color: var(--p-content-background);
+    color: var(--p-text-color);
+
+    thead,
+    tbody {
+      background-color: inherit;
+      color: inherit;
+    }
+
+    tr {
+      background-color: var(--p-content-background);
+      color: inherit;
+
+      td,
+      th {
+        background-color: inherit;
+        color: inherit;
+      }
+    }
+  }
+}
+
 .treetable-cell {
   background-color: var(--p-content-background);
   padding: 0;

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { expectInlineActionStyle } from '../../testing/inline-style-test-helpers';
+import { expectBootstrapTableStyle } from '../../testing/inline-style-test-helpers';
 import { CredentialsService } from '../credentials.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { SubmittedFileComponent } from './submitted-file.component';
@@ -36,7 +36,7 @@ describe('SubmittedFileComponent', () => {
   it('applies inline style tokens based on file action', () => {
     setDatafile({ action: Fileaction.Copy });
     expect(() =>
-      expectInlineActionStyle(
+      expectBootstrapTableStyle(
         component.hostStyle(),
         'var(--app-file-action-copy-bg)',
         'var(--app-file-action-copy-color)',
@@ -45,7 +45,7 @@ describe('SubmittedFileComponent', () => {
 
     setDatafile({ action: Fileaction.Update });
     expect(() =>
-      expectInlineActionStyle(
+      expectBootstrapTableStyle(
         component.hostStyle(),
         'var(--app-file-action-update-bg)',
         'var(--app-file-action-update-color)',
@@ -54,7 +54,7 @@ describe('SubmittedFileComponent', () => {
 
     setDatafile({ action: Fileaction.Delete, status: Filestatus.New });
     expect(() =>
-      expectInlineActionStyle(
+      expectBootstrapTableStyle(
         component.hostStyle(),
         'var(--app-file-action-delete-bg)',
         'var(--app-file-action-delete-color)',
@@ -63,7 +63,7 @@ describe('SubmittedFileComponent', () => {
 
     setDatafile({ action: Fileaction.Custom });
     expect(() =>
-      expectInlineActionStyle(
+      expectBootstrapTableStyle(
         component.hostStyle(),
         'var(--app-file-action-custom-bg)',
         'var(--app-file-action-custom-color)',

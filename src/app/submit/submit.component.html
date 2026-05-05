@@ -119,14 +119,14 @@
   </ng-template>
 </p-dialog>
 
-<table class="app-static-table">
+<table class="table table-theme-adaptive">
   <tbody>
     <tr class="file-list-header">
       <th><i [class]="icon_copy"></i> Files that will be created</th>
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <table class="app-static-table">
+        <table class="table table-theme-adaptive">
           <tbody>
             @for (datafile of created(); track datafile.id ?? $index) {
               <tr
@@ -146,7 +146,7 @@
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <table class="app-static-table">
+        <table class="table table-theme-adaptive">
           <tbody>
             @for (datafile of updated(); track datafile.id ?? $index) {
               <tr
@@ -166,7 +166,7 @@
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <table class="app-static-table">
+        <table class="table table-theme-adaptive">
           <tbody>
             @for (datafile of deleted(); track datafile.id ?? $index) {
               <tr
