@@ -52,28 +52,45 @@
       </div>
     </div>
 
-    @if (exportMode() === 'report') {
+    @if (exportMode() === "report") {
       <p class="text-muted small mb-3">
-        Export a saved REDCap report by ID. The report definition controls which fields and records are included.
+        Export a saved REDCap report by ID. The report definition controls which
+        fields and records are included.
       </p>
     } @else {
       <p class="text-muted small mb-3">
-        Export all project records directly via the REDCap API. Use the filters below to narrow the result.
+        Export all project records directly via the REDCap API. Use the filters
+        below to narrow the result.
       </p>
     }
 
     <div class="row g-3">
-      @if (exportMode() === 'report') {
+      @if (exportMode() === "report") {
         <div class="col-md-3">
           <label class="form-label">Report ID</label>
-          <input
-            type="text"
-            class="form-control"
-            [ngModel]="reportId()"
-            (ngModelChange)="reportId.set($event)"
-            placeholder="e.g. 3010"
-          />
-          <small class="text-muted">Find this in REDCap under My Reports &amp; Exports.</small>
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              [ngModel]="reportId()"
+              (ngModelChange)="reportId.set($event)"
+              (blur)="onReportIdBlur()"
+              placeholder="e.g. 3010"
+            />
+            <button
+              pButton
+              type="button"
+              class="p-button p-button-sm p-button-outlined"
+              (click)="reloadVariables()"
+              title="Load the report's variables for anonymization"
+            >
+              Load variables
+            </button>
+          </div>
+          <small class="text-muted"
+            >Find this in REDCap under My Reports &amp; Exports. Reports are
+            always exported flat.</small
+          >
         </div>
       }
 
@@ -84,16 +101,6 @@
           [options]="dataFormatItems"
           [ngModel]="dataFormat()"
           (ngModelChange)="dataFormat.set($event)"
-        ></p-select>
-      </div>
-
-      <div class="col-md-3">
-        <label class="form-label">Record type</label>
-        <p-select
-          appendTo="body"
-          [options]="recordTypeItems"
-          [ngModel]="recordType()"
-          (ngModelChange)="recordType.set($event)"
         ></p-select>
       </div>
 
@@ -117,7 +124,13 @@
         ></p-select>
       </div>
 
-      <div class="col-md-3">
+      <div
+        class="col-md-3"
+        [hidden]="
+          dataFormat() !== 'csv' ||
+          (exportMode() === 'records' && recordType() === 'eav')
+        "
+      >
         <label class="form-label">Header labels</label>
         <p-select
           appendTo="body"
@@ -127,7 +140,17 @@
         ></p-select>
       </div>
 
-      @if (exportMode() === 'records') {
+      @if (exportMode() === "records") {
+        <div class="col-md-3">
+          <label class="form-label">Record type</label>
+          <p-select
+            appendTo="body"
+            [options]="recordTypeItems"
+            [ngModel]="recordType()"
+            (ngModelChange)="recordType.set($event)"
+          ></p-select>
+        </div>
+
         <div class="col-md-3 d-flex align-items-end">
           <div class="form-check">
             <input
@@ -137,8 +160,12 @@
               [ngModel]="exportSurveyFields()"
               (ngModelChange)="exportSurveyFields.set($event)"
             />
-            <label class="form-check-label" for="exportSurveyFields">Include survey fields</label>
-            <br /><small class="text-muted">Survey identifier &amp; timestamps</small>
+            <label class="form-check-label" for="exportSurveyFields"
+              >Include survey fields</label
+            >
+            <br /><small class="text-muted"
+              >Survey identifier &amp; timestamps</small
+            >
           </div>
         </div>
 
@@ -151,7 +178,9 @@
               [ngModel]="exportDataAccessGroups()"
               (ngModelChange)="exportDataAccessGroups.set($event)"
             />
-            <label class="form-check-label" for="exportDataAccessGroups">Include Data Access Groups</label>
+            <label class="form-check-label" for="exportDataAccessGroups"
+              >Include Data Access Groups</label
+            >
           </div>
         </div>
 
@@ -239,11 +268,18 @@
       <span class="text-muted small">Only "none" and "blank" are enabled.</span>
     </div>
 
+    @if (exportMode() === "records" && recordType() === "eav") {
+      <p class="text-muted small">
+        EAV export: blanking is applied per field to the value column of
+        matching rows.
+      </p>
+    }
+
     @if (loadingVariables()) {
       <p class="text-muted mb-0">Loading variables...</p>
     } @else if (variables().length === 0) {
       <p class="text-muted mb-0">
-        @if (exportMode() === 'report') {
+        @if (exportMode() === "report") {
           No variables were returned for this report.
         } @else {
           No variables found in this project.
@@ -284,13 +320,18 @@
 
   <div class="card shadow-sm p-3">
     <h5 class="mb-2">Generated files</h5>
-    @if (exportMode() === 'report') {
+    @if (exportMode() === "report") {
       <ul class="mb-0 generated-files">
         <li><code>redcap/report-&lt;id&gt;/data.&lt;csv|json&gt;</code></li>
         <li><code>redcap/report-&lt;id&gt;/metadata.csv</code></li>
         <li><code>redcap/report-&lt;id&gt;/project_info.json</code></li>
-        <li><code>redcap/report-&lt;id&gt;/events.csv</code> (longitudinal only)</li>
-        <li><code>redcap/report-&lt;id&gt;/form_event_mapping.csv</code> (longitudinal only)</li>
+        <li>
+          <code>redcap/report-&lt;id&gt;/events.csv</code> (longitudinal only)
+        </li>
+        <li>
+          <code>redcap/report-&lt;id&gt;/form_event_mapping.csv</code>
+          (longitudinal only)
+        </li>
         <li><code>redcap/report-&lt;id&gt;/manifest.json</code></li>
       </ul>
     } @else {
@@ -299,7 +340,9 @@
         <li><code>redcap/records/metadata.csv</code></li>
         <li><code>redcap/records/project_info.json</code></li>
         <li><code>redcap/records/events.csv</code> (longitudinal only)</li>
-        <li><code>redcap/records/form_event_mapping.csv</code> (longitudinal only)</li>
+        <li>
+          <code>redcap/records/form_event_mapping.csv</code> (longitudinal only)
+        </li>
         <li><code>redcap/records/manifest.json</code></li>
       </ul>
     }

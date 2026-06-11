@@ -38,7 +38,7 @@ interface Redcap2PluginOptions {
   dateRangeEnd?: string;
   recordType?: 'flat' | 'eav';
   csvDelimiter?: ',' | 'tab';
-  rawOrLabel?: 'raw' | 'label' | 'both';
+  rawOrLabel?: 'raw' | 'label';
   rawOrLabelHeaders?: 'raw' | 'label';
   exportSurveyFields?: boolean;
   exportDataAccessGroups?: boolean;
@@ -73,12 +73,15 @@ export class Redcap2ExportComponent implements OnInit {
   readonly filterLogic = signal('');
   readonly dateRangeBegin = signal('');
   readonly dateRangeEnd = signal('');
-  readonly rawOrLabel = signal<'raw' | 'label' | 'both'>('raw');
+  readonly rawOrLabel = signal<'raw' | 'label'>('raw');
   readonly rawOrLabelHeaders = signal<'raw' | 'label'>('raw');
   readonly exportSurveyFields = signal(false);
   readonly exportDataAccessGroups = signal(false);
   readonly variables = signal<Redcap2VariableOption[]>([]);
   readonly loadingVariables = signal(false);
+  readonly lastLoadedReportId = signal('');
+  // Increments per variables request; stale responses are discarded.
+  private loadSeq = 0;
 
   readonly dataFormatItems: SelectItem<string>[] = [
     { label: 'CSV', value: 'csv' },
@@ -100,10 +103,10 @@ export class Redcap2ExportComponent implements OnInit {
     { label: 'Blank', value: 'blank' },
   ];
 
+  // "both" is not a real REDCap API value — only raw and label exist.
   readonly rawOrLabelItems: SelectItem<string>[] = [
     { label: 'Raw', value: 'raw' },
     { label: 'Label', value: 'label' },
-    { label: 'Both', value: 'both' },
   ];
 
   readonly rawOrLabelHeadersItems: SelectItem<string>[] = [
@@ -140,9 +143,32 @@ export class Redcap2ExportComponent implements OnInit {
     }
     this.exportMode.set(mode);
     this.variables.set([]);
+    this.lastLoadedReportId.set('');
     if (mode === 'records' || this.reportId().trim()) {
       this.loadVariables(new Map());
     }
+  }
+
+  // Loads the variable list when the user finishes typing a (new) report ID —
+  // without this, identifier auto-blanking would silently be skipped on the
+  // first visit.
+  onReportIdBlur(): void {
+    const id = this.reportId().trim();
+    if (
+      this.exportMode() === 'report' &&
+      id !== '' &&
+      id !== this.lastLoadedReportId()
+    ) {
+      this.loadVariables(new Map());
+    }
+  }
+
+  reloadVariables(): void {
+    if (this.exportMode() === 'report' && this.reportId().trim() === '') {
+      this.notificationService.showError('Enter a report ID first.');
+      return;
+    }
+    this.loadVariables(new Map());
   }
 
   goBack(): void {
@@ -169,7 +195,8 @@ export class Redcap2ExportComponent implements OnInit {
       exportMode: mode,
       reportId: mode === 'report' ? reportId : undefined,
       dataFormat: this.dataFormat(),
-      recordType: this.recordType(),
+      // Report exports are always flat (content=report has no type parameter).
+      recordType: mode === 'records' ? this.recordType() : 'flat',
       csvDelimiter: this.csvDelimiter(),
       rawOrLabel: this.rawOrLabel(),
       rawOrLabelHeaders: this.rawOrLabelHeaders(),
@@ -225,8 +252,7 @@ export class Redcap2ExportComponent implements OnInit {
 
     try {
       const parsed = JSON.parse(raw) as Partial<Redcap2PluginOptions>;
-      const savedMode =
-        parsed.exportMode === 'records' ? 'records' : 'report';
+      const savedMode = parsed.exportMode === 'records' ? 'records' : 'report';
       this.exportMode.set(savedMode);
 
       // For report mode, discard options from a different report.
@@ -247,11 +273,7 @@ export class Redcap2ExportComponent implements OnInit {
       if (parsed.csvDelimiter === ',' || parsed.csvDelimiter === 'tab') {
         this.csvDelimiter.set(parsed.csvDelimiter);
       }
-      if (
-        parsed.rawOrLabel === 'raw' ||
-        parsed.rawOrLabel === 'label' ||
-        parsed.rawOrLabel === 'both'
-      ) {
+      if (parsed.rawOrLabel === 'raw' || parsed.rawOrLabel === 'label') {
         this.rawOrLabel.set(parsed.rawOrLabel);
       }
       if (
@@ -292,18 +314,20 @@ export class Redcap2ExportComponent implements OnInit {
   private loadVariables(savedModes: Map<string, 'none' | 'blank'>): void {
     const creds = this.credentialsService.credentials$();
     const mode = this.exportMode();
+    const reportId = mode === 'report' ? this.reportId().trim() : '';
+    const seq = ++this.loadSeq;
     const req: RepoLookupRequest = {
       pluginId: creds.pluginId,
       plugin: creds.plugin,
       repoName: creds.repo_name,
-      option: mode === 'report' ? this.reportId() : '',
+      option: reportId,
       url: creds.url,
       user: creds.user,
       token: creds.token,
       pluginOptions: JSON.stringify({
         request: 'variables',
         exportMode: mode,
-        reportId: mode === 'report' ? this.reportId() : '',
+        reportId: reportId,
       }),
     };
 
@@ -313,6 +337,9 @@ export class Redcap2ExportComponent implements OnInit {
       .pipe(take(1))
       .subscribe({
         next: (items) => {
+          if (seq !== this.loadSeq) {
+            return; // a newer request superseded this one
+          }
           const identifierFields = new Set(
             items
               .filter((item) => item.selected)
@@ -335,9 +362,13 @@ export class Redcap2ExportComponent implements OnInit {
                 (identifierFields.has(name) ? 'blank' : 'none'),
             })),
           );
+          this.lastLoadedReportId.set(reportId);
           this.loadingVariables.set(false);
         },
         error: (err) => {
+          if (seq !== this.loadSeq) {
+            return;
+          }
           this.loadingVariables.set(false);
           this.notificationService.showError(
             `Variable lookup failed: ${this.errorMessage(err)}`,

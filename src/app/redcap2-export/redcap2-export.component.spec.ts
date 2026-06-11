@@ -16,6 +16,7 @@ import { of } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { RepoLookupService } from '../repo.lookup.service';
+import { RepoLookupRequest } from '../models/repo-lookup';
 import { NotificationService } from '../shared/notification.service';
 import { Redcap2ExportComponent } from './redcap2-export.component';
 
@@ -155,5 +156,75 @@ describe('Redcap2ExportComponent', () => {
     expect(notificationService.showError).toHaveBeenCalledWith(
       'Report ID is missing.',
     );
+  });
+
+  it('does not offer the nonexistent rawOrLabel=both API value', () => {
+    expect(component.rawOrLabelItems.map((item) => item.value)).toEqual([
+      'raw',
+      'label',
+    ]);
+  });
+
+  it('forces flat record type in report mode (content=report has no type parameter)', () => {
+    component.recordType.set('eav');
+    component.continueToCompare();
+    const saved = JSON.parse(
+      credentialsService.credentials$().plugin_options ?? '{}',
+    ) as { recordType?: string };
+    expect(saved.recordType).toBe('flat');
+  });
+
+  it('loads variables when a new report ID is entered (blur)', () => {
+    repoLookupService.getOptions.calls.reset();
+    component.reportId.set('4020');
+    component.onReportIdBlur();
+    expect(repoLookupService.getOptions).toHaveBeenCalledTimes(1);
+    expect(component.lastLoadedReportId()).toBe('4020');
+  });
+
+  it('does not reload variables on blur when the report ID is unchanged', () => {
+    repoLookupService.getOptions.calls.reset();
+    component.onReportIdBlur(); // id 3010 was already loaded in ngOnInit
+    expect(repoLookupService.getOptions).not.toHaveBeenCalled();
+  });
+
+  it('requires a report ID before manual variable reload in report mode', () => {
+    const notificationService = TestBed.inject(
+      NotificationService,
+    ) as unknown as NotificationServiceStub;
+    repoLookupService.getOptions.calls.reset();
+    component.reportId.set('');
+    component.reloadVariables();
+    expect(notificationService.showError).toHaveBeenCalledWith(
+      'Enter a report ID first.',
+    );
+    expect(repoLookupService.getOptions).not.toHaveBeenCalled();
+  });
+
+  it('loads project variables when switching to records mode', () => {
+    repoLookupService.getOptions.calls.reset();
+    component.setExportMode('records');
+    expect(repoLookupService.getOptions).toHaveBeenCalledTimes(1);
+    const req = repoLookupService.getOptions.calls.mostRecent()
+      .args[0] as RepoLookupRequest;
+    expect(JSON.parse(req.pluginOptions ?? '{}')).toEqual({
+      request: 'variables',
+      exportMode: 'records',
+      reportId: '',
+    });
+  });
+
+  it('pre-selects identifier-tagged variables as blank', () => {
+    repoLookupService.getOptions.and.returnValue(
+      of([
+        { label: 'record_id', value: 'record_id' },
+        { label: 'email', value: 'email', selected: true },
+      ]),
+    );
+    component.setExportMode('records');
+    expect(component.variables()).toEqual([
+      { name: 'email', anonymization: 'blank' },
+      { name: 'record_id', anonymization: 'none' },
+    ]);
   });
 });
