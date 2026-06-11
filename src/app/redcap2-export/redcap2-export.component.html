@@ -320,8 +320,10 @@
           class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2"
         >
           <span class="hint-text small"
-            >Identifier-tagged fields are pre-set to "blank". Only "none" and
-            "blank" are enabled.</span
+            >Identifier-tagged fields are pre-set to "blank". "Blank" empties
+            the values, "drop" removes the variable entirely, "pseudonymize"
+            replaces values with irreversible HMAC codes (same key, same
+            codes).</span
           >
           <button
             pButton
@@ -336,8 +338,35 @@
 
         @if (exportMode() === "records" && recordType() === "eav") {
           <div class="alert alert-info" role="alert">
-            <i class="pi pi-info-circle"></i>&nbsp;EAV export: blanking is
-            applied per field to the value column of matching rows.
+            <i class="pi pi-info-circle"></i>&nbsp;EAV export: transforms are
+            applied per field to the value column of matching rows. A transform
+            on the record ID field is also applied to the record column;
+            dropping the record ID field is not possible in EAV.
+          </div>
+        }
+
+        @if (usesPseudonymization()) {
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label for="pseudonymizationKey" class="form-label"
+                >Pseudonymization key (base64)</label
+              >
+              <input
+                type="password"
+                class="form-control"
+                id="pseudonymizationKey"
+                autocomplete="off"
+                placeholder="Paste your base64 key"
+                [ngModel]="pseudonymizationKey()"
+                (ngModelChange)="pseudonymizationKey.set($event)"
+              />
+              <small class="hint-text"
+                >You manage this key, not the server. Generate one with
+                <code>openssl rand -base64 32</code> and store it safely: the
+                same key reproduces the same pseudonyms in future exports;
+                without it, exports cannot be linked.</small
+              >
+            </div>
           </div>
         }
 
@@ -369,6 +398,12 @@
                   <tr>
                     <td>
                       <code>{{ variable.name }}</code>
+                      @if (variable.note) {
+                        <i
+                          class="pi pi-exclamation-triangle phi-risk-icon"
+                          [title]="variable.note"
+                        ></i>
+                      }
                     </td>
                     <td class="anonymization-col">
                       <p-select

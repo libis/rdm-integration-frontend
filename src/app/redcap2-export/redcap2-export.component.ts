@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -27,10 +28,22 @@ import { RepoLookupService } from '../repo.lookup.service';
 import { RepoLookupRequest } from '../models/repo-lookup';
 import { NotificationService } from '../shared/notification.service';
 
+type Redcap2Anonymization = 'none' | 'blank' | 'drop' | 'pseudonymize';
+
 interface Redcap2VariableOption {
   name: string;
-  anonymization: 'none' | 'blank';
+  anonymization: Redcap2Anonymization;
 }
+
+// Variables as shown in the anonymization table: the PHI-risk note is
+// display-only and not sent back to the backend.
+interface Redcap2VariableRow extends Redcap2VariableOption {
+  note?: string;
+}
+
+// Minimum decoded length of the pseudonymization key; must match the backend
+// (minPseudonymizationKeyBytes). The recommended key is 32 bytes.
+const MIN_PSEUDONYMIZATION_KEY_BYTES = 16;
 
 interface Redcap2PluginOptions {
   exportMode?: 'report' | 'records';
@@ -50,6 +63,7 @@ interface Redcap2PluginOptions {
   exportSurveyFields?: boolean;
   exportDataAccessGroups?: boolean;
   variables?: Redcap2VariableOption[];
+  pseudonymizationKey?: string;
   generatedAt?: string;
 }
 
@@ -94,12 +108,19 @@ export class Redcap2ExportComponent implements OnInit {
   readonly rawOrLabelHeaders = signal<'raw' | 'label'>('raw');
   readonly exportSurveyFields = signal(false);
   readonly exportDataAccessGroups = signal(false);
-  readonly variables = signal<Redcap2VariableOption[]>([]);
+  readonly variables = signal<Redcap2VariableRow[]>([]);
+  readonly pseudonymizationKey = signal('');
   readonly loadingVariables = signal(false);
   readonly lastLoadedReportId = signal('');
   readonly expandedPanels = signal<string[]>(['0', '1', '2']);
   // Increments per variables request; stale responses are discarded.
   private loadSeq = 0;
+
+  readonly usesPseudonymization = computed(() =>
+    this.variables().some(
+      (variable) => variable.anonymization === 'pseudonymize',
+    ),
+  );
 
   readonly dataFormatItems: SelectItem<string>[] = [
     { label: 'CSV', value: 'csv' },
@@ -119,6 +140,8 @@ export class Redcap2ExportComponent implements OnInit {
   readonly anonymizationItems: SelectItem<string>[] = [
     { label: 'None', value: 'none' },
     { label: 'Blank', value: 'blank' },
+    { label: 'Drop', value: 'drop' },
+    { label: 'Pseudonymize', value: 'pseudonymize' },
   ];
 
   // "both" is not a real REDCap API value — only raw and label exist.
@@ -209,6 +232,24 @@ export class Redcap2ExportComponent implements OnInit {
       return;
     }
 
+    const usesPseudonymization = this.usesPseudonymization();
+    const pseudonymizationKey = this.pseudonymizationKey().trim();
+    if (usesPseudonymization) {
+      const keyBytes = this.decodedKeyLength(pseudonymizationKey);
+      if (keyBytes < 0) {
+        this.notificationService.showError(
+          'The pseudonymization key is not valid base64. Generate one with: openssl rand -base64 32',
+        );
+        return;
+      }
+      if (keyBytes < MIN_PSEUDONYMIZATION_KEY_BYTES) {
+        this.notificationService.showError(
+          `The pseudonymization key is too short (${keyBytes} bytes decoded, minimum ${MIN_PSEUDONYMIZATION_KEY_BYTES}). Generate one with: openssl rand -base64 32`,
+        );
+        return;
+      }
+    }
+
     const options: Redcap2PluginOptions = {
       exportMode: mode,
       reportId: mode === 'report' ? reportId : undefined,
@@ -218,7 +259,14 @@ export class Redcap2ExportComponent implements OnInit {
       csvDelimiter: this.csvDelimiter(),
       rawOrLabel: this.rawOrLabel(),
       rawOrLabelHeaders: this.rawOrLabelHeaders(),
-      variables: this.variables(),
+      // The display-only PHI-risk note is stripped from the submitted options.
+      variables: this.variables().map(({ name, anonymization }) => ({
+        name,
+        anonymization,
+      })),
+      pseudonymizationKey: usesPseudonymization
+        ? pseudonymizationKey
+        : undefined,
       generatedAt: new Date().toISOString(),
       ...(mode === 'records' && {
         exportSurveyFields: this.exportSurveyFields(),
@@ -252,7 +300,7 @@ export class Redcap2ExportComponent implements OnInit {
   }
 
   setVariableAnonymization(name: string, anonymization: string): void {
-    const normalized = anonymization === 'blank' ? 'blank' : 'none';
+    const normalized = this.normalizeAnonymization(anonymization);
     this.variables.set(
       this.variables().map((variable) =>
         variable.name === name
@@ -262,8 +310,25 @@ export class Redcap2ExportComponent implements OnInit {
     );
   }
 
-  private applySavedPluginOptions(raw?: string): Map<string, 'none' | 'blank'> {
-    const modes = new Map<string, 'none' | 'blank'>();
+  private normalizeAnonymization(value: unknown): Redcap2Anonymization {
+    return value === 'blank' || value === 'drop' || value === 'pseudonymize'
+      ? value
+      : 'none';
+  }
+
+  // Returns the decoded byte length of a base64 key, or -1 when invalid.
+  private decodedKeyLength(key: string): number {
+    try {
+      return atob(key).length;
+    } catch {
+      return -1;
+    }
+  }
+
+  private applySavedPluginOptions(
+    raw?: string,
+  ): Map<string, Redcap2Anonymization> {
+    const modes = new Map<string, Redcap2Anonymization>();
     if (!raw || raw.trim() === '') {
       return modes;
     }
@@ -313,13 +378,17 @@ export class Redcap2ExportComponent implements OnInit {
         this.exportDataAccessGroups.set(parsed.exportDataAccessGroups ?? false);
       }
 
+      if (typeof parsed.pseudonymizationKey === 'string') {
+        this.pseudonymizationKey.set(parsed.pseudonymizationKey);
+      }
+
       for (const variable of parsed.variables ?? []) {
         if (!variable?.name) {
           continue;
         }
         modes.set(
           variable.name,
-          variable.anonymization === 'blank' ? 'blank' : 'none',
+          this.normalizeAnonymization(variable.anonymization),
         );
       }
     } catch {
@@ -329,7 +398,7 @@ export class Redcap2ExportComponent implements OnInit {
     return modes;
   }
 
-  private loadVariables(savedModes: Map<string, 'none' | 'blank'>): void {
+  private loadVariables(savedModes: Map<string, Redcap2Anonymization>): void {
     const creds = this.credentialsService.credentials$();
     const mode = this.exportMode();
     const reportId = mode === 'report' ? this.reportId().trim() : '';
@@ -364,6 +433,13 @@ export class Redcap2ExportComponent implements OnInit {
               .map((item) => String(item.value ?? item.label ?? '').trim())
               .filter((name) => name !== ''),
           );
+          const noteByName = new Map<string, string>();
+          for (const item of items) {
+            const name = String(item.value ?? item.label ?? '').trim();
+            if (name !== '' && item.note) {
+              noteByName.set(name, item.note);
+            }
+          }
           const names = Array.from(
             new Set(
               items
@@ -373,12 +449,16 @@ export class Redcap2ExportComponent implements OnInit {
           ).sort((a, b) => a.localeCompare(b));
 
           this.variables.set(
-            names.map((name) => ({
-              name,
-              anonymization:
-                savedModes.get(name) ??
-                (identifierFields.has(name) ? 'blank' : 'none'),
-            })),
+            names.map((name) => {
+              const row: Redcap2VariableRow = {
+                name,
+                anonymization:
+                  savedModes.get(name) ??
+                  (identifierFields.has(name) ? 'blank' : 'none'),
+              };
+              const note = noteByName.get(name);
+              return note ? { ...row, note } : row;
+            }),
           );
           this.lastLoadedReportId.set(reportId);
           this.loadingVariables.set(false);

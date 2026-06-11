@@ -227,4 +227,116 @@ describe('Redcap2ExportComponent', () => {
       { name: 'record_id', anonymization: 'none' },
     ]);
   });
+
+  it('offers all four anonymization modes', () => {
+    expect(component.anonymizationItems.map((item) => item.value)).toEqual([
+      'none',
+      'blank',
+      'drop',
+      'pseudonymize',
+    ]);
+  });
+
+  it('keeps PHI-risk notes from the variable lookup', () => {
+    repoLookupService.getOptions.and.returnValue(
+      of([
+        { label: 'record_id', value: 'record_id' },
+        {
+          label: 'comments',
+          value: 'comments',
+          note: 'free-text notes field: may contain identifying information',
+        },
+      ]),
+    );
+    component.setExportMode('records');
+    expect(component.variables()).toEqual([
+      {
+        name: 'comments',
+        anonymization: 'none',
+        note: 'free-text notes field: may contain identifying information',
+      },
+      { name: 'record_id', anonymization: 'none' },
+    ]);
+  });
+
+  it('rejects pseudonymization without a valid base64 key', () => {
+    const notificationService = TestBed.inject(
+      NotificationService,
+    ) as unknown as NotificationServiceStub;
+    component.setVariableAnonymization('record_id', 'pseudonymize');
+    expect(component.usesPseudonymization()).toBeTrue();
+
+    component.pseudonymizationKey.set('!!!not-base64!!!');
+    component.continueToCompare();
+    expect(notificationService.showError).toHaveBeenCalledWith(
+      'The pseudonymization key is not valid base64. Generate one with: openssl rand -base64 32',
+    );
+    expect(router.navigate).not.toHaveBeenCalledWith(
+      ['/compare', 'doi:10.5072/FK2/TEST'],
+      jasmine.anything(),
+    );
+  });
+
+  it('rejects a too-short pseudonymization key', () => {
+    const notificationService = TestBed.inject(
+      NotificationService,
+    ) as unknown as NotificationServiceStub;
+    component.setVariableAnonymization('record_id', 'pseudonymize');
+    component.pseudonymizationKey.set(btoa('tooshort'));
+    component.continueToCompare();
+    expect(notificationService.showError).toHaveBeenCalledWith(
+      jasmine.stringContaining('too short'),
+    );
+  });
+
+  it('submits the pseudonymization key only when pseudonymization is used', () => {
+    const key = btoa('0123456789abcdef0123456789abcdef');
+    component.setVariableAnonymization('record_id', 'pseudonymize');
+    component.pseudonymizationKey.set(key);
+    component.continueToCompare();
+    let saved = JSON.parse(
+      credentialsService.credentials$().plugin_options ?? '{}',
+    ) as { pseudonymizationKey?: string };
+    expect(saved.pseudonymizationKey).toBe(key);
+
+    component.setVariableAnonymization('record_id', 'blank');
+    component.continueToCompare();
+    saved = JSON.parse(
+      credentialsService.credentials$().plugin_options ?? '{}',
+    ) as { pseudonymizationKey?: string };
+    expect(saved.pseudonymizationKey).toBeUndefined();
+  });
+
+  it('strips display-only notes from submitted variables', () => {
+    repoLookupService.getOptions.and.returnValue(
+      of([{ label: 'comments', value: 'comments', note: 'free-text' }]),
+    );
+    component.setExportMode('records');
+    component.continueToCompare();
+    const saved = JSON.parse(
+      credentialsService.credentials$().plugin_options ?? '{}',
+    ) as { variables?: Array<Record<string, unknown>> };
+    expect(saved.variables).toEqual([
+      { name: 'comments', anonymization: 'none' },
+    ]);
+  });
+
+  it('restores a saved pseudonymization key and modes', () => {
+    credentialsService.updateCredentials({
+      plugin_options: JSON.stringify({
+        exportMode: 'report',
+        reportId: '3010',
+        dataFormat: 'csv',
+        variables: [{ name: 'record_id', anonymization: 'pseudonymize' }],
+        pseudonymizationKey: 'c2F2ZWQta2V5',
+      }),
+    });
+    const newFixture = TestBed.createComponent(Redcap2ExportComponent);
+    newFixture.detectChanges();
+    const newComponent = newFixture.componentInstance;
+    expect(newComponent.pseudonymizationKey()).toBe('c2F2ZWQta2V5');
+    expect(newComponent.variables()).toEqual([
+      { name: 'record_id', anonymization: 'pseudonymize' },
+    ]);
+  });
 });
