@@ -429,6 +429,10 @@
     <p-accordion-panel value="2">
       <p-accordion-header>Generated files</p-accordion-header>
       <p-accordion-content>
+        <p class="hint-text small mb-2">
+          All files are generated during the export; you can deselect individual
+          files in the compare step before uploading.
+        </p>
         @if (exportMode() === "report") {
           <ul class="mb-0 generated-files">
             <li><code>redcap/report-&lt;id&gt;/data.&lt;csv|json&gt;</code></li>
@@ -442,6 +446,21 @@
               <code>redcap/report-&lt;id&gt;/form_event_mapping.csv</code>
               (longitudinal only)
             </li>
+            <li>
+              <code>redcap/report-&lt;id&gt;/project_metadata.xml</code> (CDISC
+              ODM, metadata only)
+            </li>
+            <li>
+              <code>redcap/report-&lt;id&gt;/croissant.json</code> (Croissant
+              1.0)
+            </li>
+            <li>
+              <code>redcap/report-&lt;id&gt;/ro-crate-metadata.json</code>
+              (RO-Crate 1.2)
+            </li>
+            <li>
+              <code>redcap/report-&lt;id&gt;/ddi-cdi.jsonld</code> (DDI-CDI 1.0)
+            </li>
             <li><code>redcap/report-&lt;id&gt;/manifest.json</code></li>
           </ul>
         } @else {
@@ -454,6 +473,15 @@
               <code>redcap/records/form_event_mapping.csv</code> (longitudinal
               only)
             </li>
+            <li>
+              <code>redcap/records/project_metadata.xml</code> (CDISC ODM,
+              metadata only)
+            </li>
+            <li><code>redcap/records/croissant.json</code> (Croissant 1.0)</li>
+            <li>
+              <code>redcap/records/ro-crate-metadata.json</code> (RO-Crate 1.2)
+            </li>
+            <li><code>redcap/records/ddi-cdi.jsonld</code> (DDI-CDI 1.0)</li>
             <li><code>redcap/records/manifest.json</code></li>
           </ul>
         }
