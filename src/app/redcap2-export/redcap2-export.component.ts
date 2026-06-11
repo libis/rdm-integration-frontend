@@ -10,7 +10,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { take } from 'rxjs';
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionPanel,
+} from 'primeng/accordion';
 import { ButtonDirective } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
 import { Select } from 'primeng/select';
 import { SelectItem } from 'primeng/api';
 
@@ -50,7 +57,17 @@ interface Redcap2PluginOptions {
   selector: 'app-redcap2-export',
   templateUrl: './redcap2-export.component.html',
   styleUrls: ['./redcap2-export.component.scss'],
-  imports: [CommonModule, FormsModule, ButtonDirective, Select],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ButtonDirective,
+    Select,
+    Checkbox,
+    Accordion,
+    AccordionPanel,
+    AccordionHeader,
+    AccordionContent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Redcap2ExportComponent implements OnInit {
@@ -80,6 +97,7 @@ export class Redcap2ExportComponent implements OnInit {
   readonly variables = signal<Redcap2VariableOption[]>([]);
   readonly loadingVariables = signal(false);
   readonly lastLoadedReportId = signal('');
+  readonly expandedPanels = signal<string[]>(['0', '1', '2']);
   // Increments per variables request; stale responses are discarded.
   private loadSeq = 0;
 

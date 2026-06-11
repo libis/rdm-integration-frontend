@@ -1,16 +1,21 @@
+// Author: Eryk Kulikowski @ KU Leuven (2026). Apache 2.0 License
+
 .redcap2-export {
-  .card {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
+  // Theme-aware muted text (Bootstrap's .text-muted does not follow the
+  // PrimeNG dark/light theme).
+  .hint-text {
+    color: var(--p-text-muted-color);
+  }
+
+  code {
+    color: var(--p-text-color);
   }
 
   .anonymization-col {
     width: 16rem;
   }
 
-  .generated-files {
-    li {
-      margin-bottom: 0.25rem;
-    }
+  .generated-files li {
+    margin-bottom: 0.25rem;
   }
 }
