@@ -164,9 +164,9 @@
       <p-treeTable
         [value]="rootNodeChildren()"
         [loading]="loading()"
-        loadingIcon=" pi pi-spin pi-spinner"
+        loadingIcon="pi pi-spin pi-spinner"
         [scrollable]="true"
-        scrollHeight="calc(100vh - 16rem)"
+        scrollHeight="flex"
         [virtualScroll]="useVirtualScroll()"
         [virtualScrollItemSize]="41"
         (onNodeExpand)="recountVisibleRows()"
@@ -237,7 +237,7 @@
             [value]="rootOptions()"
             (onNodeExpand)="getOptions($event.node)"
             [loading]="optionsLoading()"
-            loadingIcon=" pi pi-spin pi-spinner"
+            loadingIcon="pi pi-spin pi-spinner"
             (onNodeSelect)="optionSelected($event.node)"
           ></p-tree>
         </div>

@@ -41,7 +41,7 @@
         <p-treeTable
           [value]="rootNodeChildren()"
           [scrollable]="true"
-          scrollHeight="calc(100vh - 12rem)"
+          scrollHeight="flex"
           [virtualScroll]="useVirtualScroll()"
           [virtualScrollItemSize]="41"
           (onNodeExpand)="recountVisibleRows()"
