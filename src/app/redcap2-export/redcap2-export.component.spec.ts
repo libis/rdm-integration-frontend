@@ -18,6 +18,10 @@ import { DataStateService } from '../data.state.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { RepoLookupRequest } from '../models/repo-lookup';
 import { NotificationService } from '../shared/notification.service';
+import {
+  ConnectSnapshot,
+  SnapshotStorageService,
+} from '../shared/snapshot-storage.service';
 import { Redcap2ExportComponent } from './redcap2-export.component';
 
 class CredentialsServiceStub {
@@ -59,6 +63,22 @@ class DataStateServiceStub {
   resetState = jasmine.createSpy('resetState');
 }
 
+class SnapshotStorageServiceStub {
+  snapshot: ConnectSnapshot | undefined = undefined;
+  loadConnect(): ConnectSnapshot | undefined {
+    return this.snapshot;
+  }
+  saveConnect(snapshot: ConnectSnapshot): void {
+    this.snapshot = snapshot;
+  }
+  mergeConnect(partial: Partial<ConnectSnapshot>): void {
+    this.snapshot = { ...(this.snapshot ?? {}), ...partial };
+  }
+  clearConnect(): void {
+    this.snapshot = undefined;
+  }
+}
+
 describe('Redcap2ExportComponent', () => {
   let fixture: ComponentFixture<Redcap2ExportComponent>;
   let component: Redcap2ExportComponent;
@@ -89,6 +109,10 @@ describe('Redcap2ExportComponent', () => {
         { provide: RepoLookupService, useClass: RepoLookupServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
         { provide: DataStateService, useClass: DataStateServiceStub },
+        {
+          provide: SnapshotStorageService,
+          useClass: SnapshotStorageServiceStub,
+        },
       ],
     }).compileComponents();
 
@@ -318,6 +342,53 @@ describe('Redcap2ExportComponent', () => {
     ) as { variables?: Array<Record<string, unknown>> };
     expect(saved.variables).toEqual([
       { name: 'comments', anonymization: 'none' },
+    ]);
+  });
+
+  it('persists settings to the connect snapshot without the pseudonymization key', () => {
+    const snapshotStorage = TestBed.inject(
+      SnapshotStorageService,
+    ) as unknown as SnapshotStorageServiceStub;
+    const key = btoa('0123456789abcdef0123456789abcdef');
+    component.setVariableAnonymization('record_id', 'pseudonymize');
+    component.pseudonymizationKey.set(key);
+    component.continueToCompare();
+
+    expect(snapshotStorage.snapshot?.option).toBe('3010');
+    const savedOptions = JSON.parse(
+      snapshotStorage.snapshot?.plugin_options ?? '{}',
+    ) as { reportId?: string; pseudonymizationKey?: string };
+    expect(savedOptions.reportId).toBe('3010');
+    expect(savedOptions.pseudonymizationKey).toBeUndefined();
+    expect(snapshotStorage.snapshot?.plugin_options).not.toContain(key);
+  });
+
+  it('falls back to snapshot settings when credentials lack plugin options', () => {
+    const snapshotStorage = TestBed.inject(
+      SnapshotStorageService,
+    ) as unknown as SnapshotStorageServiceStub;
+    snapshotStorage.snapshot = {
+      option: '3010',
+      plugin_options: JSON.stringify({
+        exportMode: 'report',
+        reportId: '3010',
+        dataFormat: 'json',
+        variables: [{ name: 'record_id', anonymization: 'blank' }],
+      }),
+    };
+    // Simulate reconnect: credentials carry connection fields but no settings.
+    credentialsService.updateCredentials({
+      option: undefined,
+      plugin_options: undefined,
+    });
+
+    const newFixture = TestBed.createComponent(Redcap2ExportComponent);
+    newFixture.detectChanges();
+    const newComponent = newFixture.componentInstance;
+    expect(newComponent.reportId()).toBe('3010');
+    expect(newComponent.dataFormat()).toBe('json');
+    expect(newComponent.variables()).toEqual([
+      { name: 'record_id', anonymization: 'blank' },
     ]);
   });
 

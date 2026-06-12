@@ -13,7 +13,13 @@ export interface ConnectSnapshot {
   token?: string;
   repo_name?: string;
   url?: string;
+  // The source URL as typed in the form (url is the parsed/derived value)
+  sourceUrl?: string;
   option?: string;
+  // Plugin-specific settings (e.g. redcap2 export settings), so they survive
+  // page reloads and reconnects. Secrets (pseudonymization key) are stripped
+  // before saving.
+  plugin_options?: string;
   dataverse_token?: string;
   dataset_id?: string;
   collectionId?: string;

@@ -408,6 +408,60 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(credentialsService.newlyCreated$()).toBeTrue();
   });
 
+  it('applySnapshot restores the Source URL form field', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    comp['applySnapshot']({ sourceUrl: 'https://host/owner/repo' });
+    expect(comp.sourceUrl()).toBe('https://host/owner/repo');
+  });
+
+  it('applySnapshot falls back to the derived url for older snapshots', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    comp['applySnapshot']({ url: 'https://legacy.example.org' });
+    expect(comp.sourceUrl()).toBe('https://legacy.example.org');
+  });
+
+  it('connect preserves redcap2 settings from the snapshot in credentials', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    snapshotStorage.snapshot = {
+      plugin_options: '{"exportMode":"records"}',
+    };
+    comp.pluginId.set('redcap2');
+    comp.plugin.set('redcap2');
+    comp.datasetId.set('doi:10.5072/FK2/TEST');
+    comp.sourceUrl.set('https://host/owner/repo');
+    const httpMock = TestBed.inject(HttpTestingController);
+
+    comp.connect();
+    const req = httpMock.expectOne('api/common/useremail');
+    req.flush('user@example.com');
+
+    expect(credentialsService.pluginOptions$()).toBe(
+      '{"exportMode":"records"}',
+    );
+  });
+
+  it('connect does not carry snapshot plugin options for other plugins', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp: any = fixture.componentInstance;
+    snapshotStorage.snapshot = {
+      plugin_options: '{"exportMode":"records"}',
+    };
+    comp.pluginId.set('github');
+    comp.plugin.set('github');
+    comp.datasetId.set('doi:10.5072/FK2/TEST');
+    comp.sourceUrl.set('https://host/owner/repo');
+    const httpMock = TestBed.inject(HttpTestingController);
+
+    comp.connect();
+    const req = httpMock.expectOne('api/common/useremail');
+    req.flush('user@example.com');
+
+    expect(credentialsService.pluginOptions$()).toBeUndefined();
+  });
+
   it('deep-link with datasetPid/apiToken clears previous snapshot and preserves only explicit values', async () => {
     // Pre-populate snapshot with fields that should be cleared
     sessionStorage.setItem(

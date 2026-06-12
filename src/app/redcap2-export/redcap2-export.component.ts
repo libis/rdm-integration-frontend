@@ -27,6 +27,7 @@ import { DataStateService } from '../data.state.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { RepoLookupRequest } from '../models/repo-lookup';
 import { NotificationService } from '../shared/notification.service';
+import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 type Redcap2Anonymization = 'none' | 'blank' | 'drop' | 'pseudonymize';
 
@@ -91,6 +92,7 @@ export class Redcap2ExportComponent implements OnInit {
   private readonly repoLookupService = inject(RepoLookupService);
   private readonly notificationService = inject(NotificationService);
   private readonly dataStateService = inject(DataStateService);
+  private readonly snapshotStorage = inject(SnapshotStorageService);
 
   readonly exportMode = signal<'report' | 'records'>('report');
   readonly reportId = signal<string>('');
@@ -167,11 +169,14 @@ export class Redcap2ExportComponent implements OnInit {
 
     // Report ID may come from a previous visit (saved in plugin_options)
     // or be empty for a first visit — the user enters it on this page.
-    const reportId = (creds.option ?? '').trim();
+    // Settings fall back to the connect snapshot so they survive page
+    // reloads and reconnects (in-memory credentials do not).
+    const snapshot = this.snapshotStorage.loadConnect();
+    const reportId = (creds.option ?? snapshot?.option ?? '').trim();
     this.reportId.set(reportId);
 
     const savedVariableModes = this.applySavedPluginOptions(
-      creds.plugin_options,
+      creds.plugin_options ?? snapshot?.plugin_options,
     );
     if (this.exportMode() === 'records' || this.reportId().trim()) {
       this.loadVariables(savedVariableModes);
@@ -284,6 +289,15 @@ export class Redcap2ExportComponent implements OnInit {
     this.credentialsService.updateCredentials({
       option: mode === 'report' ? reportId : '',
       plugin_options: JSON.stringify(options),
+    });
+    // Persist the settings (without the pseudonymization key — it stays
+    // in memory only) so reloads and reconnects do not lose them.
+    this.snapshotStorage.mergeConnect({
+      option: mode === 'report' ? reportId : '',
+      plugin_options: JSON.stringify({
+        ...options,
+        pseudonymizationKey: undefined,
+      }),
     });
     this.dataStateService.resetState();
 
