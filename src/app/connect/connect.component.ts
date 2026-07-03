@@ -627,6 +627,13 @@ export class ConnectComponent
       this.foundRepoName.set(v),
     );
     assignIfEmpty(this.option(), snap.option, (v) => this.option.set(v));
+    // Restore the Source URL form field (older snapshots only carry the
+    // derived url; fall back to it so the field is not lost on reload).
+    const snapSourceUrl =
+      (snap as { sourceUrl?: string }).sourceUrl ?? snap.url;
+    assignIfEmpty(this.sourceUrl(), snapSourceUrl, (v) =>
+      this.sourceUrl.set(v),
+    );
     assignIfEmpty(this.dataverseToken(), snap.dataverse_token, (v) =>
       this.dataverseToken.set(v),
     );
@@ -815,12 +822,20 @@ export class ConnectComponent
             ) {
               localStorage.setItem(tokenName, token);
             }
+            // Plugin-specific settings (redcap2 export settings) survive
+            // reconnects via the snapshot: dropping them here would make the
+            // compare page fail for plugins that require them.
+            const savedPluginOptions =
+              this.plugin() === 'redcap2'
+                ? this.snapshotStorage.loadConnect()?.plugin_options
+                : undefined;
             const creds: Credentials = {
               pluginId: pId,
               plugin: this.plugin(),
               repo_name: this.computedRepoName(),
               url: this.url(),
               option: this.option(),
+              plugin_options: savedPluginOptions,
               user: this.user(),
               token: token,
               dataset_id: this.datasetId(),
@@ -836,7 +851,9 @@ export class ConnectComponent
               token: token,
               repo_name: this.computedRepoName(),
               url: this.url(),
+              sourceUrl: this.sourceUrl(),
               option: this.option(),
+              plugin_options: savedPluginOptions,
               dataverse_token: this.dataverseToken(),
               dataset_id: this.datasetId(),
               collectionId: this.collectionId(),
@@ -844,7 +861,9 @@ export class ConnectComponent
             this.dataStateService.resetState();
             this.credentialsService.setCredentials(creds);
 
-            this.router.navigate(['/compare', this.datasetId()], {
+            const destination =
+              this.plugin() === 'redcap2' ? '/redcap2-export' : '/compare';
+            this.router.navigate([destination, this.datasetId()], {
               state: {
                 collectionId: this.collectionId(),
                 collectionItems: this.collectionItems(),

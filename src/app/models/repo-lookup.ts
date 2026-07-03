@@ -8,4 +8,5 @@ export interface RepoLookupRequest {
   url?: string;
   user?: string;
   token?: string;
+  pluginOptions?: string;
 }

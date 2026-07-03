@@ -343,6 +343,23 @@ export class CompareComponent
   }
 
   ngOnInit(): void {
+    // redcap2 cannot compare without its export settings (a compare request
+    // without them fails server-side with "missing report id"). Credentials
+    // can lose plugin_options on reconnects/reloads — send the user to the
+    // export settings page instead of firing a doomed compare.
+    if (
+      this.credentialsService.plugin$() === 'redcap2' &&
+      !this.credentialsService.pluginOptions$() &&
+      this.dataStateService.state$() == null
+    ) {
+      const datasetId = this.credentialsService.datasetId$();
+      if (datasetId) {
+        this.router.navigate(['/redcap2-export', datasetId]);
+      } else {
+        this.router.navigate(['/connect']);
+      }
+      return;
+    }
     if (this.dataStateService.state$() == null) {
       this.dataStateService.initializeState();
     }

@@ -49,6 +49,7 @@ export class SubmitService {
         repoName: this.credentialsService.repoName$(),
         url: this.credentialsService.url$(),
         option: this.credentialsService.option$(),
+        pluginOptions: this.credentialsService.pluginOptions$(),
         user: this.credentialsService.user$(),
         token: this.credentialsService.token$(),
       },

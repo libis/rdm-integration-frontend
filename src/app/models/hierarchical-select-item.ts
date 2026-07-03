@@ -16,4 +16,6 @@ export interface HierarchicalSelectItem<T = string> extends SelectItem<T> {
   ancestors?: HierarchicalSelectItem<T>[];
   /** Mark this item as selected/highlighted */
   selected?: boolean;
+  /** Informational note about this item (e.g. PHI-risk hints for variables) */
+  note?: string;
 }

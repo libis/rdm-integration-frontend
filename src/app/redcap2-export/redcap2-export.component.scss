@@ -1,0 +1,27 @@
+// Author: Eryk Kulikowski @ KU Leuven (2026). Apache 2.0 License
+
+.redcap2-export {
+  // Theme-aware muted text (Bootstrap's .text-muted does not follow the
+  // PrimeNG dark/light theme).
+  .hint-text {
+    color: var(--p-text-muted-color);
+  }
+
+  code {
+    color: var(--p-text-color);
+  }
+
+  .anonymization-col {
+    width: 16rem;
+  }
+
+  .phi-risk-icon {
+    margin-left: 0.5rem;
+    color: var(--p-orange-500, #f97316);
+    cursor: help;
+  }
+
+  .generated-files li {
+    margin-bottom: 0.25rem;
+  }
+}

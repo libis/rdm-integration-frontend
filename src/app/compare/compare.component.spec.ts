@@ -64,6 +64,7 @@ function createCredentialsStub() {
   const newlyCreatedSignal = signal<boolean | undefined>(undefined);
   const dataverseTokenSignal = signal<string | undefined>(undefined);
   const metadataAvailableSignal = signal<boolean | undefined>(undefined);
+  const pluginOptionsSignal = signal<string | undefined>(undefined);
 
   // Helper to sync all signals from credentials object
   function syncSignals(creds: any) {
@@ -78,6 +79,7 @@ function createCredentialsStub() {
     newlyCreatedSignal.set(creds.newly_created);
     dataverseTokenSignal.set(creds.dataverse_token);
     metadataAvailableSignal.set(creds.metadata_available);
+    pluginOptionsSignal.set(creds.plugin_options);
     credentialsSignal.set(creds);
   }
 
@@ -101,6 +103,7 @@ function createCredentialsStub() {
     newlyCreated$: newlyCreatedSignal.asReadonly(),
     dataverseToken$: dataverseTokenSignal.asReadonly(),
     metadataAvailable$: metadataAvailableSignal.asReadonly(),
+    pluginOptions$: pluginOptionsSignal.asReadonly(),
 
     setCredentials(creds: any): void {
       syncSignals(creds);
@@ -193,6 +196,51 @@ describe('CompareComponent', () => {
       jasmine.objectContaining({ dataset_id: 'doi:10.777/TEST' }),
     );
     expect(navigateSpy).toHaveBeenCalledWith(['/connect']);
+  });
+
+  it('redirects redcap2 to the export settings page when plugin options are missing', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+    const initializeSpy = spyOn(dataStateStub, 'initializeState');
+    credentialsStub.credentials = {
+      plugin: 'redcap2',
+      pluginId: 'redcap2',
+      dataset_id: 'doi:10.777/TEST',
+      url: 'https://redcap.test',
+      token: 'tok',
+    };
+    dataStateStub.state$.set(null);
+    component.ngOnInit();
+    expect(navigateSpy).toHaveBeenCalledWith([
+      '/redcap2-export',
+      'doi:10.777/TEST',
+    ]);
+    expect(initializeSpy).not.toHaveBeenCalled();
+  });
+
+  it('redirects redcap2 to connect when plugin options and dataset are missing', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+    credentialsStub.credentials = { plugin: 'redcap2', pluginId: 'redcap2' };
+    dataStateStub.state$.set(null);
+    component.ngOnInit();
+    expect(navigateSpy).toHaveBeenCalledWith(['/connect']);
+  });
+
+  it('compares normally for redcap2 when plugin options are present', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+    const initializeSpy = spyOn(dataStateStub, 'initializeState');
+    credentialsStub.credentials = {
+      plugin: 'redcap2',
+      pluginId: 'redcap2',
+      dataset_id: 'doi:10.777/TEST',
+      plugin_options: '{"exportMode":"records"}',
+    };
+    dataStateStub.state$.set(null);
+    component.ngOnInit();
+    expect(navigateSpy).not.toHaveBeenCalled();
+    expect(initializeSpy).toHaveBeenCalled();
   });
 
   it('submit() navigates to metadata-selector when new dataset path', () => {

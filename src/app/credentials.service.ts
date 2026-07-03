@@ -19,6 +19,7 @@ export class CredentialsService {
   readonly repoName$ = computed(() => this._credentials().repo_name);
   readonly url$ = computed(() => this._credentials().url);
   readonly option$ = computed(() => this._credentials().option);
+  readonly pluginOptions$ = computed(() => this._credentials().plugin_options);
   readonly user$ = computed(() => this._credentials().user);
   readonly token$ = computed(() => this._credentials().token);
   readonly datasetId$ = computed(() => this._credentials().dataset_id);

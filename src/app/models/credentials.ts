@@ -6,6 +6,7 @@ export interface Credentials {
   repo_name?: string;
   url?: string;
   option?: string;
+  plugin_options?: string;
   user?: string;
   token?: string;
   dataset_id?: string;
