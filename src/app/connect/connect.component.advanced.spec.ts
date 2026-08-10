@@ -344,10 +344,9 @@ describe('ConnectComponent advanced behaviors', () => {
 
     expect(navigation.assign).toHaveBeenCalled();
     const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
-    expect(redirectUrl).toContain('client_id=');
-    const match = redirectUrl.match(/state=([^&]+)/);
-    expect(match).toBeTruthy();
-    const state = JSON.parse(decodeURIComponent(match![1]));
+    const p = new URL(redirectUrl).searchParams;
+    expect(p.get('client_id')).toBe('client-id');
+    const state = JSON.parse(p.get('state')!);
     expect(state.datasetId.value).toBe('doi:10.123/XYZ');
     expect(state.plugin.value).toBe('github');
   });
@@ -703,7 +702,33 @@ describe('ConnectComponent advanced behaviors', () => {
     );
     comp.getOptions();
     await new Promise<void>((r) => setTimeout(r));
-    expect(comp.getRepoToken).toHaveBeenCalledWith('repo:read');
+    expect(comp.getRepoToken).toHaveBeenCalledWith({ scopes: ['repo:read'] });
+  });
+
+  it('getOptions triggers reauth on structured 401 payload with domains', async () => {
+    const { comp } = createComponent();
+    comp.plugin.set('github');
+    comp.pluginId.set('github');
+    comp.sourceUrl.set('https://host/owner/repo');
+    comp.user.set('alice');
+    comp.token.set('tok');
+    comp.repoName.set('owner/repo');
+    spyOn(comp, 'getRepoToken');
+    spyOn(repoLookup, 'getOptions').and.returnValue(
+      new Observable((observer) => {
+        queueMicrotask(() =>
+          observer.error({
+            status: 401,
+            error: { reauth: { required_domains: ['sydney.edu.au'] } },
+          }),
+        );
+      }),
+    );
+    comp.getOptions();
+    await new Promise<void>((r) => setTimeout(r));
+    expect(comp.getRepoToken).toHaveBeenCalledWith({
+      domains: ['sydney.edu.au'],
+    });
   });
 
   it('getDvObjectOptions returns immediately when items already loaded', () => {

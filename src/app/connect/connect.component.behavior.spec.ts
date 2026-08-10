@@ -664,7 +664,9 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     comp.getOptions();
 
-    expect(comp.getRepoToken).toHaveBeenCalledOnceWith('repo.read');
+    expect(comp.getRepoToken).toHaveBeenCalledOnceWith({
+      scopes: ['repo.read'],
+    });
   });
 
   it('getOptions surfaces errors and resets state when scopes marker missing', () => {

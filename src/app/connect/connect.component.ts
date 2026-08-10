@@ -24,6 +24,13 @@ import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
+import {
+  ReauthRequest,
+  buildAuthorizeUrl,
+  extractReauth,
+  normalizeTokenGetter,
+  takePendingReauth,
+} from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 // Models
@@ -364,6 +371,14 @@ export class ConnectComponent
   async ngOnInit() {
     this.attemptFullRestore('[ngOnInit]');
 
+    const pendingReauth = takePendingReauth();
+    if (pendingReauth && this.pluginId()) {
+      // A reauth demand stored before navigating here (e.g. from the compare
+      // polling flow) — go straight back to the OAuth provider.
+      this.getRepoToken(pendingReauth);
+      return;
+    }
+
     // Load dataverseToken from localStorage if storeDvToken is enabled
     if (this.pluginService.isStoreDvToken()) {
       const dvToken = localStorage.getItem('dataverseToken');
@@ -380,7 +395,7 @@ export class ConnectComponent
               this.repoNames.set(v);
             })
             .catch((err) => {
-              if (this.handleScopesError(err)) return;
+              if (this.handleReauthError(err)) return;
               this.repoNames.set([
                 {
                   label: `search failed: ${err.message}`,
@@ -389,7 +404,7 @@ export class ConnectComponent
               ]);
             }),
         error: (err) => {
-          if (this.handleScopesError(err)) return;
+          if (this.handleReauthError(err)) return;
           this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]);
@@ -702,7 +717,7 @@ export class ConnectComponent
    * OAUTH AND API TOKEN *
    ***********************/
 
-  getRepoToken(scopes?: string) {
+  getRepoToken(reauth?: ReauthRequest) {
     const pId = this.pluginId();
     if (pId === undefined) {
       this.notificationService.showError('Repository type is missing');
@@ -713,7 +728,8 @@ export class ConnectComponent
     if (tg.URL?.includes('://')) {
       url = tg.URL;
     }
-    if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
+    const base = normalizeTokenGetter(tg, url);
+    if (base) {
       const nonce = this.newNonce(44);
       const pluginIdItem = this.getItem(this.pluginIds(), pId);
       if (pluginIdItem !== undefined) {
@@ -731,31 +747,13 @@ export class ConnectComponent
         collectionId: this.getItem(this.collectionItems(), this.collectionId()),
         nonce: nonce,
       };
-      let clId = '?client_id=';
-      if (url.includes('?')) {
-        clId = '&client_id=';
-      }
-      url = `${
-        url + clId + encodeURIComponent(tg.oauth_client_id)
-      }&redirect_uri=${encodeURIComponent(
-        this.pluginService.getRedirectUri(),
-      )}&response_type=code&state=${encodeURIComponent(
-        JSON.stringify(loginState),
-      )}`;
-      // + '&code_challenge=' + nonce + '&code_challenge_method=S256';
-      if (scopes) {
-        if (url.includes('scope=')) {
-          let scopeStr = url.substring(url.indexOf('scope='));
-          const and = scopeStr.indexOf('&');
-          if (and > 0) {
-            scopeStr = scopeStr.substring(0, and);
-          }
-          url = url.replace(scopeStr, `scope=${encodeURIComponent(scopes)}`);
-        } else {
-          url = `${url}&scope=${encodeURIComponent(scopes)}`;
-        }
-      }
-      this.navigation.assign(url);
+      this.navigation.assign(
+        buildAuthorizeUrl(base, {
+          redirectUri: this.pluginService.getRedirectUri(),
+          state: JSON.stringify(loginState),
+          reauth,
+        }),
+      );
     } else {
       const curUrl = this.url();
       if (curUrl) window.open(curUrl, '_blank');
@@ -1231,46 +1229,28 @@ export class ConnectComponent
           this.handleOptionsResponse(items, node);
         },
         error: (err) => {
-          const errStr: string = err.error;
-          const scopesStr = '*scopes*';
-          if (errStr.includes(scopesStr)) {
-            const scopes = errStr.substring(
-              errStr.indexOf(scopesStr) + scopesStr.length,
-              errStr.lastIndexOf(scopesStr),
-            );
-            this.getRepoToken(scopes);
-          } else {
-            this.notificationService.showError(
-              `Branch lookup failed: ${err.error}`,
-            );
-            this.branchItems.set([]);
-            this.option.set(undefined);
-            this.optionsLoading.set(false);
-          }
+          if (this.handleReauthError(err)) return;
+          this.notificationService.showError(
+            `Branch lookup failed: ${err.error}`,
+          );
+          this.branchItems.set([]);
+          this.option.set(undefined);
+          this.optionsLoading.set(false);
         },
       });
   }
 
   /**
-   * Inspect a failed HTTP response for the `*scopes*<scope list>*scopes*`
-   * marker returned by plugins that need additional OAuth scopes (GitHub,
-   * Globus, ...). When present, trigger a re-authorization with the extra
-   * scopes appended to the authorize URL. Returns true when the marker was
-   * detected and re-auth was triggered so callers can skip regular error
-   * handling.
+   * Inspect a failed HTTP response for a re-authentication demand — either the
+   * structured 401 {"reauth": ...} payload or the legacy *scopes* marker — and
+   * trigger a new authorization with the demanded scopes/domains merged into
+   * the authorize URL. Returns true when re-auth was triggered so callers can
+   * skip regular error handling.
    */
-  private handleScopesError(err: unknown): boolean {
-    const errStr =
-      (err as { error?: string } | undefined)?.error ??
-      (err as { message?: string } | undefined)?.message ??
-      '';
-    if (typeof errStr !== 'string') return false;
-    const scopesStr = '*scopes*';
-    const first = errStr.indexOf(scopesStr);
-    const last = errStr.lastIndexOf(scopesStr);
-    if (first < 0 || last <= first) return false;
-    const scopes = errStr.substring(first + scopesStr.length, last);
-    this.getRepoToken(scopes);
+  private handleReauthError(err: unknown): boolean {
+    const reauth = extractReauth(err);
+    if (!reauth) return false;
+    this.getRepoToken(reauth);
     return true;
   }
 
