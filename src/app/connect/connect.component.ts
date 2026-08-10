@@ -371,12 +371,17 @@ export class ConnectComponent
   async ngOnInit() {
     this.attemptFullRestore('[ngOnInit]');
 
-    const pendingReauth = takePendingReauth();
-    if (pendingReauth && this.pluginId()) {
-      // A reauth demand stored before navigating here (e.g. from the compare
-      // polling flow) — go straight back to the OAuth provider.
-      this.getRepoToken(pendingReauth);
-      return;
+    // Only consume (read-and-clear) the stored demand once we know it can
+    // actually be used — if the pluginId failed to restore, leave it in
+    // sessionStorage rather than silently dropping it.
+    if (this.pluginId()) {
+      const pendingReauth = takePendingReauth();
+      if (pendingReauth) {
+        // A reauth demand stored before navigating here (e.g. from the compare
+        // polling flow) — go straight back to the OAuth provider.
+        this.getRepoToken(pendingReauth);
+        return;
+      }
     }
 
     // Load dataverseToken from localStorage if storeDvToken is enabled

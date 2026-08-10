@@ -20,6 +20,7 @@ import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
 import { PluginService } from '../plugin.service';
 import { NotificationService } from '../shared/notification.service';
+import { extractReauth, storePendingReauth } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { SubmitService } from '../submit.service';
 
@@ -270,8 +271,23 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
             this.transferInProgress.set(true);
           }
         },
-        error: (err) => {
-          this.notificationService.showError(`Store failed: ${err.error}`);
+        error: (err: unknown) => {
+          const reauth = extractReauth(err);
+          if (reauth) {
+            storePendingReauth(reauth);
+            this.notificationService.showError(
+              'The repository requires re-authentication. Redirecting to login...',
+            );
+            this.router.navigate(['/connect']);
+            return;
+          }
+          const e = err as { error?: unknown; message?: unknown } | undefined;
+          const fallbackError = 'unknown error';
+          const message =
+            (typeof e?.error === 'string' ? e.error : undefined) ??
+            (typeof e?.message === 'string' ? e.message : undefined) ??
+            fallbackError;
+          this.notificationService.showError(`Store failed: ${message}`);
           this.router.navigate(['/connect']);
         },
       });

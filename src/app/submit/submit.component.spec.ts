@@ -17,6 +17,7 @@ import { DatasetService } from '../dataset.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { NotificationService } from '../shared/notification.service';
+import { takePendingReauth } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { SubmitComponent } from './submit.component';
 
@@ -182,6 +183,10 @@ describe('SubmitComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
   it('should create', () => {
     expect(component).toBeTruthy();
   });
@@ -249,6 +254,40 @@ describe('SubmitComponent', () => {
     await component.continueSubmit();
     expect(notificationServiceStub.showError).toHaveBeenCalledWith(
       'Store failed: boom',
+    );
+    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
+  });
+
+  it('continueSubmit stores pending reauth and redirects to /connect on structured 401', async () => {
+    submitServiceStub.submit.and.returnValue(
+      throwError(() => ({
+        status: 401,
+        error: { reauth: { required_scopes: ['scope-a'] } },
+      })),
+    );
+    component.data.set([
+      { action: Fileaction.Copy, status: Filestatus.Equal } as any,
+    ]);
+    await component.continueSubmit();
+    expect(takePendingReauth()).toEqual({ scopes: ['scope-a'] });
+    expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
+    // Only the re-auth notice is shown — never the raw "[object Object]" render
+    // of the structured error body.
+    expect(notificationServiceStub.showError).toHaveBeenCalledOnceWith(
+      'The repository requires re-authentication. Redirecting to login...',
+    );
+  });
+
+  it('continueSubmit renders a safe message when the store error body is a non-reauth object', async () => {
+    submitServiceStub.submit.and.returnValue(
+      throwError(() => ({ status: 500, error: { unexpected: true } })),
+    );
+    component.data.set([
+      { action: Fileaction.Copy, status: Filestatus.Equal } as any,
+    ]);
+    await component.continueSubmit();
+    expect(notificationServiceStub.showError).toHaveBeenCalledOnceWith(
+      'Store failed: unknown error',
     );
     expect(routerStub.navigate as any).toHaveBeenCalledWith(['/connect']);
   });

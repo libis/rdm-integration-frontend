@@ -24,6 +24,7 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
 import { NotificationService } from '../shared/notification.service';
+import { storePendingReauth, takePendingReauth } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { ConnectComponent } from './connect.component';
 
@@ -792,5 +793,51 @@ describe('ConnectComponent additional behavior/validation', () => {
       '/C/Users/ErykK/Documents/globus download/',
     );
     expect(comp.option()).toBe('/C/Users/ErykK/Documents/globus download/');
+  });
+
+  describe('pending reauth pickup on ngOnInit', () => {
+    afterEach(() => {
+      sessionStorage.clear();
+    });
+
+    it('consumes the stored demand and calls getRepoToken once pluginId is restored', () => {
+      // No connectSnapshot in history state — pluginId comes from storage below.
+      window.history.replaceState({}, '');
+      storePendingReauth({ scopes: ['scope-a'] });
+      snapshotStorage.snapshot = {
+        plugin: 'github',
+        pluginId: 'github',
+        repo_name: 'owner/repo',
+      };
+
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      spyOn(comp, 'getRepoToken');
+
+      fixture.detectChanges();
+
+      expect(comp.getRepoToken).toHaveBeenCalledOnceWith({
+        scopes: ['scope-a'],
+      });
+      // ngOnInit's takePendingReauth() already consumed it — nothing left to take.
+      expect(takePendingReauth()).toBeUndefined();
+    });
+
+    it('leaves the stored demand in place when no pluginId can be restored', () => {
+      window.history.replaceState({}, '');
+      storePendingReauth({ scopes: ['scope-b'] });
+      snapshotStorage.snapshot = undefined;
+
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      spyOn(comp, 'getRepoToken');
+
+      fixture.detectChanges();
+
+      expect(comp.pluginId()).toBeUndefined();
+      expect(comp.getRepoToken).not.toHaveBeenCalled();
+      // Demand was never consumed, so it is still available for a later attempt.
+      expect(takePendingReauth()).toEqual({ scopes: ['scope-b'] });
+    });
   });
 });
