@@ -27,9 +27,11 @@ export interface RepoPlugin {
   showTokenGetter?: boolean;
 }
 
-interface TokenGetter {
+export interface TokenGetter {
   URL?: string;
   oauth_client_id?: string;
+  scopes?: string[];
+  session_required_single_domain?: string[];
 }
 
 export interface Config {
