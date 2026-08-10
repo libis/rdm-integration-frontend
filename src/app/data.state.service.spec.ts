@@ -9,6 +9,7 @@ import { Observable, of, Subject, Subscription, throwError } from 'rxjs';
 import { DataService } from './data.service';
 import { DataStateService } from './data.state.service';
 import { NotificationService } from './shared/notification.service';
+import { takePendingReauth } from './shared/reauth';
 import { UtilsService } from './utils.service';
 
 class MockDataService {
@@ -60,6 +61,10 @@ describe('DataStateService', () => {
       ],
     });
     service = TestBed.inject(DataStateService);
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
   });
 
   function init() {
@@ -140,6 +145,33 @@ describe('DataStateService', () => {
           n.extras?.queryParams?.reset === 'true',
       ),
     ).toBeTrue();
+  });
+
+  it('stores pending reauth and navigates to /connect when polling fails with 401 reauth', async () => {
+    const reauthErr = {
+      status: 401,
+      error: { reauth: { required_domains: ['sydney.edu.au'] } },
+    };
+    data.getCachedData = () => throwError(() => reauthErr);
+    init();
+    await new Promise<void>((r) => setTimeout(r));
+    expect(takePendingReauth()).toEqual({ domains: ['sydney.edu.au'] });
+    expect(router.navigated.length).toBe(1);
+    expect(router.navigated[0].commands).toEqual(['/connect']);
+    expect(router.navigated[0].extras?.queryParams).toBeUndefined();
+  });
+
+  it('keeps legacy 401 reset navigation for non-reauth 401s', async () => {
+    const plainErr = { status: 401, error: '401 - session expired' };
+    data.getCachedData = () => throwError(() => plainErr);
+    init();
+    await new Promise<void>((r) => setTimeout(r));
+    expect(takePendingReauth()).toBeUndefined();
+    expect(router.navigated.length).toBe(1);
+    expect(router.navigated[0].commands).toEqual(['/connect']);
+    expect(router.navigated[0].extras?.queryParams).toEqual({
+      reset: 'true',
+    });
   });
 
   it('cancelInitialization unsubscribes and resets by default', async () => {

@@ -11,6 +11,7 @@ import {
 } from 'rxjs';
 import { DataService } from './data.service';
 import { CompareResult, Key } from './models/compare-result';
+import { extractReauth, storePendingReauth } from './shared/reauth';
 import { NotificationService } from './shared/notification.service';
 import { UtilsService } from './utils.service';
 
@@ -42,8 +43,19 @@ export class DataStateService {
     this.dataSubscription = this.dataService.getData().subscribe({
       next: (key) => this.getCompareData(key, generation),
       error: (err) => {
+        const reauth = extractReauth(err);
+        if (reauth) {
+          storePendingReauth(reauth);
+          this.notificationService.showError(
+            'The repository requires re-authentication. Redirecting to login...',
+          );
+          this.router.navigate(['/connect']);
+          this.dataSubscription = undefined;
+          return;
+        }
         const is401 =
-          err.status === 401 || (err.error && err.error.includes('401'));
+          err.status === 401 ||
+          (typeof err.error === 'string' && err.error.includes('401'));
         this.notificationService.showError(`Getting data failed: ${err.error}`);
         this.router.navigate(['/connect'], {
           queryParams: is401 ? { reset: 'true' } : {},
@@ -105,9 +117,19 @@ export class DataStateService {
         ) {
           return;
         }
+        const reauth = extractReauth(err);
+        if (reauth) {
+          storePendingReauth(reauth);
+          this.notificationService.showError(
+            'The repository requires re-authentication. Redirecting to login...',
+          );
+          this.router.navigate(['/connect']);
+          return;
+        }
         const error = err as { status?: number; error?: string };
         const is401 =
-          error.status === 401 || (error.error && error.error.includes('401'));
+          error.status === 401 ||
+          (typeof error.error === 'string' && error.error.includes('401'));
         this.notificationService.showError(`Comparing failed: ${error.error}`);
         this.router.navigate(['/connect'], {
           queryParams: is401 ? { reset: 'true' } : {},
