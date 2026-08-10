@@ -21,6 +21,12 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
+import {
+  ReauthRequest,
+  buildAuthorizeUrl,
+  extractReauth,
+  normalizeTokenGetter,
+} from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 
@@ -464,18 +470,21 @@ export class DownloadComponent
         next: (x) =>
           x
             .then((v) => this.repoNames.set(v))
-            .catch((err) =>
+            .catch((err) => {
+              if (this.handleReauthError(err)) return;
               this.repoNames.set([
                 {
                   label: `search failed: ${err.message}`,
                   value: err.message,
                 },
-              ]),
-            ),
-        error: (err) =>
+              ]);
+            }),
+        error: (err) => {
+          if (this.handleReauthError(err)) return;
           this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
-          ]),
+          ]);
+        },
       }),
     );
 
@@ -1019,6 +1028,7 @@ export class DownloadComponent
             this.downloadRequested.set(false);
             this.downloadInProgress.set(false);
             this.statusPollingActive.set(false);
+            if (this.handleReauthError(err)) return;
 
             const fallbackError = 'unknown error';
             const message =
@@ -1145,6 +1155,7 @@ export class DownloadComponent
           this.handleOptionsResponse(items, node);
         },
         error: (err) => {
+          if (this.handleReauthError(err)) return;
           this.notificationService.showError(
             `Branch lookup failed: ${err.error}`,
           );
@@ -1154,6 +1165,19 @@ export class DownloadComponent
         },
       }),
     );
+  }
+
+  /**
+   * Inspect a failed HTTP response for a re-authentication demand (structured
+   * 401 {"reauth": ...} payload or legacy *scopes* marker) and trigger a new
+   * Globus authorization with the demanded scopes/domains. Returns true when
+   * re-auth was triggered so callers can skip regular error handling.
+   */
+  private handleReauthError(err: unknown): boolean {
+    const reauth = extractReauth(err);
+    if (!reauth) return false;
+    this.getRepoToken(reauth);
+    return true;
   }
 
   /**
@@ -1255,7 +1279,7 @@ export class DownloadComponent
     this.option.set(undefined);
   }
 
-  getRepoToken() {
+  getRepoToken(reauth?: ReauthRequest) {
     const tg = this.globusPlugin()?.tokenGetter;
     if (tg === undefined) {
       return;
@@ -1266,11 +1290,8 @@ export class DownloadComponent
     if (tg.URL?.includes('://')) {
       url = tg.URL;
     }
-    // For guest/preview users, strip session_required_single_domain to allow any Globus identity
-    if (this.accessMode() === 'guest' || this.accessMode() === 'preview') {
-      url = url.replace(/[&?]session_required_single_domain=[^&]*/g, '');
-    }
-    if (tg.oauth_client_id !== undefined && tg.oauth_client_id !== '') {
+    const base = normalizeTokenGetter(tg, url);
+    if (base) {
       const nonce = this.newNonce(44);
       // Include all state to preserve across OAuth redirect
       const loginState: LoginState = {
@@ -1288,16 +1309,17 @@ export class DownloadComponent
             ? Array.from(this.preSelectedFileIds())
             : undefined,
       };
-      let clId = '?client_id=';
-      if (url.includes('?')) {
-        clId = '&client_id=';
-      }
-      url = `${
-        url + clId + encodeURIComponent(tg.oauth_client_id)
-      }&redirect_uri=${this.pluginService.getRedirectUri()}&response_type=code&state=${encodeURIComponent(
-        JSON.stringify(loginState),
-      )}`;
-      this.navigation.assign(url);
+      this.navigation.assign(
+        buildAuthorizeUrl(base, {
+          redirectUri: this.pluginService.getRedirectUri(),
+          state: JSON.stringify(loginState),
+          reauth,
+          // Guests/preview users may authenticate with any Globus identity —
+          // unless an endpoint policy explicitly demanded a domain.
+          guestMode:
+            this.accessMode() === 'guest' || this.accessMode() === 'preview',
+        }),
+      );
     } else {
       window.open(url, '_blank');
     }

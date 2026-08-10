@@ -507,6 +507,39 @@ describe('DownloadComponent', () => {
     expect(component.option()).toBeUndefined();
   });
 
+  it('getOptions triggers reauth instead of raw error on structured 401 (scope consent)', async () => {
+    initComponent();
+    component.selectedRepoName.set('repoA');
+    const reauthErr = {
+      status: 401,
+      error: {
+        reauth: {
+          required_scopes: [
+            'urn:globus:auth:scope:transfer.api.globus.org:all[*https://auth.globus.org/scopes/82c495cc/data_access]',
+          ],
+        },
+      },
+    };
+    spyOn(repoLookup, 'getOptions').and.returnValue(
+      new Observable((obs) => {
+        queueMicrotask(() => obs.error(reauthErr));
+      }),
+    );
+    spyOn(component, 'getRepoToken');
+    spyOn(notification, 'showError');
+
+    component.getOptions();
+    await new Promise<void>((r) => setTimeout(r));
+
+    expect(component.getRepoToken).toHaveBeenCalledWith({
+      scopes: [
+        'urn:globus:auth:scope:transfer.api.globus.org:all[*https://auth.globus.org/scopes/82c495cc/data_access]',
+      ],
+    });
+    // The raw "Branch lookup failed" notification must NOT have fired.
+    expect(notification.showError).not.toHaveBeenCalled();
+  });
+
   it('download surfaces error and stops polling setup', async () => {
     initComponent();
     const df: Datafile = {
@@ -581,6 +614,37 @@ describe('DownloadComponent', () => {
     ).toBeTrue();
     expect(component.statusPollingActive()).toBeFalse();
     expect(component.lastTransferTaskId()).toBeUndefined();
+  });
+
+  it('download() triggers reauth on structured 401 with domains', async () => {
+    initComponent();
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
+    component.rowNodeMap().set('1:file', { data: df });
+    component.option.set('branchX');
+    component.selectedRepoName.set('repoX');
+
+    const reauthErr = {
+      status: 401,
+      error: { reauth: { required_domains: ['sydney.edu.au'] } },
+    };
+    spyOn(submit, 'download').and.returnValue(throwError(() => reauthErr));
+    spyOn(component, 'getRepoToken');
+    spyOn(notification, 'showError');
+
+    component.download();
+    await new Promise<void>((r) => setTimeout(r));
+
+    expect(component.getRepoToken).toHaveBeenCalledWith({
+      domains: ['sydney.edu.au'],
+    });
+    // The raw "Download request failed" notification must NOT have fired.
+    expect(notification.showError).not.toHaveBeenCalled();
   });
 
   it('onStatusPollingChange toggles polling state flag', () => {
@@ -761,9 +825,10 @@ describe('DownloadComponent', () => {
     component.datasetId.set('doi:GUEST');
     component.getRepoToken();
     expect(navigation.assign).toHaveBeenCalled();
-    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
-    expect(redirectUrl).not.toContain('session_required_single_domain');
-    expect(redirectUrl).toContain('scope=openid');
+    const assigned = navigation.assign.calls.mostRecent().args[0] as string;
+    const params = new URL(assigned).searchParams;
+    expect(params.get('session_required_single_domain')).toBeNull();
+    expect(params.get('scope')).toBe('openid');
   });
 
   it('getRepoToken keeps session_required_single_domain for logged-in users', () => {
