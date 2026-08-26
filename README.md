@@ -1,5 +1,7 @@
 # Datasync
 
+[![nightly tests](https://github.com/libis/rdm-integration-frontend/actions/workflows/nightly-tests.yml/badge.svg)](https://github.com/libis/rdm-integration-frontend/actions/workflows/nightly-tests.yml)
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.6.
 
 ## Development server
