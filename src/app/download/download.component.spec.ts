@@ -23,6 +23,7 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
+import { registerReauthAttempt } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 import { DownloadComponent } from './download.component';
@@ -246,6 +247,9 @@ describe('DownloadComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
+    // Reauth attempt counters and pending demands live in sessionStorage and
+    // would leak between specs otherwise.
+    sessionStorage.clear();
     notification = new MockNotificationService();
     repoLookup = new MockRepoLookupService();
     submit = new MockSubmitService();
@@ -614,6 +618,37 @@ describe('DownloadComponent', () => {
     ).toBeTrue();
     expect(component.statusPollingActive()).toBeFalse();
     expect(component.lastTransferTaskId()).toBeUndefined();
+  });
+
+  it('download() shows a terminal error instead of redirecting when the same demand keeps repeating', async () => {
+    initComponent();
+    const df: Datafile = {
+      id: '1',
+      name: 'f',
+      path: '',
+      hidden: false,
+      action: Fileaction.Download,
+    } as any;
+    component.rowNodeMap().set('1:file', { data: df });
+    component.option.set('branchX');
+    component.selectedRepoName.set('repoX');
+
+    const reauthErr = {
+      status: 401,
+      error: { reauth: { required_domains: ['gent.be'] } },
+    };
+    spyOn(submit, 'download').and.returnValue(throwError(() => reauthErr));
+    spyOn(component, 'getRepoToken');
+    spyOn(notification, 'showError');
+    // Two round-trips for this demand already happened.
+    registerReauthAttempt({ domains: ['gent.be'] });
+    registerReauthAttempt({ domains: ['gent.be'] });
+
+    component.download();
+    await new Promise<void>((r) => setTimeout(r));
+
+    expect(component.getRepoToken).not.toHaveBeenCalled();
+    expect(notification.showError).toHaveBeenCalled();
   });
 
   it('download() triggers reauth on structured 401 with domains', async () => {

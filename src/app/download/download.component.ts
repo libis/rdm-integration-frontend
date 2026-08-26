@@ -26,6 +26,8 @@ import {
   buildAuthorizeUrl,
   extractReauth,
   normalizeTokenGetter,
+  reauthFailureMessage,
+  registerReauthAttempt,
 } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
@@ -1176,6 +1178,10 @@ export class DownloadComponent
   private handleReauthError(err: unknown): boolean {
     const reauth = extractReauth(err);
     if (!reauth) return false;
+    if (!registerReauthAttempt(reauth)) {
+      this.notificationService.showError(reauthFailureMessage(reauth));
+      return true;
+    }
     this.getRepoToken(reauth);
     return true;
   }

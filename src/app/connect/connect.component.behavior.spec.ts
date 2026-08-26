@@ -24,7 +24,11 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
 import { NotificationService } from '../shared/notification.service';
-import { storePendingReauth, takePendingReauth } from '../shared/reauth';
+import {
+  registerReauthAttempt,
+  storePendingReauth,
+  takePendingReauth,
+} from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { ConnectComponent } from './connect.component';
 
@@ -822,6 +826,28 @@ describe('ConnectComponent additional behavior/validation', () => {
       });
       // ngOnInit's takePendingReauth() already consumed it — nothing left to take.
       expect(takePendingReauth()).toBeUndefined();
+    });
+
+    it('shows a terminal error instead of redirecting when the same demand keeps repeating', () => {
+      window.history.replaceState({}, '');
+      storePendingReauth({ scopes: ['scope-a'] });
+      // Two round-trips for this demand already happened.
+      registerReauthAttempt({ scopes: ['scope-a'] });
+      registerReauthAttempt({ scopes: ['scope-a'] });
+      snapshotStorage.snapshot = {
+        plugin: 'github',
+        pluginId: 'github',
+        repo_name: 'owner/repo',
+      };
+
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      spyOn(comp, 'getRepoToken');
+
+      fixture.detectChanges();
+
+      expect(comp.getRepoToken).not.toHaveBeenCalled();
+      expect(notification.errors.pop()).toContain('re-authentication');
     });
 
     it('leaves the stored demand in place when no pluginId can be restored', () => {

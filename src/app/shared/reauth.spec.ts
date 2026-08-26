@@ -4,6 +4,7 @@ import {
   buildAuthorizeUrl,
   extractReauth,
   normalizeTokenGetter,
+  registerReauthAttempt,
   storePendingReauth,
   takePendingReauth,
 } from './reauth';
@@ -193,5 +194,65 @@ describe('pending reauth storage', () => {
   it('survives malformed storage content', () => {
     sessionStorage.setItem('pendingReauth', 'not-json');
     expect(takePendingReauth()).toBeUndefined();
+  });
+
+  it('discards a stored demand older than the max age', () => {
+    sessionStorage.setItem(
+      'pendingReauth',
+      JSON.stringify({
+        scopes: ['scope-a'],
+        storedAt: Date.now() - 6 * 60 * 1000,
+      }),
+    );
+    expect(takePendingReauth()).toBeUndefined();
+  });
+
+  it('discards an entry without a timestamp (older app version)', () => {
+    sessionStorage.setItem(
+      'pendingReauth',
+      JSON.stringify({ scopes: ['scope-a'] }),
+    );
+    expect(takePendingReauth()).toBeUndefined();
+  });
+});
+
+describe('registerReauthAttempt', () => {
+  afterEach(() => sessionStorage.removeItem('reauthAttempts'));
+
+  it('allows up to two consecutive attempts for the same demand', () => {
+    const demand = { domains: ['kuleuven.be'] };
+    expect(registerReauthAttempt(demand)).toBeTrue();
+    expect(registerReauthAttempt(demand)).toBeTrue();
+  });
+
+  it('blocks the third consecutive attempt for the same demand', () => {
+    const demand = { domains: ['kuleuven.be'] };
+    registerReauthAttempt(demand);
+    registerReauthAttempt(demand);
+    expect(registerReauthAttempt(demand)).toBeFalse();
+  });
+
+  it('a different demand restarts the counter', () => {
+    const domainDemand = { domains: ['kuleuven.be'] };
+    registerReauthAttempt(domainDemand);
+    registerReauthAttempt(domainDemand);
+    expect(registerReauthAttempt({ scopes: ['scope-a'] })).toBeTrue();
+  });
+
+  it('forgets attempts older than the window', () => {
+    sessionStorage.setItem(
+      'reauthAttempts',
+      JSON.stringify({
+        key: JSON.stringify([[], ['kuleuven.be']]),
+        count: 2,
+        firstAt: Date.now() - 6 * 60 * 1000,
+      }),
+    );
+    expect(registerReauthAttempt({ domains: ['kuleuven.be'] })).toBeTrue();
+  });
+
+  it('survives unavailable or malformed storage by allowing the attempt', () => {
+    sessionStorage.setItem('reauthAttempts', 'not-json');
+    expect(registerReauthAttempt({ scopes: ['scope-a'] })).toBeTrue();
   });
 });

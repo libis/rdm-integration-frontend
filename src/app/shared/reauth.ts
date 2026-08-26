@@ -25,6 +25,10 @@ interface ReauthPayload {
 
 const LEGACY_MARKER = '*scopes*';
 const PENDING_REAUTH_KEY = 'pendingReauth';
+const PENDING_REAUTH_MAX_AGE_MS = 5 * 60 * 1000;
+const REAUTH_ATTEMPTS_KEY = 'reauthAttempts';
+const REAUTH_ATTEMPTS_WINDOW_MS = 5 * 60 * 1000;
+const MAX_CONSECUTIVE_REAUTH_ATTEMPTS = 2;
 
 /**
  * Inspect a failed HTTP response for a re-authentication demand.
@@ -152,24 +156,99 @@ export function buildAuthorizeUrl(
   return url.toString();
 }
 
+/**
+ * Terminal message for a demand that registerReauthAttempt refused: shown
+ * instead of yet another redirect to the OAuth provider.
+ */
+export function reauthFailureMessage(reauth: ReauthRequest): string {
+  const detail = reauth.message ? ` Repository message: ${reauth.message}` : '';
+  return (
+    'Repeated re-authentication did not resolve the repository error, ' +
+    'so you will not be redirected to the login page again.' +
+    detail +
+    ' Please make sure you sign in with the required identity and grant the requested access, or contact support.'
+  );
+}
+
 /** Persist a reauth demand across an in-app navigation (compare -> connect). */
 export function storePendingReauth(reauth: ReauthRequest): void {
   try {
-    sessionStorage.setItem(PENDING_REAUTH_KEY, JSON.stringify(reauth));
+    sessionStorage.setItem(
+      PENDING_REAUTH_KEY,
+      JSON.stringify({ ...reauth, storedAt: Date.now() }),
+    );
   } catch {
     // Storage unavailable (private mode) — the user can re-authorize manually.
   }
 }
 
-/** Read and clear a stored reauth demand. */
+/**
+ * Read and clear a stored reauth demand. Entries older than
+ * PENDING_REAUTH_MAX_AGE_MS (or without a timestamp) are discarded: a demand
+ * that survived in sessionStorage past its own context would otherwise
+ * redirect the user to the OAuth provider out of nowhere on a later visit.
+ */
 export function takePendingReauth(): ReauthRequest | undefined {
   try {
     const raw = sessionStorage.getItem(PENDING_REAUTH_KEY);
     sessionStorage.removeItem(PENDING_REAUTH_KEY);
     if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as ReauthRequest;
-    return parsed.scopes || parsed.domains ? parsed : undefined;
+    const parsed = JSON.parse(raw) as ReauthRequest & { storedAt?: number };
+    if (
+      typeof parsed.storedAt !== 'number' ||
+      Date.now() - parsed.storedAt > PENDING_REAUTH_MAX_AGE_MS
+    ) {
+      return undefined;
+    }
+    const res: ReauthRequest = {};
+    if (parsed.scopes) res.scopes = parsed.scopes;
+    if (parsed.domains) res.domains = parsed.domains;
+    if (parsed.message) res.message = parsed.message;
+    return res.scopes || res.domains ? res : undefined;
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Record a reauth round-trip about to be triggered for this demand and say
+ * whether it may proceed. Consecutive identical demands are counted (in
+ * sessionStorage, so the count survives the OAuth redirect); after
+ * MAX_CONSECUTIVE_REAUTH_ATTEMPTS within the window the caller must show a
+ * terminal error instead of redirecting — re-authenticating did not clear the
+ * error, and redirecting again would keep the user in a login treadmill. A
+ * different demand or an expired window restarts the count. When storage is
+ * unavailable the attempt is allowed (no counting is possible).
+ */
+export function registerReauthAttempt(reauth: ReauthRequest): boolean {
+  const key = JSON.stringify([reauth.scopes ?? [], reauth.domains ?? []]);
+  const now = Date.now();
+  let count = 1;
+  let firstAt = now;
+  try {
+    const raw = sessionStorage.getItem(REAUTH_ATTEMPTS_KEY);
+    if (raw) {
+      const prev = JSON.parse(raw) as {
+        key?: string;
+        count?: number;
+        firstAt?: number;
+      };
+      if (
+        prev.key === key &&
+        typeof prev.count === 'number' &&
+        typeof prev.firstAt === 'number' &&
+        now - prev.firstAt <= REAUTH_ATTEMPTS_WINDOW_MS
+      ) {
+        count = prev.count + 1;
+        firstAt = prev.firstAt;
+      }
+    }
+    sessionStorage.setItem(
+      REAUTH_ATTEMPTS_KEY,
+      JSON.stringify({ key, count, firstAt }),
+    );
+  } catch {
+    return true;
+  }
+  return count <= MAX_CONSECUTIVE_REAUTH_ATTEMPTS;
 }

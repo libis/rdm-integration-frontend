@@ -29,6 +29,8 @@ import {
   buildAuthorizeUrl,
   extractReauth,
   normalizeTokenGetter,
+  reauthFailureMessage,
+  registerReauthAttempt,
   takePendingReauth,
 } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
@@ -377,10 +379,13 @@ export class ConnectComponent
     if (this.pluginId()) {
       const pendingReauth = takePendingReauth();
       if (pendingReauth) {
-        // A reauth demand stored before navigating here (e.g. from the compare
-        // polling flow) — go straight back to the OAuth provider.
-        this.getRepoToken(pendingReauth);
-        return;
+        if (registerReauthAttempt(pendingReauth)) {
+          // A reauth demand stored before navigating here (e.g. from the compare
+          // polling flow) — go straight back to the OAuth provider.
+          this.getRepoToken(pendingReauth);
+          return;
+        }
+        this.notificationService.showError(reauthFailureMessage(pendingReauth));
       }
     }
 
@@ -1294,6 +1299,10 @@ export class ConnectComponent
   private handleReauthError(err: unknown): boolean {
     const reauth = extractReauth(err);
     if (!reauth) return false;
+    if (!registerReauthAttempt(reauth)) {
+      this.notificationService.showError(reauthFailureMessage(reauth));
+      return true;
+    }
     this.getRepoToken(reauth);
     return true;
   }
