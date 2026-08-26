@@ -401,6 +401,9 @@ export class ConnectComponent
             })
             .catch((err) => {
               if (this.handleReauthError(err)) return;
+              this.notificationService.showError(
+                `Repository search failed: ${err.message}`,
+              );
               this.repoNames.set([
                 {
                   label: `search failed: ${err.message}`,
@@ -410,6 +413,9 @@ export class ConnectComponent
             }),
         error: (err) => {
           if (this.handleReauthError(err)) return;
+          this.notificationService.showError(
+            `Repository search failed: ${err.message}`,
+          );
           this.repoNames.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]);
@@ -423,6 +429,9 @@ export class ConnectComponent
               this.collectionItems.set(v);
             })
             .catch((err) => {
+              this.notificationService.showError(
+                `Collection search failed: ${err.message}`,
+              );
               this.collectionItems.set([
                 {
                   label: `search failed: ${err.message}`,
@@ -431,7 +440,37 @@ export class ConnectComponent
               ]);
             }),
         error: (err) => {
+          this.notificationService.showError(
+            `Collection search failed: ${err.message}`,
+          );
           this.collectionItems.set([
+            { label: `search failed: ${err.message}`, value: err.message },
+          ]);
+        },
+      });
+    this.datasetSearchResultsSubscription =
+      this.datasetSearchResultsObservable.subscribe({
+        next: (x) =>
+          x
+            .then((v) => {
+              this.doiItems.set(v);
+            })
+            .catch((err) => {
+              this.notificationService.showError(
+                `Dataset search failed: ${err.message}`,
+              );
+              this.doiItems.set([
+                {
+                  label: `search failed: ${err.message}`,
+                  value: err.message,
+                },
+              ]);
+            }),
+        error: (err) => {
+          this.notificationService.showError(
+            `Dataset search failed: ${err.message}`,
+          );
+          this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
           ]);
         },

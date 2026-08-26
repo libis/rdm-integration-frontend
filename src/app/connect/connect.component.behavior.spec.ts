@@ -640,6 +640,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     expect(repoLookup.searchSpy).toHaveBeenCalled();
     expect(comp.repoNames()[0].label).toContain('search failed: boom');
+    expect(notification.errors.pop()).toContain('Repository search failed');
   });
 
   it('getOptions requests oauth scopes when branch lookup returns scopes marker', () => {
@@ -838,6 +839,60 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(comp.getRepoToken).not.toHaveBeenCalled();
       // Demand was never consumed, so it is still available for a later attempt.
       expect(takePendingReauth()).toEqual({ scopes: ['scope-b'] });
+    });
+  });
+
+  describe('dataverse object search dropdowns', () => {
+    it('delivers dataset search results to the doi dropdown', async () => {
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      fixture.detectChanges();
+      const dvLookup = TestBed.inject(DvObjectLookupService);
+      spyOn(dvLookup, 'getItems').and.returnValue(
+        of([{ label: 'Dataset 1', value: 'doi:1' }]),
+      );
+
+      comp.onDatasetSearch('data');
+      await waitForSignal(() =>
+        comp.doiItems().some((i: SelectItem<string>) => i.value === 'doi:1'),
+      );
+
+      expect(dvLookup.getItems).toHaveBeenCalled();
+    });
+
+    it('dataset search failure shows a toast and a failure entry', async () => {
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      fixture.detectChanges();
+      const dvLookup = TestBed.inject(DvObjectLookupService);
+      spyOn(dvLookup, 'getItems').and.returnValue(
+        throwError(() => new Error('boom')),
+      );
+
+      comp.onDatasetSearch('data');
+      await waitForSignal(
+        () => comp.doiItems()[0]?.label?.includes('search failed') ?? false,
+      );
+
+      expect(notification.errors.pop()).toContain('Dataset search failed');
+    });
+
+    it('collection search failure shows a toast and a failure entry', async () => {
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp: any = fixture.componentInstance;
+      fixture.detectChanges();
+      const dvLookup = TestBed.inject(DvObjectLookupService);
+      spyOn(dvLookup, 'getItems').and.returnValue(
+        throwError(() => new Error('boom')),
+      );
+
+      comp.onCollectionSearch('abc');
+      await waitForSignal(
+        () =>
+          comp.collectionItems()[0]?.label?.includes('search failed') ?? false,
+      );
+
+      expect(notification.errors.pop()).toContain('Collection search failed');
     });
   });
 });
