@@ -257,9 +257,12 @@
                   [value]="rootOptions()"
                   (onNodeExpand)="getOptions($event.node)"
                   [loading]="optionsLoading()"
-                  loadingIcon="pi pi-spin pi-spinner"
                   (onNodeSelect)="optionSelected($event.node)"
-                ></p-tree>
+                >
+                  <ng-template pTemplate="loadingicon">
+                    <i class="pi pi-spin pi-spinner"></i>
+                  </ng-template>
+                </p-tree>
               </div>
             </div>
           </div>

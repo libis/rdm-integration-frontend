@@ -160,6 +160,9 @@
     (onNodeExpand)="recountVisibleRows()"
     (onNodeCollapse)="recountVisibleRows()"
   >
+    <ng-template pTemplate="loadingicon">
+      <i class="pi pi-spin pi-spinner"></i>
+    </ng-template>
     <ng-template pTemplate="header">
       <tr>
         <th>
