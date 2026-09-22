@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { CredentialsService } from 'src/app/credentials.service';
-import { DataUpdatesService } from 'src/app/data.updates.service';
-import { Fileaction, Filestatus } from 'src/app/models/datafile';
+import { CredentialsService } from '../../credentials.service';
+import { DataUpdatesService } from '../../data.updates.service';
+import { Fileaction, Filestatus } from '../../models/datafile';
 import { SubmitService, TransferTaskStatus } from '../../submit.service';
 import { TransferProgressCardComponent } from './transfer-progress-card.component';
 

@@ -1,6 +1,7 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -269,7 +270,7 @@ describe('DownloadComponent', () => {
       imports: [DownloadComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: NotificationService, useValue: notification },
         { provide: RepoLookupService, useValue: repoLookup },
@@ -2135,7 +2136,7 @@ describe('DownloadComponent layout', () => {
       imports: [DownloadComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         {
           provide: NotificationService,

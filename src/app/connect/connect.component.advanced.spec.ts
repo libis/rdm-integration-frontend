@@ -1,6 +1,7 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
@@ -297,7 +298,7 @@ describe('ConnectComponent advanced behaviors', () => {
       imports: [ConnectComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useValue: pluginService },
         { provide: RepoLookupService, useValue: repoLookup },

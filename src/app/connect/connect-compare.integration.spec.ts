@@ -1,8 +1,9 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router, RouterOutlet, Routes } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -141,6 +142,7 @@ class NotificationServiceStub {
 @Component({
   selector: 'stub-metadata-selector',
   template: '<p>metadata selector stub</p>',
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 class MetadataSelectorStubComponent {}
@@ -156,6 +158,7 @@ const routes: Routes = [
   selector: 'test-host',
   template: '<router-outlet></router-outlet>',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterOutlet, ConnectComponent, CompareComponent],
 })
 class HostComponent {}
@@ -169,7 +172,7 @@ describe('Integration: Compare back -> Connect restoration', () => {
       imports: [HostComponent],
       providers: [
         provideRouter(routes),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: DataStateService, useClass: DataStateServiceStub },
         { provide: CredentialsService, useClass: CredentialsServiceStub },

@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { Observable, Subscription, merge, of, timer } from 'rxjs';
 import { map, switchMap, tap, takeWhile } from 'rxjs/operators';
-import { DataUpdatesService } from 'src/app/data.updates.service';
+import { DataUpdatesService } from '../../data.updates.service';
 import { CompareResult } from '../../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../../models/datafile';
 import { SubmitService, TransferTaskStatus } from '../../submit.service';

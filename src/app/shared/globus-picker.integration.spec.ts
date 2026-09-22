@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
@@ -46,7 +46,7 @@ for (const scenario of [
         imports: [scenario.type],
         providers: [
           provideRouter([], withDisabledInitialNavigation()),
-          provideHttpClient(),
+          provideHttpClient(withXhr()),
           provideHttpClientTesting(),
         ],
       }).compileComponents();

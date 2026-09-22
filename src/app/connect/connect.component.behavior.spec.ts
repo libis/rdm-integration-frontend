@@ -1,6 +1,7 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -215,7 +216,7 @@ describe('ConnectComponent additional behavior/validation', () => {
       imports: [ConnectComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
@@ -499,7 +500,7 @@ describe('ConnectComponent additional behavior/validation', () => {
       imports: [ConnectComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
@@ -554,7 +555,7 @@ describe('ConnectComponent additional behavior/validation', () => {
       imports: [ConnectComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: PluginService, useClass: PluginServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },

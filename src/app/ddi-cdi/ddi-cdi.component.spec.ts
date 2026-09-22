@@ -4,6 +4,7 @@ import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
@@ -140,7 +141,7 @@ describe('DdiCdiComponent', () => {
       schemas: [CUSTOM_ELEMENTS_SCHEMA],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataService, useValue: dataServiceStub },
         { provide: DvObjectLookupService, useValue: dvObjectLookupServiceStub },

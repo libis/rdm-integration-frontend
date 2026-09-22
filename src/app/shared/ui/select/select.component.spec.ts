@@ -1,10 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { SelectComponent, SelectOptionDirective } from './select.component';
 
 @Component({
   imports: [SelectComponent, FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-select
       inputId="ds"
@@ -171,6 +172,7 @@ describe('SelectComponent', () => {
 
 @Component({
   imports: [SelectComponent, SelectOptionDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-select [options]="options">
       <ng-template appSelectOption let-option>

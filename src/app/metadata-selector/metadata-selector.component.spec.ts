@@ -2,6 +2,7 @@ import { Location } from '@angular/common';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
@@ -103,7 +104,7 @@ describe('MetadataSelectorComponent', () => {
     await TestBed.configureTestingModule({
       imports: [MetadataSelectorComponent],
       providers: [
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: Router, useValue: routerStub },
         { provide: DatasetService, useValue: datasetStub },

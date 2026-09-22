@@ -5,6 +5,7 @@ import {
   Injector,
   signal,
   viewChild,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TreeNode } from '../../../models/tree-node';
@@ -22,6 +23,7 @@ import { TreeTogglerComponent } from './tree-toggler.component';
     TreeTableRowDirective,
     TreeTogglerComponent,
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <button type="button" class="switch-tab" (click)="toggleVisible()">
       Switch tab

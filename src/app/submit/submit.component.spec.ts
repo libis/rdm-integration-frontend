@@ -1,6 +1,7 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -163,7 +164,7 @@ describe('SubmitComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SubmitComponent],
       providers: [
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataStateService, useValue: dataStateStub },
         { provide: CredentialsService, useValue: credentialsStub },
@@ -538,7 +539,7 @@ describe('SubmitComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SubmitComponent],
       providers: [
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataStateService, useValue: dataStateStub },
         { provide: CredentialsService, useValue: credentialsStub },
@@ -572,7 +573,7 @@ describe('SubmitComponent', () => {
     await TestBed.configureTestingModule({
       imports: [SubmitComponent],
       providers: [
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataStateService, useValue: dataStateStub },
         { provide: CredentialsService, useValue: credentialsStub },

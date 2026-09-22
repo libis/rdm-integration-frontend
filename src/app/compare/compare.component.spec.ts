@@ -1,6 +1,7 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
@@ -155,7 +156,7 @@ describe('CompareComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CompareComponent],
       providers: [
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataStateService, useClass: StubDataStateService },
         { provide: DataUpdatesService, useClass: StubDataUpdatesService },

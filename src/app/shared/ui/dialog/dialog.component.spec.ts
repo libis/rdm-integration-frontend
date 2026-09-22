@@ -1,9 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DialogComponent } from './dialog.component';
 
 @Component({
   imports: [DialogComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-dialog
       header="Submit"

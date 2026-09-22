@@ -1,10 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { TreeNode } from '../../../models/tree-node';
 import { FolderTreeComponent } from './folder-tree.component';
 
 @Component({
   imports: [FolderTreeComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `<app-folder-tree
     [nodes]="nodes()"
     [loading]="loading()"

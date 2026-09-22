@@ -1,6 +1,7 @@
 import {
   provideHttpClient,
   withInterceptorsFromDi,
+  withXhr,
 } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -328,7 +329,7 @@ describe('ConnectComponent pilot plugin configuration', () => {
       imports: [ConnectComponent],
       providers: [
         provideRouter([], withDisabledInitialNavigation()),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataStateService, useClass: DataStateServiceStub },
         { provide: DatasetService, useClass: DatasetServiceStub },
