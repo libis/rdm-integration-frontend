@@ -10,6 +10,7 @@ import { DialogComponent } from './dialog.component';
       header="Submit"
       [(visible)]="visible"
       [closable]="closable()"
+      [position]="position()"
       (hidden)="hidden = hidden + 1"
     >
       <p>Body text</p>
@@ -28,6 +29,7 @@ import { DialogComponent } from './dialog.component';
 class HostComponent {
   readonly visible = signal(false);
   readonly closable = signal(true);
+  readonly position = signal<'center' | 'topright'>('center');
   hidden = 0;
 }
 
@@ -64,6 +66,32 @@ describe('DialogComponent', () => {
     expect(
       (fixture.nativeElement as HTMLElement).contains(document.activeElement),
     ).toBeTrue();
+  });
+
+  it('keeps the top-right close button clickable above the application header', async () => {
+    const header = document.createElement('nav');
+    header.className = 'dataverse-header-block';
+    document.body.prepend(header);
+    try {
+      const fixture = TestBed.createComponent(HostComponent);
+      fixture.componentInstance.position.set('topright');
+      fixture.componentInstance.visible.set(true);
+      await fixture.whenStable();
+      const close = fixture.nativeElement.querySelector(
+        '.btn-close',
+      ) as HTMLButtonElement;
+      const rect = close.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        rect.x + rect.width / 2,
+        rect.y + rect.height / 2,
+      );
+      expect(hit).toBe(close);
+      (hit as HTMLElement).click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.visible()).toBeFalse();
+    } finally {
+      header.remove();
+    }
   });
 
   it('closes on the close button and on Escape, and emits hidden', async () => {

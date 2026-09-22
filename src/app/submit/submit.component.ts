@@ -258,12 +258,12 @@ export class SubmitComponent implements OnInit, OnDestroy, SubscriptionManager {
                 data.globusTransferMonitorUrl ?? null,
               );
               if (!data.globusTransferTaskId) {
-                // Only deletions were requested: they already ran on the
-                // server and there is no Globus task to wait for.
+                // Deletions ran on the server; uploads may also have been
+                // filtered as redundant. There is no task left to wait for.
                 this.transferInProgress.set(false);
                 this.done.set(true);
                 this.notificationService.showSuccess(
-                  'Files deleted. No Globus transfer was needed.',
+                  'Changes completed. No Globus transfer was needed.',
                 );
                 return;
               }

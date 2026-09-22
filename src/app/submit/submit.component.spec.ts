@@ -469,7 +469,7 @@ describe('SubmitComponent', () => {
     );
   });
 
-  it('continueSubmit finishes a delete-only globus submit without waiting for a task', async () => {
+  it('continueSubmit finishes a globus submit with no remaining transfer task', async () => {
     // Set globus plugin and recreate component
     credentialsStub._setPlugin('globus');
     fixture = TestBed.createComponent(SubmitComponent);
