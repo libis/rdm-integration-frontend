@@ -129,7 +129,7 @@
   <br /><br />
   <div style="text-align: right">
     @if (configLoaded() && sendMails()) {
-      <div class="field-checkbox">
+      <div>
         <p-checkbox
           [ngModel]="sendEmailOnSuccess()"
           (ngModelChange)="sendEmailOnSuccess.set($event)"

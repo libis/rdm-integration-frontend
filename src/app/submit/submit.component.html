@@ -97,7 +97,7 @@
   <br /><br />
   <div style="text-align: right">
     @if (sendMails() && !isGlobus()) {
-      <div class="field-checkbox">
+      <div>
         <p-checkbox
           [ngModel]="sendEmailOnSuccess()"
           (ngModelChange)="sendEmailOnSuccess.set($event)"

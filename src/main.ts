@@ -15,7 +15,6 @@ import {
 import { FormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { definePreset } from '@primeuix/themes';
 import { MessageService } from 'primeng/api';
 import Lara from '@primeuix/themes/lara';
@@ -32,7 +31,6 @@ import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TreeModule } from 'primeng/tree';
-import { TreeSelectModule } from 'primeng/treeselect';
 import { TreeTableModule } from 'primeng/treetable';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routs';
@@ -60,7 +58,6 @@ bootstrapApplication(AppComponent, {
     MessageService,
     importProvidersFrom(
       BrowserModule,
-      NgbModule,
       AccordionModule,
       FormsModule,
       TreeTableModule,
@@ -73,7 +70,6 @@ bootstrapApplication(AppComponent, {
       DialogModule,
       CheckboxModule,
       TreeModule,
-      TreeSelectModule,
       AutosizeModule,
       ProgressSpinnerModule,
     ),

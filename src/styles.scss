@@ -1,7 +1,11 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 @import "primeicons/primeicons.css";
-@import "primeflex/primeflex.css";
+
+.spinner-1rem {
+  width: 1rem;
+  height: 1rem;
+}
 
 :root {
   --app-file-action-copy-bg: #c3e6cb;
