@@ -41,13 +41,7 @@ export const APP_CONSTANTS = {
 } as const;
 
 type FileActionStyleKey =
-  | 'IGNORE'
-  | 'COPY'
-  | 'SELECTED'
-  | 'UPDATE'
-  | 'DELETE'
-  | 'CUSTOM'
-  | 'DOWNLOAD';
+  'IGNORE' | 'COPY' | 'SELECTED' | 'UPDATE' | 'DELETE' | 'CUSTOM' | 'DOWNLOAD';
 
 export type FileActionStyle = Readonly<{
   backgroundColor?: string;

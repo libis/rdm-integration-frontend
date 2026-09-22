@@ -41,8 +41,12 @@ describe('extractReauth', () => {
 
   it('returns undefined for plain errors and empty payloads', () => {
     expect(extractReauth({ status: 500, error: 'boom' })).toBeUndefined();
-    expect(extractReauth({ status: 401, error: 'session expired' })).toBeUndefined();
-    expect(extractReauth({ status: 401, error: { reauth: {} } })).toBeUndefined();
+    expect(
+      extractReauth({ status: 401, error: 'session expired' }),
+    ).toBeUndefined();
+    expect(
+      extractReauth({ status: 401, error: { reauth: {} } }),
+    ).toBeUndefined();
     expect(extractReauth(undefined)).toBeUndefined();
   });
 });
@@ -61,7 +65,9 @@ describe('normalizeTokenGetter', () => {
       },
       'https://auth.globus.org/v2/oauth2/authorize',
     )!;
-    expect(base.authorizeUrl).toBe('https://auth.globus.org/v2/oauth2/authorize');
+    expect(base.authorizeUrl).toBe(
+      'https://auth.globus.org/v2/oauth2/authorize',
+    );
     expect(base.clientId).toBe('client-1');
     expect(base.baseScopes).toEqual(['scope-a', 'openid']);
     expect(base.baseDomains).toEqual(['kuleuven.be']);
@@ -79,7 +85,9 @@ describe('normalizeTokenGetter', () => {
       'profile',
     ]);
     expect(base.baseDomains).toEqual(['kuleuven.be']);
-    expect(base.authorizeUrl).toBe('https://auth.globus.org/v2/oauth2/authorize');
+    expect(base.authorizeUrl).toBe(
+      'https://auth.globus.org/v2/oauth2/authorize',
+    );
   });
 
   it('preserves unrelated query params in the base URL', () => {
@@ -117,7 +125,10 @@ describe('buildAuthorizeUrl', () => {
     ],
     baseDomains: ['kuleuven.be'],
   };
-  const opts = { redirectUri: 'https://app.example.org/connect', state: '{"nonce":"n"}' };
+  const opts = {
+    redirectUri: 'https://app.example.org/connect',
+    state: '{"nonce":"n"}',
+  };
 
   function params(url: string): URLSearchParams {
     return new URL(url).searchParams;
@@ -157,7 +168,10 @@ describe('buildAuthorizeUrl', () => {
 
   it('replaces domains and forces fresh login when reauth demands domains', () => {
     const p = params(
-      buildAuthorizeUrl(base, { ...opts, reauth: { domains: ['sydney.edu.au'] } }),
+      buildAuthorizeUrl(base, {
+        ...opts,
+        reauth: { domains: ['sydney.edu.au'] },
+      }),
     );
     expect(p.get('session_required_single_domain')).toBe('sydney.edu.au');
     expect(p.get('prompt')).toBe('login');

@@ -10,7 +10,7 @@ export interface ReauthRequest {
 }
 
 /** Normalized token-getter configuration for OAuth authorize URL building. */
-export interface AuthorizeBase {
+interface AuthorizeBase {
   authorizeUrl: string;
   clientId: string;
   baseScopes: string[];
@@ -38,8 +38,7 @@ const MAX_CONSECUTIVE_REAUTH_ATTEMPTS = 2;
  */
 export function extractReauth(err: unknown): ReauthRequest | undefined {
   const e = err as
-    | { status?: number; error?: unknown; message?: unknown }
-    | undefined;
+    { status?: number; error?: unknown; message?: unknown } | undefined;
   if (!e) return undefined;
   if (e.status === 401 && typeof e.error === 'object' && e.error !== null) {
     const payload = (e.error as { reauth?: ReauthPayload }).reauth;
@@ -162,12 +161,7 @@ export function buildAuthorizeUrl(
  */
 export function reauthFailureMessage(reauth: ReauthRequest): string {
   const detail = reauth.message ? ` Repository message: ${reauth.message}` : '';
-  return (
-    'Repeated re-authentication did not resolve the repository error, ' +
-    'so you will not be redirected to the login page again.' +
-    detail +
-    ' Please make sure you sign in with the required identity and grant the requested access, or contact support.'
-  );
+  return `Repeated re-authentication did not resolve the repository error, so you will not be redirected to the login page again.${detail} Please make sure you sign in with the required identity and grant the requested access, or contact support.`;
 }
 
 /** Persist a reauth demand across an in-app navigation (compare -> connect). */

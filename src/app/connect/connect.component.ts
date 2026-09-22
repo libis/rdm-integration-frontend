@@ -1315,7 +1315,7 @@ export class ConnectComponent
     items: HierarchicalSelectItem<string>[],
     node?: TreeNode<string>,
   ): void {
-    if (items && node) {
+    if (items && node && !this.isRootListing(node, items)) {
       // Expanding an existing node - add children
       const nodes = convertToTreeNodes(items);
       // Keep event-node mutation for compatibility, then synchronize
@@ -1345,6 +1345,15 @@ export class ConnectComponent
       this.branchItems.set([]);
       this.optionsLoading.set(false);
     }
+  }
+
+  // The placeholder was expanded and the backend answered with the
+  // collection root: show that root instead of nesting it under the placeholder.
+  private isRootListing(
+    node: TreeNode<string>,
+    items: HierarchicalSelectItem<string>[],
+  ): boolean {
+    return node.data === '' && items.length > 0 && items[0].value === '/';
   }
 
   private updateExpandedNodeChildren(
@@ -1387,15 +1396,18 @@ export class ConnectComponent
     }
   }
 
-  optionSelected(node: TreeNode<string>): void {
-    const v = node.data;
+  optionSelected(
+    selection: TreeNode<string> | TreeNode<string>[] | null | undefined,
+  ): void {
+    const node = Array.isArray(selection) ? undefined : selection;
+    const v = node?.data;
     if (v === undefined || v === null) {
       this.selectedOption.set(undefined);
       this.option.set(undefined);
     } else {
       // Allow selecting root "/" or any other folder
       this.option.set(v);
-      this.selectedOption.set(node);
+      this.selectedOption.set(node ?? undefined);
     }
   }
 

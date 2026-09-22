@@ -19,6 +19,7 @@ import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CompareResult } from '../models/compare-result';
 import { Datafile, Fileaction } from '../models/datafile';
+import { HierarchicalSelectItem } from '../models/hierarchical-select-item';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
@@ -48,11 +49,11 @@ class MockNotificationService {
 }
 
 class MockRepoLookupService {
-  options: SelectItem<string>[] = [];
+  options: HierarchicalSelectItem<string>[] = [];
   search(_req?: unknown): Observable<SelectItem<string>[]> {
     return of<SelectItem<string>[]>([]);
   }
-  getOptions(): Observable<SelectItem<string>[]> {
+  getOptions(_req?: unknown): Observable<SelectItem<string>[]> {
     return new Observable<SelectItem<string>[]>((obs) => {
       setTimeout(() => {
         obs.next(this.options);
@@ -66,6 +67,7 @@ class MockSubmitService {
   succeed = true;
   responseTaskId = 'task-123';
   responseMonitorUrl?: string;
+  errorPayload: unknown = { error: 'failX' };
 
   download() {
     return new Observable<{ taskId: string; monitorUrl?: string }>((obs) => {
@@ -77,7 +79,7 @@ class MockSubmitService {
           });
           obs.complete();
         } else {
-          obs.error({ error: 'failX' });
+          obs.error(this.errorPayload);
         }
       }, 0);
     });
@@ -716,6 +718,61 @@ describe('DownloadComponent', () => {
 
     expect(comp.branchItems().length).toBe(2);
     expect(comp.branchItems()[0].label).toBe('folder-a');
+  });
+
+  it('replaces the placeholder with the collection root and keeps the selected home', async () => {
+    const comp = initComponent();
+    comp.selectedRepoName.set('repoA');
+    repoLookup.options = [
+      {
+        label: '/',
+        value: '/',
+        expanded: true,
+        children: [
+          {
+            label: 'Users',
+            value: '/Users/',
+            expanded: true,
+            children: [
+              {
+                label: 'alice',
+                value: '/Users/alice/',
+                selected: true,
+                expanded: true,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    comp.getOptions({ label: 'Expand and select', data: '', expanded: true });
+    await new Promise<void>((r) => setTimeout(r));
+
+    expect(comp.rootOptions().length).toBe(1);
+    expect(comp.rootOptions()[0].data).toBe('/');
+    expect(comp.rootOptions()[0].children?.[0].data).toBe('/Users/');
+    expect(comp.option()).toBe('/Users/alice/');
+    comp.optionSelected(comp.rootOptions()[0]);
+    expect(comp.option()).toBe('/');
+
+    const lookup = spyOn(repoLookup, 'getOptions').and.callThrough();
+    repoLookup.options = [
+      { label: 'Users', value: '/Users/' },
+      { label: 'Volumes', value: '/Volumes/' },
+    ];
+    comp.getOptions(comp.rootOptions()[0]);
+    await new Promise<void>((r) => setTimeout(r));
+    expect(lookup).toHaveBeenCalledWith(
+      jasmine.objectContaining({ option: '/' }),
+    );
+    expect(comp.rootOptions().length).toBe(1);
+    expect(comp.rootOptions()[0].data).toBe('/');
+    expect(comp.rootOptions()[0].children?.map((n) => n.data)).toEqual([
+      '/Users/',
+      '/Volumes/',
+    ]);
+    expect(comp.option()).toBe('/');
   });
 
   it('helper accessors mirror globus plugin configuration', () => {
@@ -1824,6 +1881,254 @@ describe('DownloadComponent', () => {
 
       expect(comp.loading()).toBeFalse();
       dataService.globusParamsError = undefined;
+    });
+  });
+
+  describe('branch coverage', () => {
+    it('repoName field accessors fall back when the plugin omits them', () => {
+      const comp = initComponent();
+      comp.globusPlugin.set({ tokenGetter: {} } as any);
+      expect(comp.repoNameFieldEditable()).toBeFalse();
+      expect(comp.repoNamePlaceholder()).toBe('');
+      comp.globusPlugin.set({
+        repoNameFieldEditable: true,
+        repoNameFieldPlaceholder: 'ep',
+      } as any);
+      expect(comp.repoNameFieldEditable()).toBeTrue();
+      expect(comp.repoNamePlaceholder()).toBe('ep');
+    });
+
+    it('recountVisibleRows counts only rows under expanded nodes', () => {
+      const comp = initComponent();
+      comp.rootNodeChildren.set([
+        { expanded: true, children: [{}, { expanded: false, children: [{}] }] },
+        { expanded: true, children: [] },
+        { expanded: false, children: [{}] },
+      ] as TreeNode<Datafile>[]);
+      comp.recountVisibleRows();
+      expect(comp.visibleRowCount()).toBe(5);
+      expect(comp.useVirtualScroll()).toBeFalse();
+    });
+
+    it('hasDownloadSelection follows the root node action', () => {
+      const comp = initComponent();
+      const root = {
+        data: { id: '', action: Fileaction.Download } as Datafile,
+      };
+      comp.rowNodeMap.set(new Map([['', root]]));
+      expect(comp.hasDownloadSelection()).toBeTrue();
+      root.data.action = Fileaction.Ignore;
+      comp.refreshTrigger.update((n) => n + 1);
+      expect(comp.hasDownloadSelection()).toBeFalse();
+    });
+
+    it('fileNodes skips the root entry, folders and nodes with children', () => {
+      const comp = initComponent();
+      comp.rowNodeMap.set(
+        new Map<string, TreeNode<Datafile>>([
+          ['', { data: { id: '' } as Datafile }],
+          [
+            'dir',
+            { data: { id: 'dir', attributes: { isFile: false } } as Datafile },
+          ],
+          ['parent', { data: { id: 'parent' } as Datafile, children: [{}] }],
+          ['nodata', {}],
+          ['f', { data: { id: 'f' } as Datafile }],
+        ]),
+      );
+      expect(comp.fileNodes().map((n) => n.data!.id)).toEqual(['f']);
+    });
+
+    it('updateFolderActionsRecursive derives folder actions from children', () => {
+      const comp = initComponent() as any;
+      expect(comp.updateFolderActionsRecursive({})).toBe(Fileaction.Ignore);
+      expect(comp.updateFolderActionsRecursive({ data: {} })).toBe(
+        Fileaction.Ignore,
+      );
+      const uniform = {
+        data: { action: Fileaction.Ignore },
+        children: [
+          { data: { action: Fileaction.Download } },
+          { data: { action: Fileaction.Download } },
+        ],
+      };
+      expect(comp.updateFolderActionsRecursive(uniform)).toBe(
+        Fileaction.Download,
+      );
+      expect(uniform.data.action).toBe(Fileaction.Download);
+      const mixed = {
+        children: [
+          { data: { action: Fileaction.Download } },
+          { data: { action: Fileaction.Ignore } },
+        ],
+      };
+      expect(comp.updateFolderActionsRecursive(mixed)).toBe(Fileaction.Custom);
+    });
+
+    it('download success without a task id only reports the submission', async () => {
+      initComponent();
+      component.rowNodeMap().set('1:file', {
+        data: {
+          id: '1',
+          name: 'f',
+          path: '',
+          action: Fileaction.Download,
+        } as any,
+      });
+      component.option.set('/');
+      component.selectedRepoName.set('repoX');
+      submit.responseTaskId = '';
+      component.download();
+      await new Promise<void>((r) => setTimeout(r));
+      expect(notification.successes.pop()).toBe('Download request submitted.');
+      expect(component.lastTransferTaskId()).toBeUndefined();
+      expect(component.globusMonitorUrl()).toBeUndefined();
+    });
+
+    it('download error falls back to message and then to a generic text', async () => {
+      initComponent();
+      component.rowNodeMap().set('1:file', {
+        data: {
+          id: '1',
+          name: 'f',
+          path: '',
+          action: Fileaction.Download,
+        } as any,
+      });
+      component.option.set('/');
+      component.selectedRepoName.set('repoX');
+      submit.succeed = false;
+      submit.errorPayload = { message: 'boom' };
+      component.download();
+      await new Promise<void>((r) => setTimeout(r));
+      expect(notification.errors.pop()).toBe('Download request failed: boom');
+      submit.errorPayload = {};
+      component.download();
+      await new Promise<void>((r) => setTimeout(r));
+      expect(notification.errors.pop()).toBe(
+        'Download request failed: unknown error',
+      );
+      expect(component.downloadRequested()).toBeFalse();
+    });
+
+    it('getOptions skips the lookup when branch items are already loaded', () => {
+      const comp = initComponent();
+      comp.selectedRepoName.set('repoA');
+      comp.branchItems.set([{ label: 'a', value: '/a/' }]);
+      const spy = spyOn(repoLookup, 'getOptions').and.callThrough();
+      comp.getOptions();
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('updateExpandedNodeChildren replaces a nested target and reports misses', () => {
+      const comp = initComponent() as any;
+      const tree = [
+        { label: 'x', data: '/x/', children: [] },
+        { label: 'a', data: '/a/', children: [{ label: 'b', data: '/a/b/' }] },
+      ];
+      const hit = comp.updateExpandedNodeChildren(
+        tree,
+        { label: 'b', data: '/a/b/' },
+        [{ label: 'c', data: '/a/b/c/' }],
+      );
+      expect(hit.found).toBeTrue();
+      expect(hit.tree[1].children[0].children[0].data).toBe('/a/b/c/');
+      expect(hit.tree[0]).toBe(tree[0]);
+      const miss = comp.updateExpandedNodeChildren(
+        tree,
+        { label: 'zzz', data: '/zzz/' },
+        [],
+      );
+      expect(miss.found).toBeFalse();
+    });
+
+    it('getRepoToken falls back to the plugin source url and carries preselected files', () => {
+      const comp = initComponent();
+      comp.globusPlugin.set({
+        sourceUrlFieldValue: 'https://globus.example',
+        tokenGetter: { oauth_client_id: 'client-id' },
+      } as any);
+      comp.preSelectedFileIds.set(new Set(['1', '2']));
+      comp.datasetId.set('?');
+      comp.getRepoToken();
+      const url = navigation.assign.calls.mostRecent().args[0] as string;
+      expect(new URL(url).origin).toBe('https://globus.example');
+      const state = JSON.parse(new URL(url).searchParams.get('state')!);
+      expect(state.preSelectedFileIds).toEqual(['1', '2']);
+      expect(state.datasetId).toBeUndefined();
+    });
+
+    it('onDatasetChange explains anonymous preview url failures', async () => {
+      const comp = initComponent();
+      comp.datasetId.set('doi:10.1/PREV');
+      comp.accessMode.set('preview');
+      comp.dataverseToken.set('tok');
+      dataService.error = 'forbidden';
+      comp.onDatasetChange();
+      await new Promise<void>((r) => setTimeout(r));
+      expect(notification.errors.pop()).toContain(
+        'Anonymous Preview URLs are not supported',
+      );
+      expect(comp.loading()).toBeFalse();
+      dataService.error = undefined;
+    });
+
+    it('onDatasetChange sorts entries without ids first', async () => {
+      const comp = initComponent();
+      comp.datasetId.set('doi:10.1/SORT');
+      dataService.response = {
+        data: [
+          { id: 'b', name: 'b', path: '', action: Fileaction.Ignore },
+          { name: 'noid', path: '', action: Fileaction.Ignore },
+          { id: 'a', name: 'a', path: '', action: Fileaction.Ignore },
+        ],
+      };
+      comp.onDatasetChange();
+      await new Promise<void>((r) => setTimeout(r));
+      expect(comp.data()?.data?.map((d: Datafile) => d.name)).toEqual([
+        'noid',
+        'a',
+        'b',
+      ]);
+      dataService.response = { data: [] };
+    });
+
+    it('getDoiOptions reloads when the dataset id is only a placeholder', async () => {
+      const comp = initComponent();
+      comp.doiItems.set([{ label: '?', value: '?' }]);
+      comp.datasetId.set('?');
+      dvLookup.items = [{ label: 'a', value: 'doi:a' }];
+      comp.getDoiOptions();
+      await new Promise<void>((r) => setTimeout(r));
+      expect(comp.doiItems()[0].value).toBe('doi:a');
+      expect(comp.datasetId()).toBeUndefined();
+    });
+
+    it('ngOnInit fetches the DOI from globus parameters when only ids are known', async () => {
+      const spy = spyOn(
+        dataService,
+        'getGlobusDownloadParams',
+      ).and.callThrough();
+      initComponent({ downloadId: 'dl-1', datasetDbId: '999' });
+      await new Promise<void>((r) => setTimeout(r));
+      expect(spy).toHaveBeenCalled();
+      const args = spy.calls.mostRecent().args as unknown[];
+      expect(args[1]).toBe('999');
+      expect(args[2]).toBe('dl-1');
+    });
+
+    it('ngOnInit uses a placeholder DOI when the OAuth state has no dataset', async () => {
+      const comp = initComponent(
+        {
+          code: 'code-1',
+          state: JSON.stringify({ nonce: 'n1', download: true }),
+        },
+        (c) => spyOn(c, 'getDoiOptions'),
+      );
+      await new Promise<void>((r) => setTimeout(r));
+      httpMock.match(() => true).forEach((r) => r.flush({ session_id: 's' }));
+      expect(comp.datasetId()).toBe('?');
+      expect(comp.doiItems()).toEqual([{ label: '?', value: '?' }]);
     });
   });
 });

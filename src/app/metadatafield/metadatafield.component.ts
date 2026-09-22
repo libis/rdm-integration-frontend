@@ -111,8 +111,7 @@ export class MetadatafieldComponent {
     if (!node) return undefined;
     // If this node is a leaf with a MetadataField, return its source if present
     const f = node.data?.field as
-      | { typeName?: string; value?: unknown; source?: string }
-      | undefined;
+      { typeName?: string; value?: unknown; source?: string } | undefined;
     if (f && f.typeName !== undefined && f.value !== undefined && f.source) {
       return f.source;
     }

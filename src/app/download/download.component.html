@@ -239,12 +239,15 @@
             [value]="rootOptions()"
             (onNodeExpand)="getOptions($event.node)"
             [loading]="optionsLoading()"
-            (onNodeSelect)="optionSelected($event.node)"
+            (selectionChange)="optionSelected($event)"
           >
             <ng-template pTemplate="loadingicon">
               <i class="pi pi-spin pi-spinner"></i>
             </ng-template>
           </p-tree>
+          @if (option()) {
+            <div class="form-text">Selected: {{ option() }}</div>
+          }
         </div>
       </div>
     </div>

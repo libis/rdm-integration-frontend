@@ -42,6 +42,9 @@ class MockPluginService {
   repoNameFieldHasInit = true;
   sourceUrlFieldValue?: string;
   repoNameFieldValues: string[] = ['owner/repo'];
+  tokenName?: string;
+  tokenGetterUrl: string | undefined = '/oauth';
+  parseSourceUrlField = true;
 
   async setConfig() {
     return;
@@ -60,13 +63,14 @@ class MockPluginService {
   }
   getPlugin(pluginId?: string) {
     const tokenGetter = {
-      URL: '/oauth',
+      URL: this.tokenGetterUrl,
       oauth_client_id: this.oauthClientId,
     } as const;
     return {
       tokenGetter,
+      tokenName: this.tokenName,
       repoNameFieldHasSearch: true,
-      parseSourceUrlField: true,
+      parseSourceUrlField: this.parseSourceUrlField,
       repoNameFieldName: 'Repository',
       repoNameFieldEditable: true,
       repoNameFieldPlaceholder: 'owner/repo',
@@ -158,7 +162,7 @@ class MockRepoLookupService {
     return of([]);
   }
 
-  getOptions(): Observable<SelectItem<string>[]> {
+  getOptions(_req?: unknown): Observable<SelectItem<string>[]> {
     return new Observable((observer) => {
       setTimeout(() => {
         if (this.error) {
@@ -545,6 +549,79 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(storedRoot.children?.[0]?.label).toBe('ghum');
   });
 
+  it('getOptions replaces placeholder with the collection root when backend returns "/"', async () => {
+    repoLookup.options = [
+      {
+        label: '/',
+        value: '/',
+        expanded: true,
+        children: [
+          {
+            label: 'home',
+            value: '/home/',
+            expanded: true,
+            children: [
+              {
+                label: 'alice',
+                value: '/home/alice/',
+                selected: true,
+                expanded: true,
+                children: [{ label: 'data', value: '/home/alice/data/' }],
+              },
+            ],
+          },
+        ],
+      },
+    ] as any;
+
+    const { comp } = createComponent();
+    comp.pluginId.set('globus');
+    comp.plugin.set('globus');
+    comp.repoName.set('ep');
+    comp.user.set('alice');
+    comp.token.set('tok');
+    comp.url.set('https://host');
+    comp.sourceUrl.set('https://host/owner/repo/path');
+    comp.option.set(undefined);
+    comp.branchItems.set([]);
+
+    comp.getOptions({
+      label: 'Expand and select',
+      data: '',
+      selectable: true,
+      expanded: true,
+    });
+    await new Promise<void>((r) => setTimeout(r));
+
+    const root = comp.rootOptions();
+    expect(root.length).toBe(1);
+    expect(root[0].label).toBe('/');
+    expect(root[0].data).toBe('/');
+    expect(root[0].children?.[0]?.label).toBe('home');
+    expect(comp.option()).toBe('/home/alice/');
+    comp.optionSelected(root[0]);
+    expect(comp.option()).toBe('/');
+
+    // Expanding the real root must request '/' and replace its children,
+    // keeping the current selection and exposing folders outside the home.
+    const lookup = spyOn(repoLookup, 'getOptions').and.callThrough();
+    repoLookup.options = [
+      { label: 'home', value: '/home/' },
+      { label: 'mnt', value: '/mnt/' },
+    ];
+    comp.getOptions(root[0]);
+    await new Promise<void>((r) => setTimeout(r));
+    expect(lookup).toHaveBeenCalledWith(
+      jasmine.objectContaining({ option: '/' }),
+    );
+    expect(comp.rootOptions().length).toBe(1);
+    expect(comp.rootOptions()[0].data).toBe('/');
+    expect(
+      comp.rootOptions()[0].children?.map((n: TreeNode<string>) => n.data),
+    ).toEqual(['/home/', '/mnt/']);
+    expect(comp.option()).toBe('/');
+  });
+
   it('onRepoChange clears tree selection state and restores placeholder root', () => {
     const { comp } = createComponent();
     (comp as any)._rootOptionsData.set([
@@ -859,5 +936,80 @@ describe('ConnectComponent advanced behaviors', () => {
     } finally {
       jasmine.clock().uninstall();
     }
+  });
+
+  describe('branch coverage', () => {
+    it('changePluginId restores a token stored for the plugin', () => {
+      pluginService.tokenName = 'gh-token';
+      localStorage.setItem('gh-token', 'stored-token');
+      try {
+        const { comp } = createComponent();
+        comp.pluginId.set('github');
+        comp.changePluginId();
+        expect(comp.token()).toBe('stored-token');
+      } finally {
+        localStorage.removeItem('gh-token');
+      }
+    });
+
+    it('getRepoToken uses the repository url when the token getter has no path', () => {
+      pluginService.tokenGetterUrl = undefined;
+      const { comp } = createComponent();
+      comp.plugin.set('github');
+      comp.pluginId.set('github');
+      comp.repoName.set('owner/repo');
+      comp.url.set('https://host');
+      comp.pluginIds.set([{ label: 'GitHub', value: 'github' }]);
+      comp.plugins.set([{ label: 'GitHub', value: 'github' }]);
+      comp.getRepoToken();
+      const redirectUrl = navigation.assign.calls.mostRecent()
+        .args[0] as string;
+      expect(new URL(redirectUrl).origin).toBe('https://host');
+    });
+
+    it('getRepoLookupRequest tolerates a missing repo name for searches', () => {
+      pluginService.parseSourceUrlField = false;
+      pluginService.sourceUrlFieldValue = 'https://host';
+      const { comp } = createComponent();
+      comp.pluginId.set('github');
+      comp.plugin.set('github');
+      comp.user.set('alice');
+      comp.token.set('tok');
+      comp.repoName.set(undefined);
+      comp.selectedRepoName.set(undefined);
+      comp.foundRepoName.set(undefined);
+      expect(comp.getRepoLookupRequest(true)).toBeDefined();
+      expect(comp.getRepoLookupRequest(false)).toBeUndefined();
+      expect(notification.errors.pop()).toContain('Repository is missing');
+    });
+
+    it('newDataset without a collection uses an empty prefix', () => {
+      const { comp } = createComponent();
+      comp.collectionId.set(undefined);
+      comp.doiItems.set([
+        { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+      ]);
+      comp.newDataset();
+      expect(comp.datasetId()).toBe(':New Dataset');
+    });
+
+    it('getDoiOptions requests items with an empty collection when none is selected', () => {
+      const { comp } = createComponent();
+      comp.collectionId.set(undefined);
+      comp.doiItems.set([]);
+      const spy = spyOn(dvLookup, 'getItems').and.callThrough();
+      comp.getDoiOptions();
+      expect((spy.calls.mostRecent().args as unknown[])[0]).toBe('');
+    });
+
+    it('applySnapshot falls back to the snapshot id for the dataset', () => {
+      const { comp } = createComponent();
+      comp.datasetId.set(undefined);
+      comp.applySnapshot({ id: 'doi:10.1/SNAP' }, undefined, undefined);
+      expect(comp.datasetId()).toBe('doi:10.1/SNAP');
+      comp.datasetId.set(undefined);
+      comp.applySnapshot({ id: 42 }, undefined, undefined);
+      expect(comp.datasetId()).toBeUndefined();
+    });
   });
 });

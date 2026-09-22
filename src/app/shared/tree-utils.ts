@@ -16,7 +16,14 @@ interface TreeConversionResult<T = string> {
  */
 export function createDefaultRootOptions(): TreeNode<string>[] {
   return [
-    { label: '/', data: '/', leaf: false, selectable: true, expanded: false },
+    {
+      key: 'path:/',
+      label: '/',
+      data: '/',
+      leaf: false,
+      selectable: true,
+      expanded: false,
+    },
   ];
 }
 
@@ -25,7 +32,13 @@ export function createDefaultRootOptions(): TreeNode<string>[] {
  */
 export function createPlaceholderRootOptions(): TreeNode<string>[] {
   return [
-    { label: 'Expand and select', data: '', leaf: false, selectable: true },
+    {
+      key: 'path:',
+      label: 'Expand and select',
+      data: '',
+      leaf: false,
+      selectable: true,
+    },
   ];
 }
 
@@ -41,6 +54,9 @@ export function convertToTreeNodes<T = string>(
 
   for (const item of items) {
     const treeNode: TreeNode<T> = {
+      // Lazy loading replaces node objects. PrimeNG needs a stable key to
+      // retain selection across those replacements, including the empty root.
+      key: typeof item.value === 'string' ? `path:${item.value}` : undefined,
       label: item.label,
       data: item.value,
       leaf: false,
