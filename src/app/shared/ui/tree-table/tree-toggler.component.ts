@@ -45,6 +45,7 @@ import { TreeNode } from '../../../models/tree-node';
       display: inline-block;
       width: 1.5rem;
       text-align: center;
+      text-decoration: none;
     }
   `,
 })

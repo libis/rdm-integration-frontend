@@ -14,7 +14,11 @@
   border-radius: var(--bs-border-radius);
 }
 
+.folder-toggle,
+.folder-label {
+  text-decoration: none;
+}
+
 .folder-label {
   color: var(--app-text);
-  text-decoration: none;
 }

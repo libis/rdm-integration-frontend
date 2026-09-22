@@ -28,10 +28,10 @@
 // Row action toggles: square, muted border, icon in the text colour.
 .tt-cell .btn-outline-secondary {
   --bs-btn-color: var(--app-text);
-  --bs-btn-border-color: var(--app-muted);
+  --bs-btn-border-color: var(--app-border);
   --bs-btn-hover-color: var(--app-text);
   --bs-btn-hover-bg: var(--app-surface);
-  --bs-btn-hover-border-color: var(--app-muted);
+  --bs-btn-hover-border-color: var(--app-border);
   width: 2rem;
   height: 2rem;
   padding: 0;
