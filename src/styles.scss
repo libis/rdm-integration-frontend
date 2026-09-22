@@ -28,21 +28,14 @@
 }
 
 // Icon glyphs sit on the text baseline by default, which draws them lower
-// than the text next to them. Centre them on the x-height instead, and let
-// the tree toggler box centre against the file name that follows it.
+// than the text next to them. "middle" centres the icon box on the x-height,
+// and the glyphs sit another 0.07em low inside their box, measured against
+// the cap height of the body font. The same shift holds in flex containers
+// such as buttons, so this is the one rule for every icon next to text.
 .pi {
   vertical-align: middle;
-}
-
-app-tree-toggler {
-  vertical-align: middle;
-}
-
-// Inside buttons the text's visual centre sits a pixel above the icon's.
-.btn > .pi,
-.folder-toggle > .pi {
   position: relative;
-  top: -0.0625rem;
+  top: -0.07em;
 }
 
 // Row action toggles: square, muted border, icon in the text colour.

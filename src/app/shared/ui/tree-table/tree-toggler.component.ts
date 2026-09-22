@@ -33,9 +33,13 @@ import { TreeNode } from '../../../models/tree-node';
     }
   `,
   styles: `
+    /* Exactly one line tall and aligned to the top of it: a taller box would
+       stretch the cell's line and push the file name off the row's centre. */
     :host {
       display: inline-flex;
       align-items: center;
+      vertical-align: top;
+      height: 1lh;
     }
     .tt-indent {
       display: inline-block;
