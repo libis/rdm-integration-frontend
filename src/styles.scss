@@ -27,13 +27,13 @@
   gap: 0.375rem;
 }
 
-// Icon glyphs sit on the text baseline by default, which draws them lower
-// than the text next to them. "middle" centres the icon box on the x-height,
-// and the glyphs sit another 0.07em low inside their box, measured against
-// the cap height of the body font. The same shift holds in flex containers
-// such as buttons, so this is the one rule for every icon next to text.
+// Align inline icons to the text baseline in paragraphs, labels and headings.
+// "middle" leaves them lower than flex-centred icons, especially at larger
+// font sizes. Flex/grid items ignore vertical-align and keep their container's
+// alignment. The small optical lift applies in both layouts and uses position
+// rather than transform so spinning icons keep their rotation.
 .pi {
-  vertical-align: middle;
+  vertical-align: -0.125em;
   position: relative;
   top: -0.07em;
 }
