@@ -3,8 +3,10 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { Router } from '@angular/router';
 import { Observable, Observer, Subscription, of } from 'rxjs';
@@ -453,6 +455,36 @@ describe('CompareComponent', () => {
       // Selecting all items disables filter mode
       component.selectedFilterItems.set([...component.filterItems]);
       expect(component.isInFilterMode()).toBeFalse();
+    });
+
+    it('toggleFilter and toggleAllFilters update the selected filters', () => {
+      component.toggleAllFilters(false);
+      expect(component.selectedFilterItems()).toEqual([]);
+      component.toggleFilter(component.filterItems[0], true);
+      expect(component.isFilterSelected(component.filterItems[0])).toBeTrue();
+      component.toggleAllFilters(true);
+      expect(component.selectedFilterItems().length).toBe(
+        component.filterItems.length,
+      );
+    });
+
+    it('gives the tree table viewport a height with the page styles', async () => {
+      const inFolder = makeDatafile('dir/inner', Filestatus.New);
+      inFolder.path = 'dir';
+      inFolder.name = 'inner';
+      const topLevel = makeDatafile('top', Filestatus.Equal);
+      component.data.set({ id: 'test', data: [inFolder, topLevel] } as any);
+      await fixture.whenStable();
+      const body = fixture.nativeElement.querySelector(
+        '.tt-body',
+      ) as HTMLElement;
+      expect(body.offsetHeight).toBeGreaterThan(0);
+      const viewport = fixture.debugElement
+        .query(By.directive(CdkVirtualScrollViewport))
+        .injector.get(CdkVirtualScrollViewport);
+      expect(viewport.getViewportSize()).toBeGreaterThan(0);
+      const rows = fixture.nativeElement.querySelectorAll('div[app-datafile]');
+      expect(rows.length).toBe(2);
     });
 
     it('rootNodeChildrenView returns empty array when no data', () => {

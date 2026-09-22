@@ -1,6 +1,6 @@
 import { FolderStatusService } from './folder-status.service';
 import { Filestatus, Datafile } from '../models/datafile';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 
 describe('FolderStatusService', () => {
   let service: FolderStatusService;

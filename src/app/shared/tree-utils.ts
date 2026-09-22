@@ -1,6 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 import { HierarchicalSelectItem } from '../models/hierarchical-select-item';
 
 /**
@@ -54,8 +54,9 @@ export function convertToTreeNodes<T = string>(
 
   for (const item of items) {
     const treeNode: TreeNode<T> = {
-      // Lazy loading replaces node objects. PrimeNG needs a stable key to
-      // retain selection across those replacements, including the empty root.
+      // Lazy loading replaces node objects. The folder tree needs a stable key
+      // to retain expansion and selection across those replacements, including
+      // the empty root.
       key: typeof item.value === 'string' ? `path:${item.value}` : undefined,
       label: item.label,
       data: item.value,

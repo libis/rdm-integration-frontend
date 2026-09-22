@@ -9,7 +9,6 @@ import {
   computed,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -41,21 +40,17 @@ import { HierarchicalSelectItem } from '../models/hierarchical-select-item';
 import { Item, LoginState } from '../models/oauth';
 import { RepoLookupRequest } from '../models/repo-lookup';
 
-// PrimeNG
+// UI
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import { CdkAccordionModule } from '@angular/cdk/accordion';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionPanel,
-} from 'primeng/accordion';
-import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Select } from 'primeng/select';
-import { Skeleton } from 'primeng/skeleton';
-import { Tree } from 'primeng/tree';
+  SelectComponent,
+  SelectOptionDirective,
+} from '../shared/ui/select/select.component';
+import { FolderTreeComponent } from '../shared/ui/folder-tree/folder-tree.component';
 
 // RxJS
 import {
@@ -86,17 +81,11 @@ const new_dataset = 'New Dataset';
   styleUrls: ['./connect.component.scss'],
   imports: [
     CommonModule,
-    ButtonDirective,
-    Accordion,
-    AccordionPanel,
-    AccordionHeader,
-    AccordionContent,
-    Select,
+    CdkAccordionModule,
+    SelectComponent,
+    SelectOptionDirective,
     FormsModule,
-    PrimeTemplate,
-    Skeleton,
-    Tree,
-    ProgressSpinnerModule,
+    FolderTreeComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -121,8 +110,6 @@ export class ConnectComponent
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
   private newDatasetMessageTimeout?: ReturnType<typeof setTimeout>;
-
-  readonly repoNameSelect = viewChild.required<Select>('repoSelect');
 
   private tokenExchangeInProgress = false;
 
@@ -174,6 +161,18 @@ export class ConnectComponent
 
   // Both accordion panels expanded by default
   readonly expandedPanels = signal<string[]>(['0', '1']);
+
+  isPanelExpanded(id: string): boolean {
+    return this.expandedPanels().includes(id);
+  }
+
+  setPanelExpanded(id: string, expanded: boolean): void {
+    this.expandedPanels.update((ids) =>
+      expanded
+        ? Array.from(new Set([...ids, id]))
+        : ids.filter((x) => x !== id),
+    );
+  }
 
   // INTERNAL STATE VARIABLES SIGNALS
   readonly url = signal<string | undefined>(undefined);
@@ -300,10 +299,10 @@ export class ConnectComponent
 
   readonly isConnectReady = computed(() => this.computedIsFormValid());
   readonly connectButtonClass = computed(() => {
-    const baseClasses = 'p-button-sm p-button-raised';
+    const baseClasses = 'btn btn-sm';
     return this.isConnectReady()
-      ? `${baseClasses} p-button-primary`
-      : `${baseClasses} p-button-secondary`;
+      ? `${baseClasses} btn-primary`
+      : `${baseClasses} btn-secondary`;
   });
   readonly showReset = computed(
     () =>
@@ -1242,12 +1241,6 @@ export class ConnectComponent
     }
   }
 
-  // REPO VIA SELECT
-
-  showRepoName() {
-    this.repoNameSelect().show();
-  }
-
   // BRANCHES/FOLDERS/OTHER OPTIONS
 
   getOptions(node?: TreeNode<string>): void {
@@ -1623,8 +1616,8 @@ export class ConnectComponent
     return [createNewOption, ...items];
   }
 
-  onDatasetSelectionChange(event: { value: string }) {
-    const selectedValue = event.value;
+  onDatasetSelectionChange(value: string | undefined) {
+    const selectedValue = value;
 
     if (selectedValue === 'CREATE_NEW_DATASET') {
       // Handle creation of new dataset

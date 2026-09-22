@@ -1,0 +1,35 @@
+@if (visible()) {
+  <div class="modal-backdrop show"></div>
+  <div
+    class="modal d-block"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="header()"
+  >
+    <div
+      class="modal-dialog"
+      [class.app-dialog-topright]="position() === 'topright'"
+      cdkTrapFocus
+      cdkTrapFocusAutoCapture
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ header() }}</h5>
+          @if (closable()) {
+            <button
+              type="button"
+              class="btn-close"
+              aria-label="Close"
+              (click)="close()"
+            ></button>
+          }
+        </div>
+        <div class="modal-body"><ng-content></ng-content></div>
+        <div class="modal-footer">
+          <ng-content select="[appDialogFooter]"></ng-content>
+        </div>
+      </div>
+    </div>
+  </div>
+}

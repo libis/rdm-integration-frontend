@@ -2,9 +2,8 @@
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto" [hidden]="!showReset()">
     <button
-      pButton
       type="button"
-      class="p-button p-button-text p-button-sm"
+      class="btn btn-sm btn-link"
       (click)="resetForm()"
       title="Reset all fields"
     >
@@ -16,7 +15,6 @@
   </div>
   <div class="col-auto">
     <button
-      pButton
       type="button"
       [class]="connectButtonClass()"
       [disabled]="!isConnectReady()"
@@ -32,264 +30,97 @@
 
 <div style="height: 100% - 2rem; overflow: hidden">
   @if (configLoaded()) {
-    <p-accordion
-      [multiple]="true"
-      [value]="expandedPanels()"
-      (valueChange)="expandedPanels.set($any($event))"
-    >
-      <p-accordion-panel value="0">
-        <p-accordion-header>Data/code source</p-accordion-header>
-        <p-accordion-content>
-          <div>
-            <div class="mb-3">
-              <label for="plugin" class="form-label">Repository type</label
-              ><br />
-              <p-select
-                appendTo="body"
-                id="plugin"
-                [options]="plugins()"
-                [ngModel]="plugin()"
-                (ngModelChange)="plugin.set($event)"
-                placeholder="Select the source"
-                (onChange)="changePlugin()"
-                (onClick)="getPlugins()"
-              ></p-select>
-            </div>
-            <div class="mb-3" [hidden]="pluginIdSelectHidden()">
-              <label for="pluginId" class="form-label"
-                >Repository instance</label
-              ><br />
-              <p-select
-                appendTo="body"
-                id="pluginId"
-                [options]="pluginIds()"
-                [ngModel]="pluginId()"
-                (ngModelChange)="pluginId.set($event)"
-                placeholder="Select the source"
-                (onChange)="changePluginId()"
-                (onClick)="getPluginIds()"
-              ></p-select>
-            </div>
-            <button
-              style="width: 12rem; align-items: center; justify-content: center"
-              pButton
-              type="button"
-              class="p-button p-button-raised"
-              (click)="getRepoToken()"
-              title="Get API token"
-              [hidden]="!hasOauthConfig() || isAuthorized()"
-            >
-              Authorize
-            </button>
-            <div [hidden]="hasOauthConfig() && !isAuthorized()">
-              <div class="mb-3" [hidden]="usernameFieldName() === undefined">
-                <label for="username" class="form-label">{{
-                  usernameFieldName()
-                }}</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="username"
-                  [placeholder]="usernamePlaceholder()"
-                  [ngModel]="user()"
-                  (ngModelChange)="user.set($event)"
-                  #ctrl="ngModel"
-                />
-              </div>
-              <div class="mb-3" [hidden]="tokenFieldName() === undefined">
-                <label for="repoToken" class="form-label">{{
-                  tokenFieldName()
-                }}</label>
-                <div class="input-group">
-                  <input
-                    type="password"
-                    class="form-control"
-                    id="repoToken"
-                    [placeholder]="tokenPlaceholder()"
-                    [ngModel]="token()"
-                    (ngModelChange)="token.set($event)"
-                    #ctrl="ngModel"
-                  />
-                  <div class="input-group-append">
-                    <button
-                      style="
-                        width: 12rem;
-                        align-items: center;
-                        justify-content: center;
-                      "
-                      pButton
-                      type="button"
-                      class="p-button p-button-raised"
-                      (click)="getRepoToken()"
-                      title="Get API token"
-                      [hidden]="!showRepoTokenGetter()"
-                    >
-                      Get token
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="mb-3" [hidden]="sourceUrlFieldName() === undefined">
-                <label for="baseUrl" class="form-label">{{
-                  sourceUrlFieldName()
-                }}</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="baseUrl"
-                  [placeholder]="sourceUrlPlaceholder()"
-                  [ngModel]="sourceUrl()"
-                  (ngModelChange)="sourceUrl.set($event)"
-                  #ctrl="ngModel"
-                  (change)="onRepoChange()"
-                />
-              </div>
-              <div
-                class="mb-3"
-                [hidden]="
-                  repoNameFieldName() === undefined ||
-                  pluginRepoNames().length > 0 ||
-                  repoNameSearchEnabled()
-                "
-              >
-                <label for="repoName" class="form-label">{{
-                  repoNameFieldName()
-                }}</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="repoName"
-                  [placeholder]="repoNamePlaceholder()"
-                  [ngModel]="repoName()"
-                  (ngModelChange)="repoName.set($event)"
-                  #ctrl="ngModel"
-                  (change)="onRepoChange()"
-                />
-              </div>
-              <div
-                class="mb-3"
-                [hidden]="
-                  repoNameFieldName() === undefined ||
-                  pluginRepoNames().length === 0
-                "
-              >
-                <label for="repoNameSelect" class="form-label">{{
-                  repoNameFieldName()
-                }}</label>
-                <p-select
-                  appendTo="body"
-                  #repoSelect
-                  [editable]="repoNameFieldEditable()"
-                  id="repoNameSelect"
-                  [options]="pluginRepoNames()"
-                  [ngModel]="selectedRepoName()"
-                  (ngModelChange)="selectedRepoName.set($event)"
-                  [placeholder]="repoNamePlaceholder()"
-                  (onFocus)="showRepoName()"
-                  (onChange)="onRepoChange()"
-                ></p-select>
-              </div>
-              <div class="mb-3" [hidden]="!repoNameSearchEnabled()">
-                <label for="repoNameSearch" class="form-label">{{
-                  repoNameFieldName()
-                }}</label>
-                <p-select
-                  appendTo="body"
-                  [editable]="repoNameFieldEditable()"
-                  id="repoNameSearch"
-                  [options]="repoNames()"
-                  [ngModel]="foundRepoName()"
-                  (ngModelChange)="foundRepoName.set($event)"
-                  [placeholder]="repoNamePlaceholder()"
-                  [filter]="true"
-                  filterBy="label"
-                  [resetFilterOnHide]="true"
-                  (onFilter)="onRepoNameSearch($event.filter)"
-                  (onClick)="startRepoSearch()"
-                  (onChange)="onRepoChange()"
-                ></p-select>
-              </div>
-              <div
-                class="mb-3"
-                [hidden]="
-                  optionFieldName() === undefined || isOptionFieldInteractive()
-                "
-              >
-                <label for="repoBranch" class="form-label">{{
-                  optionFieldName()
-                }}</label
-                ><br />
-                <p-select
-                  appendTo="body"
-                  id="repoBranch"
-                  [options]="branchItems()"
-                  [ngModel]="option()"
-                  (ngModelChange)="option.set($event)"
-                  [placeholder]="optionPlaceholder()"
-                  (onClick)="getOptions()"
-                >
-                  <ng-template pTemplate="loader" let-options="options">
-                    <div
-                      class="d-flex align-items-center py-2 px-3"
-                      style="height: 2.375rem"
-                    >
-                      <p-skeleton
-                        [width]="options.even ? '60%' : '50%'"
-                        height="1rem"
-                      ></p-skeleton>
-                    </div>
-                  </ng-template>
-                </p-select>
-              </div>
-              <div
-                class="mb-3"
-                [hidden]="
-                  optionFieldName() === undefined || !isOptionFieldInteractive()
-                "
-              >
-                <label for="repoBranchTree" class="form-label">{{
-                  optionFieldName()
-                }}</label
-                ><br />
-                <p-tree
-                  selectionMode="single"
-                  [selection]="selectedOption()"
-                  [value]="rootOptions()"
-                  (onNodeExpand)="getOptions($event.node)"
-                  [loading]="optionsLoading()"
-                  (selectionChange)="optionSelected($event)"
-                >
-                  <ng-template pTemplate="loadingicon">
-                    <i class="pi pi-spin pi-spinner"></i>
-                  </ng-template>
-                </p-tree>
-                @if (option()) {
-                  <div class="form-text">Selected: {{ option() }}</div>
-                }
-              </div>
-            </div>
-          </div>
-        </p-accordion-content>
-      </p-accordion-panel>
-      <p-accordion-panel value="1">
-        <p-accordion-header>{{ dataverseHeader() }}</p-accordion-header>
-        <p-accordion-content>
-          <div>
-            @if (showDVToken()) {
+    <cdk-accordion class="accordion" [multi]="true">
+      <cdk-accordion-item
+        class="accordion-item"
+        #panel0="cdkAccordionItem"
+        [expanded]="isPanelExpanded('0')"
+        (expandedChange)="setPanelExpanded('0', $event)"
+      >
+        <h2 class="accordion-header">
+          <button
+            type="button"
+            class="accordion-button"
+            [class.collapsed]="!panel0.expanded"
+            [attr.aria-expanded]="panel0.expanded"
+            (click)="panel0.toggle()"
+          >
+            Data/code source
+          </button>
+        </h2>
+        <div class="accordion-collapse collapse" [class.show]="panel0.expanded">
+          <div class="accordion-body">
+            <div>
               <div class="mb-3">
-                <label for="dataverseToken" class="form-label">Token</label>
-                <div class="input-group">
+                <label for="plugin" class="form-label">Repository type</label
+                ><br />
+                <app-select
+                  inputId="plugin"
+                  [options]="plugins()"
+                  [ngModel]="plugin()"
+                  (ngModelChange)="plugin.set($event)"
+                  placeholder="Select the source"
+                  (valueChange)="changePlugin()"
+                  (opened)="getPlugins()"
+                ></app-select>
+              </div>
+              <div class="mb-3" [hidden]="pluginIdSelectHidden()">
+                <label for="pluginId" class="form-label"
+                  >Repository instance</label
+                ><br />
+                <app-select
+                  inputId="pluginId"
+                  [options]="pluginIds()"
+                  [ngModel]="pluginId()"
+                  (ngModelChange)="pluginId.set($event)"
+                  placeholder="Select the source"
+                  (valueChange)="changePluginId()"
+                  (opened)="getPluginIds()"
+                ></app-select>
+              </div>
+              <button
+                style="
+                  width: 12rem;
+                  align-items: center;
+                  justify-content: center;
+                "
+                type="button"
+                class="btn btn-primary"
+                (click)="getRepoToken()"
+                title="Get API token"
+                [hidden]="!hasOauthConfig() || isAuthorized()"
+              >
+                Authorize
+              </button>
+              <div [hidden]="hasOauthConfig() && !isAuthorized()">
+                <div class="mb-3" [hidden]="usernameFieldName() === undefined">
+                  <label for="username" class="form-label">{{
+                    usernameFieldName()
+                  }}</label>
                   <input
-                    type="password"
+                    type="text"
                     class="form-control"
-                    id="dataverseToken"
-                    placeholder="Dataverse API token"
-                    [ngModel]="dataverseToken()"
-                    (ngModelChange)="dataverseToken.set($event)"
+                    id="username"
+                    [placeholder]="usernamePlaceholder()"
+                    [ngModel]="user()"
+                    (ngModelChange)="user.set($event)"
                     #ctrl="ngModel"
-                    (onChange)="onUserChange()"
                   />
-                  @if (showDVTokenGetter()) {
+                </div>
+                <div class="mb-3" [hidden]="tokenFieldName() === undefined">
+                  <label for="repoToken" class="form-label">{{
+                    tokenFieldName()
+                  }}</label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="repoToken"
+                      [placeholder]="tokenPlaceholder()"
+                      [ngModel]="token()"
+                      (ngModelChange)="token.set($event)"
+                      #ctrl="ngModel"
+                    />
                     <div class="input-group-append">
                       <button
                         style="
@@ -297,88 +128,252 @@
                           align-items: center;
                           justify-content: center;
                         "
-                        pButton
                         type="button"
-                        class="p-button p-button-raised"
-                        (click)="getDataverseToken()"
+                        class="btn btn-primary"
+                        (click)="getRepoToken()"
                         title="Get API token"
+                        [hidden]="!showRepoTokenGetter()"
                       >
                         Get token
                       </button>
                     </div>
+                  </div>
+                </div>
+                <div class="mb-3" [hidden]="sourceUrlFieldName() === undefined">
+                  <label for="baseUrl" class="form-label">{{
+                    sourceUrlFieldName()
+                  }}</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="baseUrl"
+                    [placeholder]="sourceUrlPlaceholder()"
+                    [ngModel]="sourceUrl()"
+                    (ngModelChange)="sourceUrl.set($event)"
+                    #ctrl="ngModel"
+                    (change)="onRepoChange()"
+                  />
+                </div>
+                <div
+                  class="mb-3"
+                  [hidden]="
+                    repoNameFieldName() === undefined ||
+                    pluginRepoNames().length > 0 ||
+                    repoNameSearchEnabled()
+                  "
+                >
+                  <label for="repoName" class="form-label">{{
+                    repoNameFieldName()
+                  }}</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="repoName"
+                    [placeholder]="repoNamePlaceholder()"
+                    [ngModel]="repoName()"
+                    (ngModelChange)="repoName.set($event)"
+                    #ctrl="ngModel"
+                    (change)="onRepoChange()"
+                  />
+                </div>
+                <div
+                  class="mb-3"
+                  [hidden]="
+                    repoNameFieldName() === undefined ||
+                    pluginRepoNames().length === 0
+                  "
+                >
+                  <label for="repoNameSelect" class="form-label">{{
+                    repoNameFieldName()
+                  }}</label>
+                  <app-select
+                    [editable]="repoNameFieldEditable()"
+                    inputId="repoNameSelect"
+                    [options]="pluginRepoNames()"
+                    [ngModel]="selectedRepoName()"
+                    (ngModelChange)="selectedRepoName.set($event)"
+                    [placeholder]="repoNamePlaceholder()"
+                    (valueChange)="onRepoChange()"
+                  ></app-select>
+                </div>
+                <div class="mb-3" [hidden]="!repoNameSearchEnabled()">
+                  <label for="repoNameSearch" class="form-label">{{
+                    repoNameFieldName()
+                  }}</label>
+                  <app-select
+                    [editable]="repoNameFieldEditable()"
+                    inputId="repoNameSearch"
+                    [options]="repoNames()"
+                    [ngModel]="foundRepoName()"
+                    (ngModelChange)="foundRepoName.set($event)"
+                    [placeholder]="repoNamePlaceholder()"
+                    [filter]="true"
+                    (filterChange)="onRepoNameSearch($event)"
+                    (opened)="startRepoSearch()"
+                    (valueChange)="onRepoChange()"
+                  ></app-select>
+                </div>
+                <div
+                  class="mb-3"
+                  [hidden]="
+                    optionFieldName() === undefined ||
+                    isOptionFieldInteractive()
+                  "
+                >
+                  <label for="repoBranch" class="form-label">{{
+                    optionFieldName()
+                  }}</label
+                  ><br />
+                  <app-select
+                    inputId="repoBranch"
+                    [options]="branchItems()"
+                    [ngModel]="option()"
+                    (ngModelChange)="option.set($event)"
+                    [placeholder]="optionPlaceholder()"
+                    (opened)="getOptions()"
+                  >
+                  </app-select>
+                </div>
+                <div
+                  class="mb-3"
+                  [hidden]="
+                    optionFieldName() === undefined ||
+                    !isOptionFieldInteractive()
+                  "
+                >
+                  <label for="repoBranchTree" class="form-label">{{
+                    optionFieldName()
+                  }}</label
+                  ><br />
+                  <app-folder-tree
+                    [nodes]="rootOptions()"
+                    [loading]="optionsLoading()"
+                    [selected]="selectedOption()"
+                    (selectedChange)="optionSelected($event)"
+                    (nodeExpand)="getOptions($event)"
+                  ></app-folder-tree>
+                  @if (option()) {
+                    <div class="form-text">Selected: {{ option() }}</div>
                   }
                 </div>
               </div>
-            }
-            @if (!collectionOptionsHidden()) {
-              <div class="mb-3">
-                <label for="collectionId" class="form-label"
-                  >Dataverse collection</label
-                >
-                <p-select
-                  appendTo="body"
-                  [editable]="collectionFieldEditable()"
-                  id="collectionId"
-                  [options]="collectionItems()"
-                  [filter]="true"
-                  filterBy="label"
-                  [resetFilterOnHide]="true"
-                  (onFilter)="onCollectionSearch($event.filter)"
-                  [ngModel]="collectionId()"
-                  (ngModelChange)="collectionId.set($event)"
-                  placeholder="Select Dataverse collection"
-                  (onClick)="getCollectionOptions()"
-                  (onChange)="onCollectionChange()"
-                ></p-select>
-              </div>
-            }
-            <div class="mb-3">
-              <label for="datasetId" class="form-label">Dataset DOI</label>
-              <p-select
-                appendTo="body"
-                [editable]="datasetFieldEditable()"
-                id="datasetId"
-                [options]="doiItems()"
-                [filter]="true"
-                filterBy="label"
-                [resetFilterOnHide]="true"
-                (onFilter)="onDatasetSearch($event.filter)"
-                [ngModel]="datasetId()"
-                (ngModelChange)="datasetId.set($event)"
-                placeholder="Select dataset"
-                (onClick)="getDoiOptions()"
-                (onChange)="onDatasetSelectionChange($event)"
-              >
-                <ng-template pTemplate="option" let-option>
-                  <div class="d-flex align-items-center">
-                    <span
-                      [class]="
-                        option.value === 'CREATE_NEW_DATASET'
-                          ? 'fw-bold text-primary'
-                          : ''
-                      "
-                    >
-                      {{ option.label }}
-                    </span>
-                  </div>
-                </ng-template>
-                <ng-template pTemplate="selectedItem" let-option>
-                  <div class="d-flex align-items-center">
-                    <span>{{ option.label }}</span>
-                  </div>
-                </ng-template>
-              </p-select>
-              @if (showNewDatasetCreatedMessage()) {
-                <div class="mt-2">
-                  <p class="text-success mb-0">
-                    <i class="pi pi-check-circle"></i> New dataset created
-                  </p>
-                </div>
-              }
             </div>
           </div>
-        </p-accordion-content>
-      </p-accordion-panel>
-    </p-accordion>
+        </div>
+      </cdk-accordion-item>
+      <cdk-accordion-item
+        class="accordion-item"
+        #panel1="cdkAccordionItem"
+        [expanded]="isPanelExpanded('1')"
+        (expandedChange)="setPanelExpanded('1', $event)"
+      >
+        <h2 class="accordion-header">
+          <button
+            type="button"
+            class="accordion-button"
+            [class.collapsed]="!panel1.expanded"
+            [attr.aria-expanded]="panel1.expanded"
+            (click)="panel1.toggle()"
+          >
+            {{ dataverseHeader() }}
+          </button>
+        </h2>
+        <div class="accordion-collapse collapse" [class.show]="panel1.expanded">
+          <div class="accordion-body">
+            <div>
+              @if (showDVToken()) {
+                <div class="mb-3">
+                  <label for="dataverseToken" class="form-label">Token</label>
+                  <div class="input-group">
+                    <input
+                      type="password"
+                      class="form-control"
+                      id="dataverseToken"
+                      placeholder="Dataverse API token"
+                      [ngModel]="dataverseToken()"
+                      (ngModelChange)="dataverseToken.set($event)"
+                      #ctrl="ngModel"
+                      (onChange)="onUserChange()"
+                    />
+                    @if (showDVTokenGetter()) {
+                      <div class="input-group-append">
+                        <button
+                          style="
+                            width: 12rem;
+                            align-items: center;
+                            justify-content: center;
+                          "
+                          type="button"
+                          class="btn btn-primary"
+                          (click)="getDataverseToken()"
+                          title="Get API token"
+                        >
+                          Get token
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (!collectionOptionsHidden()) {
+                <div class="mb-3">
+                  <label for="collectionId" class="form-label"
+                    >Dataverse collection</label
+                  >
+                  <app-select
+                    [editable]="collectionFieldEditable()"
+                    inputId="collectionId"
+                    [options]="collectionItems()"
+                    [filter]="true"
+                    (filterChange)="onCollectionSearch($event)"
+                    [ngModel]="collectionId()"
+                    (ngModelChange)="collectionId.set($event)"
+                    placeholder="Select Dataverse collection"
+                    (opened)="getCollectionOptions()"
+                    (valueChange)="onCollectionChange()"
+                  ></app-select>
+                </div>
+              }
+              <div class="mb-3">
+                <label for="datasetId" class="form-label">Dataset DOI</label>
+                <app-select
+                  [editable]="datasetFieldEditable()"
+                  inputId="datasetId"
+                  [options]="doiItems()"
+                  [filter]="true"
+                  (filterChange)="onDatasetSearch($event)"
+                  [ngModel]="datasetId()"
+                  (ngModelChange)="datasetId.set($event)"
+                  placeholder="Select dataset"
+                  (opened)="getDoiOptions()"
+                  (valueChange)="onDatasetSelectionChange($event)"
+                >
+                  <ng-template appSelectOption let-option>
+                    <div class="d-flex align-items-center">
+                      <span
+                        [class]="
+                          option.value === 'CREATE_NEW_DATASET'
+                            ? 'fw-bold text-primary'
+                            : ''
+                        "
+                      >
+                        {{ option.label }}
+                      </span>
+                    </div>
+                  </ng-template>
+                </app-select>
+                @if (showNewDatasetCreatedMessage()) {
+                  <div class="mt-2">
+                    <p class="text-success mb-0">
+                      <i class="pi pi-check-circle"></i> New dataset created
+                    </p>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </cdk-accordion-item>
+    </cdk-accordion>
   }
 </div>

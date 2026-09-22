@@ -1,0 +1,94 @@
+<div class="app-select" cdkOverlayOrigin #origin="cdkOverlayOrigin">
+  @if (editable()) {
+    <div class="input-group">
+      <input
+        type="text"
+        class="form-control"
+        [id]="inputId()"
+        [placeholder]="placeholder()"
+        [disabled]="isDisabled()"
+        [value]="value() ?? ''"
+        (input)="onEditableInput($any($event.target).value)"
+      />
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        aria-label="Show options"
+        [disabled]="isDisabled()"
+        (click)="toggle()"
+      >
+        <i class="pi pi-chevron-down"></i>
+      </button>
+    </div>
+  } @else {
+    <button
+      type="button"
+      class="form-select text-start"
+      [id]="inputId()"
+      [disabled]="isDisabled()"
+      [attr.aria-expanded]="open()"
+      (click)="toggle()"
+    >
+      @if (selectedLabel(); as label) {
+        {{ label }}
+      } @else {
+        <span class="text-body-secondary">{{ placeholder() }}</span>
+      }
+    </button>
+  }
+</div>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  [cdkConnectedOverlayMatchWidth]="true"
+  (backdropClick)="close()"
+  (detach)="close()"
+>
+  <div
+    class="app-select-panel dropdown-menu show position-static shadow"
+    (keydown)="onPanelKeydown($event)"
+  >
+    @if (filter()) {
+      <div class="px-2 pb-2">
+        <input
+          #filterInput
+          type="text"
+          class="form-control form-control-sm"
+          placeholder="Filter"
+          [value]="filterText()"
+          (input)="onFilterInput($any($event.target).value)"
+        />
+      </div>
+    }
+    <ul
+      class="list-unstyled mb-0 app-select-list"
+      cdkListbox
+      [cdkListboxValue]="listValue()"
+      (cdkListboxValueChange)="onListChange($event)"
+    >
+      @for (option of visibleOptions(); track option.value) {
+        <li
+          class="dropdown-item app-select-option"
+          [cdkOption]="option.value"
+          [cdkOptionDisabled]="option.disabled ?? false"
+          [cdkOptionTypeaheadLabel]="optionLabel(option)"
+          [title]="option.title ?? ''"
+        >
+          @if (optionTemplate(); as tpl) {
+            <ng-container
+              *ngTemplateOutlet="tpl.template; context: { $implicit: option }"
+            ></ng-container>
+          } @else {
+            {{ optionLabel(option) }}
+          }
+        </li>
+      } @empty {
+        <li class="dropdown-item disabled">No results</li>
+      }
+    </ul>
+  </div>
+</ng-template>

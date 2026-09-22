@@ -7,9 +7,8 @@ import {
   input,
   output,
 } from '@angular/core';
-import { TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
-import { TreeTableModule } from 'primeng/treetable';
+import { TreeNode } from '../models/tree-node';
+import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.component';
 import { Datafile, Fileaction } from '../models/datafile';
 import {
   FileActionStyle,
@@ -18,10 +17,10 @@ import {
 } from '../shared/constants';
 
 @Component({
-  selector: 'tr[app-downloadablefile]',
+  selector: 'div[app-downloadablefile]',
   templateUrl: './downladablefile.component.html',
   styleUrls: ['./downladablefile.component.scss'],
-  imports: [TreeTableModule, ButtonDirective],
+  imports: [TreeTogglerComponent],
   exportAs: 'appDownloadablefile',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,19 +29,14 @@ export class DownladablefileComponent {
   readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(
     new Map<string, TreeNode<Datafile>>(),
   );
-  readonly rowNode = input<TreeNode<Datafile>>({});
+  readonly node = input.required<TreeNode<Datafile>>();
+  readonly level = input(0);
+  readonly toggle = output<void>();
   // Trigger to force update when underlying data (action) mutates
   readonly trigger = input(0);
 
   /** Emitted after action state changes to notify parent to refresh view */
   readonly changed = output<void>();
-
-  readonly node = computed<TreeNode<Datafile>>(() => {
-    const map = this.rowNodeMap();
-    const df = this.datafile();
-    const key = df.id! + (df.attributes?.isFile ? ':file' : '');
-    return map.get(key) ?? {};
-  });
 
   static readonly icon_ignore = 'pi pi-stop';
   static readonly icon_download = 'pi pi-check-square';

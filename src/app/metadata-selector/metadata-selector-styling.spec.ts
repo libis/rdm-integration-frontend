@@ -10,44 +10,54 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
   beforeEach(async () => {
     const { TestBed } = await import('@angular/core/testing');
     const { Component } = await import('@angular/core');
-    const { TreeTableModule } = await import('primeng/treetable');
+    const { TreeTableComponent } =
+      await import('../shared/ui/tree-table/tree-table.component');
+    const { TreeTableHeaderDirective, TreeTableRowDirective } =
+      await import('../shared/ui/tree-table/tree-table-templates');
     const { MetadatafieldComponent } =
       await import('../metadatafield/metadatafield.component');
 
-    document.documentElement.style.setProperty(
-      '--p-content-background',
-      '#111111',
-    );
-    document.documentElement.style.setProperty('--p-text-color', '#f0f0f0');
+    document.documentElement.style.setProperty('--app-bg', '#111111');
+    document.documentElement.style.setProperty('--app-text', '#f0f0f0');
 
     defaultTableBackgroundRgb = parseCssColor(
       getComputedStyle(document.documentElement)
-        .getPropertyValue('--p-content-background')
+        .getPropertyValue('--app-bg')
         .trim() || '#111111',
     );
 
     @Component({
       selector: 'app-test-metadata-treetable',
       standalone: true,
-      imports: [TreeTableModule, MetadatafieldComponent],
+      imports: [
+        TreeTableComponent,
+        TreeTableHeaderDirective,
+        TreeTableRowDirective,
+        MetadatafieldComponent,
+      ],
       template: `
-        <div class="treetable-cell">
-          <p-treeTable
-            [value]="fields"
-            [scrollable]="true"
-            styleClass="table table-theme-adaptive"
-          >
-            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-              <tr
+        <div class="treetable-cell" style="height: 300px">
+          <app-tree-table #tt [nodes]="fields" columns="2fr 2fr 1fr 4rem">
+            <ng-template appTreeTableHeader>
+              <div class="tt-cell">Metadata field</div>
+              <div class="tt-cell">Value</div>
+              <div class="tt-cell">Metadata source</div>
+              <div class="tt-cell"></div>
+            </ng-template>
+            <ng-template appTreeTableRow let-node let-level="level">
+              <div
                 app-metadatafield
                 #fieldRow="appMetadatafield"
-                [field]="rowData"
+                class="tt-row"
+                [field]="node.data"
+                [node]="node"
+                [level]="level"
                 [rowNodeMap]="rowNodeMap"
-                [rowNode]="rowNode"
+                (toggle)="tt.toggle(node)"
                 [style]="fieldRow.hostStyle()"
-              ></tr>
+              ></div>
             </ng-template>
-          </p-treeTable>
+          </app-tree-table>
         </div>
       `,
     })
@@ -88,18 +98,23 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
 
     fixture = TestBed.createComponent(TestMetadataTreeTableComponent);
     compiled = fixture.nativeElement as HTMLElement;
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should render TreeTable with metadata field rows', () => {
-    const rows = compiled.querySelectorAll('tr[app-metadatafield]');
+  afterEach(() => {
+    document.documentElement.style.removeProperty('--app-bg');
+    document.documentElement.style.removeProperty('--app-text');
+  });
+
+  it('should render the tree table with metadata field rows', () => {
+    const rows = compiled.querySelectorAll('div[app-metadatafield]');
     expect(rows.length)
       .withContext('Should have 3 metadata field rows')
       .toBe(3);
   });
 
   it('should apply inline style vars to Copy row', () => {
-    const rows = compiled.querySelectorAll('tr[app-metadatafield]');
+    const rows = compiled.querySelectorAll('div[app-metadatafield]');
     const copyRow = rows[0] as HTMLElement;
 
     expect(copyRow.style.backgroundColor).toBe(
@@ -109,7 +124,7 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
   });
 
   it('should apply inline style vars to Custom row', () => {
-    const rows = compiled.querySelectorAll('tr[app-metadatafield]');
+    const rows = compiled.querySelectorAll('div[app-metadatafield]');
     const customRow = rows[1] as HTMLElement;
 
     expect(customRow.style.backgroundColor).toBe(
@@ -119,7 +134,7 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
   });
 
   it('should NOT apply inline styles to Ignore row', () => {
-    const rows = compiled.querySelectorAll('tr[app-metadatafield]');
+    const rows = compiled.querySelectorAll('div[app-metadatafield]');
     const ignoreRow = rows[2] as HTMLElement;
 
     expect(ignoreRow.style.backgroundColor)
@@ -130,32 +145,31 @@ describe('Metadata Field Action Styling - Real TreeTable Integration', () => {
       .toBe('');
   });
 
-  it('should have VISIBLE background colors applied via component SCSS - NOT OVERRIDDEN BY .table selector', () => {
-    const rows = compiled.querySelectorAll('tr[app-metadatafield]');
+  it('should have VISIBLE background colors applied via the app tokens - NOT OVERRIDDEN BY the table styling', () => {
+    const rows = compiled.querySelectorAll('div[app-metadatafield]');
 
     // Test Copy row (should have green background)
     const copyRow = rows[0] as HTMLElement;
     const copyStyle = window.getComputedStyle(copyRow);
     const copyBg = copyStyle.backgroundColor;
-    const copyCell = copyRow.querySelector('td') as HTMLElement;
+    const copyCell = copyRow.querySelector('.tt-cell') as HTMLElement;
     const copyCellBg = window.getComputedStyle(copyCell).backgroundColor;
     // Test Custom row (should have yellow background)
     const customRow = rows[1] as HTMLElement;
     const customStyle = window.getComputedStyle(customRow);
     const customBg = customStyle.backgroundColor;
-    const customCell = customRow.querySelector('td') as HTMLElement;
+    const customCell = customRow.querySelector('.tt-cell') as HTMLElement;
     const customCellBg = window.getComputedStyle(customCell).backgroundColor;
 
     // Test Ignore row (should have default background)
     const ignoreRow = rows[2] as HTMLElement;
     const ignoreStyle = window.getComputedStyle(ignoreRow);
     const ignoreBg = ignoreStyle.backgroundColor;
-    const ignoreCell = ignoreRow.querySelector('td') as HTMLElement;
+    const ignoreCell = ignoreRow.querySelector('.tt-cell') as HTMLElement;
     const ignoreCellBg = window.getComputedStyle(ignoreCell).backgroundColor;
 
     // THE CRITICAL TEST: Copy and Custom should have visible backgrounds
-    // This tests that .table tr selector in metadata-selector.component.scss
-    // does NOT override the file-action classes
+    // This tests that the tree table styling does NOT override the file-action styles
     expect(copyBg)
       .withContext(
         `Copy row inline style. Style: ${copyRow.getAttribute('style')}`,

@@ -3,7 +3,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -29,16 +28,17 @@ import {
 } from '../models/compare-result';
 import { Datafile } from '../models/datafile';
 
-// PrimeNG
+// UI
 import { FormsModule } from '@angular/forms';
-import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
-import { Button, ButtonDirective } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { Dialog } from 'primeng/dialog';
-import { FloatLabel } from 'primeng/floatlabel';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Select } from 'primeng/select';
-import { TreeTableModule } from 'primeng/treetable';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
+import { DialogComponent } from '../shared/ui/dialog/dialog.component';
+import { SelectComponent } from '../shared/ui/select/select.component';
+import { TreeTableComponent } from '../shared/ui/tree-table/tree-table.component';
+import {
+  TreeTableHeaderDirective,
+  TreeTableRowDirective,
+} from '../shared/ui/tree-table/tree-table-templates';
 
 // Components
 import { ExecutablefileComponent } from '../executablefile/executablefile.component';
@@ -58,16 +58,12 @@ import { SubscriptionManager } from '../shared/types';
   templateUrl: './compute.component.html',
   styleUrl: './compute.component.scss',
   imports: [
-    ButtonDirective,
     FormsModule,
-    FloatLabel,
-    Select,
-    Dialog,
-    Checkbox,
-    PrimeTemplate,
-    Button,
-    TreeTableModule,
-    ProgressSpinnerModule,
+    SelectComponent,
+    DialogComponent,
+    TreeTableComponent,
+    TreeTableHeaderDirective,
+    TreeTableRowDirective,
     ExecutablefileComponent,
     AutosizeModule,
   ],
@@ -103,8 +99,6 @@ export class ComputeComponent
     new Map<string, TreeNode<Datafile>>(),
   );
   readonly loading = signal(false);
-  readonly visibleRowCount = signal(0);
-  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
   readonly popup = signal(false);
   readonly outputDisabled = signal(true);
   readonly sendEmailOnSuccess = signal(false);
@@ -296,24 +290,8 @@ export class ComputeComponent
     this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
       this.rootNodeChildren.set(rootNode.children);
-      this.visibleRowCount.set(this.countVisibleRows(rootNode.children));
     }
     this.loading.set(false);
-  }
-
-  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
-    let count = 0;
-    for (const node of nodes) {
-      count++;
-      if (node.expanded && node.children?.length) {
-        count += this.countVisibleRows(node.children);
-      }
-    }
-    return count;
-  }
-
-  recountVisibleRows(): void {
-    this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
   }
 
   submitCompute(req: ComputeRequest): void {

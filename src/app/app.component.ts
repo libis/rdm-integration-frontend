@@ -6,8 +6,7 @@ import {
   OnInit,
   inject,
 } from '@angular/core';
-import { PrimeNG } from 'primeng/config';
-import { Toast } from 'primeng/toast';
+import { ToastComponent } from './shared/ui/toast/toast.component';
 import { DataService } from './data.service';
 import { DatasetService } from './dataset.service';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
@@ -18,11 +17,10 @@ import { NotificationService } from './shared/notification.service';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet, Toast],
+  imports: [RouterOutlet, ToastComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {
-  private primengConfig = inject(PrimeNG);
   dataService = inject(DataService);
   private datasetService = inject(DatasetService);
   private router = inject(Router);
@@ -34,7 +32,6 @@ export class AppComponent implements OnInit {
 
   constructor() {}
   ngOnInit(): void {
-    this.primengConfig.ripple.set(true);
     const subscription = this.dataService
       .checkAccessToQueue('', '', '')
       .subscribe({

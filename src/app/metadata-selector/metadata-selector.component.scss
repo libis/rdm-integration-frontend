@@ -1,31 +1,15 @@
 // Metadata selector component styles
-// Ensure PrimeNG tables inherit theme-aware colors while allowing inline row styles to take precedence
-
-:host ::ng-deep {
-  .table {
-    background-color: var(--p-content-background);
-    color: var(--p-text-color);
-
-    thead,
-    tbody {
-      background-color: inherit;
-      color: inherit;
-    }
-
-    tr {
-      background-color: var(--p-content-background);
-      color: inherit;
-
-      td,
-      th {
-        background-color: inherit;
-        color: inherit;
-      }
-    }
-  }
+// The page is a column so the tree table takes the remaining height below the
+// application header (3.125rem, see .dataverse-header-block in styles.scss).
+:host {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 3.125rem);
 }
 
 .treetable-cell {
-  background-color: var(--p-content-background);
+  flex: 1 1 auto;
+  min-height: 0;
+  background-color: var(--app-bg);
   padding: 0;
 }

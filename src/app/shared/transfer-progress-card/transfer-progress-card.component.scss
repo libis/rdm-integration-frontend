@@ -1,10 +1,10 @@
 .transfer-status {
   margin-top: 1rem;
   margin-bottom: 1rem;
-  border: 0.0625rem solid var(--p-surface-border);
+  border: 0.0625rem solid var(--app-border);
   border-radius: 0.75rem;
   padding: 1.25rem;
-  background: var(--p-content-background);
+  background: var(--app-bg);
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
@@ -12,7 +12,7 @@
 
   @media (prefers-color-scheme: dark) {
     box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.3);
-    background: color-mix(in srgb, var(--p-content-background) 95%, #ffffff);
+    background: color-mix(in srgb, var(--app-bg) 95%, #ffffff);
   }
 }
 
@@ -23,15 +23,15 @@
   align-items: start;
 
   &.success .status-icon {
-    color: var(--p-green-500, color-mix(in srgb, #22c55e 90%, currentColor));
+    color: var(--bs-success);
   }
 
   &.error .status-icon {
-    color: var(--p-red-500, color-mix(in srgb, #ef4444 90%, currentColor));
+    color: var(--bs-danger);
   }
 
   &.info .status-icon {
-    color: var(--p-blue-500, color-mix(in srgb, #3b82f6 90%, currentColor));
+    color: var(--bs-info);
   }
 }
 
@@ -55,28 +55,28 @@
 .status-message {
   font-weight: 600;
   font-size: 1rem;
-  color: var(--p-text-color, inherit);
+  color: var(--app-text, inherit);
   grid-column: 1 / -1;
 }
 
-/* Using PrimeNG progressbar; no custom track/fill needed */
+/* Using the Bootstrap progress bar; no custom track/fill needed */
 
 .status-files,
 .status-bytes {
-  color: var(--p-text-muted-color);
+  color: var(--app-muted);
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
-  background: var(--p-surface-50);
+  background: var(--app-surface);
   border-radius: 0.375rem;
-  border: 0.0625rem solid var(--p-surface-border);
+  border: 0.0625rem solid var(--app-border);
 
   @media (prefers-color-scheme: dark) {
-    background: color-mix(in srgb, var(--p-surface-ground) 90%, #ffffff 10%);
-    border-color: color-mix(in srgb, var(--p-surface-border) 80%, #ffffff 20%);
+    background: color-mix(in srgb, var(--app-bg) 90%, #ffffff 10%);
+    border-color: color-mix(in srgb, var(--app-border) 80%, #ffffff 20%);
   }
 
   strong {
-    color: var(--p-text-color);
+    color: var(--app-text);
     font-weight: 600;
   }
 
@@ -90,29 +90,29 @@
 
   .status-files-label {
     font-weight: 600;
-    color: var(--p-text-color);
+    color: var(--app-text);
   }
 
   .status-files-count {
     font-weight: 600;
-    color: var(--p-text-color);
+    color: var(--app-text);
     white-space: nowrap;
   }
 
-  p-progressbar {
+  .progress {
     margin-top: 0.25rem;
   }
 
   .status-files-failed {
     margin-top: 0.5rem;
     font-weight: 500;
-    color: var(--p-red-500, color-mix(in srgb, #ef4444 85%, currentColor));
+    color: var(--bs-danger);
   }
 }
 
 .status-timestamp,
 .status-task {
-  color: var(--p-text-muted-color);
+  color: var(--app-muted);
   font-size: 0.8125rem;
   grid-column: 1 / -1;
 
@@ -120,18 +120,14 @@
     font-family: "Courier New", Courier, monospace;
     font-size: 0.75rem;
     padding: 0.125rem 0.375rem;
-    background: var(--p-surface-100);
+    background: var(--bs-secondary-bg);
     border-radius: 0.25rem;
-    border: 0.0625rem solid var(--p-surface-border);
+    border: 0.0625rem solid var(--app-border);
 
     @media (prefers-color-scheme: dark) {
-      background: color-mix(in srgb, var(--p-surface-ground) 85%, #ffffff 15%);
-      border-color: color-mix(
-        in srgb,
-        var(--p-surface-border) 70%,
-        #ffffff 30%
-      );
-      color: color-mix(in srgb, var(--p-text-color) 90%, #ffffff 10%);
+      background: color-mix(in srgb, var(--app-bg) 85%, #ffffff 15%);
+      border-color: color-mix(in srgb, var(--app-border) 70%, #ffffff 30%);
+      color: color-mix(in srgb, var(--app-text) 90%, #ffffff 10%);
     }
   }
 }
@@ -142,7 +138,7 @@
   gap: 0.5rem;
   grid-column: 1 / -1;
   padding-top: 0.5rem;
-  border-top: 0.0625rem solid var(--p-surface-border);
+  border-top: 0.0625rem solid var(--app-border);
 }
 
 .monitor-link {

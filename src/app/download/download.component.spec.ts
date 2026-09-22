@@ -6,14 +6,17 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import {
   ActivatedRoute,
   provideRouter,
   withDisabledInitialNavigation,
 } from '@angular/router';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
@@ -1898,18 +1901,6 @@ describe('DownloadComponent', () => {
       expect(comp.repoNamePlaceholder()).toBe('ep');
     });
 
-    it('recountVisibleRows counts only rows under expanded nodes', () => {
-      const comp = initComponent();
-      comp.rootNodeChildren.set([
-        { expanded: true, children: [{}, { expanded: false, children: [{}] }] },
-        { expanded: true, children: [] },
-        { expanded: false, children: [{}] },
-      ] as TreeNode<Datafile>[]);
-      comp.recountVisibleRows();
-      expect(comp.visibleRowCount()).toBe(5);
-      expect(comp.useVirtualScroll()).toBeFalse();
-    });
-
     it('hasDownloadSelection follows the root node action', () => {
       const comp = initComponent();
       const root = {
@@ -2130,5 +2121,113 @@ describe('DownloadComponent', () => {
       expect(comp.datasetId()).toBe('?');
       expect(comp.doiItems()).toEqual([{ label: '?', value: '?' }]);
     });
+  });
+});
+
+describe('DownloadComponent layout', () => {
+  it('gives the tree table viewport a height with the page styles', async () => {
+    sessionStorage.clear();
+    const plugin = new MockPluginService();
+    const routeSubject = new BehaviorSubject<
+      Record<string, string | undefined>
+    >({});
+    await TestBed.configureTestingModule({
+      imports: [DownloadComponent],
+      providers: [
+        provideRouter([], withDisabledInitialNavigation()),
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        {
+          provide: NotificationService,
+          useValue: new MockNotificationService(),
+        },
+        { provide: RepoLookupService, useValue: new MockRepoLookupService() },
+        { provide: SubmitService, useValue: new MockSubmitService() },
+        { provide: PluginService, useValue: plugin },
+        {
+          provide: DvObjectLookupService,
+          useValue: new MockDvObjectLookupService(),
+        },
+        { provide: DataService, useValue: new MockDataService() },
+        { provide: UtilsService, useValue: new MockUtilsService() },
+        { provide: NavigationService, useValue: new MockNavigationService() },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParams: routeSubject.asObservable() },
+        },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(DownloadComponent);
+    const comp = fixture.componentInstance;
+    fixture.detectChanges();
+    comp.globusPlugin.set(plugin.getGlobusPlugin());
+    const folder: TreeNode<Datafile> = {
+      key: 'dir',
+      data: {
+        id: 'dir',
+        name: 'dir',
+        path: '',
+        hidden: false,
+        action: Fileaction.Ignore,
+      },
+      children: [],
+    };
+    const file: TreeNode<Datafile> = {
+      key: 'dir/f:file',
+      data: {
+        id: 'dir/f',
+        name: 'f',
+        path: 'dir',
+        hidden: false,
+        action: Fileaction.Ignore,
+        attributes: { isFile: true },
+      },
+      children: [],
+      parent: folder,
+    };
+    folder.children!.push(file);
+    const root: TreeNode<Datafile> = {
+      key: '',
+      data: {
+        id: '',
+        name: '',
+        path: '',
+        hidden: false,
+        action: Fileaction.Ignore,
+      },
+      children: [folder],
+    };
+    comp.rowNodeMap.set(
+      new Map([
+        ['', root],
+        ['dir', folder],
+        ['dir/f:file', file],
+      ]),
+    );
+    comp.rootNodeChildren.set([folder]);
+    comp.datasetId.set('doi:10.1/ABC');
+    comp.data.set({
+      id: 'doi:10.1/ABC',
+      url: 'https://example.org/ds',
+    } as CompareResult);
+    await fixture.whenStable();
+    const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
+    expect(body.offsetHeight).toBeGreaterThan(0);
+    const viewport = fixture.debugElement
+      .query(By.directive(CdkVirtualScrollViewport))
+      .injector.get(CdkVirtualScrollViewport);
+    expect(viewport.getViewportSize()).toBeGreaterThan(0);
+    expect(
+      fixture.nativeElement.querySelectorAll('div[app-downloadablefile]')
+        .length,
+    ).toBe(1);
+    (
+      fixture.nativeElement.querySelector('.tt-toggle') as HTMLButtonElement
+    ).click();
+    await fixture.whenStable();
+    expect(
+      fixture.nativeElement.querySelectorAll('div[app-downloadablefile]')
+        .length,
+    ).toBe(2);
   });
 });

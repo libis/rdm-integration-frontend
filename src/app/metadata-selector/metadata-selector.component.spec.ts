@@ -4,7 +4,9 @@ import {
   withInterceptorsFromDi,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { DatasetService } from '../dataset.service';
@@ -109,7 +111,7 @@ describe('MetadataSelectorComponent', () => {
         { provide: NotificationService, useValue: notificationStub },
       ],
     })
-      // Keep template as-is; component uses PrimeNG lightweightly
+      // Keep template as-is
       .compileComponents();
 
     fixture = TestBed.createComponent(MetadataSelectorComponent);
@@ -158,10 +160,20 @@ describe('MetadataSelectorComponent', () => {
     fixture.detectChanges();
     // Verify that table rows are rendered
     const rows: HTMLElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('tr'),
+      fixture.nativeElement.querySelectorAll('div[app-metadatafield]'),
     );
     // We expect at least one row (root children default to Copy)
     expect(rows.length).toBeGreaterThan(0);
+  });
+
+  it('gives the tree table viewport a height with the page styles', async () => {
+    await fixture.whenStable();
+    const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
+    expect(body.offsetHeight).toBeGreaterThan(0);
+    const viewport = fixture.debugElement
+      .query(By.directive(CdkVirtualScrollViewport))
+      .injector.get(CdkVirtualScrollViewport);
+    expect(viewport.getViewportSize()).toBeGreaterThan(0);
   });
 
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {

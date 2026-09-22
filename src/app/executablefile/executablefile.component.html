@@ -1,35 +1,39 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<td style="text-align: left">
-  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
+<div class="tt-cell">
+  <app-tree-toggler
+    [node]="node()"
+    [level]="level()"
+    (toggle)="toggle.emit()"
+  ></app-tree-toggler
   >{{ datafile().name }}
-</td>
-<td style="text-align: right">
+</div>
+<div class="tt-cell text-end">
   <div [hidden]="!datafile().attributes?.isFile">
-    <p-progressSpinner
-      [hidden]="!spinning()"
-      styleClass="spinner-1rem"
-      ariaLabel="loading"
-    ></p-progressSpinner>
-    <p-select
-      appendTo="body"
-      [options]="queues()"
-      [filter]="true"
-      filterBy="label"
-      [resetFilterOnHide]="true"
-      [ngModel]="queue()"
-      (ngModelChange)="queue.set($event)"
-      placeholder="Select queue"
-      (onChange)="onSelectQueue()"
-    ></p-select>
-    <button
-      style="height: 3rem"
-      pButton
-      label="Run on"
-      type="button"
-      [disabled]="!computeEnabled()"
-      (click)="compute()"
-    >
-      <i [class]="icon_play"></i>
-    </button>
+    <div class="d-flex align-items-center justify-content-end gap-2">
+      <span
+        class="spinner-border spinner-border-sm"
+        role="status"
+        aria-label="loading"
+        [hidden]="!spinning()"
+      ></span>
+      <app-select
+        class="flex-grow-1"
+        [options]="queues()"
+        [filter]="true"
+        [ngModel]="queue()"
+        (ngModelChange)="queue.set($event)"
+        placeholder="Select queue"
+        (valueChange)="onSelectQueue()"
+      ></app-select>
+      <button
+        class="btn btn-primary"
+        style="height: 3rem"
+        type="button"
+        [disabled]="!computeEnabled()"
+        (click)="compute()"
+      >
+        <i [class]="icon_play"></i> Run on
+      </button>
+    </div>
   </div>
-</td>
+</div>

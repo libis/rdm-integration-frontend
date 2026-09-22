@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 import { expectBootstrapTableStyle } from '../../testing/inline-style-test-helpers';
 import { Field, Fieldaction } from '../models/field';
 import { MetadatafieldComponent } from './metadatafield.component';
@@ -49,11 +49,7 @@ describe('MetadatafieldComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MetadatafieldComponent],
-    })
-      .overrideComponent(MetadatafieldComponent, {
-        set: { template: '<div></div>' },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(MetadatafieldComponent);
     component = fixture.componentInstance;
@@ -62,7 +58,7 @@ describe('MetadatafieldComponent', () => {
   it('computes host class and metadata helpers', () => {
     const { childNode, map } = buildFieldTree();
     fixture.componentRef.setInput('field', childNode.data);
-    fixture.componentRef.setInput('rowNode', childNode);
+    fixture.componentRef.setInput('node', childNode);
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
@@ -77,6 +73,11 @@ describe('MetadatafieldComponent', () => {
     expect(component.fieldValue()).toBe('My dataset');
     expect(component.fieldSource()).toBe('codemeta.json');
     expect(component.actionIcon()).toBe(MetadatafieldComponent.icon_copy);
+    const cells = fixture.nativeElement.querySelectorAll('.tt-cell');
+    expect(cells.length).toBe(4);
+    expect(cells[0].textContent).toContain('Title');
+    expect(cells[1].textContent).toContain('My dataset');
+    expect(cells[2].textContent).toContain('codemeta.json');
   });
 
   it('source falls back to first leaf child when parent lacks metadata', () => {
@@ -87,7 +88,7 @@ describe('MetadatafieldComponent', () => {
       action: Fieldaction.Ignore,
     };
     fixture.componentRef.setInput('field', parentNode.data);
-    fixture.componentRef.setInput('rowNode', parentNode);
+    fixture.componentRef.setInput('node', parentNode);
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
@@ -124,7 +125,7 @@ describe('MetadatafieldComponent', () => {
     });
 
     fixture.componentRef.setInput('field', childNode.data);
-    fixture.componentRef.setInput('rowNode', childNode);
+    fixture.componentRef.setInput('node', childNode);
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.detectChanges();
 
@@ -152,7 +153,7 @@ describe('MetadatafieldComponent', () => {
     const { parentNode, map } = buildFieldTree();
     fixture.componentRef.setInput('field', parentNode.data);
     fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', parentNode);
+    fixture.componentRef.setInput('node', parentNode);
     fixture.detectChanges();
 
     const emitSpy = spyOn(component.changed, 'emit');

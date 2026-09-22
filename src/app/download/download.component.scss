@@ -1,28 +1,14 @@
-:host ::ng-deep .p-select {
-  width: 100%;
-}
-
-// Fix dropdown panel width when appendTo="body"
-// The panel is appended to body, so we need to target it globally
-::ng-deep .p-select-overlay {
-  max-width: 30rem !important;
-
-  .p-select-option {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
 // Fix text-muted readability in dark mode
 .text-muted {
-  color: var(--p-text-muted-color) !important;
+  color: var(--app-muted) !important;
 }
 
+// The split has a definite height so the tree table can fill its left pane.
+// 14rem is the space taken by the page header rows above the split.
 .download-split {
   display: flex;
   gap: 1rem;
-  max-height: calc(100vh - 14rem);
+  height: calc(100vh - 14rem);
   overflow: hidden;
 }
 
@@ -31,4 +17,15 @@
   flex: 1 1 50%;
   min-width: 0;
   overflow: hidden;
+}
+
+.download-split-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.download-table {
+  flex: 1 1 auto;
+  min-height: 0;
 }

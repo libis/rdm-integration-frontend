@@ -1,0 +1,53 @@
+@if (loading()) {
+  <span
+    class="spinner-border spinner-border-sm"
+    role="status"
+    aria-label="Loading"
+  ></span>
+}
+<cdk-tree
+  #tree
+  class="folder-tree"
+  [dataSource]="nodes()"
+  [childrenAccessor]="children"
+  [expansionKey]="nodeKey"
+  [trackBy]="trackNode"
+>
+  <cdk-tree-node
+    *cdkTreeNodeDef="let node"
+    class="folder-node"
+    [class.selected]="isSelected(node)"
+    [isExpandable]="isExpandable(node)"
+    cdkTreeNodePadding
+    [cdkTreeNodePaddingIndent]="16"
+    tabindex="0"
+    (keydown)="onKeydown($event, node)"
+  >
+    @if (isExpandable(node)) {
+      <button
+        type="button"
+        class="btn btn-link btn-sm p-0 folder-toggle"
+        tabindex="-1"
+        aria-label="Toggle"
+        [attr.aria-expanded]="tree.isExpanded(node)"
+        (click)="toggle(node)"
+      >
+        <i
+          class="pi"
+          [class.pi-chevron-down]="tree.isExpanded(node)"
+          [class.pi-chevron-right]="!tree.isExpanded(node)"
+        ></i>
+      </button>
+    } @else {
+      <span class="folder-toggle"></span>
+    }
+    <button
+      type="button"
+      class="btn btn-link btn-sm folder-label"
+      tabindex="-1"
+      (click)="select(node)"
+    >
+      <span>{{ node.label }}</span>
+    </button>
+  </cdk-tree-node>
+</cdk-tree>

@@ -1,27 +1,33 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
-<td>
-  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
+<div class="tt-cell">
+  <app-tree-toggler
+    [node]="node()"
+    [level]="level()"
+    (toggle)="toggle.emit()"
+  ></app-tree-toggler
   >{{ sourceFile() }}
-</td>
-<td class="compact-col" style="text-align: center">
+</div>
+<div class="tt-cell text-center">
   <i
     [class]="comparisonIcon()"
     [style]="'color:' + comparisonColor()"
     [title]="comparisonTitle()"
   ></i>
-</td>
-<td class="compact-col" style="text-align: center">
+</div>
+<div class="tt-cell text-center">
   <button
-    pButton
-    label=""
     type="button"
-    class="p-button-sm p-button-outlined p-button-secondary"
+    class="btn btn-sm btn-outline-secondary"
     (click)="toggleAction()"
   >
     <i [class]="actionIcon()"></i>
   </button>
-</td>
-<td [class]="targetFileClass()">
-  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
+</div>
+<div [class]="'tt-cell ' + targetFileClass()">
+  <app-tree-toggler
+    [node]="node()"
+    [level]="level()"
+    (toggle)="toggle.emit()"
+  ></app-tree-toggler
   >{{ targetFile() }}
-</td>
+</div>

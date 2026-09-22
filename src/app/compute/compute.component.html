@@ -3,9 +3,8 @@
   <span class="col-auto">
     <button
       style="height: 3rem"
-      pButton
       type="button"
-      class="p-button-sm p-button-raised p-button-secondary"
+      class="btn btn-sm btn-secondary"
       (click)="back()"
     >
       <i class="pi pi-angle-double-left"></i>&nbsp;Home
@@ -36,33 +35,28 @@
     class="col-auto"
     style="width: 30rem; position: relative; top: 0.275rem"
   >
-    <p-floatlabel class="w-100" variant="on">
-      <p-select
-        appendTo="body"
-        autoWidth="false"
-        [style]="{ width: '100%' }"
+    <div class="w-100">
+      <label class="form-label" for="datasetId">Select Dataset</label>
+      <app-select
+        class="w-100"
         [editable]="datasetFieldEditable()"
-        id="datasetId"
+        inputId="datasetId"
         [options]="doiItems()"
         [filter]="true"
-        filterBy="label"
-        [resetFilterOnHide]="true"
-        (onFilter)="onDatasetSearch($event.filter)"
+        (filterChange)="onDatasetSearch($event)"
         [ngModel]="datasetId()"
         (ngModelChange)="datasetId.set($event)"
-        (onClick)="getDoiOptions()"
-        (onChange)="onDatasetChange()"
-      ></p-select>
-      <label for="datasetId">Select Dataset</label>
-    </p-floatlabel>
+        (opened)="getDoiOptions()"
+        (valueChange)="onDatasetChange()"
+      ></app-select>
+    </div>
   </span>
 </div>
 
 <br />
-<p-dialog
+<app-dialog
   header="Compute"
   position="topright"
-  [modal]="true"
   [visible]="popup()"
   (visibleChange)="popup.set($event)"
 >
@@ -79,65 +73,67 @@
   <br /><br />
   <div style="text-align: right">
     @if (configLoaded() && sendMails()) {
-      <div>
-        <p-checkbox
+      <div class="form-check">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          id="sendEmailOnSuccessCB"
           [ngModel]="sendEmailOnSuccess()"
           (ngModelChange)="sendEmailOnSuccess.set($event)"
-          [binary]="true"
-          inputId="sendEmailOnSuccessCB"
-        ></p-checkbox>
-        <label for="sendEmailOnSuccesCB"
+        />
+        <label class="form-check-label" for="sendEmailOnSuccessCB"
           >Email me when the computation is completed</label
         >
       </div>
     }
   </div>
-  <ng-template pTemplate="footer">
-    <p-button
+  <div appDialogFooter>
+    <button
+      type="button"
+      class="btn btn-sm btn-primary"
       (click)="continueSubmit()"
-      styleClass="p-button-sm p-button-raised p-button-primary"
-      >OK</p-button
     >
-  </ng-template>
-</p-dialog>
+      OK
+    </button>
+  </div>
+</app-dialog>
 <div class="compute-split">
   <div class="compute-split-left">
-    <p-treeTable
-      [value]="rootNodeChildren()"
-      [loading]="loading()"
-      [scrollable]="true"
-      scrollHeight="flex"
-      [virtualScroll]="useVirtualScroll()"
-      [virtualScrollItemSize]="41"
-      (onNodeExpand)="recountVisibleRows()"
-      (onNodeCollapse)="recountVisibleRows()"
-    >
-      <ng-template pTemplate="loadingicon">
-        <i class="pi pi-spin pi-spinner"></i>
-      </ng-template>
-      <ng-template pTemplate="header">
-        <tr>
-          <th style="text-align: left">
+    <div class="compute-table">
+      <app-tree-table
+        #tt
+        [nodes]="rootNodeChildren()"
+        [loading]="loading()"
+        [virtual]="false"
+        [rowHeight]="56"
+        columns="1fr 24rem"
+      >
+        <ng-template appTreeTableHeader>
+          <div class="tt-cell">
             <a [href]="data()!.url" target="_blank">{{ data()!.id }}</a>
-          </th>
-          <th class="icon_col" style="text-align: right">
+          </div>
+          <div class="tt-cell text-end">
             <span title="Action">Compute</span>
-          </th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-        <tr
-          app-executablefile
-          [datafile]="rowData"
-          [loading]="loading()"
-          [rowNodeMap]="rowNodeMap()"
-          [rowNode]="rowNode"
-          [pid]="datasetId()"
-          [dv_token]="dataverseToken()"
-          (computeClicked)="submitCompute($event)"
-        ></tr
-      ></ng-template>
-    </p-treeTable>
+          </div>
+        </ng-template>
+        <ng-template appTreeTableRow let-node let-level="level">
+          <div
+            app-executablefile
+            class="tt-row"
+            role="row"
+            [datafile]="node.data"
+            [node]="node"
+            [level]="level"
+            [loading]="loading()"
+            [rowNodeMap]="rowNodeMap()"
+            [pid]="datasetId()"
+            [dv_token]="dataverseToken()"
+            (toggle)="tt.toggle(node)"
+            (computeClicked)="submitCompute($event)"
+          ></div>
+        </ng-template>
+      </app-tree-table>
+    </div>
   </div>
   <div class="compute-split-right">
     <div [style.width]="'100%'" [style.margin]="'0.2rem'">

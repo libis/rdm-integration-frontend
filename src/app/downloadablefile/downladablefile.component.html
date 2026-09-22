@@ -1,16 +1,18 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<td>
-  <p-treeTableToggler [rowNode]="rowNode()"></p-treeTableToggler
+<div class="tt-cell">
+  <app-tree-toggler
+    [node]="node()"
+    [level]="level()"
+    (toggle)="toggle.emit()"
+  ></app-tree-toggler
   >{{ fileName() }}
-</td>
-<td style="text-align: right">
+</div>
+<div class="tt-cell text-end">
   <button
-    pButton
-    label=""
     type="button"
-    class="p-button-sm p-button-outlined p-button-secondary"
+    class="btn btn-sm btn-outline-secondary"
     (click)="toggleAction()"
   >
     <i [class]="actionIcon()"></i>
   </button>
-</td>
+</div>

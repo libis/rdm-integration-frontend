@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from './models/tree-node';
 import { Datafile, Fileaction } from './models/datafile';
 
 @Injectable({

@@ -8,7 +8,7 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { SelectItem } from 'primeng/api';
+import { SelectItem } from './models/select-item';
 import { RepoLookupRequest } from './models/repo-lookup';
 import { RepoLookupService } from './repo.lookup.service';
 

@@ -15,23 +15,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
-import { definePreset } from '@primeuix/themes';
-import { MessageService } from 'primeng/api';
-import Lara from '@primeuix/themes/lara';
 import { AutosizeModule } from 'ngx-autosize';
-import { AccordionModule } from 'primeng/accordion';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { providePrimeNG } from 'primeng/config';
-import { DialogModule } from 'primeng/dialog';
-import { FloatLabelModule } from 'primeng/floatlabel';
-import { PopoverModule } from 'primeng/popover';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { SelectModule } from 'primeng/select';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
-import { TreeModule } from 'primeng/tree';
-import { TreeTableModule } from 'primeng/treetable';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routs';
 import { environment } from './environments/environment';
@@ -52,85 +36,21 @@ async function initializeApp(): Promise<void> {
   }
 }
 
+const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+const applyColorMode = () =>
+  document.documentElement.setAttribute(
+    'data-bs-theme',
+    darkScheme.matches ? 'dark' : 'light',
+  );
+applyColorMode();
+darkScheme.addEventListener('change', applyColorMode);
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
-    MessageService,
-    importProvidersFrom(
-      BrowserModule,
-      AccordionModule,
-      FormsModule,
-      TreeTableModule,
-      TableModule,
-      ButtonModule,
-      PopoverModule,
-      SelectModule,
-      FloatLabelModule,
-      SkeletonModule,
-      DialogModule,
-      CheckboxModule,
-      TreeModule,
-      AutosizeModule,
-      ProgressSpinnerModule,
-    ),
+    importProvidersFrom(BrowserModule, FormsModule, AutosizeModule),
     provideHttpClient(withInterceptorsFromDi()),
     provideZonelessChangeDetection(),
     provideAppInitializer(initializeApp),
-    providePrimeNG({
-      ripple: false, // disable ripple effects globally
-      theme: {
-        preset: definePreset(Lara, {
-          semantic: {
-            primary: {
-              50: '{blue.50}',
-              100: '{blue.100}',
-              200: '{blue.200}',
-              300: '{blue.300}',
-              400: '{blue.400}',
-              500: '{blue.500}',
-              600: '{blue.600}',
-              700: '{blue.700}',
-              800: '{blue.800}',
-              900: '{blue.900}',
-              950: '{blue.950}',
-            },
-            colorScheme: {
-              light: {
-                surface: {
-                  0: '#ffffff',
-                  50: '{zinc.50}',
-                  100: '{zinc.100}',
-                  200: '{zinc.200}',
-                  300: '{zinc.300}',
-                  400: '{zinc.400}',
-                  500: '{zinc.500}',
-                  600: '{zinc.600}',
-                  700: '{zinc.700}',
-                  800: '{zinc.800}',
-                  900: '{zinc.900}',
-                  950: '{zinc.950}',
-                },
-              },
-              dark: {
-                surface: {
-                  0: '#ffffff',
-                  50: '{zinc.50}',
-                  100: '{zinc.100}',
-                  200: '{zinc.200}',
-                  300: '{zinc.300}',
-                  400: '{zinc.400}',
-                  500: '{zinc.500}',
-                  600: '{zinc.600}',
-                  700: '{zinc.700}',
-                  800: '{zinc.800}',
-                  900: '{zinc.900}',
-                  950: '{zinc.950}',
-                },
-              },
-            },
-          },
-        }),
-      },
-    }),
   ],
 }).catch((err) => console.error(err));

@@ -9,30 +9,23 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
 import { Subscription } from 'rxjs';
 import { Datafile } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { DataService } from '../data.service';
 import { NotificationService } from '../shared/notification.service';
 import { ComputeRequest } from '../models/compare-result';
-import { TreeTableModule } from 'primeng/treetable';
-import { ProgressSpinner } from 'primeng/progressspinner';
-import { Select } from 'primeng/select';
+import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.component';
+import { SelectComponent } from '../shared/ui/select/select.component';
 import { FormsModule } from '@angular/forms';
-import { ButtonDirective } from 'primeng/button';
 
 @Component({
-  selector: 'tr[app-executablefile]',
+  selector: 'div[app-executablefile]',
   templateUrl: './executablefile.component.html',
   styleUrl: './executablefile.component.scss',
-  imports: [
-    TreeTableModule,
-    ProgressSpinner,
-    Select,
-    FormsModule,
-    ButtonDirective,
-  ],
+  imports: [TreeTogglerComponent, SelectComponent, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExecutablefileComponent {
@@ -45,20 +38,15 @@ export class ExecutablefileComponent {
   readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(
     new Map<string, TreeNode<Datafile>>(),
   );
-  readonly rowNode = input<TreeNode<Datafile>>({});
+  readonly node = input.required<TreeNode<Datafile>>();
+  readonly level = input(0);
+  readonly toggle = output<void>();
   readonly pid = input<string>();
   readonly dv_token = input<string>();
 
   readonly computeClicked = output<ComputeRequest>({ alias: 'computeClicked' });
 
   icon_play = 'pi pi-play';
-
-  readonly node = computed<TreeNode<Datafile>>(() => {
-    const map = this.rowNodeMap();
-    const df = this.datafile();
-    const key = df.id! + (df.attributes?.isFile ? ':file' : '');
-    return map.get(key) ?? {};
-  });
 
   readonly queues = computed<SelectItem<string>[]>(() => {
     const datafile = this.datafile();

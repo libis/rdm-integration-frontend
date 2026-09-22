@@ -1,12 +1,7 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto">
-    <button
-      pButton
-      type="button"
-      class="p-button-sm p-button-raised p-button-secondary"
-      (click)="back()"
-    >
+    <button type="button" class="btn btn-sm btn-secondary" (click)="back()">
       <i class="pi pi-angle-double-left"></i>&nbsp;Return
     </button>
   </div>
@@ -15,9 +10,8 @@
   </div>
   <div class="col-auto">
     <button
-      pButton
       type="button"
-      class="p-button-sm p-button-raised p-button-primary"
+      class="btn btn-sm btn-primary"
       (click)="submit()"
       title="Confirm metadata selection"
     >
@@ -28,57 +22,40 @@
 
 <br />
 
-<table class="table table-theme-adaptive">
-  <tbody>
-    <tr class="file-list-header">
-      <!-- Ensure tableColumnCount is defined in the component TypeScript and matches the number of columns -->
-      <th [attr.colspan]="treeTableColumnCount()">
-        <i [class]="icon_copy"></i> Metadata that will be copied
-      </th>
-    </tr>
-    <tr>
-      <td class="treetable-cell" [attr.colspan]="treeTableColumnCount()">
-        <p-treeTable
-          [value]="rootNodeChildren()"
-          [scrollable]="true"
-          scrollHeight="flex"
-          [virtualScroll]="useVirtualScroll()"
-          [virtualScrollItemSize]="41"
-          (onNodeExpand)="recountVisibleRows()"
-          (onNodeCollapse)="recountVisibleRows()"
+<div class="file-list-header">
+  <i [class]="icon_copy"></i> Metadata that will be copied
+</div>
+<div class="treetable-cell">
+  <app-tree-table #tt [nodes]="rootNodeChildren()" columns="2fr 2fr 1fr 4rem">
+    <ng-template appTreeTableHeader>
+      <div class="tt-cell">Metadata field</div>
+      <div class="tt-cell">Value</div>
+      <div class="tt-cell">Metadata source</div>
+      <div class="tt-cell text-end">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          (click)="toggleAction()"
         >
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width: 16rem; text-align: left">Metadata field</th>
-              <th>Value</th>
-              <th style="width: 9rem">Metadata source</th>
-              <th class="icon_col" style="width: 4rem; text-align: right">
-                <button
-                  pButton
-                  label=""
-                  type="button"
-                  class="p-button-sm p-button-outlined p-button-secondary"
-                  (click)="toggleAction()"
-                >
-                  <i [class]="action()"></i>
-                </button>
-              </th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-            <tr
-              app-metadatafield
-              #metadataRow="appMetadatafield"
-              [field]="rowData"
-              [rowNodeMap]="rowNodeMap()"
-              [rowNode]="rowNode"
-              [refreshTrigger]="refreshTrigger()"
-              [style]="metadataRow.hostStyle()"
-              (changed)="onRowActionChanged()"
-            ></tr
-          ></ng-template>
-        </p-treeTable>
-      </td>
-    </tr>
-  </tbody>
-</table>
+          <i [class]="action()"></i>
+        </button>
+      </div>
+    </ng-template>
+    <ng-template appTreeTableRow let-node let-level="level">
+      <div
+        app-metadatafield
+        #metadataRow="appMetadatafield"
+        class="tt-row"
+        role="row"
+        [field]="node.data"
+        [node]="node"
+        [level]="level"
+        [rowNodeMap]="rowNodeMap()"
+        [refreshTrigger]="refreshTrigger()"
+        [style]="metadataRow.hostStyle()"
+        (toggle)="tt.toggle(node)"
+        (changed)="onRowActionChanged()"
+      ></div>
+    </ng-template>
+  </app-tree-table>
+</div>

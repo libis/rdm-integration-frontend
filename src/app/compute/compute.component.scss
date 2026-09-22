@@ -4,10 +4,12 @@ textarea {
   width: 100%;
 }
 
+// The split has a definite height so the tree table can fill its left pane.
+// 14rem is the space taken by the page header rows above the split.
 .compute-split {
   display: flex;
   gap: 1rem;
-  max-height: calc(100vh - 14rem);
+  height: calc(100vh - 14rem);
   overflow: hidden;
 }
 
@@ -20,4 +22,10 @@ textarea {
 .compute-split-left {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.compute-table {
+  flex: 1 1 auto;
+  min-height: 0;
 }

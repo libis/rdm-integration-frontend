@@ -1,0 +1,15 @@
+.app-select-panel {
+  max-height: 20rem;
+  overflow: auto;
+  width: 100%;
+}
+
+.app-select-option {
+  cursor: pointer;
+}
+
+.app-select-option[aria-selected="true"],
+.app-select-option:focus,
+.app-select-option.cdk-option-active {
+  background-color: var(--app-surface);
+}

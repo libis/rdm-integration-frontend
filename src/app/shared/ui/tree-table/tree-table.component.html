@@ -1,0 +1,52 @@
+<div
+  class="tt"
+  [style.--tt-columns]="columns()"
+  [style.--tt-row-height.px]="rowHeight()"
+>
+  <div class="tt-header" role="row">
+    <ng-container *ngTemplateOutlet="headerTemplate().template"></ng-container>
+  </div>
+  @if (loading()) {
+    <div class="tt-loading">
+      <span
+        class="spinner-border spinner-border-sm"
+        role="status"
+        aria-label="Loading"
+      ></span>
+    </div>
+  }
+  @if (virtual()) {
+    <cdk-virtual-scroll-viewport
+      class="tt-body"
+      [itemSize]="rowHeight()"
+      [minBufferPx]="rowHeight() * 10"
+      [maxBufferPx]="rowHeight() * 20"
+    >
+      <ng-container
+        *cdkVirtualFor="
+          let row of rows();
+          trackBy: trackRow;
+          templateCacheSize: 0
+        "
+      >
+        <ng-container
+          *ngTemplateOutlet="
+            rowTemplate().template;
+            context: { $implicit: row.node, level: row.level }
+          "
+        ></ng-container>
+      </ng-container>
+    </cdk-virtual-scroll-viewport>
+  } @else {
+    <div class="tt-body tt-body-static">
+      @for (row of rows(); track trackRow($index, row)) {
+        <ng-container
+          *ngTemplateOutlet="
+            rowTemplate().template;
+            context: { $implicit: row.node, level: row.level }
+          "
+        ></ng-container>
+      }
+    </div>
+  }
+</div>

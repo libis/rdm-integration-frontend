@@ -5,7 +5,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { signal } from '@angular/core';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
@@ -52,6 +52,9 @@ class MockDataService {
 
   getCachedComputeData() {
     return this.responses.asObservable();
+  }
+  checkAccessToQueue() {
+    return of({ access: true, message: '' });
   }
   emit(res: any) {
     this.responses.next(res);
@@ -117,6 +120,9 @@ class MockPluginService {
   }
   dataverseHeader() {
     return 'Dataverse:';
+  }
+  getQueues(ext: string) {
+    return ext === 'py' ? [{ label: 'CPU', value: 'cpu' }] : [];
   }
 }
 
@@ -336,5 +342,88 @@ describe('ComputeComponent', () => {
     mockData.emit({ ready: true, err: 'failure', res: '' });
     await new Promise<void>((r) => setTimeout(r));
     expect(notification.errors.some((e) => e.includes('failure'))).toBeTrue();
+  });
+});
+
+describe('ComputeComponent layout and row state', () => {
+  let fixture: ComponentFixture<ComputeComponent>;
+  let component: ComputeComponent;
+
+  const file = (id: string): Datafile => ({
+    id,
+    name: id,
+    path: '',
+    hidden: false,
+    status: Filestatus.Equal,
+    action: Fileaction.Ignore,
+    attributes: { isFile: true },
+  });
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ComputeComponent],
+      providers: [
+        provideRouter([], withDisabledInitialNavigation()),
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        { provide: DataService, useValue: new MockDataService() },
+        { provide: PluginService, useValue: new MockPluginService() },
+        {
+          provide: DvObjectLookupService,
+          useValue: new MockDvObjectLookupService(),
+        },
+        {
+          provide: NotificationService,
+          useValue: new MockNotificationService(),
+        },
+        { provide: UtilsService, useClass: MockUtilsService },
+        { provide: NavigationService, useValue: new MockNavigationService() },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ComputeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    component.data.set({ id: 'doi:10.1/ABC', url: 'https://example.org/ds' });
+    component.rootNodeChildren.set(
+      [file('a.py'), file('b.py')].map((f) => ({
+        key: `${f.id}:file`,
+        data: f,
+      })),
+    );
+    await fixture.whenStable();
+  });
+
+  it('gives the static scroll body a height with the page styles', () => {
+    const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
+    expect(body.classList).toContain('tt-body-static');
+    expect(body.offsetHeight).toBeGreaterThan(0);
+    expect(
+      fixture.nativeElement.querySelectorAll('div[app-executablefile]').length,
+    ).toBe(2);
+  });
+
+  it('keeps the queue chosen in the first row after scrolling', async () => {
+    const rows = fixture.nativeElement.querySelectorAll(
+      'div[app-executablefile]',
+    );
+    const trigger = rows[0].querySelector('.form-select') as HTMLButtonElement;
+    trigger.click();
+    await fixture.whenStable();
+    const option = document.querySelector(
+      '.cdk-overlay-container .app-select-option',
+    ) as HTMLElement;
+    expect(option.textContent).toContain('CPU');
+    option.click();
+    await fixture.whenStable();
+    expect(trigger.textContent).toContain('CPU');
+    const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
+    body.scrollTop = 500;
+    body.dispatchEvent(new Event('scroll'));
+    await fixture.whenStable();
+    const firstRow = fixture.nativeElement.querySelectorAll(
+      'div[app-executablefile]',
+    )[0];
+    expect(firstRow.querySelector('.form-select').textContent).toContain('CPU');
+    expect(firstRow.querySelector('button.btn-primary').disabled).toBeFalse();
   });
 });

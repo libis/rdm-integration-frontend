@@ -28,13 +28,14 @@ import { UtilsService } from '../utils.service';
 import { CompareResult, ResultStatus } from '../models/compare-result';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 
-// PrimeNG
-import { PrimeTemplate, TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
-import { PopoverModule } from 'primeng/popover';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { TableModule } from 'primeng/table';
-import { TreeTableModule } from 'primeng/treetable';
+// UI
+import { TreeNode } from '../models/tree-node';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { TreeTableComponent } from '../shared/ui/tree-table/tree-table.component';
+import {
+  TreeTableHeaderDirective,
+  TreeTableRowDirective,
+} from '../shared/ui/tree-table/tree-table-templates';
 
 // Components
 import { DatafileComponent } from '../datafile/datafile.component';
@@ -58,12 +59,11 @@ interface FileNodeBuckets {
   styleUrls: ['./compare.component.scss'],
   imports: [
     CommonModule,
-    ButtonDirective,
-    TreeTableModule,
-    PrimeTemplate,
-    PopoverModule,
-    TableModule,
-    ProgressSpinnerModule,
+    TreeTableComponent,
+    TreeTableHeaderDirective,
+    TreeTableRowDirective,
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
     DatafileComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -139,6 +139,7 @@ export class CompareComponent
   ];
 
   readonly selectedFilterItems = signal<FilterItem[]>([...this.filterItems]);
+  readonly filterOpen = signal(false);
 
   // DERIVED STATE
 
@@ -185,9 +186,6 @@ export class CompareComponent
       return root.children || [];
     }
   });
-
-  readonly visibleRowCount = signal(0);
-  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
 
   readonly isInFilterMode = computed(
     () => this.selectedFilterItems().length < this.filterItems.length,
@@ -314,32 +312,20 @@ export class CompareComponent
         }
       }
     });
-
-    // Recount visible rows whenever the displayed node array changes (new data
-    // load or filter change).  Expand/collapse mutations are handled via
-    // recountVisibleRows() called from template events.
-    effect(() => {
-      this.visibleRowCount.set(
-        this.countVisibleRows(this.rootNodeChildrenView()),
-      );
-    });
   }
 
-  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
-    let count = 0;
-    for (const node of nodes) {
-      count++;
-      if (node.expanded && node.children?.length) {
-        count += this.countVisibleRows(node.children);
-      }
-    }
-    return count;
+  isFilterSelected(item: FilterItem): boolean {
+    return this.selectedFilterItems().includes(item);
   }
 
-  recountVisibleRows(): void {
-    this.visibleRowCount.set(
-      this.countVisibleRows(this.rootNodeChildrenView()),
+  toggleFilter(item: FilterItem, checked: boolean): void {
+    this.selectedFilterItems.update((items) =>
+      checked ? [...items, item] : items.filter((i) => i !== item),
     );
+  }
+
+  toggleAllFilters(checked: boolean): void {
+    this.selectedFilterItems.set(checked ? [...this.filterItems] : []);
   }
 
   ngOnInit(): void {

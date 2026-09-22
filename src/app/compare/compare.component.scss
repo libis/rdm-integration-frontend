@@ -1,27 +1,15 @@
-// Ensure table sections inherit theme-aware colors while inline row styles override when provided
+// Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-.table {
-  tbody,
-  thead,
-  td,
-  th {
-    background-color: var(--p-content-background);
-    color: var(--p-text-color);
-  }
-
-  tr {
-    background-color: var(--p-content-background);
-    color: var(--p-text-color);
-
-    td,
-    th {
-      background-color: inherit;
-      color: inherit;
-    }
-  }
+// The page is a column so the tree table takes the remaining height below the
+// application header (3.125rem, see .dataverse-header-block in styles.scss).
+:host {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 3.125rem);
 }
 
-// Virtual-scrolling container
 .treetable-container {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
 }

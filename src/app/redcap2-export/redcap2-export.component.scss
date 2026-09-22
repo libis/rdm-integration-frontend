@@ -1,14 +1,13 @@
 // Author: Eryk Kulikowski @ KU Leuven (2026). Apache 2.0 License
 
 .redcap2-export {
-  // Theme-aware muted text (Bootstrap's .text-muted does not follow the
-  // PrimeNG dark/light theme).
+  // Theme-aware muted text that follows the Bootstrap colour mode.
   .hint-text {
-    color: var(--p-text-muted-color);
+    color: var(--app-muted);
   }
 
   code {
-    color: var(--p-text-color);
+    color: var(--app-text);
   }
 
   .anonymization-col {
@@ -17,7 +16,7 @@
 
   .phi-risk-icon {
     margin-left: 0.5rem;
-    color: var(--p-orange-500, #f97316);
+    color: var(--bs-orange);
     cursor: help;
   }
 

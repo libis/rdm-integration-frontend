@@ -4,7 +4,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { DatafileComponent } from './datafile.component';
 
@@ -25,15 +25,12 @@ describe('DatafileComponent', () => {
           useValue: folderActionStub,
         },
       ],
-    })
-      // Shallow render to avoid PrimeNG TreeTable internal provider requirements during unit tests
-      .overrideComponent(DatafileComponent, {
-        set: { template: '<div></div>' },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(DatafileComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('node', {});
+    fixture.componentRef.setInput('level', 0);
     fixture.detectChanges();
   });
 
@@ -41,13 +38,21 @@ describe('DatafileComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('renders four grid cells with a toggler in the name cells', () => {
+    const cells = fixture.nativeElement.querySelectorAll('.tt-cell');
+    expect(cells.length).toBe(4);
+    expect(
+      fixture.nativeElement.querySelectorAll('app-tree-toggler').length,
+    ).toBe(2);
+  });
+
   function setInputs(df: Datafile, map: Map<string, TreeNode<Datafile>>) {
     // Use proper Angular signal input setters via component reference
     fixture.componentRef.setInput('datafile', df);
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.componentRef.setInput(
-      'rowNode',
-      map.get(df.id + (df.attributes?.isFile ? ':file' : '')),
+      'node',
+      map.get(df.id + (df.attributes?.isFile ? ':file' : '')) ?? {},
     );
     fixture.componentRef.setInput('isInFilter', false);
     fixture.componentRef.setInput('loading', false);

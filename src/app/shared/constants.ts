@@ -13,7 +13,7 @@ export const APP_CONSTANTS = {
   // Sleep duration between retries (ms)
   RETRY_SLEEP_DURATION: 1000,
 
-  // PrimeNG icons
+  // PrimeIcons
   ICONS: {
     NO_ACTION: 'pi pi-stop',
     UPDATE: 'pi pi-copy',

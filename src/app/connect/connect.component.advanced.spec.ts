@@ -10,7 +10,8 @@ import {
   provideRouter,
   withDisabledInitialNavigation,
 } from '@angular/router';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
 import { Observable, of } from 'rxjs';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -921,7 +922,7 @@ describe('ConnectComponent advanced behaviors', () => {
       ]);
       const newDatasetSpy = spyOn(comp, 'newDataset').and.callThrough();
 
-      comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
+      comp.onDatasetSelectionChange('CREATE_NEW_DATASET');
       expect(newDatasetSpy).toHaveBeenCalled();
       expect(comp.datasetId()).toContain('root:COLL');
       expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
@@ -930,7 +931,7 @@ describe('ConnectComponent advanced behaviors', () => {
       expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
 
       const previousValue = comp.datasetId();
-      comp.onDatasetSelectionChange({ value: 'doi:567' });
+      comp.onDatasetSelectionChange('doi:567');
       expect(comp.showNewDatasetCreatedMessage()).toBeFalse();
       expect(comp.datasetId()).toBe(previousValue);
     } finally {

@@ -1,0 +1,31 @@
+.tt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--app-text);
+  background: var(--app-bg);
+}
+
+.tt-header {
+  display: grid;
+  grid-template-columns: var(--tt-columns);
+  font-weight: 600;
+  border-bottom: 1px solid var(--app-border);
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+.tt-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  scrollbar-gutter: stable;
+}
+
+.tt-body-static {
+  overflow: auto;
+}
+
+.tt-loading {
+  padding: 0.25rem 0.5rem;
+}

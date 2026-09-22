@@ -1,13 +1,16 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   inject,
+  Injector,
   OnDestroy,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 
@@ -24,17 +27,19 @@ import { UtilsService } from '../utils.service';
 import { CompareResult, DdiCdiRequest, Key } from '../models/compare-result';
 import { Datafile } from '../models/datafile';
 
-// PrimeNG
+// UI
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { PrimeTemplate, SelectItem, TreeNode } from 'primeng/api';
-import { Button, ButtonDirective } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { Dialog } from 'primeng/dialog';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { Select } from 'primeng/select';
-import { TreeTableModule } from 'primeng/treetable';
-import { TabsModule } from 'primeng/tabs';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
+import { DialogComponent } from '../shared/ui/dialog/dialog.component';
+import { SelectComponent } from '../shared/ui/select/select.component';
+import { TreeTableComponent } from '../shared/ui/tree-table/tree-table.component';
+import {
+  TreeTableHeaderDirective,
+  TreeTableRowDirective,
+} from '../shared/ui/tree-table/tree-table-templates';
+import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.component';
 
 // Third-party
 import { AutosizeModule } from 'ngx-autosize';
@@ -65,17 +70,14 @@ import { SubscriptionManager } from '../shared/types';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    ButtonDirective,
     FormsModule,
-    Select,
-    Dialog,
-    Checkbox,
-    PrimeTemplate,
-    Button,
-    TreeTableModule,
-    ProgressSpinnerModule,
+    SelectComponent,
+    DialogComponent,
+    TreeTableComponent,
+    TreeTableHeaderDirective,
+    TreeTableRowDirective,
+    TreeTogglerComponent,
     AutosizeModule,
-    TabsModule,
   ],
 })
 export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
@@ -113,6 +115,21 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly sendEmailOnSuccess = signal(false);
   originalDdiCdi?: string;
   readonly activeTab = signal<string>('files');
+
+  readonly filesTable = viewChild<TreeTableComponent<Datafile>>('tt');
+  private readonly renderInjector = inject(Injector);
+
+  selectTab(tab: 'files' | 'console'): void {
+    this.activeTab.set(tab);
+    if (tab === 'files') {
+      afterNextRender(
+        () => {
+          if (this.activeTab() === 'files') this.filesTable()?.refresh();
+        },
+        { injector: this.renderInjector },
+      );
+    }
+  }
   private readonly totalSelectableFiles = signal(0);
 
   // Computed signals for template bindings
@@ -124,8 +141,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly selectAllIcon = computed(() =>
     this.allFilesSelected() ? 'pi pi-check-square' : 'pi pi-square',
   );
-  readonly visibleRowCount = signal(0);
-  readonly useVirtualScroll = computed(() => this.visibleRowCount() >= 100);
   readonly generateDisabled = computed(
     () =>
       this.loading() || this.selectedFiles().size === 0 || !this.datasetId(),
@@ -385,7 +400,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.resetOutputState();
     this.selectedFiles.set(new Set<string>());
     this.totalSelectableFiles.set(0);
-    this.activeTab.set('files');
+    this.selectTab('files');
 
     // First, try to load cached output
     this.loadCachedOutput();
@@ -428,7 +443,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.rowNodeMap.set(rowDataMap);
     if (rootNode?.children) {
       this.rootNodeChildren.set(rootNode.children);
-      this.visibleRowCount.set(this.countVisibleRows(rootNode.children));
     }
     this.totalSelectableFiles.set(
       this.countSelectableFiles(this.rootNodeChildren()),
@@ -440,21 +454,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     });
 
     this.loading.set(false);
-  }
-
-  private countVisibleRows(nodes: TreeNode<Datafile>[]): number {
-    let count = 0;
-    for (const node of nodes) {
-      count++;
-      if (node.expanded && node.children?.length) {
-        count += this.countVisibleRows(node.children);
-      }
-    }
-    return count;
-  }
-
-  recountVisibleRows(): void {
-    this.visibleRowCount.set(this.countVisibleRows(this.rootNodeChildren()));
   }
 
   autoSelectAllFiles(node: TreeNode<Datafile>): void {
@@ -531,7 +530,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.cancelPolling();
 
     this.submitPopup.set(false);
-    this.activeTab.set('console');
+    this.selectTab('console');
     const currentSendEmail = this.sendEmailOnSuccess();
     this.req = {
       persistentId: this.datasetId()!,

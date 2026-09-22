@@ -1,3 +1,4 @@
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import {
@@ -6,7 +7,8 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, signal, WritableSignal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { Observable, Subscription, of, throwError } from 'rxjs';
@@ -24,7 +26,8 @@ import {
   Key,
 } from '../models/compare-result';
 import { Datafile } from '../models/datafile';
-import { SelectItem, TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
+import { SelectItem } from '../models/select-item';
 
 describe('DdiCdiComponent', () => {
   let dataServiceStub: jasmine.SpyObj<DataService>;
@@ -1420,6 +1423,118 @@ describe('DdiCdiComponent', () => {
         expect(component.submitPopup()).toBe(true);
         expect(dataServiceStub.generateDdiCdi).not.toHaveBeenCalled();
       });
+    });
+  });
+  describe('files tab layout and selection', () => {
+    const seedFiles = (component: DdiCdiComponent) => {
+      const mockMap = new Map<string, TreeNode<Datafile>>();
+      const rootNode: TreeNode<Datafile> = {
+        data: { name: '', directoryLabel: '' } as Datafile,
+        children: [
+          {
+            key: 'a.csv:file',
+            data: { name: 'a.csv', directoryLabel: '' } as Datafile,
+            children: [],
+          },
+          {
+            key: 'b.tsv:file',
+            data: { name: 'b.tsv', directoryLabel: '' } as Datafile,
+            children: [],
+          },
+        ],
+      };
+      mockMap.set('', rootNode);
+      utilsServiceStub.mapDatafiles.and.returnValue(mockMap);
+      component.setData({
+        id: 'doi:10.1/ABC',
+        url: 'https://example.org/ds',
+        data: [{ name: 'a.csv' } as Datafile, { name: 'b.tsv' } as Datafile],
+      });
+    };
+
+    const viewportOf = (fixture: ComponentFixture<DdiCdiComponent>) =>
+      fixture.debugElement
+        .query(By.directive(CdkVirtualScrollViewport))
+        .injector.get(CdkVirtualScrollViewport);
+
+    const rowCount = (fixture: ComponentFixture<DdiCdiComponent>) =>
+      fixture.nativeElement.querySelectorAll('.tt-row').length;
+
+    it('gives the viewport a height and remeasures after tab switches through the buttons', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      fixture.detectChanges();
+      seedFiles(fixture.componentInstance);
+      await fixture.whenStable();
+      const viewport = viewportOf(fixture);
+      expect(viewport.elementRef.nativeElement.offsetHeight).toBeGreaterThan(0);
+      expect(viewport.getViewportSize()).toBeGreaterThan(0);
+      expect(rowCount(fixture)).toBe(2);
+      const tabs = fixture.nativeElement.querySelectorAll(
+        '.nav-link',
+      ) as NodeListOf<HTMLButtonElement>;
+      tabs[1].click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.activeTab()).toBe('console');
+      expect(viewport.elementRef.nativeElement.offsetHeight).toBe(0);
+      tabs[0].click();
+      await fixture.whenStable();
+      expect(viewport.elementRef.nativeElement.offsetHeight).toBeGreaterThan(0);
+      expect(viewport.getViewportSize()).toBeGreaterThan(0);
+      expect(rowCount(fixture)).toBe(2);
+    });
+
+    it('returns to the files tab and remeasures when a new dataset loads', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      seedFiles(component);
+      await fixture.whenStable();
+      component.selectTab('console');
+      await fixture.whenStable();
+      const viewport = viewportOf(fixture);
+      expect(viewport.elementRef.nativeElement.offsetHeight).toBe(0);
+      component.datasetId.set('doi:10.1/NEW');
+      component.onDatasetChange();
+      await fixture.whenStable();
+      expect(component.activeTab()).toBe('files');
+      seedFiles(component);
+      await fixture.whenStable();
+      expect(viewport.elementRef.nativeElement.offsetHeight).toBeGreaterThan(0);
+      expect(viewport.getViewportSize()).toBeGreaterThan(0);
+      expect(rowCount(fixture)).toBe(2);
+    });
+
+    it('toggles one filename per row checkbox, selects and clears all from the header, and keeps the dataset link', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      seedFiles(component);
+      await fixture.whenStable();
+      expect(component.selectedFiles()).toEqual(new Set(['a.csv', 'b.tsv']));
+      const boxes = fixture.nativeElement.querySelectorAll(
+        '.tt-row input[type="checkbox"]',
+      ) as NodeListOf<HTMLInputElement>;
+      expect(boxes.length).toBe(2);
+      boxes[0].click();
+      await fixture.whenStable();
+      expect(component.selectedFiles()).toEqual(new Set(['b.tsv']));
+      boxes[0].click();
+      await fixture.whenStable();
+      expect(component.selectedFiles()).toEqual(new Set(['a.csv', 'b.tsv']));
+      const selectAll = fixture.nativeElement.querySelector(
+        '.tt-header button',
+      ) as HTMLButtonElement;
+      selectAll.click();
+      await fixture.whenStable();
+      expect(component.selectedFiles().size).toBe(0);
+      selectAll.click();
+      await fixture.whenStable();
+      expect(component.selectedFiles()).toEqual(new Set(['a.csv', 'b.tsv']));
+      const link = fixture.nativeElement.querySelector(
+        '.tt-header a',
+      ) as HTMLAnchorElement;
+      expect(link.getAttribute('href')).toBe('https://example.org/ds');
+      expect(link.textContent).toContain('doi:10.1/ABC');
     });
   });
 });

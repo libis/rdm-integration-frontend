@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 import { Datafile, Fileaction } from '../models/datafile';
 import { DownladablefileComponent } from './downladablefile.component';
 
@@ -45,11 +45,7 @@ describe('DownladablefileComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DownladablefileComponent],
-    })
-      .overrideComponent(DownladablefileComponent, {
-        set: { template: '<div></div>' },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(DownladablefileComponent);
     component = fixture.componentInstance;
@@ -67,19 +63,22 @@ describe('DownladablefileComponent', () => {
       attributes: { isFile: true },
     });
     fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', child);
+    fixture.componentRef.setInput('node', child);
     fixture.detectChanges();
 
     expect(component.node()).toBe(child);
     expect(component.actionIcon()).toBe(DownladablefileComponent.icon_download);
     expect(component.fileName()).toBe('README.md');
+    const cells = fixture.nativeElement.querySelectorAll('.tt-cell');
+    expect(cells.length).toBe(2);
+    expect(cells[0].textContent).toContain('README.md');
   });
 
   it('toggleAction cycles file actions and updates parent folder', () => {
     const { child, root, map } = buildTree();
     fixture.componentRef.setInput('datafile', child.data);
     fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', child);
+    fixture.componentRef.setInput('node', child);
     fixture.detectChanges();
 
     expect(child.data?.action).toBe(Fileaction.Ignore);
@@ -156,7 +155,7 @@ describe('DownladablefileComponent', () => {
       attributes: { isFile: true },
     });
     fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', child);
+    fixture.componentRef.setInput('node', child);
     fixture.detectChanges();
 
     expect(component.actionIcon()).toBe(DownladablefileComponent.icon_custom);
@@ -181,7 +180,7 @@ describe('DownladablefileComponent', () => {
       attributes: { isFile: true },
     });
     fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', child);
+    fixture.componentRef.setInput('node', child);
     fixture.detectChanges();
 
     expect(component.hostStyle()).toBe('');
@@ -213,7 +212,7 @@ describe('DownladablefileComponent', () => {
     const { child, map } = buildTree();
     fixture.componentRef.setInput('datafile', child.data);
     fixture.componentRef.setInput('rowNodeMap', map);
-    fixture.componentRef.setInput('rowNode', child);
+    fixture.componentRef.setInput('node', child);
     fixture.detectChanges();
 
     const emitSpy = spyOn(component.changed, 'emit');

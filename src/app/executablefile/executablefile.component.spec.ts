@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 import { Observable, Subject } from 'rxjs';
 import { DataService } from '../data.service';
 import { Datafile, Fileaction } from '../models/datafile';
@@ -96,11 +96,7 @@ describe('ExecutablefileComponent', () => {
         { provide: DataService, useClass: DataServiceStub },
         { provide: NotificationService, useClass: NotificationServiceStub },
       ],
-    })
-      .overrideComponent(ExecutablefileComponent, {
-        set: { template: '<div></div>' },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ExecutablefileComponent);
     component = fixture.componentInstance;
@@ -113,7 +109,7 @@ describe('ExecutablefileComponent', () => {
   const initialiseComponent = () => {
     const { exec, map } = buildTree();
     fixture.componentRef.setInput('datafile', exec.data);
-    fixture.componentRef.setInput('rowNode', exec);
+    fixture.componentRef.setInput('node', exec);
     fixture.componentRef.setInput('rowNodeMap', map);
     fixture.componentRef.setInput('pid', 'doi:10.123/ABC');
     fixture.componentRef.setInput('dv_token', 'secret');
@@ -124,6 +120,10 @@ describe('ExecutablefileComponent', () => {
     initialiseComponent();
     expect(component.node()?.data?.id).toBe('script.py');
     expect(component.queues().map((q) => q.value)).toEqual(['cpu', 'gpu']);
+    const cells = fixture.nativeElement.querySelectorAll('.tt-cell');
+    expect(cells.length).toBe(2);
+    expect(cells[0].textContent).toContain('script.py');
+    expect(fixture.nativeElement.querySelector('app-select')).not.toBeNull();
   });
 
   it('onSelectQueue enables compute when access granted', async () => {

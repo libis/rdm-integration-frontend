@@ -89,7 +89,7 @@ describe('File Action Styling - HostBinding Logic', () => {
 });
 
 describe('File Action Styling - Real TreeTable Integration', () => {
-  // This is the REAL test - render actual TreeTable with DatafileComponent rows
+  // This is the REAL test - render the tree table with DatafileComponent rows
   // and verify that the background colors are applied
 
   let fixture: any;
@@ -98,28 +98,47 @@ describe('File Action Styling - Real TreeTable Integration', () => {
   beforeEach(async () => {
     const { TestBed } = await import('@angular/core/testing');
     const { Component } = await import('@angular/core');
-    const { TreeTableModule } = await import('primeng/treetable');
+    const { TreeTableComponent } =
+      await import('../shared/ui/tree-table/tree-table.component');
+    const { TreeTableHeaderDirective, TreeTableRowDirective } =
+      await import('../shared/ui/tree-table/tree-table-templates');
     const { DatafileComponent } = await import('./datafile.component');
 
     @Component({
       selector: 'app-test-treetable',
       standalone: true,
-      imports: [TreeTableModule, DatafileComponent],
+      imports: [
+        TreeTableComponent,
+        TreeTableHeaderDirective,
+        TreeTableRowDirective,
+        DatafileComponent,
+      ],
       template: `
-        <p-treeTable [value]="files" [scrollable]="true">
-          <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-            <tr
-              app-datafile
-              #row="appDatafile"
-              [datafile]="rowData"
-              [loading]="false"
-              [rowNodeMap]="rowNodeMap"
-              [rowNode]="rowNode"
-              [isInFilter]="false"
-              [style]="row.hostStyle()"
-            ></tr>
-          </ng-template>
-        </p-treeTable>
+        <div style="height: 300px">
+          <app-tree-table #tt [nodes]="files" columns="1fr 4rem 4rem 1fr">
+            <ng-template appTreeTableHeader>
+              <div class="tt-cell">Source</div>
+              <div class="tt-cell"></div>
+              <div class="tt-cell"></div>
+              <div class="tt-cell">Target</div>
+            </ng-template>
+            <ng-template appTreeTableRow let-node let-level="level">
+              <div
+                app-datafile
+                #row="appDatafile"
+                class="tt-row"
+                [datafile]="node.data"
+                [node]="node"
+                [level]="level"
+                [loading]="false"
+                [rowNodeMap]="rowNodeMap"
+                [isInFilter]="false"
+                (toggle)="tt.toggle(node)"
+                [style]="row.hostStyle()"
+              ></div>
+            </ng-template>
+          </app-tree-table>
+        </div>
       `,
     })
     class TestTreeTableComponent {
@@ -180,16 +199,16 @@ describe('File Action Styling - Real TreeTable Integration', () => {
 
     fixture = TestBed.createComponent(TestTreeTableComponent);
     compiled = fixture.nativeElement as HTMLElement;
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should render TreeTable with file rows', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+  it('should render the tree table with file rows', () => {
+    const rows = compiled.querySelectorAll('div[app-datafile]');
     expect(rows.length).withContext('Should have 5 datafile rows').toBe(5);
   });
 
   it('should apply inline style vars to Copy row', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+    const rows = compiled.querySelectorAll('div[app-datafile]');
     const copyRow = rows[0] as HTMLElement;
 
     expect(copyRow.style.backgroundColor).toBe(
@@ -199,7 +218,7 @@ describe('File Action Styling - Real TreeTable Integration', () => {
   });
 
   it('should apply inline style vars to Update row', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+    const rows = compiled.querySelectorAll('div[app-datafile]');
     const updateRow = rows[1] as HTMLElement;
 
     expect(updateRow.style.backgroundColor).toBe(
@@ -209,7 +228,7 @@ describe('File Action Styling - Real TreeTable Integration', () => {
   });
 
   it('should apply inline style vars to Delete row', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+    const rows = compiled.querySelectorAll('div[app-datafile]');
     const deleteRow = rows[2] as HTMLElement;
 
     expect(deleteRow.style.backgroundColor).toBe(
@@ -219,7 +238,7 @@ describe('File Action Styling - Real TreeTable Integration', () => {
   });
 
   it('should apply inline style vars to Custom row', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+    const rows = compiled.querySelectorAll('div[app-datafile]');
     const customRow = rows[3] as HTMLElement;
 
     expect(customRow.style.backgroundColor).toBe(
@@ -229,15 +248,15 @@ describe('File Action Styling - Real TreeTable Integration', () => {
   });
 
   it('should leave ignore row without inline style overrides', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+    const rows = compiled.querySelectorAll('div[app-datafile]');
     const ignoreRow = rows[4] as HTMLElement;
 
     expect(ignoreRow.style.backgroundColor).toBe('');
     expect(ignoreRow.style.color).toBe('');
   });
 
-  it('should have VISIBLE background colors applied via component SCSS', () => {
-    const rows = compiled.querySelectorAll('tr[app-datafile]');
+  it('should have VISIBLE background colors applied via the app tokens', () => {
+    const rows = compiled.querySelectorAll('div[app-datafile]');
 
     // Test Copy row (should have green background)
     const copyRow = rows[0] as HTMLElement;
@@ -260,7 +279,7 @@ describe('File Action Styling - Real TreeTable Integration', () => {
     const customBg = customStyle.backgroundColor;
 
     // THE CRITICAL TEST: These should NOT be transparent
-    // If they are transparent, it means component SCSS is not being applied!
+    // If they are transparent, it means the global tokens are not applied!
     expect(copyBg)
       .withContext(
         `Copy row inline style. Style: ${copyRow.getAttribute('style')}`,

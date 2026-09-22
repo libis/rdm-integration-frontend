@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@angular/animations": "^21.2.14",
+    "@angular/cdk": "^21.2.14",
     "@angular/cli": "^21.2.13",
     "@angular/common": "^21.2.14",
     "@angular/compiler": "^21.2.14",
@@ -32,7 +33,6 @@
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.15",
     "@angular/router": "^21.2.15",
-    "@primeuix/themes": "^2.0.3",
     "@ro-kit/ui-widgets": "^1.0.63",
     "bootstrap": "^5.3.8",
     "jsonld": "^9.0.0",
@@ -40,7 +40,6 @@
     "n3": "^2.7.12",
     "ngx-autosize": "^2.0.4",
     "primeicons": "^7.0.0",
-    "primeng": "^21.1.10",
     "rdfxml-streaming-parser": "^3.3.0",
     "rxjs": "^7.8.2",
     "shacl-engine": "^1.1.2",

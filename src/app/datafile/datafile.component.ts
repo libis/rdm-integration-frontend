@@ -8,9 +8,8 @@ import {
   input,
   output,
 } from '@angular/core';
-import { TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
-import { TreeTableModule } from 'primeng/treetable';
+import { TreeNode } from '../models/tree-node';
+import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.component';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import {
@@ -20,10 +19,10 @@ import {
 } from '../shared/constants';
 
 @Component({
-  selector: 'tr[app-datafile]',
+  selector: 'div[app-datafile]',
   templateUrl: './datafile.component.html',
   styleUrls: ['./datafile.component.scss'],
-  imports: [TreeTableModule, ButtonDirective],
+  imports: [TreeTogglerComponent],
   exportAs: 'appDatafile',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,7 +34,9 @@ export class DatafileComponent {
   readonly rowNodeMap = input<Map<string, TreeNode<Datafile>>>(
     new Map<string, TreeNode<Datafile>>(),
   );
-  readonly rowNode = input<TreeNode<Datafile>>({});
+  readonly node = input.required<TreeNode<Datafile>>();
+  readonly level = input(0);
+  readonly toggle = output<void>();
   readonly isInFilter = input(false);
   // Trigger to force update when underlying data (action) mutates
   readonly trigger = input(0);
@@ -54,15 +55,6 @@ export class DatafileComponent {
   static readonly icon_update = 'pi pi-clone';
   static readonly icon_delete = 'pi pi-trash';
   static readonly icon_custom = 'pi pi-stop';
-
-  readonly node = computed<TreeNode<Datafile>>(() => {
-    const id = this.datafile().id;
-    const isFile = this.datafile().attributes?.isFile;
-    if (id !== undefined) {
-      return this.rowNodeMap().get(id + (isFile ? ':file' : '')) ?? {};
-    }
-    return {};
-  });
 
   readonly sourceFile = computed(() => {
     const datafile = this.datafile();

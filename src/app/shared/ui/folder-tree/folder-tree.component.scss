@@ -1,0 +1,20 @@
+.folder-tree {
+  display: block;
+}
+
+.folder-node {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  outline-offset: -2px;
+}
+
+.folder-node.selected {
+  background-color: var(--app-surface);
+  border-radius: var(--bs-border-radius);
+}
+
+.folder-label {
+  color: var(--app-text);
+  text-decoration: none;
+}

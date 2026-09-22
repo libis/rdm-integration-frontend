@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
+import { ToastService } from './ui/toast/toast.service';
 
 /**
  * Service for handling errors and user notifications.
@@ -8,59 +8,42 @@ import { MessageService } from 'primeng/api';
   providedIn: 'root',
 })
 export class NotificationService {
-  private readonly messageService = inject(MessageService, { optional: true });
+  private readonly toasts = inject(ToastService);
 
   showError(message: string): void {
-    if (this.messageService) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: message,
-        life: 8000,
-      });
-      return;
-    }
-    // eslint-disable-next-line no-restricted-syntax
-    alert(message);
+    this.toasts.show({
+      severity: 'error',
+      summary: 'Error',
+      detail: message,
+      life: 8000,
+    });
   }
 
   showSuccess(message: string): void {
-    if (this.messageService) {
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Success',
-        detail: message,
-        life: 4000,
-      });
-      return;
-    }
-    void message;
+    this.toasts.show({
+      severity: 'success',
+      summary: 'Success',
+      detail: message,
+      life: 4000,
+    });
   }
 
   showInfo(message: string): void {
-    if (this.messageService) {
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Info',
-        detail: message,
-        life: 4000,
-      });
-      return;
-    }
-    void message;
+    this.toasts.show({
+      severity: 'info',
+      summary: 'Info',
+      detail: message,
+      life: 4000,
+    });
   }
 
   showWarning(message: string): void {
-    if (this.messageService) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Warning',
-        detail: message,
-        life: 6000,
-      });
-      return;
-    }
-    void message;
+    this.toasts.show({
+      severity: 'warning',
+      summary: 'Warning',
+      detail: message,
+      life: 6000,
+    });
   }
 
   /**

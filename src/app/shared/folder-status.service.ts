@@ -2,7 +2,7 @@
 // Computes aggregate folder (non-file node) statuses based on child statuses.
 
 import { Injectable } from '@angular/core';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from '../models/tree-node';
 import { Datafile, Filestatus } from '../models/datafile';
 
 @Injectable({ providedIn: 'root' })

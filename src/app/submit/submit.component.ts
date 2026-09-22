@@ -30,12 +30,9 @@ import { Attributes, Datafile, Fileaction } from '../models/datafile';
 import { Metadata } from '../models/field';
 import { StoreResult } from '../models/store-result';
 
-// PrimeNG
+// UI
 import { FormsModule } from '@angular/forms';
-import { PrimeTemplate } from 'primeng/api';
-import { Button, ButtonDirective } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { Dialog } from 'primeng/dialog';
+import { DialogComponent } from '../shared/ui/dialog/dialog.component';
 
 // Components
 import { TransferProgressCardComponent } from '../shared/transfer-progress-card/transfer-progress-card.component';
@@ -51,12 +48,8 @@ import { SubscriptionManager } from '../shared/types';
   styleUrls: ['./submit.component.scss'],
   imports: [
     CommonModule,
-    ButtonDirective,
-    Dialog,
-    Checkbox,
+    DialogComponent,
     FormsModule,
-    PrimeTemplate,
-    Button,
     SubmittedFileComponent,
     TransferProgressCardComponent,
   ],

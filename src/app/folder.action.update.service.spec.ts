@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { FolderActionUpdateService } from './folder.action.update.service';
-import { TreeNode } from 'primeng/api';
+import { TreeNode } from './models/tree-node';
 import { Datafile, Fileaction, Filestatus } from './models/datafile';
 
 describe('FolderActionUpdateService', () => {

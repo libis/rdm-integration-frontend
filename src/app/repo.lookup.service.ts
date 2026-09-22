@@ -3,7 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { SelectItem } from 'primeng/api';
+import { SelectItem } from './models/select-item';
 import { RepoLookupRequest } from './models/repo-lookup';
 import { HierarchicalSelectItem } from './models/hierarchical-select-item';
 

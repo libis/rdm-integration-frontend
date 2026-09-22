@@ -7,9 +7,8 @@ import {
   input,
   output,
 } from '@angular/core';
-import { TreeNode } from 'primeng/api';
-import { ButtonDirective } from 'primeng/button';
-import { TreeTableModule } from 'primeng/treetable';
+import { TreeNode } from '../models/tree-node';
+import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.component';
 import { Field, Fieldaction } from '../models/field';
 import {
   FileActionStyle,
@@ -18,10 +17,10 @@ import {
 } from '../shared/constants';
 
 @Component({
-  selector: 'tr[app-metadatafield]',
+  selector: 'div[app-metadatafield]',
   templateUrl: './metadatafield.component.html',
   styleUrls: ['./metadatafield.component.scss'],
-  imports: [TreeTableModule, ButtonDirective],
+  imports: [TreeTogglerComponent],
   exportAs: 'appMetadatafield',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,7 +29,9 @@ export class MetadatafieldComponent {
   readonly rowNodeMap = input<Map<string, TreeNode<Field>>>(
     new Map<string, TreeNode<Field>>(),
   );
-  readonly rowNode = input<TreeNode<Field>>({});
+  readonly node = input.required<TreeNode<Field>>();
+  readonly level = input(0);
+  readonly toggle = output<void>();
 
   /** Emitted after action state changes to notify parent to refresh view */
   readonly changed = output<void>();
@@ -38,13 +39,6 @@ export class MetadatafieldComponent {
   static readonly icon_ignore = 'pi pi-stop';
   static readonly icon_copy = 'pi pi-check-square';
   static readonly icon_custom = 'pi pi-exclamation-triangle';
-
-  readonly node = computed<TreeNode<Field>>(() => {
-    const foundNode = [...this.rowNodeMap().values()].find(
-      (x) => x.data?.id === this.field().id,
-    );
-    return foundNode ?? this.rowNode();
-  });
 
   // Trigger to force update when underlying data (action) mutates
   readonly refreshTrigger = input(0);

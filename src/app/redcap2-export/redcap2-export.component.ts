@@ -11,16 +11,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { take } from 'rxjs';
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionHeader,
-  AccordionPanel,
-} from 'primeng/accordion';
-import { ButtonDirective } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { Select } from 'primeng/select';
-import { SelectItem } from 'primeng/api';
+import { CdkAccordionModule } from '@angular/cdk/accordion';
+import { SelectComponent } from '../shared/ui/select/select.component';
+import { SelectItem } from '../models/select-item';
 
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
@@ -72,17 +65,7 @@ interface Redcap2PluginOptions {
   selector: 'app-redcap2-export',
   templateUrl: './redcap2-export.component.html',
   styleUrls: ['./redcap2-export.component.scss'],
-  imports: [
-    CommonModule,
-    FormsModule,
-    ButtonDirective,
-    Select,
-    Checkbox,
-    Accordion,
-    AccordionPanel,
-    AccordionHeader,
-    AccordionContent,
-  ],
+  imports: [CommonModule, CdkAccordionModule, FormsModule, SelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Redcap2ExportComponent implements OnInit {
@@ -115,6 +98,18 @@ export class Redcap2ExportComponent implements OnInit {
   readonly loadingVariables = signal(false);
   readonly lastLoadedReportId = signal('');
   readonly expandedPanels = signal<string[]>(['0', '1', '2']);
+
+  isPanelExpanded(id: string): boolean {
+    return this.expandedPanels().includes(id);
+  }
+
+  setPanelExpanded(id: string, expanded: boolean): void {
+    this.expandedPanels.update((ids) =>
+      expanded
+        ? Array.from(new Set([...ids, id]))
+        : ids.filter((x) => x !== id),
+    );
+  }
   // Increments per variables request; stale responses are discarded.
   private loadSeq = 0;
 

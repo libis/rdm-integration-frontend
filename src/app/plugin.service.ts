@@ -2,7 +2,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { SelectItem } from 'primeng/api';
+import { SelectItem } from './models/select-item';
 import { Config, RepoPlugin } from './models/plugin';
 import { firstValueFrom } from 'rxjs';
 import { NavigationService } from './shared/navigation.service';

@@ -16,8 +16,6 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ButtonDirective } from 'primeng/button';
-import { ProgressBarModule } from 'primeng/progressbar';
 import { Observable, Subscription, merge, of, timer } from 'rxjs';
 import { map, switchMap, tap, takeWhile } from 'rxjs/operators';
 import { DataUpdatesService } from 'src/app/data.updates.service';
@@ -31,7 +29,7 @@ import { SubmitService, TransferTaskStatus } from '../../submit.service';
  */
 @Component({
   selector: 'app-transfer-progress-card',
-  imports: [CommonModule, ButtonDirective, ProgressBarModule],
+  imports: [CommonModule],
   templateUrl: './transfer-progress-card.component.html',
   styleUrls: ['./transfer-progress-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

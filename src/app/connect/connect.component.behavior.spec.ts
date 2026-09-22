@@ -13,7 +13,7 @@ import {
   provideRouter,
   withDisabledInitialNavigation,
 } from '@angular/router';
-import { SelectItem } from 'primeng/api';
+import { SelectItem } from '../models/select-item';
 import { of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
@@ -269,7 +269,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(comp.isConnectReady()).toBeFalse();
-    expect(comp.connectButtonClass()).toContain('p-button-secondary');
+    expect(comp.connectButtonClass()).toContain('btn-secondary');
 
     // Destroy and recreate to test valid state (computed signals don't track plain object properties)
     fixture.destroy();
@@ -279,7 +279,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(comp.isConnectReady()).toBeTrue();
-    expect(comp.connectButtonClass()).toContain('p-button-primary');
+    expect(comp.connectButtonClass()).toContain('btn-primary');
   });
 
   it('getRepoLookupRequest emits errors in expected order for missing fields and succeeds once populated', () => {
@@ -359,6 +359,18 @@ describe('ConnectComponent additional behavior/validation', () => {
     expect(matches.length).toBe(1);
   });
 
+  it('setPanelExpanded adds and removes panel ids without duplicates', () => {
+    const fixture = TestBed.createComponent(ConnectComponent);
+    const comp = fixture.componentInstance;
+    comp.expandedPanels.set(['0']);
+    comp.setPanelExpanded('1', true);
+    comp.setPanelExpanded('1', true);
+    expect(comp.expandedPanels()).toEqual(['0', '1']);
+    comp.setPanelExpanded('0', false);
+    expect(comp.expandedPanels()).toEqual(['1']);
+    expect(comp.isPanelExpanded('1')).toBeTrue();
+  });
+
   it('onDatasetSelectionChange triggers new dataset creation flow and hides message after timeout', () => {
     jasmine.clock().install();
     try {
@@ -369,7 +381,7 @@ describe('ConnectComponent additional behavior/validation', () => {
         { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
       ]);
       fixture.detectChanges();
-      comp.onDatasetSelectionChange({ value: 'CREATE_NEW_DATASET' });
+      comp.onDatasetSelectionChange('CREATE_NEW_DATASET');
       expect(comp.datasetId()).toContain('root:COLL:New Dataset');
       expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
       jasmine.clock().tick(3000);

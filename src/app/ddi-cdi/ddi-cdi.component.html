@@ -4,9 +4,8 @@
     <div class="col-auto">
       @if (generatedDdiCdi()) {
         <button
-          pButton
           type="button"
-          class="p-button-sm p-button-raised p-button-primary header-button"
+          class="btn btn-sm btn-primary header-button"
           (click)="submitGenerate()"
         >
           <i class="pi pi-angle-double-left"></i>&nbsp;Regenerate
@@ -38,9 +37,8 @@
     <div class="col-auto d-flex" style="gap: 0.5rem">
       @if (generatedDdiCdi()) {
         <button
-          pButton
           type="button"
-          class="p-button-sm p-button-raised p-button-secondary header-button"
+          class="btn btn-sm btn-secondary header-button"
           [disabled]="loading()"
           (click)="downloadDdiCdi()"
           title="Download the generated DDI-CDI JSON-LD file"
@@ -48,9 +46,8 @@
           <i class="pi pi-download"></i>&nbsp;Download
         </button>
         <button
-          pButton
           type="button"
-          class="p-button-sm p-button-raised p-button-primary header-button"
+          class="btn btn-sm btn-primary header-button"
           [disabled]="loading()"
           (click)="openInViewer()"
           title="Saves the DDI-CDI file to your dataset and opens the file page in Dataverse"
@@ -59,9 +56,8 @@
         </button>
       } @else {
         <button
-          pButton
           type="button"
-          class="p-button-sm p-button-raised p-button-primary header-button"
+          class="btn btn-sm btn-primary header-button"
           [disabled]="generateDisabled()"
           (click)="submitGenerate()"
         >
@@ -76,22 +72,18 @@
 
 <div class="mb-3">
   <label for="datasetId" class="form-label">Dataset DOI</label>
-  <p-select
-    appendTo="body"
-    autoWidth="false"
-    [style]="{ width: '100%' }"
+  <app-select
+    class="w-100"
     [editable]="datasetFieldEditable()"
-    id="datasetId"
+    inputId="datasetId"
     [options]="doiItems()"
     [filter]="true"
-    filterBy="label"
-    [resetFilterOnHide]="true"
-    (onFilter)="onDatasetSearch($event.filter)"
+    (filterChange)="onDatasetSearch($event)"
     [ngModel]="datasetId()"
     (ngModelChange)="datasetId.set($event)"
-    (onClick)="getDoiOptions()"
-    (onChange)="onDatasetChange()"
-  ></p-select>
+    (opened)="getDoiOptions()"
+    (valueChange)="onDatasetChange()"
+  ></app-select>
 </div>
 
 <!-- Info box about file filtering -->
@@ -106,10 +98,9 @@
 }
 
 <!-- Submit Generation Dialog -->
-<p-dialog
+<app-dialog
   header="Generate DDI-CDI Metadata"
   position="topright"
-  [modal]="true"
   [visible]="submitPopup()"
   (visibleChange)="submitPopup.set($event)"
 >
@@ -129,117 +120,147 @@
   <br /><br />
   <div style="text-align: right">
     @if (configLoaded() && sendMails()) {
-      <div>
-        <p-checkbox
+      <div class="form-check">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          id="sendEmailOnSuccessCB"
           [ngModel]="sendEmailOnSuccess()"
           (ngModelChange)="sendEmailOnSuccess.set($event)"
-          [binary]="true"
-          inputId="sendEmailOnSuccessCB"
-        ></p-checkbox>
-        <label for="sendEmailOnSuccessCB"
+        />
+        <label class="form-check-label" for="sendEmailOnSuccessCB"
           >Email me when the generation is completed</label
         >
       </div>
     }
   </div>
-  <ng-template pTemplate="footer">
-    <p-button
-      (onClick)="submitPopup.set(false)"
-      styleClass="p-button-sm p-button-raised p-button-secondary"
-      >Cancel</p-button
+  <div appDialogFooter>
+    <button
+      type="button"
+      class="btn btn-sm btn-secondary"
+      (click)="submitPopup.set(false)"
     >
-    <p-button
-      (onClick)="continueSubmitGenerate()"
-      styleClass="p-button-sm p-button-raised p-button-primary"
-      >OK</p-button
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="btn btn-sm btn-primary"
+      (click)="continueSubmitGenerate()"
     >
-  </ng-template>
-</p-dialog>
-
-<div style="height: 100% - 2rem; overflow: hidden">
-  <div style="float: left; width: 50%">
-    <p-tabs [value]="activeTab()" (valueChange)="activeTab.set($any($event))">
-      <p-tablist>
-        <p-tab value="files">Select files</p-tab>
-        <p-tab value="console">Console output</p-tab>
-      </p-tablist>
-      <p-tabpanels>
-        <p-tabpanel value="files">
-          <p-treeTable
-            [value]="rootNodeChildren()"
-            [loading]="loading()"
-            [scrollable]="true"
-            scrollHeight="flex"
-            [virtualScroll]="useVirtualScroll()"
-            [virtualScrollItemSize]="41"
-            (onNodeExpand)="recountVisibleRows()"
-            (onNodeCollapse)="recountVisibleRows()"
-          >
-            <ng-template pTemplate="loadingicon">
-              <i class="pi pi-spin pi-spinner"></i>
-            </ng-template>
-            <ng-template pTemplate="header">
-              <tr>
-                <th style="text-align: left">
-                  <a [href]="data().url" target="_blank">{{ data().id }}</a>
-                </th>
-                <th class="icon_col" style="text-align: right; width: 100px">
-                  <button
-                    pButton
-                    type="button"
-                    class="p-button-sm p-button-outlined p-button-secondary"
-                    title="Toggle select all"
-                    (click)="toggleSelectAll()"
-                  >
-                    <i [class]="selectAllIcon()"></i>
-                  </button>
-                </th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-              <tr
-                [ttRow]="rowNode"
-                [style]="
-                  selectedFiles().has(rowData.name || '')
-                    ? selectedFileStyle
-                    : ignoredFileStyle
-                "
-              >
-                <td>
-                  {{ rowData.name }}
-                </td>
-                <td style="text-align: center">
-                  <p-checkbox
-                    [binary]="true"
-                    [ngModel]="selectedFiles().has(rowData.name || '')"
-                    (ngModelChange)="toggleFileSelection(rowData.name || '')"
-                  ></p-checkbox>
-                </td>
-              </tr>
-            </ng-template>
-          </p-treeTable>
-        </p-tabpanel>
-        <p-tabpanel value="console">
-          <textarea
-            autosize
-            [minRows]="20"
-            [maxRows]="25"
-            [ngModel]="output()"
-            (ngModelChange)="output.set($event)"
-            readonly
-            [disabled]="outputDisabled()"
-            class="console-output"
-            style="width: 100%; font-family: monospace; font-size: 0.9rem"
-          ></textarea>
-        </p-tabpanel>
-      </p-tabpanels>
-    </p-tabs>
+      OK
+    </button>
   </div>
-  <div style="float: right; width: 50%">
+</app-dialog>
+
+<div class="ddi-split">
+  <div class="ddi-tabs-column">
+    <ul class="nav nav-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [class.active]="activeTab() === 'files'"
+          [attr.aria-selected]="activeTab() === 'files'"
+          (click)="selectTab('files')"
+        >
+          Select files
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          type="button"
+          class="nav-link"
+          role="tab"
+          [class.active]="activeTab() === 'console'"
+          [attr.aria-selected]="activeTab() === 'console'"
+          (click)="selectTab('console')"
+        >
+          Console output
+        </button>
+      </li>
+    </ul>
+    <div
+      role="tabpanel"
+      class="tab-pane-files"
+      [hidden]="activeTab() !== 'files'"
+    >
+      <app-tree-table
+        #tt
+        [nodes]="rootNodeChildren()"
+        [loading]="loading()"
+        columns="1fr 4rem"
+      >
+        <ng-template appTreeTableHeader>
+          <div class="tt-cell">
+            <a [href]="data().url" target="_blank">{{ data().id }}</a>
+          </div>
+          <div class="tt-cell text-center">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              title="Toggle select all"
+              aria-label="Toggle select all"
+              (click)="toggleSelectAll()"
+            >
+              <i [class]="selectAllIcon()"></i>
+            </button>
+          </div>
+        </ng-template>
+        <ng-template appTreeTableRow let-node let-level="level">
+          <div
+            class="tt-row"
+            role="row"
+            [style]="
+              selectedFiles().has(node.data.name || '')
+                ? selectedFileStyle
+                : ignoredFileStyle
+            "
+          >
+            <div class="tt-cell">
+              <app-tree-toggler
+                [node]="node"
+                [level]="level"
+                (toggle)="tt.toggle(node)"
+              ></app-tree-toggler
+              >{{ node.data.name }}
+            </div>
+            <div class="tt-cell text-center">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                [checked]="selectedFiles().has(node.data.name || '')"
+                [attr.aria-label]="'Select ' + (node.data.name || 'file')"
+                (change)="toggleFileSelection(node.data.name || '')"
+              />
+            </div>
+          </div>
+        </ng-template>
+      </app-tree-table>
+    </div>
+    <div
+      role="tabpanel"
+      class="tab-pane-console"
+      [hidden]="activeTab() !== 'console'"
+    >
+      <textarea
+        autosize
+        [minRows]="20"
+        [maxRows]="25"
+        [ngModel]="output()"
+        (ngModelChange)="output.set($event)"
+        readonly
+        [disabled]="outputDisabled()"
+        class="console-output"
+        style="width: 100%; font-family: monospace; font-size: 0.9rem"
+      ></textarea>
+    </div>
+  </div>
+  <div class="ddi-preview-column">
     @if (generatedDdiCdi()) {
       <div style="text-align: left; margin-bottom: 0.5rem">
         <strong>Generated DDI-CDI Output</strong>
-        <span style="color: var(--p-text-muted-color); margin-left: 1rem">
+        <span style="color: var(--app-muted); margin-left: 1rem">
           Use "Download" to save locally, or "Save &amp; Edit" to add to your
           dataset and open the file page in Dataverse.
         </span>
@@ -250,9 +271,9 @@
         [style.margin]="'0.2rem'"
         [style.height]="'600px'"
         [style.overflow]="'auto'"
-        [style.border]="'1px solid var(--p-surface-border)'"
-        [style.border-radius]="'var(--p-border-radius)'"
-        [style.background-color]="'var(--p-content-background)'"
+        [style.border]="'1px solid var(--app-border)'"
+        [style.border-radius]="'var(--bs-border-radius)'"
+        [style.background-color]="'var(--app-bg)'"
       >
         <pre
           style="

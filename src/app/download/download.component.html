@@ -1,13 +1,12 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
 
 <!-- Guest/Login choice popup -->
-<p-dialog
+<app-dialog
   header="Access Options"
-  [modal]="true"
   [visible]="showGuestLoginPopup()"
   (visibleChange)="showGuestLoginPopup.set($event)"
   [closable]="false"
-  (onHide)="showPreviewUrlInput.set(false); accessDeniedForGuest.set(false)"
+  (hidden)="showPreviewUrlInput.set(false); accessDeniedForGuest.set(false)"
 >
   <!-- Step 1: Initial choice view -->
   @if (!showPreviewUrlInput()) {
@@ -28,29 +27,32 @@
     <div class="p-inputgroup mt-3">
       <input
         type="text"
-        pInputText
         [ngModel]="previewUrlInput()"
         (ngModelChange)="previewUrlInput.set($event)"
         placeholder="Paste preview URL or token here"
-        class="w-100"
+        class="form-control w-100"
       />
     </div>
   }
 
-  <ng-template pTemplate="footer">
+  <div appDialogFooter>
     <!-- Step 1 buttons (initial choice: guest or login) -->
     @if (!showPreviewUrlInput()) {
       <div class="d-flex justify-content-end" style="gap: 0.5rem">
-        <p-button
+        <button
+          type="button"
+          class="btn btn-sm btn-secondary"
           (click)="continueAsGuest()"
-          styleClass="p-button-sm p-button-raised p-button-secondary"
-          >Continue as guest</p-button
         >
-        <p-button
+          Continue as guest
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary"
           (click)="continueWithLogin()"
-          styleClass="p-button-sm p-button-raised p-button-primary"
-          >Log in with KU Leuven</p-button
         >
+          Log in with KU Leuven
+        </button>
       </div>
     }
     <!-- Step 2 buttons (preview URL input after guest access denied) -->
@@ -59,25 +61,29 @@
         class="d-flex justify-content-end align-items-center"
         style="gap: 0.5rem"
       >
-        <p-button
+        <button
+          type="button"
+          class="btn btn-sm btn-secondary"
           (click)="
             showPreviewUrlInput.set(false);
             previewUrlInput.set('');
             accessDeniedForGuest.set(false)
           "
-          styleClass="p-button-sm p-button-raised p-button-secondary"
-          ><i class="pi pi-arrow-left"></i>&nbsp;Back</p-button
         >
-        <p-button
+          <i class="pi pi-arrow-left"></i>&nbsp;Back
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary"
           (click)="continueWithPreviewUrl()"
-          styleClass="p-button-sm p-button-raised p-button-primary"
           [disabled]="!previewUrlInput()"
-          >Continue</p-button
         >
+          Continue
+        </button>
       </div>
     }
-  </ng-template>
-</p-dialog>
+  </div>
+</app-dialog>
 
 <div class="row justify-content-between align-items-center sticky-menu">
   @if (configLoaded() && showDVToken()) {
@@ -104,20 +110,18 @@
   </div>
   <div class="col-auto d-flex" style="gap: 0.5rem">
     <button
-      pButton
       type="button"
       [attr.hidden]="!done() ? null : ''"
-      class="p-button-sm p-button-raised p-button-primary"
+      class="btn btn-sm btn-primary"
       [disabled]="downloadDisabled()"
       (click)="download()"
     >
       Start transfer&nbsp;<i class="pi pi-angle-double-right"></i>
     </button>
     <button
-      pButton
       type="button"
       [attr.hidden]="done() ? null : ''"
-      class="p-button-sm p-button-raised p-button-primary"
+      class="btn btn-sm btn-primary"
       (click)="goToDataset()"
     >
       Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i>
@@ -129,22 +133,18 @@
 
 <div class="mb-3">
   <label for="datasetId" class="form-label">Dataset DOI</label>
-  <p-select
-    appendTo="body"
-    autoWidth="false"
-    [style]="{ width: '100%' }"
+  <app-select
+    class="w-100"
     [editable]="datasetFieldEditable()"
-    id="datasetId"
+    inputId="datasetId"
     [options]="doiItems()"
     [filter]="true"
-    filterBy="label"
-    [resetFilterOnHide]="true"
-    (onFilter)="onDatasetSearch($event.filter)"
+    (filterChange)="onDatasetSearch($event)"
     [ngModel]="datasetId()"
     (ngModelChange)="datasetId.set($event)"
-    (onClick)="getDoiOptions()"
-    (onChange)="onDatasetChange()"
-  ></p-select>
+    (opened)="getDoiOptions()"
+    (valueChange)="onDatasetChange()"
+  ></app-select>
 </div>
 
 <app-transfer-progress-card
@@ -161,50 +161,45 @@
 @if (datasetId() && data()?.id) {
   <div class="download-split">
     <div class="download-split-left">
-      <p-treeTable
-        [value]="rootNodeChildren()"
-        [loading]="loading()"
-        [scrollable]="true"
-        scrollHeight="flex"
-        [virtualScroll]="useVirtualScroll()"
-        [virtualScrollItemSize]="41"
-        (onNodeExpand)="recountVisibleRows()"
-        (onNodeCollapse)="recountVisibleRows()"
-      >
-        <ng-template pTemplate="loadingicon">
-          <i class="pi pi-spin pi-spinner"></i>
-        </ng-template>
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="text-align: left">
+      <div class="download-table">
+        <app-tree-table
+          #tt
+          [nodes]="rootNodeChildren()"
+          [loading]="loading()"
+          columns="1fr 6rem"
+        >
+          <ng-template appTreeTableHeader>
+            <div class="tt-cell">
               <a [href]="data()!.url" target="_blank">{{ data()!.id }}</a>
-            </th>
-            <th class="icon_col" style="text-align: right">
+            </div>
+            <div class="tt-cell text-end">
               <button
-                pButton
-                label=""
                 type="button"
-                class="p-button-sm p-button-outlined p-button-secondary"
+                class="btn btn-sm btn-outline-secondary"
                 (click)="toggleAction()"
               >
                 <i [class]="action()"></i>
               </button>
-            </th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-rowNode let-rowData="rowData">
-          <tr
-            app-downloadablefile
-            #downloadRow="appDownloadablefile"
-            [datafile]="rowData"
-            [rowNodeMap]="rowNodeMap()"
-            [rowNode]="rowNode"
-            [trigger]="refreshTrigger()"
-            [style]="downloadRow.hostStyle()"
-            (changed)="onRowActionChanged()"
-          ></tr
-        ></ng-template>
-      </p-treeTable>
+            </div>
+          </ng-template>
+          <ng-template appTreeTableRow let-node let-level="level">
+            <div
+              app-downloadablefile
+              #downloadRow="appDownloadablefile"
+              class="tt-row"
+              role="row"
+              [datafile]="node.data"
+              [node]="node"
+              [level]="level"
+              [rowNodeMap]="rowNodeMap()"
+              [trigger]="refreshTrigger()"
+              [style]="downloadRow.hostStyle()"
+              (toggle)="tt.toggle(node)"
+              (changed)="onRowActionChanged()"
+            ></div>
+          </ng-template>
+        </app-tree-table>
+      </div>
     </div>
     <div class="download-split-right">
       <div style="margin: 0.2rem; padding-left: 2rem">
@@ -212,39 +207,31 @@
           <label for="repoNameSearch" class="form-label">{{
             repoNameFieldName()
           }}</label>
-          <p-select
-            appendTo="body"
+          <app-select
             [editable]="repoNameFieldEditable()"
-            id="repoNameSearch"
+            inputId="repoNameSearch"
             [options]="repoNames()"
             [ngModel]="foundRepoName()"
             (ngModelChange)="foundRepoName.set($event)"
             [placeholder]="repoNamePlaceholder()"
             [filter]="true"
-            filterBy="label"
-            [resetFilterOnHide]="true"
-            (onFilter)="onRepoNameSearch($event.filter)"
-            (onClick)="startRepoSearch()"
-            (onChange)="onRepoChange()"
-          ></p-select>
+            (filterChange)="onRepoNameSearch($event)"
+            (opened)="startRepoSearch()"
+            (valueChange)="onRepoChange()"
+          ></app-select>
         </div>
         <div class="mb-3">
           <label for="repoBranchTree" class="form-label">{{
             optionFieldName()
           }}</label
           ><br />
-          <p-tree
-            selectionMode="single"
-            [selection]="selectedOption()"
-            [value]="rootOptions()"
-            (onNodeExpand)="getOptions($event.node)"
+          <app-folder-tree
+            [nodes]="rootOptions()"
             [loading]="optionsLoading()"
-            (selectionChange)="optionSelected($event)"
-          >
-            <ng-template pTemplate="loadingicon">
-              <i class="pi pi-spin pi-spinner"></i>
-            </ng-template>
-          </p-tree>
+            [selected]="selectedOption()"
+            (selectedChange)="optionSelected($event)"
+            (nodeExpand)="getOptions($event)"
+          ></app-folder-tree>
           @if (option()) {
             <div class="form-text">Selected: {{ option() }}</div>
           }
@@ -254,10 +241,12 @@
   </div>
 } @else if (loading()) {
   <div class="mb-4 mt-4 text-center">
-    <p-progressSpinner
-      strokeWidth="4"
-      [style]="{ width: '3rem', height: '3rem' }"
-    ></p-progressSpinner>
+    <span
+      class="spinner-border"
+      role="status"
+      aria-label="loading"
+      style="width: 3rem; height: 3rem"
+    ></span>
     <p class="text-muted mt-2">Loading dataset files&hellip;</p>
   </div>
 } @else {

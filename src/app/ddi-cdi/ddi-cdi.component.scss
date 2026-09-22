@@ -3,84 +3,85 @@
 .alert {
   padding: 1rem;
   margin-bottom: 1rem;
-  border-radius: var(--p-border-radius);
+  border-radius: var(--bs-border-radius);
   border: 1px solid;
 }
 
 .alert-info {
   background-color: color-mix(
     in srgb,
-    var(--p-primary-color) 10%,
-    var(--p-content-background) 90%
+    var(--app-primary) 10%,
+    var(--app-bg) 90%
   );
-  border-color: color-mix(
-    in srgb,
-    var(--p-primary-color) 30%,
-    var(--p-content-background) 70%
-  );
-  color: var(--p-text-color);
+  border-color: color-mix(in srgb, var(--app-primary) 30%, var(--app-bg) 70%);
+  color: var(--app-text);
 
   i {
-    color: var(--p-primary-color);
+    color: var(--app-primary);
   }
 }
 
-.icon_col {
-  width: 100px;
+// The tab column is a flex column with a definite height so the files pane
+// and its tree table can fill it. 14rem is the space above the split.
+.ddi-split {
+  display: flex;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.ddi-tabs-column,
+.ddi-preview-column {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.ddi-tabs-column {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 14rem);
+}
+
+.tab-pane-files {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.tab-pane-console {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 .console-output {
-  background-color: var(--p-form-field-background);
-  color: var(--p-form-field-color);
-  border: 1px solid var(--p-form-field-border-color);
-  border-radius: var(--p-border-radius);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
   padding: 0.75rem;
   resize: vertical;
 
   &:focus {
     outline: none;
-    border-color: var(--p-form-field-focus-border-color);
+    border-color: var(--bs-primary);
   }
 
   &:disabled {
-    background-color: var(--p-form-field-disabled-background);
-    color: var(--p-form-field-disabled-color);
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
     cursor: not-allowed;
   }
 }
 
-// Ensure TreeTable inherits theme-aware colors (matches compare component pattern)
-::ng-deep {
-  .p-treetable {
-    .p-treetable-thead > tr > th {
-      background-color: var(--p-content-background);
-      color: var(--p-text-color);
-      border-color: var(--p-surface-border);
-    }
-
-    .p-treetable-tbody > tr {
-      background-color: var(--p-content-background);
-      color: var(--p-text-color);
-
-      > td {
-        background-color: inherit;
-        color: inherit;
-        border-color: var(--p-surface-border);
-      }
-    }
-  }
-}
-
 .input {
-  background-color: var(--p-input-background);
-  color: var(--p-input-text-color);
-  border: 1px solid var(--p-input-border-color);
-  border-radius: var(--p-border-radius);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
   padding: 0.5rem 0.75rem;
 
   &:focus {
     outline: none;
-    border-color: var(--p-primary-color);
+    border-color: var(--app-primary);
   }
 }
 
@@ -90,32 +91,32 @@
 shacl-form {
   // Critical background colors that control form field styling
   // Note: The component uses "rokit" (single 'o'), not "rootkit"
-  --rokit-background-color-inner: var(--p-form-field-background);
-  --rokit-light-background-color-inner: var(--p-content-background);
-  --rokit-light-background-darker-color-inner: var(--p-surface-100);
+  --rokit-background-color-inner: var(--bs-body-bg);
+  --rokit-light-background-color-inner: var(--app-bg);
+  --rokit-light-background-darker-color-inner: var(--bs-secondary-bg);
 
   // Additional theme mappings for comprehensive dark mode support
-  --rokit-background-color: var(--p-form-field-background);
-  --rokit-surface-color: var(--p-content-background);
+  --rokit-background-color: var(--bs-body-bg);
+  --rokit-surface-color: var(--app-bg);
 
   // Text colors
-  --rokit-text-color: var(--p-form-field-color);
-  --rokit-text-secondary-color: var(--p-text-muted-color);
+  --rokit-text-color: var(--bs-body-color);
+  --rokit-text-secondary-color: var(--app-muted);
 
   // Border colors
-  --rokit-border-color: var(--p-form-field-border-color);
+  --rokit-border-color: var(--bs-border-color);
 
   // Form field states
-  --rokit-input-background: var(--p-form-field-background);
-  --rokit-input-color: var(--p-form-field-color);
-  --rokit-input-border-color: var(--p-form-field-border-color);
-  --rokit-input-hover-border-color: var(--p-form-field-hover-border-color);
-  --rokit-input-focus-border-color: var(--p-form-field-focus-border-color);
+  --rokit-input-background: var(--bs-body-bg);
+  --rokit-input-color: var(--bs-body-color);
+  --rokit-input-border-color: var(--bs-border-color);
+  --rokit-input-hover-border-color: var(--bs-border-color);
+  --rokit-input-focus-border-color: var(--bs-primary);
 
   // Disabled state
-  --rokit-input-disabled-background: var(--p-form-field-disabled-background);
-  --rokit-input-disabled-color: var(--p-form-field-disabled-color);
+  --rokit-input-disabled-background: var(--bs-secondary-bg);
+  --rokit-input-disabled-color: var(--bs-secondary-color);
 
   // Placeholder
-  --rokit-input-placeholder-color: var(--p-form-field-placeholder-color);
+  --rokit-input-placeholder-color: var(--bs-secondary-color);
 }
