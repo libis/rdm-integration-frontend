@@ -15,7 +15,7 @@ const SEVERITY_CLASS: Record<ToastSeverity, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
-      class="toast-container position-fixed top-0 end-0 p-3"
+      class="toast-container position-fixed end-0 p-3 app-toasts"
       aria-live="polite"
       aria-atomic="true"
     >
@@ -39,6 +39,13 @@ const SEVERITY_CLASS: Record<ToastSeverity, string> = {
         </div>
       }
     </div>
+  `,
+  styles: `
+    /* Below the application header, which sits at z-index 9999, and above it in stacking. */
+    .app-toasts {
+      top: var(--app-header-height);
+      z-index: 10000;
+    }
   `,
 })
 export class ToastComponent {
