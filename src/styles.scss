@@ -16,6 +16,40 @@
   margin: 1rem 1rem 0 auto;
 }
 
+// Buttons centre their icon and text on one line; the gap replaces the old
+// non-breaking-space separators.
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+// Row action toggles: square, muted border, icon in the text colour.
+.tt-cell .btn-outline-secondary {
+  --bs-btn-color: var(--app-text);
+  --bs-btn-border-color: var(--app-muted);
+  --bs-btn-hover-color: var(--app-text);
+  --bs-btn-hover-bg: var(--app-surface);
+  --bs-btn-hover-border-color: var(--app-muted);
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+}
+
+// CDK accordion elements are custom elements, so they need block layout for
+// Bootstrap's accordion borders to draw around them.
+cdk-accordion,
+cdk-accordion-item {
+  display: block;
+}
+
+// Keep the header colour also when a panel is collapsed.
+.accordion-button.collapsed {
+  color: var(--bs-accordion-active-color);
+  background-color: var(--bs-accordion-active-bg);
+}
+
 .tt-row {
   display: grid;
   grid-template-columns: var(--tt-columns);

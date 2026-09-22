@@ -70,7 +70,7 @@
             accessDeniedForGuest.set(false)
           "
         >
-          <i class="pi pi-arrow-left"></i>&nbsp;Back
+          <i class="pi pi-arrow-left"></i>Back
         </button>
         <button
           type="button"
@@ -116,7 +116,7 @@
       [disabled]="downloadDisabled()"
       (click)="download()"
     >
-      Start transfer&nbsp;<i class="pi pi-angle-double-right"></i>
+      Start transfer<i class="pi pi-angle-double-right"></i>
     </button>
     <button
       type="button"
@@ -124,7 +124,7 @@
       class="btn btn-sm btn-primary"
       (click)="goToDataset()"
     >
-      Go to dataset&nbsp;<i class="pi pi-angle-double-right"></i>
+      Go to dataset<i class="pi pi-angle-double-right"></i>
     </button>
   </div>
 </div>
@@ -139,6 +139,7 @@
     inputId="datasetId"
     [options]="doiItems()"
     [filter]="true"
+    placeholder="Select dataset"
     (filterChange)="onDatasetSearch($event)"
     [ngModel]="datasetId()"
     (ngModelChange)="datasetId.set($event)"

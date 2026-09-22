@@ -2,7 +2,7 @@
 <div class="row justify-content-between align-items-center sticky-menu">
   <div class="col-auto">
     <button type="button" class="btn btn-sm btn-secondary" (click)="back()">
-      <i class="pi pi-angle-double-left"></i>&nbsp;Restart
+      <i class="pi pi-angle-double-left"></i>Restart
     </button>
   </div>
   <div class="col text-center">
@@ -17,7 +17,7 @@
       [title]="proceedTitle()"
       [attr.disabled]="!canProceed() || loading() ? '' : null"
     >
-      Confirm file actions&nbsp;<i class="pi pi-angle-double-right"></i>
+      Confirm file actions<i class="pi pi-angle-double-right"></i>
     </button>
   </div>
 </div>
@@ -33,7 +33,7 @@
         [attr.disabled]="loading() ? '' : null"
         style="margin-right: 0.5rem"
       >
-        <i [class]="icon_mirror"></i>&nbsp;Mirror
+        <i [class]="icon_mirror"></i>Mirror
       </button>
       <button
         type="button"
@@ -43,7 +43,7 @@
         [attr.disabled]="loading() ? '' : null"
         style="margin-right: 0.5rem"
       >
-        <i [class]="icon_update"></i>&nbsp;Copy
+        <i [class]="icon_update"></i>Copy
       </button>
       <button
         type="button"
@@ -53,7 +53,7 @@
         [attr.disabled]="loading() ? '' : null"
         style="margin-right: 0.5rem"
       >
-        <i [class]="icon_noaction"></i>&nbsp;Clear
+        <i [class]="icon_noaction"></i>Clear
       </button>
       <button
         type="button"
@@ -62,7 +62,7 @@
         title="Refresh files status"
         [hidden]="refreshHidden()"
       >
-        <i class="pi pi-refresh"></i>&nbsp;Refresh
+        <i class="pi pi-refresh"></i>Refresh
       </button>
     </div>
   </div>

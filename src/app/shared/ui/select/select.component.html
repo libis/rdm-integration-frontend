@@ -31,8 +31,10 @@
     >
       @if (selectedLabel(); as label) {
         {{ label }}
-      } @else {
+      } @else if (placeholder()) {
         <span class="text-body-secondary">{{ placeholder() }}</span>
+      } @else {
+        &nbsp;
       }
     </button>
   }
