@@ -67,6 +67,9 @@ export class SelectComponent implements ControlValueAccessor {
   readonly valueChange = output<string | undefined>();
 
   readonly optionTemplate = contentChild(SelectOptionDirective);
+  /** The text input in editable mode, the select button otherwise. */
+  readonly trigger = viewChild<ElementRef<HTMLElement>>('trigger');
+  readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   readonly filterInput = viewChild<ElementRef<HTMLInputElement>>('filterInput');
   readonly listbox = viewChild(CdkListbox);
   private readonly renderInjector = inject(Injector);
@@ -137,9 +140,23 @@ export class SelectComponent implements ControlValueAccessor {
 
   close(): void {
     if (!this.open()) return;
+    // The panel is destroyed with the focused filter or option in it, which
+    // would drop keyboard focus to the body. Hand it back to the trigger
+    // before that happens, unless the user has already moved elsewhere.
+    const restoreFocus = this.focusIsLost();
     this.open.set(false);
     this.filterText.set('');
     this.onTouched();
+    if (restoreFocus) this.trigger()?.nativeElement.focus();
+  }
+
+  private focusIsLost(): boolean {
+    const active = document.activeElement;
+    return (
+      active === null ||
+      active === document.body ||
+      (this.panel()?.nativeElement.contains(active) ?? false)
+    );
   }
 
   onPanelKeydown(event: KeyboardEvent): void {

@@ -41,7 +41,7 @@ const SEVERITY_CLASS: Record<ToastSeverity, string> = {
     </div>
   `,
   styles: `
-    /* Below the application header, which sits at z-index 9999, and above it in stacking. */
+    /* Positioned below the application header, and above everything in stacking. */
     .app-toasts {
       top: var(--app-header-height);
       z-index: 10000;

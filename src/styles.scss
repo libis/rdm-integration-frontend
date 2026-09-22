@@ -137,13 +137,16 @@ img {
   margin-left: auto;
 }
 
+// The header is a flex item of the body, so its z-index counts. Bootstrap's
+// fixed layer (1030) keeps it above the sticky menu and the CDK overlays but
+// below the modal backdrop (1050), the modal (1055) and the toasts.
 .dataverse-header-block {
   height: var(--app-header-height);
   border-width: 0 0 0.06rem;
   background-color: var(--app-bg);
   border-color: var(--app-border);
   box-shadow: 0 0.06rem 0.3rem rgba(0, 0, 0, 0.075);
-  z-index: 9999;
+  z-index: 1030;
 }
 
 .dataverse-navbar-logo-ref {

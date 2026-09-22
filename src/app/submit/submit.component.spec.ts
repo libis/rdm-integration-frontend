@@ -146,6 +146,7 @@ describe('SubmitComponent', () => {
 
     notificationServiceStub = {
       showError: jasmine.createSpy('showError'),
+      showSuccess: jasmine.createSpy('showSuccess'),
     };
 
     pluginServiceStub = {
@@ -468,7 +469,7 @@ describe('SubmitComponent', () => {
     );
   });
 
-  it('continueSubmit should handle globus task id being null', async () => {
+  it('continueSubmit finishes a delete-only globus submit without waiting for a task', async () => {
     // Set globus plugin and recreate component
     credentialsStub._setPlugin('globus');
     fixture = TestBed.createComponent(SubmitComponent);
@@ -489,6 +490,10 @@ describe('SubmitComponent', () => {
     await component.continueSubmit();
     expect(component.transferTaskId()).toBeNull();
     expect(component.transferMonitorUrl()).toBeNull();
+    expect(component.transferInProgress()).toBeFalse();
+    expect(component.done()).toBeTrue();
+    expect(component.datasetUrl()).toBe('http://example.com');
+    expect(notificationServiceStub.showSuccess).toHaveBeenCalled();
   });
 
   it('onStatusPollingChange should update transferInProgress', () => {

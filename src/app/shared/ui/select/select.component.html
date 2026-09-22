@@ -2,6 +2,7 @@
   @if (editable()) {
     <div class="input-group">
       <input
+        #trigger
         type="text"
         class="form-control"
         [id]="inputId()"
@@ -22,6 +23,7 @@
     </div>
   } @else {
     <button
+      #trigger
       type="button"
       class="form-select text-start"
       [id]="inputId()"
@@ -51,6 +53,7 @@
   (detach)="close()"
 >
   <div
+    #panel
     class="app-select-panel dropdown-menu show position-static shadow"
     (keydown)="onPanelKeydown($event)"
   >

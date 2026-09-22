@@ -121,13 +121,68 @@ describe('SelectComponent', () => {
     expect(panel()).toBeNull();
   });
 
-  it('closes on Escape without changing the value', async () => {
+  it('closes on Escape without changing the value and focuses the trigger again', async () => {
     trigger().click();
     await fixture.whenStable();
     key(document.activeElement!, 'Escape');
     await fixture.whenStable();
     expect(panel()).toBeNull();
     expect(host.value()).toBeUndefined();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('focuses the trigger again after an option is picked by keyboard', async () => {
+    host.filter.set(false);
+    await fixture.whenStable();
+    trigger().click();
+    await fixture.whenStable();
+    key(document.activeElement!, 'ArrowDown');
+    key(document.activeElement!, 'Enter');
+    await fixture.whenStable();
+    expect(host.value()).toBe('b');
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('focuses the trigger again after a backdrop click', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    (document.querySelector('.cdk-overlay-backdrop') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('leaves focus alone when it already moved outside the panel', async () => {
+    const other = document.createElement('button');
+    document.body.appendChild(other);
+    try {
+      trigger().click();
+      await fixture.whenStable();
+      other.focus();
+      key(panel()!, 'Escape');
+      await fixture.whenStable();
+      expect(panel()).toBeNull();
+      expect(document.activeElement).toBe(other);
+    } finally {
+      other.remove();
+    }
+  });
+
+  it('focuses the text input again when the editable panel closes', async () => {
+    host.editable.set(true);
+    await fixture.whenStable();
+    (
+      fixture.nativeElement.querySelector(
+        '.app-select .btn',
+      ) as HTMLButtonElement
+    ).click();
+    await fixture.whenStable();
+    key(document.activeElement!, 'Escape');
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('input.form-control'),
+    );
   });
 
   it('filters locally and emits filterChange', async () => {
