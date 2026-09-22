@@ -1,11 +1,14 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 // The page is a column so the tree table takes the remaining height below the
-// application header (3.125rem, see .dataverse-header-block in styles.scss).
+// application header and above the footer (heights in styles.scss), minus the
+// container padding.
 :host {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 3.125rem);
+  height: calc(
+    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
+  );
 }
 
 .treetable-container {
