@@ -1,6 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,6 +22,8 @@ import { DataUpdatesService } from '../data.updates.service';
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { PluginService } from '../plugin.service';
 import { FolderStatusService } from '../shared/folder-status.service';
+import { NotificationService } from '../shared/notification.service';
+import { extractReauth, storePendingReauth } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { UtilsService } from '../utils.service';
 
@@ -82,6 +85,7 @@ export class CompareComponent
   private readonly utils = inject(UtilsService);
   private readonly snapshotStorage = inject(SnapshotStorageService);
   private readonly folderStatusService = inject(FolderStatusService);
+  private readonly notificationService = inject(NotificationService);
 
   // Subscriptions for cleanup
   private readonly subscriptions = new Set<Subscription>();
@@ -376,9 +380,8 @@ export class CompareComponent
 
     let subscription: Subscription;
     // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
-    subscription = this.dataUpdatesService
-      .updateData(dataItems, id)
-      .subscribe(async (data: CompareResult) => {
+    subscription = this.dataUpdatesService.updateData(dataItems, id).subscribe({
+      next: async (data: CompareResult) => {
         this.subscriptions.delete(subscription);
         if (!this.loading() || !this.pollingActive) {
           return;
@@ -400,8 +403,44 @@ export class CompareComponent
             this.getUpdatedData(cnt);
           }
         }
-      });
-    this.subscriptions.add(subscription);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subscriptions.delete(subscription);
+        if (!this.pollingActive) {
+          return;
+        }
+        this.pollingActive = false;
+        this.loading.set(false);
+        this.refreshHidden.set(false);
+
+        const reauth = extractReauth(err);
+        if (reauth) {
+          storePendingReauth(reauth);
+          this.notificationService.showError(
+            'The repository requires re-authentication. Redirecting to login...',
+          );
+          this.dataStateService.resetState();
+          this.router.navigate(['/connect']);
+          return;
+        }
+        const detail =
+          typeof err.error === 'string'
+            ? err.error
+            : err.message || 'The request could not be completed.';
+        this.notificationService.showError(
+          `Updating file status failed: ${detail}`,
+        );
+        if (err.status === 401) {
+          this.dataStateService.resetState();
+          this.router.navigate(['/connect'], {
+            queryParams: { reset: 'true' },
+          });
+        }
+      },
+    });
+    if (!subscription.closed) {
+      this.subscriptions.add(subscription);
+    }
   }
 
   refresh(): void {

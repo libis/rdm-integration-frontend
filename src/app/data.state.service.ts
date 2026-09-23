@@ -8,12 +8,15 @@ import {
   Subject,
   Subscription,
   takeUntil,
+  timeout,
+  TimeoutError,
 } from 'rxjs';
 import { DataService } from './data.service';
 import { CompareResult, Key } from './models/compare-result';
 import { extractReauth, storePendingReauth } from './shared/reauth';
 import { NotificationService } from './shared/notification.service';
 import { UtilsService } from './utils.service';
+import { APP_CONSTANTS } from './shared/constants';
 
 @Injectable({
   providedIn: 'root',
@@ -80,10 +83,17 @@ export class DataStateService {
   }
 
   private async getCompareData(key: Key, generation: number): Promise<void> {
+    const deadline = Date.now() + APP_CONSTANTS.INITIAL_COMPARE_TIMEOUT_MS;
     while (this.isCurrentGeneration(generation)) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) {
+        break;
+      }
       try {
         const res = await firstValueFrom(
-          this.dataService.getCachedData(key).pipe(takeUntil(this.cancelPoll$)),
+          this.dataService
+            .getCachedData(key)
+            .pipe(timeout({ first: remaining }), takeUntil(this.cancelPoll$)),
         );
         if (!this.isCurrentGeneration(generation)) {
           return;
@@ -117,6 +127,9 @@ export class DataStateService {
         ) {
           return;
         }
+        if (err instanceof TimeoutError) {
+          break;
+        }
         const reauth = extractReauth(err);
         if (reauth) {
           storePendingReauth(reauth);
@@ -136,6 +149,12 @@ export class DataStateService {
         });
         return;
       }
+    }
+    if (this.isCurrentGeneration(generation)) {
+      this.notificationService.showError(
+        'Comparing timed out. Please restart the comparison.',
+      );
+      this.router.navigate(['/connect']);
     }
   }
 

@@ -13,6 +13,9 @@ export const APP_CONSTANTS = {
   // Sleep duration between retries (ms)
   RETRY_SLEEP_DURATION: 1000,
 
+  // Match the backend's two-hour deadline for the initial source comparison.
+  INITIAL_COMPARE_TIMEOUT_MS: 2 * 60 * 60 * 1000,
+
   // PrimeIcons
   ICONS: {
     NO_ACTION: 'pi pi-stop',

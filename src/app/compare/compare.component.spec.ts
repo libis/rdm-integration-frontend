@@ -10,7 +10,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { Router } from '@angular/router';
-import { Observable, Observer, Subscription, of } from 'rxjs';
+import { Observable, Observer, Subscription, of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DataUpdatesService } from '../data.updates.service';
@@ -19,6 +19,8 @@ import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import { PluginService } from '../plugin.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { APP_CONSTANTS } from '../shared/constants';
+import { NotificationService } from '../shared/notification.service';
+import { takePendingReauth } from '../shared/reauth';
 import { CompareComponent } from './compare.component';
 
 class StubDataStateService {
@@ -811,6 +813,69 @@ describe('CompareComponent', () => {
       expect(dataUpdatesStub.updateData.calls.count()).toBe(1);
 
       component.ngOnDestroy();
+    });
+
+    it('shows a progress request failure and allows Refresh to recover', () => {
+      const notify = spyOn(TestBed.inject(NotificationService), 'showError');
+      const update = spyOn(
+        TestBed.inject(DataUpdatesService),
+        'updateData',
+      ).and.returnValue(
+        throwError(() => ({ status: 500, error: 'job failed' })),
+      );
+      component.data.set({ id: 'id', data: [], status: ResultStatus.Updating });
+      component['startUpdatePolling']();
+
+      expect(notify).toHaveBeenCalledWith(
+        'Updating file status failed: job failed',
+      );
+      expect(component.loading()).toBeFalse();
+      expect(component.refreshHidden()).toBeFalse();
+
+      update.and.returnValue(
+        of({ id: 'id', data: [], status: ResultStatus.Finished }),
+      );
+      component.refresh();
+      expect(update).toHaveBeenCalledTimes(2);
+      expect(component.data().status).toBe(ResultStatus.Finished);
+      expect(component.loading()).toBeFalse();
+    });
+
+    it('preserves a progress reauth request and returns to login', () => {
+      spyOn(TestBed.inject(NotificationService), 'showError');
+      const navigate = spyOn(TestBed.inject(Router), 'navigate');
+      spyOn(TestBed.inject(DataUpdatesService), 'updateData').and.returnValue(
+        throwError(() => ({
+          status: 401,
+          error: { reauth: { required_domains: ['example.org'] } },
+        })),
+      );
+      dataStateStub.updateState({
+        id: 'id',
+        data: [],
+        status: ResultStatus.Updating,
+      });
+      fixture.detectChanges();
+
+      expect(component.loading()).toBeFalse();
+      expect(dataStateStub.state$()).toBeNull();
+      expect(takePendingReauth()).toEqual({ domains: ['example.org'] });
+      expect(navigate).toHaveBeenCalledWith(['/connect']);
+    });
+
+    it('requests a login reset for a plain progress 401', () => {
+      spyOn(TestBed.inject(NotificationService), 'showError');
+      const navigate = spyOn(TestBed.inject(Router), 'navigate');
+      spyOn(TestBed.inject(DataUpdatesService), 'updateData').and.returnValue(
+        throwError(() => ({ status: 401, error: 'session expired' })),
+      );
+      component.data.set({ id: 'id', data: [], status: ResultStatus.Updating });
+      component['startUpdatePolling']();
+
+      expect(component.loading()).toBeFalse();
+      expect(navigate).toHaveBeenCalledWith(['/connect'], {
+        queryParams: { reset: 'true' },
+      });
     });
 
     it('stops recursive compare polling after destroy', async () => {

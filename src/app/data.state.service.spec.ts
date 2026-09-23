@@ -12,6 +12,7 @@ import { DataStateService } from './data.state.service';
 import { NotificationService } from './shared/notification.service';
 import { takePendingReauth } from './shared/reauth';
 import { UtilsService } from './utils.service';
+import { APP_CONSTANTS } from './shared/constants';
 
 class MockDataService {
   key$ = of({ key: 'k1' });
@@ -65,6 +66,7 @@ describe('DataStateService', () => {
   });
 
   afterEach(() => {
+    service.cancelInitialization();
     sessionStorage.clear();
   });
 
@@ -103,6 +105,53 @@ describe('DataStateService', () => {
     data.cached$.next({ ready: true, res: { data: [] }, err: 'boom' });
     await new Promise<void>((r) => setTimeout(r));
     expect(notify.errors.some((e) => e.includes('boom'))).toBeTrue();
+  });
+
+  it('stops polling a missing result at the deadline and allows a new comparison', async () => {
+    let now = 0;
+    spyOn(Date, 'now').and.callFake(() => now);
+    spyOn(TestBed.inject(UtilsService), 'sleep').and.callFake(async () => {
+      now += APP_CONSTANTS.INITIAL_COMPARE_TIMEOUT_MS;
+    });
+    const poll = spyOn(data, 'getCachedData').and.returnValue(
+      of({ ready: false }),
+    );
+    init();
+    await new Promise<void>((resolve) => setTimeout(resolve));
+
+    expect(poll).toHaveBeenCalledTimes(1);
+    expect(notify.errors).toEqual([
+      'Comparing timed out. Please restart the comparison.',
+    ]);
+    expect(router.navigated[0].commands).toEqual(['/connect']);
+
+    poll.and.returnValue(
+      of({ ready: true, res: { id: 'new-result', data: [] } }),
+    );
+    init();
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    expect(service.state$()?.id).toBe('new-result');
+  });
+
+  it('times out and cancels a cached-result request that never responds', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(0));
+    try {
+      let cancelled = false;
+      data.getCachedData = () =>
+        new Observable(() => () => {
+          cancelled = true;
+        });
+      init();
+      jasmine.clock().tick(APP_CONSTANTS.INITIAL_COMPARE_TIMEOUT_MS);
+      await Promise.resolve();
+
+      expect(cancelled).toBeTrue();
+      expect(notify.errors[0]).toContain('Comparing timed out');
+      expect(router.navigated[0].commands).toEqual(['/connect']);
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('handles ready true with missing response by leaving state null', async () => {
