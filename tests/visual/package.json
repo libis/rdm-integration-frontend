@@ -1,0 +1,9 @@
+{
+  "name": "datasync-visual-checks",
+  "private": true,
+  "description": "Mock API and screenshot harness for the datasync frontend",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^25.16.0"
+  }
+}
