@@ -151,6 +151,54 @@ describe('SelectComponent', () => {
     );
   });
 
+  // As with a native select: the arrow keys open the panel from the closed
+  // trigger and go straight into the list, past the filter.
+  for (const [k, altKey] of [
+    ['ArrowDown', false],
+    ['ArrowUp', false],
+    ['ArrowDown', true],
+  ] as const) {
+    it(`opens from the trigger on ${altKey ? 'Alt+' : ''}${k} and moves into the list`, async () => {
+      host.value.set('b');
+      await fixture.whenStable();
+      trigger().focus();
+      expect(key(trigger(), k, { altKey })).toBeFalse();
+      await fixture.whenStable();
+      expect(panel()).not.toBeNull();
+      expect(host.opens).toBe(1);
+      expect(document.activeElement).toBe(list());
+      expect(activeOption()).toBe(panelOptions()[1]);
+    });
+  }
+
+  for (const altKey of [false, true]) {
+    it(`opens from the editable input on ${altKey ? 'Alt+' : ''}ArrowDown and moves into the list`, async () => {
+      host.editable.set(true);
+      await fixture.whenStable();
+      const input = fixture.nativeElement.querySelector(
+        'input.form-control',
+      ) as HTMLInputElement;
+      input.focus();
+      expect(key(input, 'ArrowDown', { altKey })).toBeFalse();
+      await fixture.whenStable();
+      expect(panel()).not.toBeNull();
+      expect(document.activeElement).toBe(list());
+      expect(activeOption()).toBe(panelOptions()[0]);
+    });
+  }
+
+  it('leaves ArrowUp to the caret in the editable input', async () => {
+    host.editable.set(true);
+    await fixture.whenStable();
+    const input = fixture.nativeElement.querySelector(
+      'input.form-control',
+    ) as HTMLInputElement;
+    input.focus();
+    expect(key(input, 'ArrowUp')).toBeTrue();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+  });
+
   it('moves focus from the filter into the list on ArrowDown', async () => {
     trigger().click();
     await fixture.whenStable();

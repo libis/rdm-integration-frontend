@@ -13,6 +13,7 @@
         [disabled]="isDisabled()"
         [value]="value() ?? ''"
         (input)="onEditableInput($any($event.target).value)"
+        (keydown)="onTriggerKeydown($event)"
       />
       <button
         #toggleButton
@@ -39,6 +40,7 @@
       [attr.aria-expanded]="open()"
       [attr.aria-controls]="open() ? listId : null"
       (click)="toggle()"
+      (keydown)="onTriggerKeydown($event)"
     >
       @if (selectedLabel(); as label) {
         {{ label }}

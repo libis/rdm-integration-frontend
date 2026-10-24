@@ -154,7 +154,22 @@ export class SelectComponent implements ControlValueAccessor {
     else this.show();
   }
 
-  show(): void {
+  // As with a native select, the arrow keys open the panel from the closed
+  // trigger and go straight into the list: ArrowDown, Alt+ArrowDown and
+  // ArrowUp on the button, only ArrowDown (with or without Alt) in the
+  // editable input, where ArrowUp moves the caret.
+  onTriggerKeydown(event: KeyboardEvent): void {
+    if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const opens =
+      event.key === 'ArrowDown' ||
+      (event.key === 'ArrowUp' && !this.editable());
+    if (!opens || this.isDisabled()) return;
+    event.preventDefault();
+    this.show(true);
+  }
+
+  /** Opens the panel with focus on the filter, or on the list if intoList. */
+  show(intoList = false): void {
     if (this.open()) return;
     this.listLabel.set(this.triggerLabel() || this.placeholder() || 'Options');
     this.open.set(true);
@@ -163,7 +178,7 @@ export class SelectComponent implements ControlValueAccessor {
       () => {
         if (!this.open()) return;
         const filterInput = this.filterInput();
-        if (filterInput) filterInput.nativeElement.focus();
+        if (filterInput && !intoList) filterInput.nativeElement.focus();
         else this.listbox()?.focus();
       },
       { injector: this.renderInjector },
