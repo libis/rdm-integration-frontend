@@ -19,7 +19,7 @@ export function resizeTestWindow(width: number, height: number): () => void {
   };
 }
 
-export interface PageLayout {
+interface PageLayout {
   /** window.innerHeight */
   window: number;
   /**
