@@ -57,44 +57,45 @@ specs from `review-shared-ui.spec.ts` and `review-select-focus.spec.ts`. The con
 flows that use the select (repository type, dataset search, free DOI) keep their specs green.
 
 ### Task R3: Folder tree
-I2, I11, and the `*` key. `stopPropagation()` in the handled branches, no dead `tabindex`,
+I2, I11, and the `*` key, plus the tree's own ARIA (R6 merged here, Eryk 2026-10-25:
+"ARIA belongs with the component being touched"). `stopPropagation()` in the handled branches, no dead `tabindex`,
 `aria-selected`, a name for the tree, the label as a non-focusable span with focus on the
 node itself after a click. Regression specs from `review-shared-ui.spec.ts`. The Globus picker
 integration spec passes unchanged in meaning; the picker rules hold. Pilot check with a live
 endpoint stays with Eryk.
 
-### Task R4: Compare togglers and status filter
-I3 and I8. Chevron state driven by a signal shared by both togglers of a row; the filter
+### Task R4: Compare togglers, status filter, table semantics and button names
+I3 and I8, plus I9 (`treegrid` structure with levels and expansion state, `columnheader`
+and `gridcell`) and I10 (`aria-label` on every icon only button: action toggles, toggle
+all, filter), since they live in the tree table and its rows (R6 merged here). Chevron state driven by a signal shared by both togglers of a row; the filter
 overlay closes its state on detach, focuses its first control on open and returns focus on
 close. Regression spec from `review-compare-toggler.spec.ts` plus a keyboard spec for the
 filter.
 
-### Task R5: Toasts, dialog, dark mode leftovers
-I6, M10, M6, M7. Close button visible on every severity in both modes; `aria-live`
+### Task R5: Toasts, dialog, dark mode leftovers, tabs and accordions
+I6, M10, M6, M7, plus M11 (tab and accordion wiring with arrow keys on the tab list, and
+the DDI-CDI active tab focus ring clipped by `.ddi-split`), R6 merged here. Close button visible on every severity in both modes; `aria-live`
 assertive only for errors; timers pause on hover and focus; body scroll locked while a dialog
 is open and the CDK overlay container above Bootstrap's modal; status colours from Bootstrap
 emphasis tokens and dark rules keyed on `[data-bs-theme=dark]`. Regression spec for the close
 button styles from the reviewer's demo. Screenshots: only the intended pixels change, listed
 in the task report.
 
-### Task R6: Table semantics and names
-I9, I10, M11. `treegrid` structure with levels and expansion state, `columnheader` and
-`gridcell`, `aria-label` on every icon only button (action toggles, toggle all, filter), tab
-and accordion wiring with arrow keys on the tab list. Specs for the roles and names.
+### Task R7: Cleanup, handed to Ozgur
+Eryk, 2026-10-25: the cleanup goes to Ozgur. The task list is in
+`docs/superpowers/plans/2026-10-25-cleanup-for-ozgur.md`: delete the two stale files
+(`progress.md`, `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md`), M12 leftovers, M13 (the dataset
+search quartet, the file tree builder, the connect and download picker pair), M15 test
+patterns, the rest of M14 (page suites that replace the template with a placeholder), the
+`ai-context.md` theming section, and the two R1 minors (stale comment in
+`compare.component.scss`, a `split-pane` mixin). Not run by the agents.
 
-### Task R7: Cleanup
-M4 (label), M8, M9, M12, M13 where it is cheap (the dataset search quartet and the file tree
-builder; leave the rest with a note), M15, the `ai-context.md` theming section rewritten
-around `data-bs-theme` and the `--app-*` tokens, `progress.md` and
-`TRANSFER_CARD_VISUAL_ENHANCEMENTS.md` corrected or removed if obsolete (ask through the
-report, do not delete history). Delete `submit-styling.spec.ts`, serve the primeicons fonts
-in Karma, `jasmine.clock()` for the debounce tests where the change is mechanical.
-
-### Task R8: Report and final screenshots
-`docs/superpowers/plans/2026-10-24-review-fixes-report.md`: commits per task, which
-finding each commit closes, verification outputs, the regression specs added, intended
-visual changes with before and after images, what stays open (pilot Globus check, anything
-deferred), deviations. Final strict harness run, light and dark, both viewports.
+### Task R8: Changelog and screenshot diff
+No written report (Eryk, 2026-10-25). The controller appends to
+`docs/superpowers/plans/2026-09-22-cdk-migration-report.md` a short section: the commit list
+since 091d5e5 from the one line messages, grouped by task; the screenshot comparison per
+set in one line each; the final strict harness result and gate numbers. Final light and
+dark strict runs at both viewports.
 
 ## Deviations
 
