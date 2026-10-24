@@ -83,9 +83,14 @@ class Flow {
   }
 
   // Clicks the first visible, enabled element matching selector whose text is one of texts
-  // (any text when texts is omitted), then waits for the page to settle.
+  // (any text when texts is omitted) with the real pointer, as a user would: the element is
+  // scrolled into view and the mouse clicks the centre of its box, so a transparent backdrop
+  // left on top would take the click. Such a click fails here, naming the element on top.
+  // The pointer then leaves the page, so no hover style ends up in the capture, and the page
+  // settles.
   async click(selector, texts) {
-    const clicked = await this.page.evaluate(
+    const what = texts ? `"${texts.join('" or "')}" (${selector})` : selector;
+    const found = await this.page.evaluateHandle(
       (selector, texts) => {
         const isVisible = (el) => {
           const box = el.getBoundingClientRect();
@@ -98,24 +103,50 @@ class Flow {
         const isEnabled = (el) =>
           !el.disabled && el.getAttribute("aria-disabled") !== "true";
         const text = (el) => el.textContent.replace(/\s+/g, " ").trim();
-        const target = [...document.querySelectorAll(selector)].find(
-          (el) =>
-            (!texts || texts.includes(text(el))) &&
-            isVisible(el) &&
-            isEnabled(el),
+        return (
+          [...document.querySelectorAll(selector)].find(
+            (el) =>
+              (!texts || texts.includes(text(el))) &&
+              isVisible(el) &&
+              isEnabled(el),
+          ) ?? null
         );
-        if (!target) {
-          return false;
-        }
-        target.click();
-        return true;
       },
       selector,
       texts,
     );
-    if (!clicked) {
-      const what = texts ? `"${texts.join('" or "')}" (${selector})` : selector;
+    const target = found.asElement();
+    if (!target) {
+      await found.dispose();
       throw new Error(`nothing visible to click for ${what}`);
+    }
+    try {
+      await target.evaluate((el) =>
+        el.scrollIntoView({ block: "nearest", inline: "nearest" }),
+      );
+      const { x, y } = await target.clickablePoint();
+      const onTop = await target.evaluate(
+        (el, x, y) => {
+          const hit = document.elementFromPoint(x, y);
+          if (hit && (hit === el || el.contains(hit))) {
+            return null;
+          }
+          return hit
+            ? `<${hit.localName}${[...hit.classList].map((c) => `.${c}`).join("")}>`
+            : "nothing";
+        },
+        x,
+        y,
+      );
+      if (onTop) {
+        throw new Error(
+          `a click on ${what} at (${Math.round(x)}, ${Math.round(y)}) would hit ${onTop}`,
+        );
+      }
+      await this.page.mouse.click(x, y);
+      await this.page.mouse.move(-1, -1);
+    } finally {
+      await target.dispose();
     }
     await this.settle();
   }
