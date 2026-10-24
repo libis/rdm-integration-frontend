@@ -23,6 +23,7 @@ import {
   signal,
   TemplateRef,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectItem } from '../../../models/select-item';
@@ -72,6 +73,8 @@ export class SelectComponent implements ControlValueAccessor {
   readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   readonly filterInput = viewChild<ElementRef<HTMLInputElement>>('filterInput');
   readonly listbox = viewChild(CdkListbox);
+  readonly list = viewChild<ElementRef<HTMLElement>>('list');
+  readonly listOptions = viewChildren<CdkOption<string>>(CdkOption);
   private readonly renderInjector = inject(Injector);
 
   /** The form value. May be free text in editable mode. */
@@ -160,7 +163,24 @@ export class SelectComponent implements ControlValueAccessor {
   }
 
   onPanelKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') this.close();
+    if (event.key === 'Escape') {
+      this.close();
+    } else if (
+      (event.key === 'Enter' || event.key === ' ') &&
+      this.list()?.nativeElement.contains(event.target as Node)
+    ) {
+      const active = this.listOptions().find((o) => o.isActive());
+      if (active && !active.disabled && active.value === this.value()) {
+        this.close();
+      }
+    }
+  }
+
+  // The listbox emits no change when the selected option is activated again
+  // (by click here, by Enter or Space in onPanelKeydown), so the panel closes
+  // here; a pick of another option closes it in pick.
+  onOptionClick(option: SelectItem<string>): void {
+    if (!option.disabled && option.value === this.value()) this.close();
   }
 
   onFilterInput(text: string): void {

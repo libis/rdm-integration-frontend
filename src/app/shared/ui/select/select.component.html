@@ -71,6 +71,7 @@
       </div>
     }
     <ul
+      #list
       class="list-unstyled mb-0 app-select-list"
       cdkListbox
       [cdkListboxValue]="listValue()"
@@ -83,6 +84,7 @@
           [cdkOptionDisabled]="option.disabled ?? false"
           [cdkOptionTypeaheadLabel]="optionLabel(option)"
           [title]="option.title ?? ''"
+          (click)="onOptionClick(option)"
         >
           @if (optionTemplate(); as tpl) {
             <ng-container

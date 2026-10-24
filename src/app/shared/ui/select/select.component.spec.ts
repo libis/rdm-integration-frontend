@@ -57,7 +57,7 @@ describe('SelectComponent', () => {
     Array.from(
       document.querySelectorAll('.cdk-overlay-container .app-select-option'),
     ) as HTMLElement[];
-  const keyCodes = { ArrowDown: 40, Enter: 13, Escape: 27 };
+  const keyCodes = { ArrowDown: 40, Enter: 13, Escape: 27, ' ': 32 };
   const key = (el: Element, k: keyof typeof keyCodes) =>
     el.dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -89,6 +89,37 @@ describe('SelectComponent', () => {
     expect(trigger().textContent).toContain('Beta');
     expect(panel()).toBeNull();
   });
+
+  // The listbox emits no change when the selected option is activated again,
+  // so the panel stayed open and its transparent backdrop took the next click.
+  it('closes when the selected option is clicked again, without a valueChange', async () => {
+    host.value.set('b');
+    await fixture.whenStable();
+    trigger().click();
+    await fixture.whenStable();
+    panelOptions()[1].click();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(host.value()).toBe('b');
+    expect(host.changes).toEqual([]);
+  });
+
+  for (const k of ['Enter', ' '] as const) {
+    it(`closes on ${k === ' ' ? 'Space' : k} on the selected option and focuses the trigger again`, async () => {
+      host.filter.set(false);
+      host.value.set('b');
+      await fixture.whenStable();
+      trigger().click();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(panelOptions()[1]);
+      key(document.activeElement!, k);
+      await fixture.whenStable();
+      expect(panel()).toBeNull();
+      expect(host.value()).toBe('b');
+      expect(host.changes).toEqual([]);
+      expect(document.activeElement).toBe(trigger());
+    });
+  }
 
   it('focuses the filter after the panel has rendered', async () => {
     trigger().click();
