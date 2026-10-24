@@ -421,7 +421,10 @@ describe('ComputeComponent layout and row state', () => {
     expect(rows().length).toBe(40);
     const layout = measurePage(fixture.nativeElement);
     expect(layout.window).toBe(768);
-    expect(layout.document).toBeLessThanOrEqual(layout.window);
+    expect(layout.pageHeight).toBeLessThanOrEqual(layout.window);
+    expect(layout.hostScrollHeight).toBeLessThanOrEqual(
+      layout.hostClientHeight,
+    );
     expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
     expect(layout.header).toBe(layout.headerNoRows);
     expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
@@ -440,7 +443,10 @@ describe('ComputeComponent layout and row state', () => {
     expect(trigger.textContent).toContain(label);
     expect(trigger.getBoundingClientRect().height).toBe(oneLine);
     const layout = measurePage(fixture.nativeElement);
-    expect(layout.document).toBeLessThanOrEqual(layout.window);
+    expect(layout.pageHeight).toBeLessThanOrEqual(layout.window);
+    expect(layout.hostScrollHeight).toBeLessThanOrEqual(
+      layout.hostClientHeight,
+    );
     expect(layout.header).toBe(layout.headerNoRows);
   });
 

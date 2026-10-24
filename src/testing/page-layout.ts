@@ -23,11 +23,15 @@ interface PageLayout {
   /** window.innerHeight */
   window: number;
   /**
-   * The document height the page would give in the app: the header, the
-   * container padding, the page host with anything that overflows it, the
-   * padding and the footer.
+   * A model of the height the page takes in the app, not a measured document
+   * height: the header and footer tokens, the container padding and the page
+   * host's box, plus whatever overflows the host when it does not clip.
    */
-  document: number;
+  pageHeight: number;
+  /** The page host's content height (scrollHeight). */
+  hostScrollHeight: number;
+  /** The page host's own height (clientHeight). */
+  hostClientHeight: number;
   /** One rem in px. */
   rem: number;
   /** The tree table body (.tt-body). */
@@ -60,13 +64,18 @@ export function measurePage(host: HTMLElement): PageLayout {
     headerNoRows = height(header);
     header.style.flex = flex;
   }
+  const clips = getComputedStyle(host).overflowY !== 'visible';
   return {
     window: window.innerHeight,
-    document:
+    pageHeight:
       token('--app-header-height') +
       2 * rem +
-      Math.max(host.clientHeight, host.scrollHeight) +
+      (clips
+        ? host.offsetHeight
+        : Math.max(host.offsetHeight, host.scrollHeight)) +
       token('--app-footer-height'),
+    hostScrollHeight: host.scrollHeight,
+    hostClientHeight: host.clientHeight,
     rem,
     body: height(host.querySelector('.tt-body')),
     header: height(header),

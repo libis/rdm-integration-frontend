@@ -1578,7 +1578,10 @@ describe('DdiCdiComponent', () => {
         expect(
           fixture.nativeElement.querySelector('.alert-info'),
         ).not.toBeNull();
-        expect(layout.document).toBeLessThanOrEqual(layout.window);
+        expect(layout.pageHeight).toBeLessThanOrEqual(layout.window);
+        expect(layout.hostScrollHeight).toBeLessThanOrEqual(
+          layout.hostClientHeight,
+        );
         expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
         expect(layout.header).toBe(layout.headerNoRows);
         expect(rowCount(fixture)).toBeGreaterThan(10);
@@ -1589,7 +1592,10 @@ describe('DdiCdiComponent', () => {
           Array.from({ length: 400 }, (_, i) => `"line ${i}": true`).join('\n'),
         );
         const layout = measurePage(fixture.nativeElement);
-        expect(layout.document).toBeLessThanOrEqual(layout.window);
+        expect(layout.pageHeight).toBeLessThanOrEqual(layout.window);
+        expect(layout.hostScrollHeight).toBeLessThanOrEqual(
+          layout.hostClientHeight,
+        );
         expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
         const preview = fixture.nativeElement.querySelector(
           '.ddi-preview',

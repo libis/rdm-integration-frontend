@@ -1031,7 +1031,10 @@ describe('CompareComponent layout', () => {
         const fixture = await render(rejected);
         const layout = measurePage(fixture.nativeElement);
         expect(layout.window).toBe(768);
-        expect(layout.document).toBeLessThanOrEqual(layout.window);
+        expect(layout.pageHeight).toBeLessThanOrEqual(layout.window);
+        expect(layout.hostScrollHeight).toBeLessThanOrEqual(
+          layout.hostClientHeight,
+        );
         expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
         expect(layout.header).toBe(layout.headerNoRows);
         expect(viewportSize(fixture)).toBeGreaterThanOrEqual(12 * layout.rem);
