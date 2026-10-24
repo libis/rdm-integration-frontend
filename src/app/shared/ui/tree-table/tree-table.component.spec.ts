@@ -147,6 +147,19 @@ describe('TreeTableComponent header', () => {
       noRows,
     );
   });
+
+  it('reserves the body scrollbar gutter without a scrollbar of its own', async () => {
+    const fixture = TestBed.createComponent(StaticHostComponent);
+    fixture.componentInstance.nodes.set(
+      Array.from({ length: 40 }, (_, i) => ({ data: `f${i}.py` })),
+    );
+    await fixture.whenStable();
+    const head = header(fixture.nativeElement);
+    const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
+    expect(getComputedStyle(head).overflowY).toBe('hidden');
+    expect(getComputedStyle(head).scrollbarGutter).toBe('stable');
+    expect(head.clientWidth).toBe(body.clientWidth);
+  });
 });
 
 describe('TreeTableComponent', () => {
