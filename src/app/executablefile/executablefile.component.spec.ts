@@ -177,4 +177,19 @@ describe('ExecutablefileComponent', () => {
       sendEmailOnSuccess: false,
     });
   });
+
+  it('gives the run button the height of the queue select', async () => {
+    initialiseComponent();
+    await fixture.whenStable();
+    const run = fixture.nativeElement.querySelector(
+      'button.btn-primary',
+    ) as HTMLButtonElement;
+    const trigger = fixture.nativeElement.querySelector(
+      '.form-select',
+    ) as HTMLElement;
+    expect(run.style.height).toBe('');
+    expect(run.getBoundingClientRect().height).toBe(
+      trigger.getBoundingClientRect().height,
+    );
+  });
 });
