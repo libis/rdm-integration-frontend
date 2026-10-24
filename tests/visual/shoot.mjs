@@ -659,6 +659,10 @@ async function capture(def, viewport) {
     missed.push(name);
   } finally {
     await context.close();
+    // Whatever the page expects, a request the mock could not answer fails the capture.
+    for (const problem of server.takeProblems()) {
+      logError(`mock: ${problem}`);
+    }
   }
 }
 

@@ -8,11 +8,13 @@ scripts and fixtures are committed.
 
 - `server.mjs`: serves a built app and answers `/api/*` from `fixtures/*.json`. Only Node
   built ins. Exports `startServer({dist, port, rejected, longLabel})`, which resolves to
-  `{url, close, setVariant, variant}`: `setVariant({rejected, longLabel})` changes what the
-  following requests answer and the `variant` getter returns the current variant. A route
-  answers 200 with the JSON its handler returns, or any other status with
+  `{url, close, setVariant, variant, takeProblems}`: `setVariant({rejected, longLabel})`
+  changes what the following requests answer and the `variant` getter returns the current
+  variant. A route answers 200 with the JSON its handler returns, or any other status with
   `reply(status, body)`, a string body as `text/plain` the way the Go backend writes its
-  errors. Requests without a route are logged and answered with 404.
+  errors. A request without a route (answered 404) or whose handler throws (answered 500) is
+  logged and kept as a problem of the mock; `takeProblems()` hands them over, and `shoot.mjs`
+  fails the capture on any of them, whatever the page expects.
 - `shoot.mjs`: starts the server, drives headless Chromium with `puppeteer-core` and saves one
   full page PNG per page and viewport, plus `measurements.json`. The Chromium binary comes
   from `--chromium <path>`, else the `CHROMIUM` environment variable, else

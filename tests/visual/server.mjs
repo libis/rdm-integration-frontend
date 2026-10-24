@@ -36,7 +36,8 @@ export const DEFAULT_VARIANT = { rejected: 0, longLabel: false };
 // A route handler returns the JSON body of a 200 answer, or reply(status, body) for any other
 // status: a string body is sent as text/plain, as the Go backend writes its errors, anything
 // else as JSON. The browser logs every error status as a console error, which fails the run
-// unless the page lists the path in expectedFailures (shoot.mjs).
+// unless the page lists the path and status in expectedFailures (shoot.mjs). A request without
+// a route, or whose handler throws, is a problem of the mock instead (see takeProblems).
 class Reply {
   constructor(status, body) {
     this.status = status;
@@ -204,11 +205,6 @@ const ROUTES = [
   ],
 ];
 
-function noRoute(req, url) {
-  console.warn(`mock: no route for ${req.method} ${url.pathname}`);
-  return reply(404, { detail: "Not Found" });
-}
-
 function sendJson(res, status, body) {
   res.writeHead(status, {
     "content-type": CONTENT_TYPES[".json"],
@@ -276,8 +272,10 @@ function parseVariant(changes) {
   return variant;
 }
 
-// Resolves to {url, close, setVariant, variant}; setVariant({rejected, longLabel}) changes
-// what the following API requests answer.
+// Resolves to {url, close, setVariant, variant, takeProblems}; setVariant({rejected, longLabel})
+// changes what the following API requests answer. takeProblems() returns and forgets the
+// requests the mock could not answer as meant: no route (answered 404) or a handler that threw
+// (answered 500).
 export function startServer({ dist, port = 0, ...variant }) {
   if (!dist || !fs.existsSync(path.join(dist, "index.html"))) {
     return Promise.reject(new Error(`no index.html in dist folder "${dist}"`));
@@ -285,6 +283,7 @@ export function startServer({ dist, port = 0, ...variant }) {
   const distDir = path.resolve(dist);
   let current = { ...DEFAULT_VARIANT, ...parseVariant(variant) };
   let origin = "";
+  let problems = [];
 
   async function handleApi(req, res, url) {
     const route = ROUTES.find(
@@ -295,7 +294,15 @@ export function startServer({ dist, port = 0, ...variant }) {
       query: url.searchParams,
       variant: current,
     };
-    const answer = route ? route[2](ctx) : noRoute(req, url);
+    let answer;
+    if (route) {
+      answer = route[2](ctx);
+    } else {
+      const problem = `no route for ${req.method} ${url.pathname}`;
+      console.warn(`mock: ${problem}`);
+      problems.push(problem);
+      answer = reply(404, { detail: "Not Found" });
+    }
     if (!(answer instanceof Reply)) {
       sendJson(res, 200, answer);
     } else if (typeof answer.body === "string") {
@@ -336,6 +343,7 @@ export function startServer({ dist, port = 0, ...variant }) {
       console.error(
         `mock: ${req.method} ${req.url} failed: ${err.stack || err}`,
       );
+      problems.push(`${req.method} ${req.url} failed: ${err.message ?? err}`);
       if (!res.headersSent) {
         sendJson(res, 500, { detail: String(err) });
       } else {
@@ -355,6 +363,11 @@ export function startServer({ dist, port = 0, ...variant }) {
         },
         setVariant: (changes) => {
           current = { ...current, ...parseVariant(changes) };
+        },
+        takeProblems: () => {
+          const taken = problems;
+          problems = [];
+          return taken;
         },
         close: () =>
           new Promise((done) => {
