@@ -7,9 +7,11 @@
   background: var(--app-bg);
 }
 
+// The header keeps its height when the body has more rows than fit.
 .tt-header {
   display: grid;
   grid-template-columns: var(--tt-columns);
+  flex: none;
   font-weight: 600;
   border-bottom: 1px solid var(--app-border);
   overflow-y: scroll;

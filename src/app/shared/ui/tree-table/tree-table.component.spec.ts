@@ -83,6 +83,72 @@ class HostComponent {
   }
 }
 
+// A static body with more rows than fit below a header whose cells differ in
+// height, the way the compute page renders it.
+@Component({
+  imports: [
+    TreeTableComponent,
+    TreeTableHeaderDirective,
+    TreeTableRowDirective,
+  ],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <div style="height: 300px">
+      <app-tree-table
+        [nodes]="nodes()"
+        [virtual]="false"
+        [rowHeight]="56"
+        columns="1fr 8rem"
+      >
+        <ng-template appTreeTableHeader>
+          <div class="tt-cell header-text">Name</div>
+          <div class="tt-cell">
+            <button type="button" class="btn btn-primary header-button">
+              Run
+            </button>
+          </div>
+        </ng-template>
+        <ng-template appTreeTableRow let-node>
+          <div class="tt-row" role="row">
+            <div class="tt-cell">{{ node.data }}</div>
+            <div class="tt-cell"></div>
+          </div>
+        </ng-template>
+      </app-tree-table>
+    </div>
+  `,
+})
+class StaticHostComponent {
+  readonly nodes = signal<TreeNode<string>[]>([]);
+}
+
+describe('TreeTableComponent header', () => {
+  const header = (el: HTMLElement) =>
+    el.querySelector('.tt-header') as HTMLElement;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [StaticHostComponent],
+    }).compileComponents();
+  });
+
+  it('keeps its height above a static body with more rows than fit', async () => {
+    const fixture = TestBed.createComponent(StaticHostComponent);
+    await fixture.whenStable();
+    const noRows = header(fixture.nativeElement).getBoundingClientRect().height;
+    expect(noRows).toBeGreaterThan(30);
+    fixture.componentInstance.nodes.set(
+      Array.from({ length: 40 }, (_, i) => ({ data: `f${i}.py` })),
+    );
+    await fixture.whenStable();
+    const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
+    expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
+    expect(header(fixture.nativeElement).getBoundingClientRect().height).toBe(
+      noRows,
+    );
+  });
+});
+
 describe('TreeTableComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
