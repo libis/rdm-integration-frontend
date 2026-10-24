@@ -145,7 +145,9 @@ async function openCompute(flow) {
 }
 
 // name: the image is <name>-<width>x<height>.png. fixedHeight: the page is laid out to fit the
-// window, so a document taller than the window is a layout failure. variant: see server.mjs.
+// window, so a document taller than the window is a layout failure. table: the page shows a
+// tree table, so a missing or hidden one fails the table checks instead of skipping them.
+// variant: see server.mjs.
 const PAGES = [
   {
     name: "connect",
@@ -157,18 +159,21 @@ const PAGES = [
   {
     name: "compare-r0",
     fixedHeight: true,
+    table: true,
     variant: { rejected: 0 },
     steps: openCompare,
   },
   {
     name: "compare-r12",
     fixedHeight: true,
+    table: true,
     variant: { rejected: 12 },
     steps: openCompare,
   },
   {
     name: "compare-filter",
     fixedHeight: true,
+    table: true,
     steps: async (flow) => {
       await openCompare(flow);
       await flow.click(".tt-header button.btn-primary");
@@ -178,6 +183,7 @@ const PAGES = [
   {
     name: "download",
     fixedHeight: true,
+    table: true,
     steps: async (flow) => {
       await flow.open(
         oauthCallback({ download: true, datasetId: { value: DATASET } }),
@@ -185,16 +191,18 @@ const PAGES = [
       await flow.waitFor("div[app-downloadablefile]");
     },
   },
-  { name: "compute-40", fixedHeight: true, steps: openCompute },
+  { name: "compute-40", fixedHeight: true, table: true, steps: openCompute },
   {
     name: "compute-long-label",
     fixedHeight: true,
+    table: true,
     variant: { longLabel: true },
     steps: openCompute,
   },
   {
     name: "compute-dialog",
     fixedHeight: true,
+    table: true,
     steps: async (flow) => {
       await openCompute(flow);
       // The queue select of the first row; choosing a queue checks access and enables Run.
@@ -206,6 +214,7 @@ const PAGES = [
   {
     name: "ddi-cdi",
     fixedHeight: true,
+    table: true,
     steps: async (flow) => {
       await flow.open(`/ddi-cdi?datasetPid=${encodeURIComponent(DATASET)}`);
       await flow.waitFor(".tt-row");
@@ -214,6 +223,7 @@ const PAGES = [
   {
     name: "metadata-selector",
     fixedHeight: true,
+    table: true,
     steps: async (flow) => {
       await flow.open("/metadata-selector");
       await flow.waitFor("div[app-metadatafield]");
@@ -363,6 +373,9 @@ function checkLayout(name, def, m) {
       );
     }
   }
+  if (def.table && !m.table) {
+    fail("no visible tree table (.tt)");
+  }
   if (m.table) {
     const minBody = MIN_BODY_REM * m.rem;
     if (m.table.body < minBody) {
@@ -454,6 +467,7 @@ async function capture(def, viewport) {
       page: def.name,
       viewport,
       fixedHeight: !!def.fixedHeight,
+      expectTable: !!def.table,
       ...m,
       checks: found,
     };

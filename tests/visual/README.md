@@ -109,6 +109,7 @@ failed checks are printed; with `--strict` they make the run exit with code 1:
 - a page laid out to fit the window (compare, download, compute, DDI-CDI, metadata selector)
   has a document taller than the window, a page host whose content is taller than the host,
   or a table body that ends below the top of the footer;
+- a page that shows a tree table (every page above) has no visible `.tt`;
 - a table body is under 12rem (192 px);
 - a table header is shorter than its height with no rows.
 
