@@ -427,6 +427,23 @@ describe('ComputeComponent layout and row state', () => {
     expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
   });
 
+  it('keeps the dataset select on one line and fits the window with a long label', async () => {
+    const trigger = fixture.nativeElement.querySelector(
+      '#datasetId',
+    ) as HTMLButtonElement;
+    const oneLine = trigger.getBoundingClientRect().height;
+    const label =
+      'doi:10.1234/ABC - A rather long dataset title about measurements of ' +
+      'something in several Flemish rivers between 2019 and 2024';
+    component.doiItems.set([{ label, value: 'doi:10.1234/ABC' }]);
+    await fixture.whenStable();
+    expect(trigger.textContent).toContain(label);
+    expect(trigger.getBoundingClientRect().height).toBe(oneLine);
+    const layout = measurePage(fixture.nativeElement);
+    expect(layout.document).toBeLessThanOrEqual(layout.window);
+    expect(layout.header).toBe(layout.headerNoRows);
+  });
+
   it('keeps the queue chosen in the first row after scrolling', async () => {
     const trigger = rows()[0].querySelector(
       '.form-select',

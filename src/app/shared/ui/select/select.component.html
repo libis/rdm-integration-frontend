@@ -25,8 +25,9 @@
     <button
       #trigger
       type="button"
-      class="form-select text-start"
+      class="form-select text-start app-select-trigger"
       [id]="inputId()"
+      [attr.title]="selectedLabel() ?? null"
       [disabled]="isDisabled()"
       [attr.aria-expanded]="open()"
       (click)="toggle()"

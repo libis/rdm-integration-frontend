@@ -257,3 +257,83 @@ describe('SelectComponent with a custom option template', () => {
     expect(custom?.textContent?.trim()).toBe('Alpha!');
   });
 });
+
+const LONG_LABEL =
+  'doi:10.1234/ABC - A rather long dataset title about measurements of ' +
+  'something in several Flemish rivers between 2019 and 2024';
+
+// A long label in a narrow block, and in a flex row next to a button, like
+// the dataset select on compute and the queue select in its rows.
+@Component({
+  imports: [SelectComponent, FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <div class="block" style="width: 20rem">
+      <app-select
+        class="w-100"
+        [options]="options()"
+        [ngModel]="value()"
+        (ngModelChange)="value.set($event)"
+      ></app-select>
+    </div>
+    <div class="row-box d-flex gap-2" style="width: 20rem">
+      <app-select
+        class="flex-grow-1"
+        [options]="options()"
+        [ngModel]="value()"
+        (ngModelChange)="value.set($event)"
+      ></app-select>
+      <button type="button" class="btn btn-primary run">Run</button>
+    </div>
+  `,
+})
+class LongLabelHostComponent {
+  readonly options = signal([
+    { label: 'Short', value: 's' },
+    { label: LONG_LABEL, value: 'l' },
+  ]);
+  readonly value = signal<string | undefined>('s');
+}
+
+describe('SelectComponent with a long label', () => {
+  it('stays on one line with an ellipsis and shows the label in a title', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LongLabelHostComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(LongLabelHostComponent);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const trigger = el.querySelector('.block .form-select') as HTMLElement;
+    const oneLine = trigger.getBoundingClientRect().height;
+    expect(trigger.getAttribute('title')).toBe('Short');
+    fixture.componentInstance.value.set('l');
+    await fixture.whenStable();
+    expect(trigger.textContent!.trim()).toBe(LONG_LABEL);
+    expect(trigger.getAttribute('title')).toBe(LONG_LABEL);
+    expect(trigger.getBoundingClientRect().height).toBe(oneLine);
+    expect(getComputedStyle(trigger).textOverflow).toBe('ellipsis');
+    expect(trigger.scrollWidth).toBeGreaterThan(trigger.clientWidth);
+    // In a flex row the select gives way and the button stays inside the row.
+    const box = el.querySelector('.row-box')!.getBoundingClientRect();
+    const rowTrigger = el.querySelector('.row-box .form-select')!;
+    const run = el.querySelector('.run')!.getBoundingClientRect();
+    expect(rowTrigger.getBoundingClientRect().height).toBe(oneLine);
+    expect(rowTrigger.getBoundingClientRect().right).toBeLessThanOrEqual(
+      run.left,
+    );
+    expect(run.right).toBeLessThanOrEqual(box.right);
+  });
+
+  it('has no title without a value', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LongLabelHostComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(LongLabelHostComponent);
+    fixture.componentInstance.value.set(undefined);
+    await fixture.whenStable();
+    const trigger = fixture.nativeElement.querySelector(
+      '.block .form-select',
+    ) as HTMLElement;
+    expect(trigger.hasAttribute('title')).toBeFalse();
+  });
+});

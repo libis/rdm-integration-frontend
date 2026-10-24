@@ -1,3 +1,17 @@
+// In a flex row the select gives way to its neighbours instead of growing to
+// the width of a long label.
+:host {
+  min-width: 0;
+}
+
+// A long label stays on one line and ends in an ellipsis; the title attribute
+// holds the whole label.
+.app-select-trigger {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .app-select-panel {
   max-height: 20rem;
   overflow: auto;
