@@ -1,3 +1,4 @@
+import { ScrollDispatcher } from '@angular/cdk/scrolling';
 import {
   provideHttpClient,
   withInterceptorsFromDi,
@@ -16,7 +17,11 @@ import { PluginService } from '../plugin.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
-import { measurePage, resizeTestWindow } from '../../testing/page-layout';
+import {
+  measurePage,
+  resizeTestWindow,
+  scrolledContainers,
+} from '../../testing/page-layout';
 import { ComputeComponent } from './compute.component';
 
 class MockDataService {
@@ -414,6 +419,16 @@ describe('ComputeComponent layout and row state', () => {
     Array.from(
       fixture.nativeElement.querySelectorAll('div[app-executablefile]'),
     );
+
+  // An open select or filter panel follows the host when the host scrolls.
+  it('reports the scrolling page host to the overlays', () => {
+    expect(
+      scrolledContainers(
+        TestBed.inject(ScrollDispatcher),
+        fixture.nativeElement,
+      ),
+    ).toEqual([fixture.nativeElement]);
+  });
 
   it('fits the window with 40 rows in the static body', () => {
     const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;

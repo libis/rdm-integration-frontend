@@ -4,7 +4,10 @@ import {
   withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import {
+  CdkVirtualScrollViewport,
+  ScrollDispatcher,
+} from '@angular/cdk/scrolling';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -21,7 +24,11 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { APP_CONSTANTS } from '../shared/constants';
 import { NotificationService } from '../shared/notification.service';
 import { takePendingReauth } from '../shared/reauth';
-import { measurePage, resizeTestWindow } from '../../testing/page-layout';
+import {
+  measurePage,
+  resizeTestWindow,
+  scrolledContainers,
+} from '../../testing/page-layout';
 import { CompareComponent } from './compare.component';
 
 class StubDataStateService {
@@ -998,6 +1005,17 @@ describe('CompareComponent layout', () => {
 
   const rejectedList = (fixture: ComponentFixture<CompareComponent>) =>
     fixture.nativeElement.querySelector('.compare-rejected') as HTMLElement;
+
+  // An open select or filter panel follows the host when the host scrolls.
+  it('reports the scrolling page host to the overlays', async () => {
+    const fixture = await render(0);
+    expect(
+      scrolledContainers(
+        TestBed.inject(ScrollDispatcher),
+        fixture.nativeElement,
+      ),
+    ).toEqual([fixture.nativeElement]);
+  });
 
   // The Karma frame is about 437 px high: too small to fit the page, but the
   // table must keep its rows (the review measured 0 px with 3 names).

@@ -1,5 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -50,6 +51,9 @@ import { NotificationService } from '../shared/notification.service';
 
 @Component({
   selector: 'app-metadata-selector',
+  // The host scrolls when the window is small (fill-window in
+  // _page-layout.scss): open select and filter panels follow it.
+  hostDirectives: [CdkScrollable],
   templateUrl: './metadata-selector.component.html',
   styleUrls: ['./metadata-selector.component.scss'],
   imports: [

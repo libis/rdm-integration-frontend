@@ -1,5 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -55,6 +56,9 @@ import { SubscriptionManager } from '../shared/types';
 
 @Component({
   selector: 'app-compute',
+  // The host scrolls when the window is small (fill-window in
+  // _page-layout.scss): open select and filter panels follow it.
+  hostDirectives: [CdkScrollable],
   templateUrl: './compute.component.html',
   styleUrl: './compute.component.scss',
   imports: [

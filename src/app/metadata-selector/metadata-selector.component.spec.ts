@@ -5,7 +5,10 @@ import {
   withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import {
+  CdkVirtualScrollViewport,
+  ScrollDispatcher,
+} from '@angular/cdk/scrolling';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router } from '@angular/router';
@@ -20,6 +23,7 @@ import {
 } from '../models/field';
 import { NotificationService } from '../shared/notification.service';
 import { MetadataSelectorComponent } from './metadata-selector.component';
+import { scrolledContainers } from '../../testing/page-layout';
 
 describe('MetadataSelectorComponent', () => {
   let component: MetadataSelectorComponent;
@@ -165,6 +169,17 @@ describe('MetadataSelectorComponent', () => {
     );
     // We expect at least one row (root children default to Copy)
     expect(rows.length).toBeGreaterThan(0);
+  });
+
+  // An open select or filter panel follows the host when the host scrolls.
+  it('reports the scrolling page host to the overlays', async () => {
+    await fixture.whenStable();
+    expect(
+      scrolledContainers(
+        TestBed.inject(ScrollDispatcher),
+        fixture.nativeElement,
+      ),
+    ).toEqual([fixture.nativeElement]);
   });
 
   it('gives the tree table viewport a height with the page styles', async () => {

@@ -1,4 +1,7 @@
-import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import {
+  CdkVirtualScrollViewport,
+  ScrollDispatcher,
+} from '@angular/cdk/scrolling';
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
 import {
@@ -21,7 +24,11 @@ import { PluginService } from '../plugin.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
-import { measurePage, resizeTestWindow } from '../../testing/page-layout';
+import {
+  measurePage,
+  resizeTestWindow,
+  scrolledContainers,
+} from '../../testing/page-layout';
 import {
   CachedComputeResponse,
   CompareResult,
@@ -1570,6 +1577,17 @@ describe('DdiCdiComponent', () => {
         await fixture.whenStable();
         return fixture;
       };
+
+      // An open select or filter panel follows the host when the host scrolls.
+      it('reports the scrolling page host to the overlays', async () => {
+        const fixture = await render();
+        expect(
+          scrolledContainers(
+            TestBed.inject(ScrollDispatcher),
+            fixture.nativeElement,
+          ),
+        ).toEqual([fixture.nativeElement]);
+      });
 
       it('fits the window with 60 files', async () => {
         const fixture = await render();

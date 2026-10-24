@@ -1,5 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
+import { CdkScrollable } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -58,6 +59,9 @@ interface FileNodeBuckets {
 
 @Component({
   selector: 'app-compare',
+  // The host scrolls when the window is small (fill-window in
+  // _page-layout.scss): open select and filter panels follow it.
+  hostDirectives: [CdkScrollable],
   templateUrl: './compare.component.html',
   styleUrls: ['./compare.component.scss'],
   imports: [

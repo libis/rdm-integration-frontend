@@ -7,7 +7,10 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import {
+  CdkVirtualScrollViewport,
+  ScrollDispatcher,
+} from '@angular/cdk/scrolling';
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -28,7 +31,11 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
-import { measurePage, resizeTestWindow } from '../../testing/page-layout';
+import {
+  measurePage,
+  resizeTestWindow,
+  scrolledContainers,
+} from '../../testing/page-layout';
 import { registerReauthAttempt } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
@@ -2180,6 +2187,18 @@ describe('DownloadComponent layout', () => {
     fixture.componentInstance.globusPlugin.set(plugin.getGlobusPlugin());
     return fixture;
   };
+
+  // An open select or filter panel follows the host when the host scrolls.
+  it('reports the scrolling page host to the overlays', async () => {
+    const fixture = create();
+    await fixture.whenStable();
+    expect(
+      scrolledContainers(
+        TestBed.inject(ScrollDispatcher),
+        fixture.nativeElement,
+      ),
+    ).toEqual([fixture.nativeElement]);
+  });
 
   it('gives the tree table viewport a height with the page styles', async () => {
     const fixture = create();

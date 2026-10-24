@@ -6,6 +6,8 @@
 // the iframe to a laptop window and measure the page the way the screenshot
 // harness in tests/visual does.
 
+import { ScrollDispatcher } from '@angular/cdk/scrolling';
+
 /** Resizes the Karma iframe and returns a function that restores it. */
 export function resizeTestWindow(width: number, height: number): () => void {
   const frame = window.frameElement as HTMLElement | null;
@@ -81,4 +83,24 @@ export function measurePage(host: HTMLElement): PageLayout {
     header: height(header),
     headerNoRows,
   };
+}
+
+/**
+ * Fires a scroll event on the page host and returns the elements the CDK
+ * ScrollDispatcher reports for it. An open overlay (a select panel, the
+ * compare status filter) repositions only on what the dispatcher reports, and
+ * it listens on the document only, where scroll events of elements do not
+ * arrive: a host that scrolls must be a cdkScrollable to be reported.
+ */
+export function scrolledContainers(
+  dispatcher: ScrollDispatcher,
+  host: HTMLElement,
+): Element[] {
+  const reported: Element[] = [];
+  const subscription = dispatcher.scrolled(0).subscribe((scrollable) => {
+    if (scrollable) reported.push(scrollable.getElementRef().nativeElement);
+  });
+  host.dispatchEvent(new Event('scroll'));
+  subscription.unsubscribe();
+  return reported;
 }
