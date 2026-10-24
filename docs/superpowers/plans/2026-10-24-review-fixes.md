@@ -81,14 +81,15 @@ emphasis tokens and dark rules keyed on `[data-bs-theme=dark]`. Regression spec 
 button styles from the reviewer's demo. Screenshots: only the intended pixels change, listed
 in the task report.
 
-### Task R7: Cleanup, handed to Ozgur
-Eryk, 2026-10-25: the cleanup goes to Ozgur. The task list is in
-`docs/superpowers/plans/2026-10-25-cleanup-for-ozgur.md`: delete the two stale files
-(`progress.md`, `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md`), M12 leftovers, M13 (the dataset
-search quartet, the file tree builder, the connect and download picker pair), M15 test
-patterns, the rest of M14 (page suites that replace the template with a placeholder), the
-`ai-context.md` theming section, and the two R1 minors (stale comment in
-`compare.component.scss`, a `split-pane` mixin). Not run by the agents.
+### Task R7: Cleanup
+The item list is in `docs/superpowers/plans/2026-10-24-review-fixes-r7.md`: delete the two
+stale files (`progress.md`, `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md`), M12 leftovers, M13
+(the dataset search quartet, the file tree builder, the connect and download picker pair;
+Eryk: do the refactoring), M15 test patterns, the rest of M14 (page suites that replace
+the template with a placeholder), the `ai-context.md` theming section, and the two R1
+minors (stale comment in `compare.component.scss`, a `split-pane` mixin). Same implementer
+and reviewer loop as the other tasks; strict harness byte identical except where the
+refactoring is proven equal by the specs.
 
 ### Task R8: Changelog and screenshot diff
 No written report (Eryk, 2026-10-25). The controller appends to

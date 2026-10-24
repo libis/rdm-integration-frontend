@@ -1,12 +1,10 @@
-# Cleanup after the CDK migration, for Ozgur
+# Task R7: cleanup after the CDK migration
 
-From the review of 2026-10-24 (`/home/eryk/workspaces/redcap/rdm-integration-frontend-review-2026-10-24.md`,
-a copy sits in `.superpowers/sdd/2026-10-24-review-fixes/review.md` on Eryk's machine).
-Eryk, 2026-10-25: this part is handed over. Everything else from that review is being fixed
-on `main` (plan `docs/superpowers/plans/2026-10-24-review-fixes.md`). The tests
-(`npm run test:ci`, Karma on ChromeHeadless with `CHROME_BIN`), `npm run lint` (ESLint plus
-the unused exports check) and `npm run pretty:check` must stay green; the screenshot
-harness in `tests/visual` (README there) shows whether a page changed.
+From the review of 2026-10-24 (`.superpowers/sdd/2026-10-24-review-fixes/review.md`).
+Done by the agents like the other tasks of `2026-10-24-review-fixes.md` (Eryk, 2026-10-25:
+"just do R7"). The tests (`npm run test:ci`, Karma on ChromeHeadless with `CHROME_BIN`),
+`npm run lint` (ESLint plus the unused exports check) and `npm run pretty:check` stay green;
+the strict screenshot harness in `tests/visual` shows whether a page changed.
 
 1. Delete `progress.md` and `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md` at the repo root: they
    describe PrimeNG theme variables that no longer exist (Eryk: delete them).
