@@ -1008,6 +1008,16 @@ describe('CompareComponent layout', () => {
       expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
       expect(viewportSize(fixture)).toBeGreaterThanOrEqual(12 * layout.rem);
       expect(rejectedList(fixture).offsetHeight).toBeGreaterThan(0);
+      // The page host scrolls instead of running under the footer, and
+      // scrolled to its end it shows the whole table.
+      const host = fixture.nativeElement as HTMLElement;
+      expect(getComputedStyle(host).overflowY).toBe('auto');
+      expect(host.scrollHeight).toBeGreaterThan(host.clientHeight);
+      host.scrollTop = host.scrollHeight;
+      const body = host.querySelector('.tt-body') as HTMLElement;
+      expect(body.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        host.getBoundingClientRect().bottom + 0.5,
+      );
     });
   }
 

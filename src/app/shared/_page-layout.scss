@@ -6,16 +6,25 @@
 // styles.scss), minus the container padding, and the part with the tree table
 // takes what the rows above it leave.
 
+// When the rows above leave the table less than its minimum height (a small
+// window, or the transfer card on download), the host scrolls, so nothing runs
+// under the footer. It scrolls only vertically: Bootstrap rows have negative
+// side margins. A scroll box clips at its padding edge, so the padding, offset
+// by the margin, keeps room for the focus rings of full width controls.
 @mixin fill-window {
   display: flex;
   flex-direction: column;
   height: calc(
     100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
   );
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin-inline: -0.25rem;
+  padding-inline: 0.25rem;
 }
 
 // The part of the page with the tree table: the height the rows above leave,
-// but at least $min.
+// but at least $min, below which the page host scrolls.
 @mixin fill-rest($min) {
   flex: 1 1 auto;
   min-height: $min;

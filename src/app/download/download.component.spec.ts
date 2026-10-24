@@ -89,6 +89,17 @@ class MockSubmitService {
       }, 0);
     });
   }
+
+  // A running Globus task, as the transfer card polls it.
+  getGlobusTransferStatus(taskId: string) {
+    return of({
+      task_id: taskId,
+      status: 'ACTIVE',
+      files: 300,
+      files_transferred: 120,
+      request_time: '2026-10-24 10:00:00+00:00',
+    });
+  }
 }
 
 class MockDvObjectLookupService {
@@ -2287,6 +2298,53 @@ describe('DownloadComponent layout', () => {
         '.download-split-right',
       ) as HTMLElement;
       expect(getComputedStyle(right).overflowY).toBe('auto');
+    });
+
+    it('scrolls the page host to keep 12rem of rows below a running transfer card', async () => {
+      const fixture = create();
+      const comp = fixture.componentInstance;
+      const files: TreeNode<Datafile>[] = Array.from(
+        { length: 300 },
+        (_, i) => ({
+          key: `file${i}.csv:file`,
+          data: {
+            id: `file${i}.csv`,
+            name: `file${i}.csv`,
+            path: '',
+            hidden: false,
+            action: Fileaction.Ignore,
+            attributes: { isFile: true },
+          },
+        }),
+      );
+      comp.rowNodeMap.set(new Map(files.map((f) => [f.key!, f])));
+      comp.rootNodeChildren.set(files);
+      comp.datasetId.set('doi:10.1234/ABC');
+      comp.data.set({
+        id: 'doi:10.1234/ABC',
+        url: 'https://example.org/ds',
+      } as CompareResult);
+      comp.lastTransferTaskId.set('task-1');
+      comp.globusMonitorUrl.set('https://app.globus.org/activity/task-1');
+      await fixture.whenStable();
+      const host = fixture.nativeElement as HTMLElement;
+      const card = host.querySelector('.transfer-status') as HTMLElement;
+      expect(card.offsetHeight).toBeGreaterThan(150);
+      const body = host.querySelector('.tt-body') as HTMLElement;
+      const rem = parseFloat(
+        getComputedStyle(document.documentElement).fontSize,
+      );
+      expect(body.getBoundingClientRect().height).toBeGreaterThanOrEqual(
+        12 * rem,
+      );
+      // The host scrolls instead of running under the footer, and scrolled to
+      // its end it shows the whole table.
+      expect(getComputedStyle(host).overflowY).toBe('auto');
+      expect(host.scrollHeight).toBeGreaterThan(host.clientHeight);
+      host.scrollTop = host.scrollHeight;
+      expect(body.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        host.getBoundingClientRect().bottom + 0.5,
+      );
     });
   });
 });
