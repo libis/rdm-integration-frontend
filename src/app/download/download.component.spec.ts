@@ -2333,6 +2333,15 @@ describe('DownloadComponent layout', () => {
       const host = fixture.nativeElement as HTMLElement;
       const card = host.querySelector('.transfer-status') as HTMLElement;
       expect(card.offsetHeight).toBeGreaterThan(150);
+      // The select's bottom margin and the card's top margin collapse into
+      // one 1rem gap, as they did before the page became a flex column.
+      const select = host
+        .querySelector('#datasetId')!
+        .closest('.mb-3') as HTMLElement;
+      expect(
+        card.getBoundingClientRect().top -
+          select.getBoundingClientRect().bottom,
+      ).toBe(16);
       const body = host.querySelector('.tt-body') as HTMLElement;
       const rem = parseFloat(
         getComputedStyle(document.documentElement).fontSize,
