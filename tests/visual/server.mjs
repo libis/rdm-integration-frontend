@@ -1,8 +1,9 @@
 // Mock backend for the visual checks: serves the built app and answers /api/* from the JSON
 // fixtures in fixtures/. Run alone:
-// node server.mjs --dist <browser dir> [--rejected <n>] [--long-label] [--port 4300]
-// The variant (rejected file names on compare, long dataset label on compute) can also be
-// changed while the server runs: GET /__variant?rejected=12&longLabel=true.
+// node server.mjs --dist <browser dir> [--rejected <n>] [--rejected-size <n>] [--long-label]
+//   [--port 4300]
+// The variant (files rejected by name or by size on compare, long dataset label on compute)
+// can also be changed while the server runs: GET /__variant?rejected=12&longLabel=true.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -29,9 +30,14 @@ const CONTENT_TYPES = {
   ".eot": "application/vnd.ms-fontobject",
 };
 
-// rejected: how many of the names in compare-cached.json the compare result lists as
-// rejected. longLabel: answer the dataset lookups with dvobjects-datasets-long-label.json.
-export const DEFAULT_VARIANT = { rejected: 0, longLabel: false };
+// rejected: how many of the names in compare-cached.json the compare result lists as rejected
+// for their characters (rejectedName); rejectedSize: how many of its rejectedSize ids it lists
+// as too large. longLabel: answer the dataset lookups with dvobjects-datasets-long-label.json.
+export const DEFAULT_VARIANT = {
+  rejected: 0,
+  rejectedSize: 0,
+  longLabel: false,
+};
 
 // A route handler returns the JSON body of a 200 answer, or reply(status, body) for any other
 // status: a string body is sent as text/plain, as the Go backend writes its errors, anything
@@ -76,16 +82,23 @@ function withFiles(result) {
 
 function compareCached(variant) {
   const cached = fixture("compare-cached.json");
-  const names = cached.res.rejectedName;
-  if (variant.rejected > names.length) {
-    throw new Error(
-      `compare-cached.json lists ${names.length} rejected names, ${variant.rejected} asked`,
-    );
-  }
+  const first = (key, count) => {
+    const all = cached.res[key];
+    if (count > all.length) {
+      throw new Error(
+        `compare-cached.json lists ${all.length} ${key}, ${count} asked`,
+      );
+    }
+    return all.slice(0, count);
+  };
   const res = withFiles(cached.res);
   return {
     ...cached,
-    res: { ...res, rejectedName: names.slice(0, variant.rejected) },
+    res: {
+      ...res,
+      rejectedName: first("rejectedName", variant.rejected),
+      rejectedSize: first("rejectedSize", variant.rejectedSize),
+    },
   };
 }
 
@@ -258,12 +271,14 @@ function readBody(req) {
 
 function parseVariant(changes) {
   const variant = {};
-  if (changes.rejected !== undefined) {
-    const rejected = Number(changes.rejected);
-    if (!Number.isInteger(rejected) || rejected < 0) {
-      throw new Error(`rejected must be a count, not "${changes.rejected}"`);
+  for (const key of ["rejected", "rejectedSize"]) {
+    if (changes[key] !== undefined) {
+      const count = Number(changes[key]);
+      if (!Number.isInteger(count) || count < 0) {
+        throw new Error(`${key} must be a count, not "${changes[key]}"`);
+      }
+      variant[key] = count;
     }
-    variant.rejected = rejected;
   }
   if (changes.longLabel !== undefined) {
     variant.longLabel =
@@ -272,8 +287,8 @@ function parseVariant(changes) {
   return variant;
 }
 
-// Resolves to {url, close, setVariant, variant, takeProblems}; setVariant({rejected, longLabel})
-// changes what the following API requests answer. takeProblems() returns and forgets the
+// Resolves to {url, close, setVariant, variant, takeProblems}; setVariant({rejected,
+// rejectedSize, longLabel}) changes what the following API requests answer. takeProblems() returns and forgets the
 // requests the mock could not answer as meant: no route (answered 404) or a handler that threw
 // (answered 500).
 export function startServer({ dist, port = 0, ...variant }) {
@@ -385,6 +400,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
       dist: { type: "string" },
       port: { type: "string", default: "4300" },
       rejected: { type: "string" },
+      "rejected-size": { type: "string" },
       "long-label": { type: "boolean" },
     },
   });
@@ -392,6 +408,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
     dist: args.dist,
     port: Number(args.port),
     rejected: args.rejected,
+    rejectedSize: args["rejected-size"],
     longLabel: args["long-label"],
   });
   console.log(

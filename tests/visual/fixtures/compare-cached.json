@@ -20,6 +20,20 @@
       "bad?name 10.txt",
       "bad?name 11.txt"
     ],
+    "rejectedSize": [
+      "large/big0.bin",
+      "large/big1.bin",
+      "large/big2.bin",
+      "large/big3.bin",
+      "large/big4.bin",
+      "large/big5.bin",
+      "large/big6.bin",
+      "large/big7.bin",
+      "large/big8.bin",
+      "large/big9.bin",
+      "large/big10.bin",
+      "large/big11.bin"
+    ],
     "allowedFileNamePattern": "^[\\w .-]+$",
     "allowedFolderPathPattern": "^[\\w /.-]*$"
   }

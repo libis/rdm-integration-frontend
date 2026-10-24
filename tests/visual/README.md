@@ -7,14 +7,15 @@ turns the layout measurements into checks. Images go to `out/`, which is gitigno
 scripts and fixtures are committed.
 
 - `server.mjs`: serves a built app and answers `/api/*` from `fixtures/*.json`. Only Node
-  built ins. Exports `startServer({dist, port, rejected, longLabel})`, which resolves to
-  `{url, close, setVariant, variant, takeProblems}`: `setVariant({rejected, longLabel})`
-  changes what the following requests answer and the `variant` getter returns the current
-  variant. A route answers 200 with the JSON its handler returns, or any other status with
-  `reply(status, body)`, a string body as `text/plain` the way the Go backend writes its
-  errors. A request without a route (answered 404) or whose handler throws (answered 500) is
-  logged and kept as a problem of the mock; `takeProblems()` hands them over, and `shoot.mjs`
-  fails the capture on any of them, whatever the page expects.
+  built ins. Exports `startServer({dist, port, rejected, rejectedSize, longLabel})`, which
+  resolves to `{url, close, setVariant, variant, takeProblems}`:
+  `setVariant({rejected, rejectedSize, longLabel})` changes what the following requests answer
+  and the `variant` getter returns the current variant. A route answers 200 with the JSON its
+  handler returns, or any other status with `reply(status, body)`, a string body as
+  `text/plain` the way the Go backend writes its errors. A request without a route (answered
+  with a 404) or whose handler throws (answered with a 500) is logged and kept as a problem of
+  the mock; `takeProblems()` hands them over, and `shoot.mjs` fails the capture on any of
+  them, whatever the page expects.
 - `shoot.mjs`: starts the server, drives headless Chromium with `puppeteer-core` and saves one
   full page PNG per page and viewport, plus `measurements.json`. The Chromium binary comes
   from `--chromium <path>`, else the `CHROMIUM` environment variable, else
@@ -23,18 +24,19 @@ scripts and fixtures are committed.
   `lib.cjs`): the frontend config without its REDCap plugin, the user info, the compare key
   and the cached comparison, the dataset lookups, the file lists, the first Globus listing
   (now with the home expanded), the endpoint search, the code exchange, the access check and
-  the empty DDI-CDI output. Written new for the harness: the metadata, the REDCap variables,
-  the collections, the Globus `/` listing, the user email, the REDCap plugin (`redcap2`) in
-  the config, and a Globus download (`download.json`, task `task-1`) with its status, still
-  running with 120 of 300 files (`globus-status-active.json`). The frontend config has four plugins (local, GitHub, Globus with a token getter,
-  REDCap reports). Dataset `doi:10.1234/ABC` has 300 files on compare and download, 40 Python
-  files on compute and 60 CSV files on DDI-CDI. A fixture whose `data` is
-  `{"generate": {"count", "extension"}}` gets a generated list: every third file at the root,
-  the others in `folder0` to `folder4`, the status cycling through equal, new, updated and
-  deleted. `compare-cached.json` is a finished comparison (status 2), so the compare page does
-  not poll. The Globus folder listings follow the picker rules and the backend's
-  `buildHierarchy`: the first listing (option `""`) is a selectable `/` that is never
-  preselected, with `/home/alice/` below it preselected and expanded and its folder
+  the empty DDI-CDI output. Written new for the harness: the 12 file ids rejected for their
+  size in `compare-cached.json`, the metadata, the REDCap variables, the collections, the
+  Globus `/` listing, the user email, the REDCap plugin (`redcap2`) in the config, and a
+  Globus download (`download.json`, task `task-1`) with its status, still running with 120 of
+  300 files (`globus-status-active.json`). The frontend config has four plugins (local,
+  GitHub, Globus with a token getter, REDCap reports). Dataset `doi:10.1234/ABC` has 300 files
+  on compare and download, 40 Python files on compute and 60 CSV files on DDI-CDI. A fixture
+  whose `data` is `{"generate": {"count", "extension"}}` gets a generated list: every third
+  file at the root, the others in `folder0` to `folder4`, the status cycling through equal,
+  new, updated and deleted. `compare-cached.json` is a finished comparison (status 2), so the
+  compare page does not poll. The Globus folder listings follow the picker rules and the
+  backend's `buildHierarchy`: the first listing (option `""`) is a selectable `/` that is
+  never preselected, with `/home/alice/` below it preselected and expanded and its folder
   `Documents` listed. Expanding `/` lists `home` and `shared` (`options-globus-root.json`);
   expanding a folder of the first listing lists the children it has there, so `/home/alice/`
   lists `Documents` again. Any other options request is logged and answered with `[]`. The
@@ -58,10 +60,12 @@ the same configuration before and after a change.
 node tests/visual/server.mjs --dist dist/datasync/browser --port 4300
 ```
 
-Open `http://localhost:4300/connect`. Variants: `--rejected <n>` lists the first `n` of the
-12 rejected file names in `compare-cached.json` on the compare page (default 0), and
-`--long-label` answers the dataset lookups with `dvobjects-datasets-long-label.json`. While
-the server runs, `http://localhost:4300/__variant?rejected=12&longLabel=true` changes them.
+Open `http://localhost:4300/connect`. Variants: `--rejected <n>` lists the first `n` of the 12
+rejected file names in `compare-cached.json` on the compare page (default 0),
+`--rejected-size <n>` the first `n` of its 12 file ids rejected for their size (default 0),
+and `--long-label` answers the dataset lookups with `dvobjects-datasets-long-label.json`.
+While the server runs,
+`http://localhost:4300/__variant?rejected=12&rejectedSize=12&longLabel=true` changes them.
 
 ## Shoot
 
@@ -99,8 +103,10 @@ capture starts in a fresh browser context, so no session storage carries over. P
 order:
 
 - `connect`: `/connect`.
-- `compare-r0` and `compare-r12`: `/compare/doi%3A10.1234%2FABC` with 0 and with 12 rejected
-  file names.
+- `compare-r0`, `compare-r12` and `compare-rsize`: `/compare/doi%3A10.1234%2FABC` with no
+  rejected files, with 12 files rejected for their names and with 12 rejected for their size.
+  Each checks the headings of the rejected file lists, which count the files (none,
+  `12 files with unsupported characters ...`, `12 files exceeding maximum allowed size ...`).
 - `compare-filter`: compare, then the status filter button in the table header.
 - `download`: the Globus OAuth callback `/connect?code=c1&state={"download": true, ...}`,
   which the app sends on to `/download`.

@@ -225,6 +225,20 @@ async function openCompare(flow) {
   await flow.waitFor("div[app-datafile]");
 }
 
+// Opens compare and checks the headings of the rejected file lists, which count their files.
+async function openCompareRejected(flow, headings) {
+  await openCompare(flow);
+  const found = await flow.page.$$eval(
+    ".compare-rejected .file-list-header th",
+    (cells) => cells.map((th) => th.textContent.replace(/\s+/g, " ").trim()),
+  );
+  if (JSON.stringify(found) !== JSON.stringify(headings)) {
+    throw new Error(
+      `rejected file list headings ${JSON.stringify(found)}, not ${JSON.stringify(headings)}`,
+    );
+  }
+}
+
 async function openCompute(flow) {
   await flow.open("/compute");
   await flow.choose("#datasetId");
@@ -256,14 +270,27 @@ const PAGES = [
     fixedHeight: true,
     table: true,
     variant: { rejected: 0 },
-    steps: openCompare,
+    steps: (flow) => openCompareRejected(flow, []),
   },
   {
     name: "compare-r12",
     fixedHeight: true,
     table: true,
     variant: { rejected: 12 },
-    steps: openCompare,
+    steps: (flow) =>
+      openCompareRejected(flow, [
+        "12 files with unsupported characters (allowed patterns shown below):",
+      ]),
+  },
+  {
+    name: "compare-rsize",
+    fixedHeight: true,
+    table: true,
+    variant: { rejectedSize: 12 },
+    steps: (flow) =>
+      openCompareRejected(flow, [
+        "12 files exceeding maximum allowed size (1000 bytes):",
+      ]),
   },
   {
     name: "compare-filter",
