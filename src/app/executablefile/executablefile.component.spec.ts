@@ -192,4 +192,22 @@ describe('ExecutablefileComponent', () => {
       trigger.getBoundingClientRect().height,
     );
   });
+
+  it('leaves room in the clipping cell for the 4 px focus rings', async () => {
+    initialiseComponent();
+    await fixture.whenStable();
+    const cell = fixture.nativeElement.querySelectorAll(
+      '.tt-cell',
+    )[1] as HTMLElement;
+    expect(getComputedStyle(cell).overflow).toBe('hidden');
+    const box = cell.getBoundingClientRect();
+    for (const control of [
+      fixture.nativeElement.querySelector('.form-select'),
+      fixture.nativeElement.querySelector('button.btn-primary'),
+    ] as HTMLElement[]) {
+      const ring = control.getBoundingClientRect();
+      expect(ring.top - box.top).toBeGreaterThanOrEqual(4);
+      expect(box.bottom - ring.bottom).toBeGreaterThanOrEqual(4);
+    }
+  });
 });
