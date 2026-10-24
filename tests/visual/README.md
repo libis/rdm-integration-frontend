@@ -128,8 +128,10 @@ order:
 Clicks are real pointer clicks, as a user's: the element is scrolled into view and the mouse
 clicks the centre of its box (`page.mouse`), so whatever lies on top there, a transparent
 select backdrop left open for instance, would take the click. The script checks that point
-first and fails the capture with the element on top instead of clicking it. After the click
-the pointer leaves the page, so no hover style ends up in the capture.
+first and fails the capture with the element on top instead of clicking it. It also listens
+for the click on the window in the capture phase and fails the capture when the event target
+is outside the element, as when the mousedown moves or covers it. After the click the pointer
+leaves the page, so no hover style ends up in the capture.
 
 After every navigation or click the script waits until the network has been idle for 1500 ms
 (the search inputs debounce by 750 ms), then 500 ms more. A page that cannot be reached is

@@ -92,9 +92,10 @@ class Flow {
   // Clicks the first visible, enabled element matching selector whose text is one of texts
   // (any text when texts is omitted) with the real pointer, as a user would: the element is
   // scrolled into view and the mouse clicks the centre of its box, so a transparent backdrop
-  // left on top would take the click. Such a click fails here, naming the element on top.
-  // The pointer then leaves the page, so no hover style ends up in the capture, and the page
-  // settles.
+  // left on top would take the click. Such a click fails here, naming the element on top, and
+  // so does a click event whose target is outside the element (a capture phase listener on
+  // the window sees it first), as when the mousedown moves or covers the element. The pointer
+  // then leaves the page, so no hover style ends up in the capture, and the page settles.
   async click(selector, texts) {
     const what = texts ? `"${texts.join('" or "')}" (${selector})` : selector;
     const found = await this.page.evaluateHandle(
@@ -150,8 +151,38 @@ class Flow {
           `a click on ${what} at (${Math.round(x)}, ${Math.round(y)}) would hit ${onTop}`,
         );
       }
+      await target.evaluate((el) => {
+        window.__visualClickTarget = new Promise((resolve) => {
+          const listener = (event) => {
+            const hit = event.target;
+            if (hit instanceof Element && (hit === el || el.contains(hit))) {
+              resolve(null);
+            } else {
+              const classes =
+                hit instanceof Element
+                  ? [...hit.classList].map((c) => `.${c}`).join("")
+                  : "";
+              resolve(`<${hit.nodeName.toLowerCase()}${classes}>`);
+            }
+          };
+          window.addEventListener("click", listener, {
+            capture: true,
+            once: true,
+          });
+          setTimeout(() => {
+            window.removeEventListener("click", listener, { capture: true });
+            resolve("nothing (no click event)");
+          }, 2000);
+        });
+      });
       await this.page.mouse.click(x, y);
       await this.page.mouse.move(-1, -1);
+      const landed = await this.page.evaluate(() => window.__visualClickTarget);
+      if (landed) {
+        throw new Error(
+          `a click on ${what} at (${Math.round(x)}, ${Math.round(y)}) landed on ${landed}`,
+        );
+      }
     } finally {
       await target.dispose();
     }
