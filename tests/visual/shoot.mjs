@@ -26,6 +26,10 @@ const MIN_BODY_REM = 12;
 // scrollHeight and clientHeight are whole pixels while the boxes they round are fractional, so
 // content that fits can still come out 1 px taller.
 const ROUNDING_PX = 1;
+// Toasts close on a setTimeout of their life, 4 s to 8 s (ToastService.show), while a step
+// settles for at least 2 s, so a capture would miss a toast or catch it only sometimes. On a
+// page with holdToasts, every setTimeout of this delay or longer is held: it never fires.
+const HOLD_TIMEOUTS_MS = 4000;
 const CLICKABLE = 'button, a, [role="button"]';
 const DATASET = "doi:10.1234/ABC";
 
@@ -163,6 +167,21 @@ class Flow {
   }
 }
 
+// Runs in every new document of a holdToasts page, before the app (evaluateOnNewDocument), and
+// holds every setTimeout of minDelay or longer. The id it returns is a real, idle timer, so
+// clearTimeout keeps working. RxJS timers (debounceTime, timeout, timer) run on setInterval and
+// are not held. In the app's code only the toast lives are that long today; of the libraries,
+// Angular's animate.leave fallback (4 s) would be held too, and the app uses no animate.leave.
+function holdTimeouts(minDelay) {
+  const setTimeoutBefore = window.setTimeout;
+  window.setTimeout = function (handler, delay, ...rest) {
+    if (Number(delay) >= minDelay) {
+      return setTimeoutBefore.call(window, () => {}, 2 ** 31 - 1);
+    }
+    return setTimeoutBefore.call(window, handler, delay, ...rest);
+  };
+}
+
 // An OAuth callback: the connect page restores the form from the state and exchanges the code.
 const oauthCallback = (state) =>
   `/connect?code=c1&state=${encodeURIComponent(JSON.stringify({ nonce: "n1", ...state }))}`;
@@ -183,6 +202,7 @@ async function openCompute(flow) {
 // tree table, so a missing or hidden one fails the table checks instead of skipping them.
 // variant: see server.mjs. expectedFailures: API paths whose error status is part of the flow,
 // so the browser's "Failed to load resource" message for them is recorded, not counted.
+// holdToasts: toasts stay until the capture (see HOLD_TIMEOUTS_MS).
 const PAGES = [
   {
     name: "connect",
@@ -490,6 +510,9 @@ async function capture(def, viewport) {
     });
     page.on("pageerror", (err) => logError(`page error: ${err.message}`));
     page.on("dialog", (dialog) => dialog.dismiss());
+    if (def.holdToasts) {
+      await page.evaluateOnNewDocument(holdTimeouts, HOLD_TIMEOUTS_MS);
+    }
     await page.setViewport(viewport);
     await page.emulateMediaFeatures([
       { name: "prefers-color-scheme", value: scheme },
@@ -515,6 +538,7 @@ async function capture(def, viewport) {
       viewport,
       fixedHeight: !!def.fixedHeight,
       expectTable: !!def.table,
+      holdToasts: !!def.holdToasts,
       ...m,
       checks: found,
       expectedFailures: expected,

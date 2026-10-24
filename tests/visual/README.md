@@ -109,6 +109,16 @@ from the message's location. A request without a mock route shows up there. A pa
 needs an error status lists the API path in `expectedFailures`: its failed resource messages
 are recorded in `measurements.json` and do not fail the run.
 
+Toasts close on a `setTimeout` of their life (`ToastService.show`: 4 s for success and info,
+6 s for warnings, 8 s for errors, 5 s by default), while every step settles for at least 2 s,
+so a capture would miss a toast or catch it only sometimes. A page with `holdToasts: true`
+gets an init script (`evaluateOnNewDocument`, before the app) that holds every `setTimeout` of
+4000 ms or more: it never fires, so the toasts stay until the capture. RxJS timers
+(`debounceTime`, `timeout`, `timer`) run on `setInterval` and are not held, and in the app's
+code only the toast lives are that long today. A toast timer that pauses on hover or focus and
+restarts with the remaining time can fall under 4000 ms and fire after all, so a toast page
+should still check that its toast is in the capture.
+
 Captures are full page with the viewport at the top, so the dialog backdrop and other fixed
 elements cover only the first window height of a taller page. That is expected.
 
