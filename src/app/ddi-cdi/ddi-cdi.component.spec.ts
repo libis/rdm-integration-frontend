@@ -1587,6 +1587,29 @@ describe('DdiCdiComponent', () => {
         expect(rowCount(fixture)).toBeGreaterThan(10);
       });
 
+      it('fills the console pane with the output, without a second scroll', async () => {
+        const fixture = await render();
+        const tabs = fixture.nativeElement.querySelectorAll(
+          '.nav-link',
+        ) as NodeListOf<HTMLButtonElement>;
+        tabs[1].click();
+        await fixture.whenStable();
+        const pane = fixture.nativeElement.querySelector(
+          '.tab-pane-console',
+        ) as HTMLElement;
+        const output = pane.querySelector('textarea') as HTMLTextAreaElement;
+        const paneBox = pane.getBoundingClientRect();
+        const outputBox = output.getBoundingClientRect();
+        expect(paneBox.height).toBeGreaterThan(200);
+        expect(pane.scrollHeight).toBeLessThanOrEqual(pane.clientHeight);
+        expect(outputBox.top - paneBox.top).toBeLessThan(1);
+        expect(paneBox.bottom - outputBox.bottom).toBeLessThan(1);
+        const layout = measurePage(fixture.nativeElement);
+        expect(layout.hostScrollHeight).toBeLessThanOrEqual(
+          layout.hostClientHeight,
+        );
+      });
+
       it('fits the window with a long generated output, which scrolls', async () => {
         const fixture = await render(
           Array.from({ length: 400 }, (_, i) => `"line ${i}": true`).join('\n'),

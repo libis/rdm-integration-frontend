@@ -42,7 +42,6 @@ import {
 import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.component';
 
 // Third-party
-import { AutosizeModule } from 'ngx-autosize';
 
 // RxJS
 import {
@@ -77,7 +76,6 @@ import { SubscriptionManager } from '../shared/types';
     TreeTableHeaderDirective,
     TreeTableRowDirective,
     TreeTogglerComponent,
-    AutosizeModule,
   ],
 })
 export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
