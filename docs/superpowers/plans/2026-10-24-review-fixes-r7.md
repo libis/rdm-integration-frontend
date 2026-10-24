@@ -6,8 +6,8 @@ Done by the agents like the other tasks of `2026-10-24-review-fixes.md` (Eryk, 2
 `npm run lint` (ESLint plus the unused exports check) and `npm run pretty:check` stay green;
 the strict screenshot harness in `tests/visual` shows whether a page changed.
 
-1. Delete `progress.md` and `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md` at the repo root: they
-   describe PrimeNG theme variables that no longer exist (Eryk: delete them).
+1. Done on 2026-10-25 (commit 8ecb8a6): `progress.md` and `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md`
+   deleted, they described PrimeNG theme variables that no longer exist.
 2. `ai-context.md` lines about 448 to 622 still document the PrimeNG theme system; rewrite
    that section around Bootstrap's `data-bs-theme` and the `--app-*` tokens in
    `src/styles.scss`.
