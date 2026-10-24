@@ -1,0 +1,17 @@
+[
+  {
+    "label": "/",
+    "value": "/",
+    "expanded": true,
+    "children": [
+      {
+        "label": "home",
+        "value": "/home/",
+        "expanded": true,
+        "children": [
+          { "label": "alice", "value": "/home/alice/", "selected": true }
+        ]
+      }
+    ]
+  }
+]

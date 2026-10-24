@@ -1,0 +1,7 @@
+[
+  {
+    "label": "doi:10.1234/ABC - A rather long dataset title about measurements of something in several Flemish rivers between 2019 and 2024",
+    "value": "doi:10.1234/ABC"
+  },
+  { "label": "doi:10.1234/DEF - Other", "value": "doi:10.1234/DEF" }
+]

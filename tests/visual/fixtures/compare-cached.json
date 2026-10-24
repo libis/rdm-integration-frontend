@@ -1,0 +1,26 @@
+{
+  "ready": true,
+  "res": {
+    "id": "doi:10.1234/ABC",
+    "url": "https://rdr.example/ds",
+    "status": 2,
+    "maxFileSize": 1000,
+    "data": { "generate": { "count": 300, "extension": "txt" } },
+    "rejectedName": [
+      "bad?name 0.txt",
+      "bad?name 1.txt",
+      "bad?name 2.txt",
+      "bad?name 3.txt",
+      "bad?name 4.txt",
+      "bad?name 5.txt",
+      "bad?name 6.txt",
+      "bad?name 7.txt",
+      "bad?name 8.txt",
+      "bad?name 9.txt",
+      "bad?name 10.txt",
+      "bad?name 11.txt"
+    ],
+    "allowedFileNamePattern": "^[\\w .-]+$",
+    "allowedFolderPathPattern": "^[\\w /.-]*$"
+  }
+}

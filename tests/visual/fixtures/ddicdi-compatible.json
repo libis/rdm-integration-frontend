@@ -1,0 +1,5 @@
+{
+  "id": "doi:10.1234/ABC",
+  "url": "https://rdr.example/ds",
+  "data": { "generate": { "count": 60, "extension": "csv" } }
+}

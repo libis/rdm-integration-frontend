@@ -1,0 +1,19 @@
+[
+  { "label": "record_id", "value": "record_id" },
+  {
+    "label": "name",
+    "value": "name",
+    "selected": true,
+    "note": "unvalidated text field: may contain identifying information"
+  },
+  { "label": "dob", "value": "dob", "selected": true },
+  { "label": "email", "value": "email", "selected": true },
+  { "label": "age", "value": "age" },
+  { "label": "weight", "value": "weight" },
+  { "label": "visit_date", "value": "visit_date" },
+  {
+    "label": "comments",
+    "value": "comments",
+    "note": "free-text notes field: may contain identifying information"
+  }
+]
