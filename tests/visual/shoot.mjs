@@ -282,14 +282,33 @@ const PAGES = [
 // Runs in the page. The first visible tree table is measured: its body (the virtual scroll
 // viewport or the static body, both .tt-body) and its header. The header's height with no rows
 // is its height when it is kept out of flex shrinking, which is what an empty table gives it.
+// The page host is the routed component (the element after the router outlet); its content can
+// overflow it, or a table can end under the footer, while the document still fits the window.
+// Positions are in document coordinates.
 function measure() {
   const round = (n) => Math.round(n * 10) / 10;
   const height = (el) => round(el.getBoundingClientRect().height);
+  const top = (el) => round(el.getBoundingClientRect().top + window.scrollY);
+  const bottom = (el) =>
+    round(el.getBoundingClientRect().bottom + window.scrollY);
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const footer = document.querySelector("body > footer");
+  const host = document.querySelector(
+    "app-root router-outlet",
+  )?.nextElementSibling;
   const result = {
     window: window.innerHeight,
     document: document.documentElement.scrollHeight,
     rem,
+    footerTop: footer ? top(footer) : null,
+    host: host
+      ? {
+          element: host.localName,
+          display: getComputedStyle(host).display,
+          clientHeight: host.clientHeight,
+          scrollHeight: host.scrollHeight,
+        }
+      : null,
     table: null,
   };
   const tt = [...document.querySelectorAll(".tt")].find((el) =>
@@ -304,6 +323,7 @@ function measure() {
     header.style.flex = flex;
     result.table = {
       body: height(body),
+      bodyBottom: bottom(body),
       header: height(header),
       headerNoRows,
       rows: tt.querySelectorAll(".tt-row").length,
@@ -312,25 +332,47 @@ function measure() {
   return result;
 }
 
+const round1 = (n) => Math.round(n * 10) / 10;
+
 // The checks that --strict enforces.
 function checkLayout(name, def, m) {
   const failures = [];
+  const fail = (text) => failures.push(`${name}: ${text}`);
   if (def.fixedHeight && m.document > m.window) {
-    failures.push(
-      `${name}: document ${m.document} px is taller than the window ${m.window} px ` +
+    fail(
+      `document ${m.document} px is taller than the window ${m.window} px ` +
         `(+${m.document - m.window})`,
     );
+  }
+  if (def.fixedHeight) {
+    if (!m.host) {
+      fail("no page host (no element after router-outlet)");
+    } else if (m.host.scrollHeight > m.host.clientHeight) {
+      fail(
+        `page host <${m.host.element}> content ${m.host.scrollHeight} px is taller than ` +
+          `the host ${m.host.clientHeight} px ` +
+          `(+${m.host.scrollHeight - m.host.clientHeight})`,
+      );
+    }
+    if (m.table && m.footerTop === null) {
+      fail("no footer");
+    } else if (m.table && m.table.bodyBottom > m.footerTop + 0.5) {
+      fail(
+        `table body ends at ${m.table.bodyBottom} px, under the footer top ` +
+          `${m.footerTop} px (+${round1(m.table.bodyBottom - m.footerTop)})`,
+      );
+    }
   }
   if (m.table) {
     const minBody = MIN_BODY_REM * m.rem;
     if (m.table.body < minBody) {
-      failures.push(
-        `${name}: table body ${m.table.body} px is under ${MIN_BODY_REM}rem (${minBody} px)`,
+      fail(
+        `table body ${m.table.body} px is under ${MIN_BODY_REM}rem (${minBody} px)`,
       );
     }
     if (m.table.header < m.table.headerNoRows - 0.5) {
-      failures.push(
-        `${name}: table header ${m.table.header} px is under its height with no rows ` +
+      fail(
+        `table header ${m.table.header} px is under its height with no rows ` +
           `(${m.table.headerNoRows} px)`,
       );
     }
@@ -340,9 +382,14 @@ function checkLayout(name, def, m) {
 
 function describe(m) {
   const parts = [`document ${m.document}/${m.window}`];
+  if (m.host) {
+    parts.push(
+      `host ${m.host.element} ${m.host.scrollHeight}/${m.host.clientHeight}`,
+    );
+  }
   if (m.table) {
     parts.push(
-      `table body ${m.table.body}`,
+      `table body ${m.table.body} (ends ${m.table.bodyBottom}, footer ${m.footerTop})`,
       `header ${m.table.header} (no rows ${m.table.headerNoRows})`,
       `${m.table.rows} rows rendered`,
     );
