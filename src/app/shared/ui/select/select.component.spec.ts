@@ -425,6 +425,26 @@ describe('SelectComponent', () => {
     expect(panelOptions().map((o) => o.textContent!.trim())).toEqual(['Beta']);
   });
 
+  // A listbox may hold only options (axe: aria-required-children).
+  it('holds only options in the list and shows No results outside it', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    const roles = () =>
+      Array.from(list()!.children).map((c) => c.getAttribute('role'));
+    expect(roles()).toEqual(['option', 'option']);
+    expect(panel()!.textContent).not.toContain('No results');
+    const input = panel()!.querySelector(
+      'input.form-control',
+    ) as HTMLInputElement;
+    input.value = 'zzz';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(roles()).toEqual([]);
+    const message = panel()!.querySelector('.app-select-empty')!;
+    expect(message.textContent!.trim()).toBe('No results');
+    expect(list()!.contains(message)).toBeFalse();
+  });
+
   it('shows the label of a value that is set from outside', async () => {
     host.value.set('a');
     await fixture.whenStable();
