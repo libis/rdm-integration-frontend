@@ -33,6 +33,18 @@ const CONTENT_TYPES = {
 // rejected. longLabel: answer the dataset lookups with dvobjects-datasets-long-label.json.
 export const DEFAULT_VARIANT = { rejected: 0, longLabel: false };
 
+// A route handler returns the JSON body of a 200 answer, or reply(status, body) for any other
+// status: a string body is sent as text/plain, as the Go backend writes its errors, anything
+// else as JSON. The browser logs every error status as a console error, which fails the run
+// unless the page lists the path in expectedFailures (shoot.mjs).
+class Reply {
+  constructor(status, body) {
+    this.status = status;
+    this.body = body;
+  }
+}
+const reply = (status, body) => new Reply(status, body);
+
 // Fixtures are read on every request, so an edited fixture applies without a restart.
 const fixture = (name) =>
   JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, name), "utf8"));
@@ -168,7 +180,9 @@ const ROUTES = [
     "/api/common/ddicdicompatible",
     () => withFiles(fixture("ddicdi-compatible.json")),
   ],
-  // No previously generated DDI-CDI output.
+  // No previously generated DDI-CDI output. The backend (ddi_cdi.go) answers that with
+  // reply(404, "404 - no cached output found"); the page treats {} the same, and {} logs no
+  // failed resource.
   [
     "POST",
     "/api/common/cachedddicdioutput",
@@ -182,12 +196,25 @@ const ROUTES = [
   ["POST", "/api/common/metadata", () => fixture("metadata.json")],
 ];
 
+function noRoute(req, url) {
+  console.warn(`mock: no route for ${req.method} ${url.pathname}`);
+  return reply(404, { detail: "Not Found" });
+}
+
 function sendJson(res, status, body) {
   res.writeHead(status, {
     "content-type": CONTENT_TYPES[".json"],
     "cache-control": "no-store",
   });
   res.end(JSON.stringify(body));
+}
+
+function sendText(res, status, text) {
+  res.writeHead(status, {
+    "content-type": CONTENT_TYPES[".txt"],
+    "cache-control": "no-store",
+  });
+  res.end(text);
 }
 
 function sendFile(res, file) {
@@ -255,17 +282,19 @@ export function startServer({ dist, port = 0, ...variant }) {
     const route = ROUTES.find(
       ([method, p]) => method === req.method && p === url.pathname,
     );
-    if (!route) {
-      console.warn(`mock: no route for ${req.method} ${url.pathname}`);
-      sendJson(res, 404, { detail: "Not Found" });
-      return;
-    }
     const ctx = {
       body: await readBody(req),
       query: url.searchParams,
       variant: current,
     };
-    sendJson(res, 200, route[2](ctx));
+    const answer = route ? route[2](ctx) : noRoute(req, url);
+    if (!(answer instanceof Reply)) {
+      sendJson(res, 200, answer);
+    } else if (typeof answer.body === "string") {
+      sendText(res, answer.status, answer.body);
+    } else {
+      sendJson(res, answer.status, answer.body);
+    }
   }
 
   function handleVariant(res, url) {

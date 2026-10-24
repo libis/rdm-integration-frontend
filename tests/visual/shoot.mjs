@@ -181,7 +181,8 @@ async function openCompute(flow) {
 // name: the image is <name>-<width>x<height>.png. fixedHeight: the page is laid out to fit the
 // window, so a document taller than the window is a layout failure. table: the page shows a
 // tree table, so a missing or hidden one fails the table checks instead of skipping them.
-// variant: see server.mjs.
+// variant: see server.mjs. expectedFailures: API paths whose error status is part of the flow,
+// so the browser's "Failed to load resource" message for them is recorded, not counted.
 const PAGES = [
   {
     name: "connect",
@@ -469,12 +470,22 @@ async function capture(def, viewport) {
   const name = `${def.name}-${viewport.width}x${viewport.height}`;
   const logError = (text) =>
     errors.set(name, [...(errors.get(name) ?? []), text]);
+  const expected = [];
   const context = await browser.createBrowserContext();
   try {
     const page = await context.newPage();
     page.on("console", (message) => {
-      if (message.type() === "error") {
+      if (message.type() !== "error") {
+        return;
+      }
+      // A failed resource message has no URL in its text; its location has it.
+      const url = message.location()?.url;
+      if (!url || !message.text().startsWith("Failed to load resource")) {
         logError(message.text());
+      } else if (def.expectedFailures?.includes(new URL(url).pathname)) {
+        expected.push(`${message.text()}: ${url}`);
+      } else {
+        logError(`${message.text()}: ${url}`);
       }
     });
     page.on("pageerror", (err) => logError(`page error: ${err.message}`));
@@ -506,6 +517,7 @@ async function capture(def, viewport) {
       expectTable: !!def.table,
       ...m,
       checks: found,
+      expectedFailures: expected,
     };
     failures.push(...found);
     console.log(`captured ${name}: ${describe(m)}`);

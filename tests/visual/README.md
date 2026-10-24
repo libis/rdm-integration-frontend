@@ -8,9 +8,11 @@ scripts and fixtures are committed.
 
 - `server.mjs`: serves a built app and answers `/api/*` from `fixtures/*.json`. Only Node
   built ins. Exports `startServer({dist, port, rejected, longLabel})`, which resolves to
-  `{url, close, setVariant}`. Requests without a route are logged and answered with 404.
-- `shoot.mjs`: starts the server, drives headless Chromium with `puppeteer-core` and saves
-  one full page PNG per page and viewport, plus `measurements.json`. The Chromium binary comes
+  `{url, close, setVariant}`. A route answers 200 with the JSON its handler returns, or any
+  other status with `reply(status, body)`, a string body as `text/plain` the way the Go
+  backend writes its errors. Requests without a route are logged and answered with 404.
+- `shoot.mjs`: starts the server, drives headless Chromium with `puppeteer-core` and saves one
+  full page PNG per page and viewport, plus `measurements.json`. The Chromium binary comes
   from `--chromium <path>`, else the `CHROMIUM` environment variable, else
   `/usr/bin/chromium`.
 - `fixtures/`: the answers of the mock API, taken from the stubs of the 2026-10-24 review. The
@@ -98,11 +100,14 @@ select backdrop left open for instance, would take the click. The script checks 
 first and fails the capture with the element on top instead of clicking it. After the click
 the pointer leaves the page, so no hover style ends up in the capture.
 
-After every navigation or click the script waits until the network has been idle for
-1500 ms (the search inputs debounce by 750 ms), then 500 ms more. A page that cannot be
-reached is logged with the reason, the run goes on and exits with code 1. Console errors and
-page errors are counted per capture and printed at the end; any of them also makes the run
-exit with code 1. A request without a mock route shows up there as a failed resource.
+After every navigation or click the script waits until the network has been idle for 1500 ms
+(the search inputs debounce by 750 ms), then 500 ms more. A page that cannot be reached is
+logged with the reason, the run goes on and exits with code 1. Console errors and page errors
+are counted per capture, printed at the end and make the run exit with code 1 too. Chromium
+logs every error status as `Failed to load resource`, without the URL; the script adds the URL
+from the message's location. A request without a mock route shows up there. A page whose flow
+needs an error status lists the API path in `expectedFailures`: its failed resource messages
+are recorded in `measurements.json` and do not fail the run.
 
 Captures are full page with the viewport at the top, so the dialog backdrop and other fixed
 elements cover only the first window height of a taller page. That is expected.
