@@ -73,12 +73,15 @@ export class SelectComponent implements ControlValueAccessor {
   readonly optionTemplate = contentChild(SelectOptionDirective);
   /** The text input in editable mode, the select button otherwise. */
   readonly trigger = viewChild<ElementRef<HTMLElement>>('trigger');
+  /** The button that opens the panel in editable mode. */
+  readonly toggleButton = viewChild<ElementRef<HTMLElement>>('toggleButton');
   readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   readonly filterInput = viewChild<ElementRef<HTMLInputElement>>('filterInput');
   readonly listbox = viewChild(CdkListbox);
   readonly list = viewChild<ElementRef<HTMLElement>>('list');
   readonly listOptions = viewChildren<CdkOption<string>>(CdkOption);
   private readonly renderInjector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly listId = `app-select-list-${nextListId++}`;
   /** The name of the list: the label of the trigger, else the placeholder. */
@@ -168,11 +171,14 @@ export class SelectComponent implements ControlValueAccessor {
   }
 
   close(): void {
-    if (!this.open()) return;
-    // The panel is destroyed with the focused filter or option in it, which
+    // The panel is destroyed with the focused filter or list in it, which
     // would drop keyboard focus to the body. Hand it back to the trigger
     // before that happens, unless the user has already moved elsewhere.
-    const restoreFocus = this.focusIsLost();
+    this.closePanel(this.focusIsLost());
+  }
+
+  private closePanel(restoreFocus: boolean): void {
+    if (!this.open()) return;
     this.open.set(false);
     this.filterText.set('');
     this.onTouched();
@@ -200,6 +206,8 @@ export class SelectComponent implements ControlValueAccessor {
   onPanelKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       this.close();
+    } else if (event.key === 'Tab') {
+      this.onPanelTab(event);
     } else if (
       event.key === 'ArrowDown' &&
       event.target === this.filterInput()?.nativeElement
@@ -216,6 +224,40 @@ export class SelectComponent implements ControlValueAccessor {
         this.close();
       }
     }
+  }
+
+  // The panel sits at the end of the document, so Tab from the list, or
+  // Shift+Tab from the first stop of the panel, would leave the select for the
+  // body or the far end of the page. Like a native select, the panel closes
+  // and the browser moves on from the select itself: from the trigger, or
+  // forwards from the options button in editable mode.
+  private onPanelTab(event: KeyboardEvent): void {
+    const filter = this.filterInput()?.nativeElement;
+    const inList = this.listElement()?.contains(event.target as Node) ?? false;
+    const leaves = event.shiftKey
+      ? event.target === filter || (inList && !filter)
+      : inList;
+    if (!leaves) return;
+    const from =
+      !event.shiftKey && this.editable() ? this.toggleButton() : this.trigger();
+    from?.nativeElement.focus();
+    this.closePanel(false);
+  }
+
+  // Focus that moves from the panel to an element outside the select closes
+  // the panel and stays where it went. Focus that goes nowhere (the window
+  // loses focus, a click on the padding of the panel) leaves it open; a click
+  // outside lands on the backdrop, which closes it.
+  onPanelFocusout(event: FocusEvent): void {
+    const next = event.relatedTarget;
+    if (
+      !(next instanceof Node) ||
+      this.panel()?.nativeElement.contains(next) ||
+      this.host.nativeElement.contains(next)
+    ) {
+      return;
+    }
+    this.closePanel(false);
   }
 
   /** With focus on the list, the selected option is active, else the first. */

@@ -234,6 +234,102 @@ describe('SelectComponent', () => {
     expect(document.activeElement).toBe(trigger());
   });
 
+  // The panel sits at the end of the document: Tab out of it went to the
+  // body and then the page header, with the panel and its backdrop still open.
+  const tab = (el: Element, shiftKey = false) =>
+    el.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Tab',
+        keyCode: 9,
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+  it('closes on Tab from the list and lets the browser move on from the trigger', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    list()!.focus();
+    // Not handled: the browser moves focus on from the trigger.
+    expect(tab(list()!)).toBeTrue();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('closes on Shift+Tab from the filter and lets the browser move back from the trigger', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    expect(tab(document.activeElement!, true)).toBeTrue();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('stays open on Tab from the filter and Shift+Tab from the list, which stay in the panel', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    tab(document.activeElement!);
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+    list()!.focus();
+    tab(list()!, true);
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+  });
+
+  it('closes on Shift+Tab from the list when the panel has no filter', async () => {
+    host.filter.set(false);
+    await fixture.whenStable();
+    trigger().click();
+    await fixture.whenStable();
+    tab(list()!, true);
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('focuses the options button on Tab from the list in editable mode', async () => {
+    host.editable.set(true);
+    await fixture.whenStable();
+    const button = fixture.nativeElement.querySelector(
+      '.app-select .btn',
+    ) as HTMLButtonElement;
+    button.click();
+    await fixture.whenStable();
+    list()!.focus();
+    tab(list()!);
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('closes and leaves focus where it went when focus moves out of the panel', async () => {
+    const other = document.createElement('button');
+    document.body.appendChild(other);
+    try {
+      trigger().click();
+      await fixture.whenStable();
+      list()!.focus();
+      other.focus();
+      await fixture.whenStable();
+      expect(panel()).toBeNull();
+      expect(document.activeElement).toBe(other);
+    } finally {
+      other.remove();
+    }
+  });
+
+  it('stays open when focus leaves for nowhere, as when the window loses focus', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    list()!.focus();
+    list()!.blur();
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+  });
+
   it('leaves focus alone when it already moved outside the panel', async () => {
     const other = document.createElement('button');
     document.body.appendChild(other);
