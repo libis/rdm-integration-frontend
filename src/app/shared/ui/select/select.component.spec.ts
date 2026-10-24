@@ -140,6 +140,29 @@ describe('SelectComponent', () => {
     );
   });
 
+  it('moves focus from the filter into the list on ArrowDown', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    const filter = panel()!.querySelector('input.form-control')!;
+    expect(document.activeElement).toBe(filter);
+    // Handled: the key neither moves the caret nor scrolls the page.
+    expect(key(filter, 'ArrowDown')).toBeFalse();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(list());
+    expect(activeOption()).toBe(panelOptions()[0]);
+  });
+
+  it('activates the selected option on ArrowDown from the filter', async () => {
+    host.value.set('b');
+    await fixture.whenStable();
+    trigger().click();
+    await fixture.whenStable();
+    key(document.activeElement!, 'ArrowDown');
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(list());
+    expect(activeOption()).toBe(panelOptions()[1]);
+  });
+
   it('focuses the list with the first option active when the panel has no filter', async () => {
     host.filter.set(false);
     await fixture.whenStable();

@@ -201,6 +201,13 @@ export class SelectComponent implements ControlValueAccessor {
     if (event.key === 'Escape') {
       this.close();
     } else if (
+      event.key === 'ArrowDown' &&
+      event.target === this.filterInput()?.nativeElement
+    ) {
+      // From the filter into the list, where onListFocus activates an option.
+      event.preventDefault();
+      this.listbox()?.focus();
+    } else if (
       (event.key === 'Enter' || event.key === ' ') &&
       this.listElement()?.contains(event.target as Node)
     ) {
