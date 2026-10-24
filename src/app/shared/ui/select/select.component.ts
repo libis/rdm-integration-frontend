@@ -29,6 +29,8 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectItem } from '../../../models/select-item';
 
+let nextListId = 0;
+
 @Directive({ selector: 'ng-template[appSelectOption]' })
 export class SelectOptionDirective {
   constructor(
@@ -77,6 +79,10 @@ export class SelectComponent implements ControlValueAccessor {
   readonly list = viewChild<ElementRef<HTMLElement>>('list');
   readonly listOptions = viewChildren<CdkOption<string>>(CdkOption);
   private readonly renderInjector = inject(Injector);
+
+  readonly listId = `app-select-list-${nextListId++}`;
+  /** The name of the list: the label of the trigger, else the placeholder. */
+  readonly listLabel = signal('Options');
 
   /** The form value. May be free text in editable mode. */
   readonly value = signal<string | undefined>(undefined);
@@ -147,6 +153,7 @@ export class SelectComponent implements ControlValueAccessor {
 
   show(): void {
     if (this.open()) return;
+    this.listLabel.set(this.triggerLabel() || this.placeholder() || 'Options');
     this.open.set(true);
     this.opened.emit();
     afterNextRender(
@@ -170,6 +177,15 @@ export class SelectComponent implements ControlValueAccessor {
     this.filterText.set('');
     this.onTouched();
     if (restoreFocus) this.trigger()?.nativeElement.focus();
+  }
+
+  /** The text of the label elements of the trigger (label for="inputId"). */
+  private triggerLabel(): string {
+    const el = this.trigger()?.nativeElement as
+      HTMLButtonElement | HTMLInputElement | undefined;
+    return Array.from(el?.labels ?? [], (l) => l.textContent?.trim() ?? '')
+      .filter((text) => text !== '')
+      .join(' ');
   }
 
   private focusIsLost(): boolean {

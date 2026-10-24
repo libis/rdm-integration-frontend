@@ -389,6 +389,113 @@ describe('SelectComponent with options that arrive while it is open', () => {
   });
 });
 
+@Component({
+  imports: [SelectComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <label for="lbl">Dataset DOI</label>
+    <app-select
+      class="labelled"
+      inputId="lbl"
+      [options]="options"
+      [filter]="true"
+      placeholder="Select dataset"
+    ></app-select>
+    <app-select
+      class="placeholder"
+      [options]="options"
+      placeholder="Select queue"
+    ></app-select>
+    <app-select class="bare" [options]="options"></app-select>
+    <label for="free">DOI</label>
+    <app-select
+      class="free"
+      inputId="free"
+      [options]="options"
+      [editable]="true"
+    ></app-select>
+  `,
+})
+class AriaHostComponent {
+  readonly options = [
+    { label: 'Alpha', value: 'a' },
+    { label: 'Beta', value: 'b' },
+  ];
+}
+
+describe('SelectComponent ARIA', () => {
+  let fixture: ComponentFixture<AriaHostComponent>;
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AriaHostComponent],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AriaHostComponent);
+    await fixture.whenStable();
+  });
+
+  const el = (selector: string) =>
+    fixture.nativeElement.querySelector(selector) as HTMLElement;
+  const list = () =>
+    document.querySelector(
+      '.cdk-overlay-container .app-select-list',
+    ) as HTMLElement | null;
+  const escape = () =>
+    document.activeElement!.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        keyCode: 27,
+        bubbles: true,
+      }),
+    );
+
+  it('wires the trigger to the list it opens and names the list and the filter', async () => {
+    const trigger = el('.labelled .form-select');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.hasAttribute('aria-controls')).toBeFalse();
+    trigger.click();
+    await fixture.whenStable();
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(list()!.id).toBeTruthy();
+    expect(trigger.getAttribute('aria-controls')).toBe(list()!.id);
+    expect(list()!.getAttribute('aria-label')).toBe('Dataset DOI');
+    const filter = document.querySelector(
+      '.cdk-overlay-container input.form-control',
+    ) as HTMLInputElement;
+    expect(filter.getAttribute('aria-label')).toBe('Filter options');
+    expect(filter.getAttribute('aria-controls')).toBe(list()!.id);
+  });
+
+  it('names the list after the placeholder without a label, else Options', async () => {
+    el('.placeholder .form-select').click();
+    await fixture.whenStable();
+    expect(list()!.getAttribute('aria-label')).toBe('Select queue');
+    const first = list()!.id;
+    escape();
+    await fixture.whenStable();
+    el('.bare .form-select').click();
+    await fixture.whenStable();
+    expect(list()!.getAttribute('aria-label')).toBe('Options');
+    expect(list()!.id).not.toBe(first);
+  });
+
+  it('gives the editable input the combobox role and the open state', async () => {
+    const input = el('.free input.form-control');
+    const button = el('.free .btn');
+    expect(input.getAttribute('role')).toBe('combobox');
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+    expect(input.hasAttribute('aria-controls')).toBeFalse();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    button.click();
+    await fixture.whenStable();
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(input.getAttribute('aria-controls')).toBe(list()!.id);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('aria-controls')).toBe(list()!.id);
+    expect(list()!.getAttribute('aria-label')).toBe('DOI');
+  });
+});
+
 // Selects without inputId, like the per variable selects of the REDCap export
 // and the queue selects of compute: none of them may render id="undefined".
 @Component({
