@@ -288,9 +288,9 @@ function parseVariant(changes) {
 }
 
 // Resolves to {url, close, setVariant, variant, takeProblems}; setVariant({rejected,
-// rejectedSize, longLabel}) changes what the following API requests answer. takeProblems() returns and forgets the
-// requests the mock could not answer as meant: no route (answered 404) or a handler that threw
-// (answered 500).
+// rejectedSize, longLabel}) changes what the following API requests answer. takeProblems()
+// returns and forgets the requests the mock could not answer as meant: no route (answered 404)
+// or a handler that threw (answered 500).
 export function startServer({ dist, port = 0, ...variant }) {
   if (!dist || !fs.existsSync(path.join(dist, "index.html"))) {
     return Promise.reject(new Error(`no index.html in dist folder "${dist}"`));

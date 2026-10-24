@@ -248,10 +248,10 @@ async function openCompute(flow) {
 // name: the image is <name>-<width>x<height>.png. fixedHeight: the page is laid out to fit the
 // window, so a document taller than the window is a layout failure. table: the page shows a
 // tree table, so a missing or hidden one fails the table checks instead of skipping them.
-// variant: see server.mjs. expectedFailures: [{path, status}], the API answers with an error
-// status that are part of the flow, so the browser's "Failed to load resource" message for that
-// path and status is recorded, not counted. A request the mock has no route for, or whose
-// handler throws, fails the capture anyway.
+// variant: see server.mjs. expectedFailures: [{path, status}], error answers of the API that
+// are part of the flow: the browser's "Failed to load resource" message for that path with that
+// status is recorded, not counted. A request the mock has no route for, or whose handler
+// throws, fails the capture anyway.
 // holdToasts: toasts stay until the capture (see HOLD_TIMEOUTS_MS). freezeAnimations: CSS
 // animations stop before the capture, so a spinner is drawn the same way in every run; only for
 // elements visible without their animation (a rotating spinner, not spinner-grow).
