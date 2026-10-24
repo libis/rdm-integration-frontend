@@ -65,6 +65,8 @@ export class SelectComponent implements ControlValueAccessor {
   readonly editable = input(false);
   readonly disabled = input(false);
   readonly inputId = input<string | undefined>(undefined);
+  /** The name of a select without a label element (label for="inputId"). */
+  readonly ariaLabel = input<string | undefined>(undefined);
 
   readonly opened = output<void>();
   readonly filterChange = output<string>();
@@ -84,7 +86,7 @@ export class SelectComponent implements ControlValueAccessor {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly listId = `app-select-list-${nextListId++}`;
-  /** The name of the list: the label of the trigger, else the placeholder. */
+  /** The name of the list: the label of the trigger, ariaLabel or the placeholder. */
   readonly listLabel = signal('Options');
 
   /** The form value. May be free text in editable mode. */
@@ -171,7 +173,12 @@ export class SelectComponent implements ControlValueAccessor {
   /** Opens the panel with focus on the filter, or on the list if intoList. */
   show(intoList = false): void {
     if (this.open()) return;
-    this.listLabel.set(this.triggerLabel() || this.placeholder() || 'Options');
+    this.listLabel.set(
+      this.triggerLabel() ||
+        this.ariaLabel() ||
+        this.placeholder() ||
+        'Options',
+    );
     this.open.set(true);
     this.opened.emit();
     afterNextRender(

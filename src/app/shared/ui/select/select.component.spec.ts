@@ -643,6 +643,18 @@ describe('SelectComponent with options that arrive while it is open', () => {
       placeholder="Select queue"
     ></app-select>
     <app-select class="bare" [options]="options"></app-select>
+    <app-select
+      class="named"
+      ariaLabel="Queue for run.py"
+      [options]="options"
+      placeholder="Select queue"
+    ></app-select>
+    <app-select
+      class="named-free"
+      ariaLabel="Free DOI"
+      [options]="options"
+      [editable]="true"
+    ></app-select>
     <label for="free">DOI</label>
     <app-select
       class="free"
@@ -700,6 +712,30 @@ describe('SelectComponent ARIA', () => {
     ) as HTMLInputElement;
     expect(filter.getAttribute('aria-label')).toBe('Filter options');
     expect(filter.getAttribute('aria-controls')).toBe(list()!.id);
+  });
+
+  // A button names itself after its label and drops its content, the value;
+  // a combobox keeps the label as its name and the content as its value.
+  it('makes the trigger a combobox named by its label', () => {
+    const trigger = el('.labelled .form-select') as HTMLButtonElement;
+    expect(trigger.getAttribute('role')).toBe('combobox');
+    expect(trigger.hasAttribute('aria-label')).toBeFalse();
+    expect(Array.from(trigger.labels, (l) => l.textContent)).toEqual([
+      'Dataset DOI',
+    ]);
+  });
+
+  it('names a select without a label after ariaLabel, and its list too', async () => {
+    const trigger = el('.named .form-select');
+    expect(trigger.getAttribute('role')).toBe('combobox');
+    expect(trigger.getAttribute('aria-label')).toBe('Queue for run.py');
+    expect(
+      el('.named-free input.form-control').getAttribute('aria-label'),
+    ).toBe('Free DOI');
+    expect(el('.labelled .form-select').hasAttribute('aria-label')).toBeFalse();
+    trigger.click();
+    await fixture.whenStable();
+    expect(list()!.getAttribute('aria-label')).toBe('Queue for run.py');
   });
 
   it('names the list after the placeholder without a label, else Options', async () => {
