@@ -2,6 +2,7 @@ import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { SelectComponent, SelectOptionDirective } from './select.component';
+import { SelectItem } from '../../../models/select-item';
 
 @Component({
   imports: [SelectComponent, FormsModule],
@@ -57,6 +58,15 @@ describe('SelectComponent', () => {
     Array.from(
       document.querySelectorAll('.cdk-overlay-container .app-select-option'),
     ) as HTMLElement[];
+  const list = () =>
+    document.querySelector(
+      '.cdk-overlay-container .app-select-list',
+    ) as HTMLElement | null;
+  // Focus stays on the list; the active option is its aria-activedescendant.
+  const activeOption = () => {
+    const id = list()?.getAttribute('aria-activedescendant');
+    return id ? document.getElementById(id) : null;
+  };
   const keyCodes = { ArrowDown: 40, Enter: 13, Escape: 27, ' ': 32 };
   const key = (el: Element, k: keyof typeof keyCodes) =>
     el.dispatchEvent(
@@ -111,7 +121,8 @@ describe('SelectComponent', () => {
       await fixture.whenStable();
       trigger().click();
       await fixture.whenStable();
-      expect(document.activeElement).toBe(panelOptions()[1]);
+      expect(document.activeElement).toBe(list());
+      expect(activeOption()).toBe(panelOptions()[1]);
       key(document.activeElement!, k);
       await fixture.whenStable();
       expect(panel()).toBeNull();
@@ -129,27 +140,44 @@ describe('SelectComponent', () => {
     );
   });
 
-  it('focuses the first option when the panel has no filter', async () => {
+  it('focuses the list with the first option active when the panel has no filter', async () => {
     host.filter.set(false);
     await fixture.whenStable();
     trigger().click();
     await fixture.whenStable();
-    expect(document.activeElement).toBe(panelOptions()[0]);
+    expect(document.activeElement).toBe(list());
+    expect(activeOption()).toBe(panelOptions()[0]);
   });
 
   it('selects Beta with ArrowDown then Enter after focusing Alpha', async () => {
     trigger().click();
     await fixture.whenStable();
-    const listbox = document.querySelector(
-      '.cdk-overlay-container .app-select-list',
-    ) as HTMLElement;
-    listbox.focus();
-    expect(document.activeElement).toBe(panelOptions()[0]);
+    list()!.focus();
+    await fixture.whenStable();
+    expect(activeOption()).toBe(panelOptions()[0]);
     key(document.activeElement!, 'ArrowDown');
     key(document.activeElement!, 'Enter');
     await fixture.whenStable();
     expect(host.value()).toBe('b');
     expect(panel()).toBeNull();
+  });
+
+  // Replacing the options destroyed the focused option element and dropped
+  // focus to the body with the panel still open.
+  it('keeps focus on the list when the options are replaced while it has focus', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    list()!.focus();
+    await fixture.whenStable();
+    expect(activeOption()?.textContent?.trim()).toBe('Alpha');
+    host.options.set([
+      { label: 'Gamma', value: 'g' },
+      { label: 'Delta', value: 'd' },
+    ]);
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+    expect(document.activeElement).toBe(list());
+    expect(activeOption()?.textContent?.trim()).toBe('Gamma');
   });
 
   it('closes on Escape without changing the value and focuses the trigger again', async () => {
@@ -286,6 +314,78 @@ describe('SelectComponent with a custom option template', () => {
       '.cdk-overlay-container .app-select-option .custom-option',
     );
     expect(custom?.textContent?.trim()).toBe('Alpha!');
+  });
+});
+
+// The connect page pattern (getOptions on opened): a loading item first, the
+// result of the lookup a moment later, while the panel is open.
+@Component({
+  imports: [SelectComponent, FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <app-select
+      inputId="branch"
+      [options]="options()"
+      [ngModel]="value()"
+      (ngModelChange)="value.set($event)"
+      (opened)="options.set([{ label: 'Loading...', value: 'loading' }])"
+    ></app-select>
+  `,
+})
+class LazyHostComponent {
+  readonly options = signal<SelectItem<string>[]>([]);
+  readonly value = signal<string | undefined>(undefined);
+}
+
+describe('SelectComponent with options that arrive while it is open', () => {
+  it('keeps focus on the list and activates the first result', async () => {
+    await TestBed.configureTestingModule({
+      imports: [LazyHostComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(LazyHostComponent);
+    await fixture.whenStable();
+    const trigger = fixture.nativeElement.querySelector(
+      '#branch',
+    ) as HTMLElement;
+    trigger.focus();
+    trigger.click();
+    await fixture.whenStable();
+    const list = document.querySelector(
+      '.cdk-overlay-container .app-select-list',
+    ) as HTMLElement;
+    const active = () =>
+      document
+        .getElementById(list.getAttribute('aria-activedescendant') ?? '')
+        ?.textContent?.trim();
+    expect(document.activeElement).toBe(list);
+    expect(active()).toBe('Loading...');
+    fixture.componentInstance.options.set([
+      { label: 'main', value: 'main' },
+      { label: 'dev', value: 'dev' },
+    ]);
+    await fixture.whenStable();
+    expect(
+      document.querySelector('.cdk-overlay-container .app-select-panel'),
+    ).not.toBeNull();
+    expect(document.activeElement).toBe(list);
+    expect(active()).toBe('main');
+    list.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        keyCode: 40,
+        bubbles: true,
+      }),
+    );
+    list.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        keyCode: 13,
+        bubbles: true,
+      }),
+    );
+    await fixture.whenStable();
+    expect(fixture.componentInstance.value()).toBe('dev');
+    expect(document.activeElement).toBe(trigger);
   });
 });
 

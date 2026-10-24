@@ -74,8 +74,10 @@
       #list
       class="list-unstyled mb-0 app-select-list"
       cdkListbox
+      cdkListboxUseActiveDescendant
       [cdkListboxValue]="listValue()"
       (cdkListboxValueChange)="onListChange($event)"
+      (focus)="onListFocus()"
     >
       @for (option of visibleOptions(); track option.value) {
         <li

@@ -14,6 +14,7 @@ import {
   computed,
   contentChild,
   Directive,
+  effect,
   ElementRef,
   forwardRef,
   inject,
@@ -107,6 +108,24 @@ export class SelectComponent implements ControlValueAccessor {
   private onChange: (v: string | undefined) => void = () => {};
   private onTouched: () => void = () => {};
 
+  constructor() {
+    // Focus stays on the list and the active option is its
+    // aria-activedescendant, so replacing the options (a loading item by the
+    // result, search results) cannot drop focus to the body. The active option
+    // may go with the old options; the list then activates another one.
+    effect(() => {
+      this.visibleOptions();
+      afterNextRender(
+        () => {
+          if (this.open() && document.activeElement === this.listElement()) {
+            this.onListFocus();
+          }
+        },
+        { injector: this.renderInjector },
+      );
+    });
+  }
+
   writeValue(value: string | undefined | null): void {
     this.value.set(value ?? undefined);
   }
@@ -167,13 +186,28 @@ export class SelectComponent implements ControlValueAccessor {
       this.close();
     } else if (
       (event.key === 'Enter' || event.key === ' ') &&
-      this.list()?.nativeElement.contains(event.target as Node)
+      this.listElement()?.contains(event.target as Node)
     ) {
       const active = this.listOptions().find((o) => o.isActive());
       if (active && !active.disabled && active.value === this.value()) {
         this.close();
       }
     }
+  }
+
+  /** With focus on the list, the selected option is active, else the first. */
+  onListFocus(): void {
+    const listbox = this.listbox();
+    const options = this.listOptions();
+    if (!listbox || options.some((o) => o.isActive())) return;
+    const next =
+      options.find((o) => !o.disabled && o.value === this.value()) ??
+      options.find((o) => !o.disabled);
+    if (next) listbox._setActiveOption(next);
+  }
+
+  private listElement(): HTMLElement | undefined {
+    return this.list()?.nativeElement;
   }
 
   // The listbox emits no change when the selected option is activated again

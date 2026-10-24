@@ -27,3 +27,13 @@
 .app-select-option.cdk-option-active {
   background-color: var(--app-surface);
 }
+
+// Focus stays on the list (aria-activedescendant), so the focus ring the
+// browser drew around a focused option goes around the active option.
+.app-select-list:focus-visible {
+  outline: none;
+
+  .app-select-option.cdk-option-active {
+    outline: auto 1px -webkit-focus-ring-color;
+  }
+}
