@@ -393,7 +393,9 @@ const PAGES = [
 // is its height when it is kept out of flex shrinking, which is what an empty table gives it.
 // The page host is the routed component (the element after the router outlet); its content can
 // overflow it, or a table can end under the footer, while the document still fits the window.
-// Positions are in document coordinates.
+// The body's clip is the topmost bottom edge among its ancestors that clip overflow (any
+// overflow-y but visible; the edge is the inner border edge, scrollbars are hidden): rows below
+// it are cut off, or on a scrolled host out of reach. Positions are in document coordinates.
 function measure() {
   const round = (n) => Math.round(n * 10) / 10;
   const height = (el) => round(el.getBoundingClientRect().height);
@@ -432,9 +434,27 @@ function measure() {
     header.style.flex = "none";
     const headerNoRows = height(header);
     header.style.flex = flex;
+    let clip = null;
+    for (
+      let el = body.parentElement;
+      el && el !== document.documentElement;
+      el = el.parentElement
+    ) {
+      const style = getComputedStyle(el);
+      if (style.overflowY === "visible") {
+        continue;
+      }
+      const edge = round(bottom(el) - parseFloat(style.borderBottomWidth));
+      if (!clip || edge < clip.bottom) {
+        const classes = [...el.classList].map((c) => `.${c}`).join("");
+        clip = { bottom: edge, by: `<${el.localName}${classes}>` };
+      }
+    }
     result.table = {
       body: height(body),
       bodyBottom: bottom(body),
+      clipBottom: clip?.bottom ?? null,
+      clippedBy: clip?.by ?? null,
       header: height(header),
       headerNoRows,
       rows: tt.querySelectorAll(".tt-row").length,
@@ -484,6 +504,13 @@ function checkLayout(name, def, m) {
     fail("no visible tree table (.tt)");
   }
   if (m.table) {
+    const { bodyBottom, clipBottom, clippedBy } = m.table;
+    if (clipBottom !== null && bodyBottom > clipBottom + 0.5) {
+      fail(
+        `table body ends at ${bodyBottom} px, under the bottom of ${clippedBy} at ` +
+          `${clipBottom} px (+${round1(bodyBottom - clipBottom)})`,
+      );
+    }
     const minBody = MIN_BODY_REM * m.rem;
     if (m.table.body < minBody) {
       fail(
@@ -510,7 +537,8 @@ function describe(m) {
   }
   if (m.table) {
     parts.push(
-      `table body ${m.table.body} (ends ${m.table.bodyBottom}, footer ${m.footerTop})`,
+      `table body ${m.table.body} (ends ${m.table.bodyBottom}, clip ${m.table.clipBottom}, ` +
+        `footer ${m.footerTop})`,
       `header ${m.table.header} (no rows ${m.table.headerNoRows})`,
       `${m.table.rows} rows rendered`,
     );

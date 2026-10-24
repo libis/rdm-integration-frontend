@@ -164,31 +164,38 @@ Each capture prints and records in `<out>/measurements.json`: the document heigh
 (`scrollHeight`) against the window height; the page host (the routed component, the element
 after `router-outlet`) with its `display`, `scrollHeight` and `clientHeight`; the top of the
 `footer`; and for the first visible tree table the body height and bottom (`.tt-body`, the
-virtual scroll viewport or the static body), the header height (`.tt-header`) and the
-header's height with no rows (measured with the header kept out of flex shrinking, which is
-what an empty table gives it). Positions are in document coordinates. Without `--strict` the
-failed checks are printed; with `--strict` they make the run exit with code 1:
+virtual scroll viewport or the static body), the bottom it is clipped at (`clipBottom`: the
+topmost inner bottom edge among its ancestors whose `overflow-y` is not `visible`, named in
+`clippedBy`), the header height (`.tt-header`) and the header's height with no rows (measured
+with the header kept out of flex shrinking, which is what an empty table gives it). Positions
+are in document coordinates. Without `--strict` the failed checks are printed; with `--strict`
+they make the run exit with code 1:
 
 - a page laid out to fit the window (compare, download, compute, DDI-CDI, metadata selector)
   has a document taller than the window, a page host whose content is taller than the host,
   or a table body that ends below the top of the footer;
 - a page that shows a tree table (every page above) has no visible `.tt`;
+- a table body ends more than 0.5 px below the bottom it is clipped at, so its last rows are
+  cut off by a container with `overflow: hidden` or out of reach of a scrolled host, even
+  where the body still ends above the footer;
 - a table body is under 12rem (192 px);
 - a table header is shorter than its height with no rows.
 
-A page with `hostScrolls: true` shows more above its table than the window can leave room
-for, so its host may scroll instead: the host check then requires a scroll box (`overflow-y`
-`auto` or `scroll`) instead of content that fits, and the page is measured with the host
-scrolled to its end, where the table must still end above the footer, and captured with the
-host at its top. Today only `download-card` has it.
+A page with `hostScrolls: true` shows more above its table than the window can leave room for,
+so its host may scroll instead: the host check then requires a scroll box (`overflow-y` `auto`
+or `scroll`) instead of content that fits, and the page is measured with the host scrolled to
+its end, where the table must still end above the footer and within the host (the host is one
+of the clipping ancestors), and captured with the host at its top. Today only `download-card`
+has it.
 
 Document and host heights are whole pixels rounded from fractional boxes, so both checks allow
 1 px. The document can fit the window while the page does not: host overflow does not push the
 footer down, so on compare up to 86 px of it (the 16 px container padding under the host and
 the 70 px footer) stays inside the document, and content cut off by an `overflow: hidden`
-ancestor never reaches the document height. The host and footer checks catch both. A host with
-an inline `display` has no box of its own and reports 0 for both heights, so only the footer
-check applies to it; the five fixed height pages have flex hosts since the review fixes.
+ancestor never reaches the document height. The host, clip and footer checks catch both. A
+host with an inline `display` has no box of its own and reports 0 for both heights, so only
+the footer check applies to it; the five fixed height pages have flex hosts since the review
+fixes.
 
 ## Compare two runs
 
