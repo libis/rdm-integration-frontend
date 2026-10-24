@@ -70,6 +70,13 @@ never the machine's own setting. The app follows it by setting `data-bs-theme` o
 (`src/main.ts`), and every capture checks that the attribute matches and fails otherwise.
 Shoot once without and once with `--dark`, into different `--out` folders.
 
+Time zone and locale: the browser runs with `TZ=UTC`, `--lang=en-US`, `LANG=en_US.UTF-8` and
+`LANGUAGE=en_US` (Chromium on Linux takes its locale from the last two, `--lang` alone does
+not change it), never the machine's settings. `measurements.json` records what the browser
+reports: its version (`browser.version()`), `navigator.language` and the time zone, so a
+browser upgrade or a locale change between two runs shows there. The run warns when the
+browser did not take the pinned values.
+
 Every page is shot at 1366x768 and at 1920x1080, as `<page>-<width>x<height>.png`. Each
 capture starts in a fresh browser context, so no session storage carries over. Pages, in
 order:

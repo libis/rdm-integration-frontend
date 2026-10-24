@@ -30,6 +30,9 @@ const ROUNDING_PX = 1;
 // settles for at least 2 s, so a capture would miss a toast or catch it only sometimes. On a
 // page with holdToasts, every setTimeout of this delay or longer is held: it never fires.
 const HOLD_TIMEOUTS_MS = 4000;
+// The browser's time zone and locale are pinned, so the captures do not depend on the machine.
+const TIME_ZONE = "UTC";
+const LANGUAGE = "en-US";
 const CLICKABLE = 'button, a, [role="button"]';
 const DATASET = "doi:10.1234/ABC";
 
@@ -474,11 +477,48 @@ if (unknown.length > 0) {
   process.exit(2);
 }
 
+// Chromium on Linux takes its locale from LANGUAGE and LANG; --lang alone leaves
+// navigator.language at the machine's.
+const browserEnv = () => ({
+  ...process.env,
+  TZ: TIME_ZONE,
+  LANG: `${LANGUAGE.replace("-", "_")}.UTF-8`,
+  LANGUAGE: LANGUAGE.replace("-", "_"),
+});
+
+// What the browser reports, recorded so that a browser upgrade or a locale change between two
+// runs shows in measurements.json.
+async function browserInfo(browser) {
+  const page = await browser.newPage();
+  try {
+    return {
+      version: await browser.version(),
+      ...(await page.evaluate(() => ({
+        language: navigator.language,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }))),
+    };
+  } finally {
+    await page.close();
+  }
+}
+
 const server = await startServer({ dist: args.dist, port: 0 });
 const browser = await puppeteer.launch({
   executablePath: args.chromium,
   headless: true,
+  args: [`--lang=${LANGUAGE}`],
+  env: browserEnv(),
 });
+const info = await browserInfo(browser);
+console.log(
+  `browser ${info.version}, language ${info.language}, time zone ${info.timeZone}`,
+);
+if (info.language !== LANGUAGE || info.timeZone !== TIME_ZONE) {
+  console.warn(
+    `the browser did not take the pinned language ${LANGUAGE} and time zone ${TIME_ZONE}`,
+  );
+}
 fs.mkdirSync(args.out, { recursive: true });
 const measurements = {};
 const failures = [];
@@ -568,6 +608,7 @@ fs.writeFileSync(
   path.join(args.out, "measurements.json"),
   `${JSON.stringify(
     {
+      browser: info,
       scheme,
       strict: args.strict,
       captures: measurements,
