@@ -22,18 +22,23 @@
   cursor: pointer;
 }
 
-.app-select-option[aria-selected="true"],
-.app-select-option:focus,
-.app-select-option.cdk-option-active {
+// The selected option has the background, the active one (where the keys
+// are) the focus ring.
+.app-select-option[aria-selected="true"] {
   background-color: var(--app-surface);
 }
 
 // Focus stays on the list (aria-activedescendant), so the focus ring the
-// browser drew around a focused option goes around the active option.
+// browser draws around a focused element goes around the active option, inset
+// so the panel does not clip its sides. The first outline is the ring in every
+// browser; Chromium and WebKit then take their own ring colour from the second,
+// which Firefox drops as invalid.
 .app-select-list:focus-visible {
   outline: none;
 
   .app-select-option.cdk-option-active {
+    outline: auto 1px;
     outline: auto 1px -webkit-focus-ring-color;
+    outline-offset: -2px;
   }
 }

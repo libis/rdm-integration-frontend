@@ -67,14 +67,25 @@ describe('SelectComponent', () => {
     const id = list()?.getAttribute('aria-activedescendant');
     return id ? document.getElementById(id) : null;
   };
-  const keyCodes = { ArrowDown: 40, Enter: 13, Escape: 27, ' ': 32 };
-  const key = (el: Element, k: keyof typeof keyCodes) =>
+  const keyCodes = {
+    ArrowDown: 40,
+    ArrowUp: 38,
+    Enter: 13,
+    Escape: 27,
+    ' ': 32,
+  };
+  const key = (
+    el: Element,
+    k: keyof typeof keyCodes,
+    init: KeyboardEventInit = {},
+  ) =>
     el.dispatchEvent(
       new KeyboardEvent('keydown', {
         key: k,
         keyCode: keyCodes[k],
         bubbles: true,
         cancelable: true,
+        ...init,
       }),
     );
 
@@ -161,6 +172,27 @@ describe('SelectComponent', () => {
     await fixture.whenStable();
     expect(document.activeElement).toBe(list());
     expect(activeOption()).toBe(panelOptions()[1]);
+  });
+
+  // Firefox dropped the ring, an invalid declaration there, and the active
+  // and selected options then looked the same.
+  it('rings the active option and sets it apart from the selected one', async () => {
+    host.filter.set(false);
+    host.value.set('a');
+    await fixture.whenStable();
+    trigger().click();
+    await fixture.whenStable();
+    key(list()!, 'ArrowDown');
+    await fixture.whenStable();
+    const [alpha, beta] = panelOptions();
+    expect(activeOption()).toBe(beta);
+    expect(list()!.matches(':focus-visible')).toBeTrue();
+    const active = getComputedStyle(beta);
+    const selected = getComputedStyle(alpha);
+    expect(active.outlineStyle).not.toBe('none');
+    expect(parseFloat(active.outlineWidth)).toBeGreaterThan(0);
+    expect(selected.outlineStyle).toBe('none');
+    expect(active.backgroundColor).not.toBe(selected.backgroundColor);
   });
 
   it('focuses the list with the first option active when the panel has no filter', async () => {
