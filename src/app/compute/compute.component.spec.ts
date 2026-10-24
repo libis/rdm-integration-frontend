@@ -430,6 +430,27 @@ describe('ComputeComponent layout and row state', () => {
     expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
   });
 
+  it('draws 48 px rows with room for the focus rings of the queue select and the run button', () => {
+    const row = rows()[0];
+    const rowBox = row.getBoundingClientRect();
+    expect(rowBox.height).toBe(48);
+    // The action cell clips (overflow hidden) and sits above the row border.
+    const cell = row.querySelectorAll('.tt-cell')[1] as HTMLElement;
+    expect(getComputedStyle(cell).overflow).toBe('hidden');
+    const box = cell.getBoundingClientRect();
+    expect(box.top).toBeGreaterThanOrEqual(rowBox.top);
+    expect(box.bottom).toBeLessThanOrEqual(rowBox.bottom - 1);
+    for (const control of [
+      row.querySelector('.form-select'),
+      row.querySelector('button.btn-primary'),
+    ] as HTMLElement[]) {
+      const r = control.getBoundingClientRect();
+      expect(r.height).toBeGreaterThan(0);
+      expect(r.top - box.top).toBeGreaterThanOrEqual(4);
+      expect(box.bottom - r.bottom).toBeGreaterThanOrEqual(4);
+    }
+  });
+
   it('keeps the dataset select on one line and fits the window with a long label', async () => {
     const trigger = fixture.nativeElement.querySelector(
       '#datasetId',
