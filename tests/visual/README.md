@@ -8,17 +8,24 @@ scripts and fixtures are committed.
 
 - `server.mjs`: serves a built app and answers `/api/*` from `fixtures/*.json`. Only Node
   built ins. Exports `startServer({dist, port, rejected, longLabel})`, which resolves to
-  `{url, close, setVariant}`. A route answers 200 with the JSON its handler returns, or any
-  other status with `reply(status, body)`, a string body as `text/plain` the way the Go
-  backend writes its errors. Requests without a route are logged and answered with 404.
+  `{url, close, setVariant, variant}`: `setVariant({rejected, longLabel})` changes what the
+  following requests answer and the `variant` getter returns the current variant. A route
+  answers 200 with the JSON its handler returns, or any other status with
+  `reply(status, body)`, a string body as `text/plain` the way the Go backend writes its
+  errors. Requests without a route are logged and answered with 404.
 - `shoot.mjs`: starts the server, drives headless Chromium with `puppeteer-core` and saves one
   full page PNG per page and viewport, plus `measurements.json`. The Chromium binary comes
   from `--chromium <path>`, else the `CHROMIUM` environment variable, else
   `/usr/bin/chromium`.
-- `fixtures/`: the answers of the mock API, taken from the stubs of the 2026-10-24 review. The
-  frontend config has four plugins (local, GitHub, Globus with a token getter, REDCap
-  reports). Dataset `doi:10.1234/ABC` has 300 files on compare and download, 40 Python files
-  on compute and 60 CSV files on DDI-CDI. A fixture whose `data` is
+- `fixtures/`: the answers of the mock API. Taken from the stubs of the 2026-10-24 review (its
+  `lib.cjs`): the frontend config without its REDCap plugin, the user info, the compare key
+  and the cached comparison, the dataset lookups, the file lists, the first Globus listing
+  (now with the home expanded), the endpoint search, the code exchange, the access check and
+  the empty DDI-CDI output. Written new for the harness: the metadata, the REDCap variables,
+  the collections, the Globus `/` listing, the user email and the REDCap plugin (`redcap2`) in
+  the config. The frontend config has four plugins (local, GitHub, Globus with a token getter,
+  REDCap reports). Dataset `doi:10.1234/ABC` has 300 files on compare and download, 40 Python
+  files on compute and 60 CSV files on DDI-CDI. A fixture whose `data` is
   `{"generate": {"count", "extension"}}` gets a generated list: every third file at the root,
   the others in `folder0` to `folder4`, the status cycling through equal, new, updated and
   deleted. `compare-cached.json` is a finished comparison (status 2), so the compare page does
@@ -77,6 +84,13 @@ reports: its version (`browser.version()`), `navigator.language` and the time zo
 browser upgrade or a locale change between two runs shows there. The run warns when the
 browser did not take the pinned values.
 
+Scrollbars: `puppeteer-core` launches headless Chromium with `--hide-scrollbars`. Scrollbars
+are never painted and an `overflow: scroll` or `auto` box reserves no width for one, so a page
+taller than the window lays out 15 px wider than in a browser with classic scrollbars;
+`scrollbar-gutter: stable` still reserves its 15 px. A dead scrollbar such as the one of the
+review's finding M2 (`overflow-y: scroll` on the table header) cannot show in an image: check
+it by computed style.
+
 Every page is shot at 1366x768 and at 1920x1080, as `<page>-<width>x<height>.png`. Each
 capture starts in a fresh browser context, so no session storage carries over. Pages, in
 order:
@@ -87,7 +101,8 @@ order:
 - `compare-filter`: compare, then the status filter button in the table header.
 - `download`: the Globus OAuth callback `/connect?code=c1&state={"download": true, ...}`,
   which the app sends on to `/download`.
-- `compute-40`: `/compute`, first option of the dataset select; 40 rows.
+- `compute-40`: `/compute`, first option of the dataset select: 40 Python files, rendered as
+  19 rows (the 14 files at the root and the 5 folders, collapsed).
 - `compute-long-label`: the same with the long dataset label.
 - `compute-dialog`: compute, first queue in the first row, then its run button.
 - `ddi-cdi`: `/ddi-cdi?datasetPid=doi:10.1234/ABC`.
