@@ -21,6 +21,7 @@ import { PluginService } from '../plugin.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
+import { measurePage, resizeTestWindow } from '../../testing/page-layout';
 import {
   CachedComputeResponse,
   CompareResult,
@@ -1536,6 +1537,71 @@ describe('DdiCdiComponent', () => {
       ) as HTMLAnchorElement;
       expect(link.getAttribute('href')).toBe('https://example.org/ds');
       expect(link.textContent).toContain('doi:10.1/ABC');
+    });
+
+    describe('in a 1366x768 window', () => {
+      let restoreWindow: () => void;
+      beforeEach(() => (restoreWindow = resizeTestWindow(1366, 768)));
+      afterEach(() => restoreWindow());
+
+      // 60 CSV files with the info alert above the tabs, like the harness.
+      const render = async (generated?: string) => {
+        const fixture = TestBed.createComponent(DdiCdiComponent);
+        const component = fixture.componentInstance;
+        fixture.detectChanges();
+        const children: TreeNode<Datafile>[] = Array.from(
+          { length: 60 },
+          (_, i) => ({
+            key: `file${i}.csv:file`,
+            data: { name: `file${i}.csv`, directoryLabel: '' } as Datafile,
+            children: [],
+          }),
+        );
+        utilsServiceStub.mapDatafiles.and.returnValue(
+          new Map([['', { data: { name: '' } as Datafile, children }]]),
+        );
+        component.datasetId.set('doi:10.1234/ABC');
+        component.setData({
+          id: 'doi:10.1234/ABC',
+          url: 'https://example.org/ds',
+          data: children.map((c) => c.data!),
+        });
+        component.generatedDdiCdi.set(generated);
+        await fixture.whenStable();
+        return fixture;
+      };
+
+      it('fits the window with 60 files', async () => {
+        const fixture = await render();
+        const layout = measurePage(fixture.nativeElement);
+        expect(layout.window).toBe(768);
+        expect(
+          fixture.nativeElement.querySelector('.alert-info'),
+        ).not.toBeNull();
+        expect(layout.document).toBeLessThanOrEqual(layout.window);
+        expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
+        expect(layout.header).toBe(layout.headerNoRows);
+        expect(rowCount(fixture)).toBeGreaterThan(10);
+      });
+
+      it('fits the window with a long generated output, which scrolls', async () => {
+        const fixture = await render(
+          Array.from({ length: 400 }, (_, i) => `"line ${i}": true`).join('\n'),
+        );
+        const layout = measurePage(fixture.nativeElement);
+        expect(layout.document).toBeLessThanOrEqual(layout.window);
+        expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
+        const preview = fixture.nativeElement.querySelector(
+          '.ddi-preview',
+        ) as HTMLElement;
+        const split = fixture.nativeElement.querySelector(
+          '.ddi-split',
+        ) as HTMLElement;
+        expect(preview.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+          split.getBoundingClientRect().bottom,
+        );
+        expect(preview.scrollHeight).toBeGreaterThan(preview.clientHeight);
+      });
     });
   });
 });

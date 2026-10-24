@@ -21,24 +21,40 @@
   }
 }
 
-// The tab column is a flex column with a definite height so the files pane
-// and its tree table can fill it. 14rem is the space above the split.
+// The page is a column so the split takes the remaining height below the
+// application header and above the footer (heights in styles.scss), minus the
+// container padding, as on the compare page.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: calc(
+    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
+  );
+}
+
+// At least 12rem of rows below the tabs and the table header; a window too
+// small for that scrolls the page instead of hiding the table.
 .ddi-split {
   display: flex;
   gap: 1rem;
+  flex: 1 1 auto;
+  min-height: 17rem;
   overflow: hidden;
 }
 
+// Both columns are flex columns with the height of the split, so the files
+// pane and its tree table, and the generated output, can fill them.
 .ddi-tabs-column,
 .ddi-preview-column {
   flex: 1 1 50%;
   min-width: 0;
-}
-
-.ddi-tabs-column {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 14rem);
+}
+
+.ddi-preview {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .tab-pane-files {
