@@ -203,8 +203,10 @@ async function openCompute(flow) {
 // name: the image is <name>-<width>x<height>.png. fixedHeight: the page is laid out to fit the
 // window, so a document taller than the window is a layout failure. table: the page shows a
 // tree table, so a missing or hidden one fails the table checks instead of skipping them.
-// variant: see server.mjs. expectedFailures: API paths whose error status is part of the flow,
-// so the browser's "Failed to load resource" message for them is recorded, not counted.
+// variant: see server.mjs. expectedFailures: [{path, status}], the API answers with an error
+// status that are part of the flow, so the browser's "Failed to load resource" message for that
+// path and status is recorded, not counted. A request the mock has no route for, or whose
+// handler throws, fails the capture anyway.
 // holdToasts: toasts stay until the capture (see HOLD_TIMEOUTS_MS). freezeAnimations: CSS
 // animations stop before the capture, so a spinner is drawn the same way in every run.
 // hostScrolls: what the page shows above its table can be taller than the window leaves, so
@@ -584,11 +586,20 @@ async function capture(def, viewport) {
       if (message.type() !== "error") {
         return;
       }
-      // A failed resource message has no URL in its text; its location has it.
+      // A failed resource message has no URL in its text; its location has it. The text has
+      // the status: "... responded with a status of 404 (Not Found)".
       const url = message.location()?.url;
       if (!url || !message.text().startsWith("Failed to load resource")) {
         logError(message.text());
-      } else if (def.expectedFailures?.includes(new URL(url).pathname)) {
+        return;
+      }
+      const pathname = new URL(url).pathname;
+      const status = Number(/status of (\d+)/.exec(message.text())?.[1]);
+      if (
+        def.expectedFailures?.some(
+          (f) => f.path === pathname && f.status === status,
+        )
+      ) {
         expected.push(`${message.text()}: ${url}`);
       } else {
         logError(`${message.text()}: ${url}`);
