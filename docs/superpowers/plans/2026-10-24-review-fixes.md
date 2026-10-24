@@ -1,6 +1,6 @@
 # Review fixes after the CDK migration
 
-Branch `review-fixes` off `main` at `091d5e5`, started 2026-10-24. Source: the review in
+On `main` directly (Eryk: his repo, no branch needed), from `091d5e5`, started 2026-10-24. Source: the review in
 `.superpowers/sdd/2026-10-24-review-fixes/review.md` (a copy of
 `/home/eryk/workspaces/redcap/rdm-integration-frontend-review-2026-10-24.md`), whose
 findings are referenced below by their ids (C1, I1 to I12, M1 to M15). The reviewer's
@@ -10,7 +10,7 @@ I1, I2, I3, I6, I7, M1 and C1; `lib.cjs` and the other `.cjs` files are Playwrig
 with API stubs for every page; `shots/` are the screenshots they took. Eryk asked for every
 finding to be fixed. Same process as the dashboard follow-ups: one Opus implementer and one
 Opus reviewer per task, the controller verifies the gates, small commits with one line
-messages and no em dashes, nothing pushed, no commit on `main`.
+messages and no em dashes, nothing pushed.
 
 Gates after every task: `npm run lint` (zero warnings and errors, unused exports check
 included), `npm run pretty:check`, `npx ng build` (only the two pre-existing component style
