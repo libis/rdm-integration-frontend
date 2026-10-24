@@ -253,7 +253,8 @@ async function openCompute(flow) {
 // path and status is recorded, not counted. A request the mock has no route for, or whose
 // handler throws, fails the capture anyway.
 // holdToasts: toasts stay until the capture (see HOLD_TIMEOUTS_MS). freezeAnimations: CSS
-// animations stop before the capture, so a spinner is drawn the same way in every run.
+// animations stop before the capture, so a spinner is drawn the same way in every run; only for
+// elements visible without their animation (a rotating spinner, not spinner-grow).
 // hostScrolls: what the page shows above its table can be taller than the window leaves, so
 // its host may scroll: the host must then be a scroll box (overflow-y auto or scroll), and the
 // table is measured with the host scrolled to its end (see measure and checkLayout).

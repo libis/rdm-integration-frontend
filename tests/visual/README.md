@@ -160,8 +160,11 @@ code only the toast lives are that long today. A toast timer that pauses on hove
 restarts with the remaining time can fall under 4000 ms and fire after all, so a toast page
 should still check that its toast is in the capture.
 
-A page with `freezeAnimations: true` gets `animation: none` on every element just before
-the capture, so a spinner is drawn the same way in every run.
+A page with `freezeAnimations: true` gets `animation: none` on every element just before the
+capture, so a spinner is drawn the same way in every run. That is safe only for an animation
+whose element is visible without it: the rotating spinners of the app (`pi-spin`, Bootstrap
+`spinner-border`) stay drawn, unrotated, while Bootstrap `spinner-grow` has `opacity: 0`
+outside its animation and would vanish from the capture.
 
 Captures are full page with the viewport at the top, so the dialog backdrop and other fixed
 elements cover only the first window height of a taller page. That is expected.
