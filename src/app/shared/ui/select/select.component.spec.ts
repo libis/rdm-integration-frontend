@@ -289,6 +289,47 @@ describe('SelectComponent with a custom option template', () => {
   });
 });
 
+// Selects without inputId, like the per variable selects of the REDCap export
+// and the queue selects of compute: none of them may render id="undefined".
+@Component({
+  imports: [SelectComponent, FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <app-select class="plain" [options]="options"></app-select>
+    <app-select class="plain" [options]="options"></app-select>
+    <app-select class="free" [options]="options" [editable]="true"></app-select>
+    <app-select class="named" inputId="q" [options]="options"></app-select>
+    <app-select
+      class="named-free"
+      inputId="f"
+      [options]="options"
+      [editable]="true"
+    ></app-select>
+  `,
+})
+class IdHostComponent {
+  readonly options = [{ label: 'Alpha', value: 'a' }];
+}
+
+describe('SelectComponent ids', () => {
+  it('renders an id only when inputId is set', async () => {
+    await TestBed.configureTestingModule({
+      imports: [IdHostComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(IdHostComponent);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const ids = (selector: string) =>
+      Array.from(el.querySelectorAll(selector)).map((e) =>
+        e.getAttribute('id'),
+      );
+    expect(ids('.plain .form-select')).toEqual([null, null]);
+    expect(ids('.free input.form-control')).toEqual([null]);
+    expect(ids('.named .form-select')).toEqual(['q']);
+    expect(ids('.named-free input.form-control')).toEqual(['f']);
+  });
+});
+
 const LONG_LABEL =
   'doi:10.1234/ABC - A rather long dataset title about measurements of ' +
   'something in several Flemish rivers between 2019 and 2024';
