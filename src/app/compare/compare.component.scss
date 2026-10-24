@@ -11,8 +11,19 @@
   );
 }
 
+// The rejected file lists take at most 30% of the page and scroll, so a long
+// list cannot push the table below the footer.
+.compare-rejected {
+  flex: 0 1 auto;
+  min-height: 4.5rem;
+  max-height: 30%;
+  overflow: auto;
+}
+
+// At least 12rem of rows below the header; a window too small for that
+// scrolls the page instead of hiding the table.
 .treetable-container {
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 15rem;
   overflow: hidden;
 }

@@ -21,6 +21,7 @@ import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { APP_CONSTANTS } from '../shared/constants';
 import { NotificationService } from '../shared/notification.service';
 import { takePendingReauth } from '../shared/reauth';
+import { measurePage, resizeTestWindow } from '../../testing/page-layout';
 import { CompareComponent } from './compare.component';
 
 class StubDataStateService {
@@ -469,25 +470,6 @@ describe('CompareComponent', () => {
       expect(component.selectedFilterItems().length).toBe(
         component.filterItems.length,
       );
-    });
-
-    it('gives the tree table viewport a height with the page styles', async () => {
-      const inFolder = makeDatafile('dir/inner', Filestatus.New);
-      inFolder.path = 'dir';
-      inFolder.name = 'inner';
-      const topLevel = makeDatafile('top', Filestatus.Equal);
-      component.data.set({ id: 'test', data: [inFolder, topLevel] } as any);
-      await fixture.whenStable();
-      const body = fixture.nativeElement.querySelector(
-        '.tt-body',
-      ) as HTMLElement;
-      expect(body.offsetHeight).toBeGreaterThan(0);
-      const viewport = fixture.debugElement
-        .query(By.directive(CdkVirtualScrollViewport))
-        .injector.get(CdkVirtualScrollViewport);
-      expect(viewport.getViewportSize()).toBeGreaterThan(0);
-      const rows = fixture.nativeElement.querySelectorAll('div[app-datafile]');
-      expect(rows.length).toBe(2);
     });
 
     it('rootNodeChildrenView returns empty array when no data', () => {
@@ -944,5 +926,117 @@ describe('CompareComponent', () => {
       expect(component.refreshHidden()).toBeFalse();
       expect(component.loading()).toBeFalse();
     });
+  });
+});
+
+// The page with the real template: the host takes the window height minus the
+// header and footer tokens, as in the app.
+describe('CompareComponent layout', () => {
+  const statuses = [
+    Filestatus.Equal,
+    Filestatus.New,
+    Filestatus.Updated,
+    Filestatus.Deleted,
+  ];
+  const files = (count: number): Datafile[] =>
+    Array.from({ length: count }, (_, i) => {
+      const path = i % 3 === 0 ? '' : `folder${i % 5}`;
+      return {
+        id: path ? `${path}/file${i}.txt` : `file${i}.txt`,
+        name: `file${i}.txt`,
+        path,
+        hidden: false,
+        status: statuses[i % 4],
+        action: Fileaction.Ignore,
+        attributes: { isFile: true },
+      } as unknown as Datafile;
+    });
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CompareComponent],
+      providers: [
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        { provide: DataStateService, useClass: StubDataStateService },
+        { provide: DataUpdatesService, useClass: StubDataUpdatesService },
+        { provide: CredentialsService, useValue: createCredentialsStub() },
+        { provide: PluginService, useClass: StubPluginService },
+        {
+          provide: SnapshotStorageService,
+          useClass: StubSnapshotStorageService,
+        },
+        { provide: Router, useClass: StubRouter },
+      ],
+    }).compileComponents();
+  });
+
+  // 300 files at the root and in five folders, like the harness fixture.
+  const render = async (rejected: number) => {
+    const fixture = TestBed.createComponent(CompareComponent);
+    fixture.componentInstance.data.set({
+      id: 'doi:10.1234/ABC',
+      url: 'https://example.org/ds',
+      data: files(300),
+      rejectedName: Array.from(
+        { length: rejected },
+        (_, i) => `bad?name ${i}.txt`,
+      ),
+      allowedFileNamePattern: '^[\\w .-]+$',
+      allowedFolderPathPattern: '^[\\w /.-]*$',
+    });
+    fixture.componentInstance.loading.set(false);
+    await fixture.whenStable();
+    return fixture;
+  };
+
+  const viewportSize = (fixture: ComponentFixture<CompareComponent>) =>
+    fixture.debugElement
+      .query(By.directive(CdkVirtualScrollViewport))
+      .injector.get(CdkVirtualScrollViewport)
+      .getViewportSize();
+
+  const rejectedList = (fixture: ComponentFixture<CompareComponent>) =>
+    fixture.nativeElement.querySelector('.compare-rejected') as HTMLElement;
+
+  // The Karma frame is about 437 px high: too small to fit the page, but the
+  // table must keep its rows (the review measured 0 px with 3 names).
+  for (const rejected of [3, 40]) {
+    it(`keeps 12rem of table rows in the Karma frame with ${rejected} rejected file names`, async () => {
+      const fixture = await render(rejected);
+      const layout = measurePage(fixture.nativeElement);
+      expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
+      expect(viewportSize(fixture)).toBeGreaterThanOrEqual(12 * layout.rem);
+      expect(rejectedList(fixture).offsetHeight).toBeGreaterThan(0);
+    });
+  }
+
+  describe('in a 1366x768 window', () => {
+    let restoreWindow: () => void;
+    beforeEach(() => (restoreWindow = resizeTestWindow(1366, 768)));
+    afterEach(() => restoreWindow());
+
+    for (const rejected of [0, 12, 40]) {
+      it(`fits the window with ${rejected} rejected file names`, async () => {
+        const fixture = await render(rejected);
+        const layout = measurePage(fixture.nativeElement);
+        expect(layout.window).toBe(768);
+        expect(layout.document).toBeLessThanOrEqual(layout.window);
+        expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
+        expect(layout.header).toBe(layout.headerNoRows);
+        expect(viewportSize(fixture)).toBeGreaterThanOrEqual(12 * layout.rem);
+        expect(
+          fixture.nativeElement.querySelectorAll('div[app-datafile]').length,
+        ).toBeGreaterThan(10);
+        const list = rejectedList(fixture);
+        if (!rejected) {
+          expect(list).toBeNull();
+          return;
+        }
+        expect(list.offsetHeight).toBeLessThan(layout.body);
+        // The names that do not fit scroll inside the list.
+        expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
+      });
+    }
   });
 });
