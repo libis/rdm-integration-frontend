@@ -16,6 +16,7 @@ import { PluginService } from '../plugin.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { UtilsService } from '../utils.service';
+import { measurePage, resizeTestWindow } from '../../testing/page-layout';
 import { ComputeComponent } from './compute.component';
 
 class MockDataService {
@@ -349,6 +350,7 @@ describe('ComputeComponent', () => {
 describe('ComputeComponent layout and row state', () => {
   let fixture: ComponentFixture<ComputeComponent>;
   let component: ComputeComponent;
+  let restoreWindow: () => void;
 
   const file = (id: string): Datafile => ({
     id,
@@ -360,7 +362,12 @@ describe('ComputeComponent layout and row state', () => {
     attributes: { isFile: true },
   });
 
+  // A 1366x768 window and 40 Python files, more rows than the table shows.
   beforeEach(async () => {
+    restoreWindow = resizeTestWindow(1366, 768);
+    // The dataset select as a button, as with the harness configuration.
+    const plugin = new MockPluginService();
+    plugin.datasetEditable = false;
     await TestBed.configureTestingModule({
       imports: [ComputeComponent],
       providers: [
@@ -368,7 +375,7 @@ describe('ComputeComponent layout and row state', () => {
         provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         { provide: DataService, useValue: new MockDataService() },
-        { provide: PluginService, useValue: new MockPluginService() },
+        { provide: PluginService, useValue: plugin },
         {
           provide: DvObjectLookupService,
           useValue: new MockDvObjectLookupService(),
@@ -384,9 +391,16 @@ describe('ComputeComponent layout and row state', () => {
     fixture = TestBed.createComponent(ComputeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
-    component.data.set({ id: 'doi:10.1/ABC', url: 'https://example.org/ds' });
+    component.doiItems.set([
+      { label: 'doi:10.1234/ABC - A dataset title', value: 'doi:10.1234/ABC' },
+    ]);
+    component.datasetId.set('doi:10.1234/ABC');
+    component.data.set({
+      id: 'doi:10.1234/ABC',
+      url: 'https://example.org/ds',
+    });
     component.rootNodeChildren.set(
-      [file('a.py'), file('b.py')].map((f) => ({
+      Array.from({ length: 40 }, (_, i) => file(`file${i}.py`)).map((f) => ({
         key: `${f.id}:file`,
         data: f,
       })),
@@ -394,20 +408,29 @@ describe('ComputeComponent layout and row state', () => {
     await fixture.whenStable();
   });
 
-  it('gives the static scroll body a height with the page styles', () => {
+  afterEach(() => restoreWindow());
+
+  const rows = (): HTMLElement[] =>
+    Array.from(
+      fixture.nativeElement.querySelectorAll('div[app-executablefile]'),
+    );
+
+  it('fits the window with 40 rows in the static body', () => {
     const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
     expect(body.classList).toContain('tt-body-static');
-    expect(body.offsetHeight).toBeGreaterThan(0);
-    expect(
-      fixture.nativeElement.querySelectorAll('div[app-executablefile]').length,
-    ).toBe(2);
+    expect(rows().length).toBe(40);
+    const layout = measurePage(fixture.nativeElement);
+    expect(layout.window).toBe(768);
+    expect(layout.document).toBeLessThanOrEqual(layout.window);
+    expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
+    expect(layout.header).toBe(layout.headerNoRows);
+    expect(body.scrollHeight).toBeGreaterThan(body.clientHeight);
   });
 
   it('keeps the queue chosen in the first row after scrolling', async () => {
-    const rows = fixture.nativeElement.querySelectorAll(
-      'div[app-executablefile]',
-    );
-    const trigger = rows[0].querySelector('.form-select') as HTMLButtonElement;
+    const trigger = rows()[0].querySelector(
+      '.form-select',
+    ) as HTMLButtonElement;
     trigger.click();
     await fixture.whenStable();
     const option = document.querySelector(
@@ -418,13 +441,27 @@ describe('ComputeComponent layout and row state', () => {
     await fixture.whenStable();
     expect(trigger.textContent).toContain('CPU');
     const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
-    body.scrollTop = 500;
+    body.scrollTop = body.scrollHeight;
     body.dispatchEvent(new Event('scroll'));
     await fixture.whenStable();
-    const firstRow = fixture.nativeElement.querySelectorAll(
-      'div[app-executablefile]',
-    )[0];
-    expect(firstRow.querySelector('.form-select').textContent).toContain('CPU');
-    expect(firstRow.querySelector('button.btn-primary').disabled).toBeFalse();
+    // The table really scrolled: the first row is out of view, the last in,
+    // and every row still exists, so the first one kept its state.
+    expect(body.scrollTop).toBeGreaterThan(0);
+    expect(rows().length).toBe(40);
+    const view = body.getBoundingClientRect();
+    expect(rows()[0].getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      view.top,
+    );
+    expect(rows()[39].getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      view.bottom + 1,
+    );
+    const firstRow = rows()[0];
+    expect(firstRow.querySelector('.form-select')!.textContent).toContain(
+      'CPU',
+    );
+    expect(
+      (firstRow.querySelector('button.btn-primary') as HTMLButtonElement)
+        .disabled,
+    ).toBeFalse();
   });
 });

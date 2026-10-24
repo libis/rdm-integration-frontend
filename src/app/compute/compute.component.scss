@@ -4,12 +4,24 @@ textarea {
   width: 100%;
 }
 
-// The split has a definite height so the tree table can fill its left pane.
-// 14rem is the space taken by the page header rows above the split.
+// The page is a column so the split takes the remaining height below the
+// application header and above the footer (heights in styles.scss), minus the
+// container padding, as on the compare page.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: calc(
+    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
+  );
+}
+
+// At least 12rem of rows below the table header; a window too small for that
+// scrolls the page instead of hiding the table.
 .compute-split {
   display: flex;
   gap: 1rem;
-  height: calc(100vh - 14rem);
+  flex: 1 1 auto;
+  min-height: 15rem;
   overflow: hidden;
 }
 
