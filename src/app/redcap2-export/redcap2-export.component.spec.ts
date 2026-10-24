@@ -136,6 +136,16 @@ describe('Redcap2ExportComponent', () => {
     ]);
   });
 
+  it('names each anonymization select after its variable', async () => {
+    await fixture.whenStable();
+    const triggers = Array.from(
+      fixture.nativeElement.querySelectorAll('.anonymization-col .form-select'),
+    ) as HTMLElement[];
+    expect(triggers.map((t) => t.getAttribute('aria-label'))).toEqual([
+      'Anonymization of record_id',
+    ]);
+  });
+
   it('stores plugin options and navigates to compare', () => {
     component.setVariableAnonymization('record_id', 'blank');
     component.continueToCompare();

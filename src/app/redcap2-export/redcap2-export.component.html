@@ -425,6 +425,7 @@
                       <td class="anonymization-col">
                         <app-select
                           class="w-100"
+                          ariaLabel="Anonymization of {{ variable.name }}"
                           [options]="anonymizationItems"
                           [ngModel]="variable.anonymization"
                           (ngModelChange)="

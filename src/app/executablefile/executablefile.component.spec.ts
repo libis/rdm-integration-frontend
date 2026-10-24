@@ -178,6 +178,16 @@ describe('ExecutablefileComponent', () => {
     });
   });
 
+  it('names the queue select after the file', async () => {
+    initialiseComponent();
+    await fixture.whenStable();
+    expect(
+      fixture.nativeElement
+        .querySelector('.form-select')
+        .getAttribute('aria-label'),
+    ).toBe('Queue for script.py');
+  });
+
   it('gives the run button the height of the queue select', async () => {
     initialiseComponent();
     await fixture.whenStable();

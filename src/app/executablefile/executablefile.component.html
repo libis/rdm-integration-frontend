@@ -18,6 +18,7 @@
       ></span>
       <app-select
         class="flex-grow-1"
+        ariaLabel="Queue for {{ datafile().name }}"
         [options]="queues()"
         [filter]="true"
         [ngModel]="queue()"
