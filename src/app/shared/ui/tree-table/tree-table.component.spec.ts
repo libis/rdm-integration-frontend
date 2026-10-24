@@ -178,7 +178,10 @@ describe('TreeTableComponent header', () => {
         fixture.nativeElement.querySelector('.header-button') as HTMLElement
       ).getBoundingClientRect().height,
     );
-    expect(Math.abs(middle('.header-text') - middle('.header-button'))).toBe(0);
+    // Both midpoints are sub-pixel values; centred means within half a pixel.
+    expect(
+      Math.abs(middle('.header-text') - middle('.header-button')),
+    ).toBeLessThan(0.5);
   });
 });
 
