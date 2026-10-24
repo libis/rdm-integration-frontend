@@ -227,15 +227,18 @@ export class SelectComponent implements ControlValueAccessor {
   }
 
   // The panel sits at the end of the document, so Tab from the list, or
-  // Shift+Tab from the first stop of the panel, would leave the select for the
-  // body or the far end of the page. Like a native select, the panel closes
-  // and the browser moves on from the select itself: from the trigger, or
-  // forwards from the options button in editable mode.
+  // Shift+Tab from the first stop of the panel (or from the panel itself,
+  // focused by a click on its padding), would leave the select for the body or
+  // the far end of the page. Like a native select, the panel closes and the
+  // browser moves on from the select itself: from the trigger, or forwards
+  // from the options button in editable mode.
   private onPanelTab(event: KeyboardEvent): void {
     const filter = this.filterInput()?.nativeElement;
     const inList = this.listElement()?.contains(event.target as Node) ?? false;
     const leaves = event.shiftKey
-      ? event.target === filter || (inList && !filter)
+      ? event.target === this.panel()?.nativeElement ||
+        event.target === filter ||
+        (inList && !filter)
       : inList;
     if (!leaves) return;
     const from =
@@ -246,8 +249,9 @@ export class SelectComponent implements ControlValueAccessor {
 
   // Focus that moves from the panel to an element outside the select closes
   // the panel and stays where it went. Focus that goes nowhere (the window
-  // loses focus, a click on the padding of the panel) leaves it open; a click
-  // outside lands on the backdrop, which closes it.
+  // loses focus) leaves it open; a click on the padding of the panel focuses
+  // the panel itself (tabindex -1), and a click outside lands on the backdrop,
+  // which closes it.
   onPanelFocusout(event: FocusEvent): void {
     const next = event.relatedTarget;
     if (

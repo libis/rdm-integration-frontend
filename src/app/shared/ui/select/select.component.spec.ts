@@ -311,6 +311,23 @@ describe('SelectComponent', () => {
     expect(panel()).not.toBeNull();
   });
 
+  // A click on the padding of the panel focused nothing, so focus fell to
+  // the body and Shift+Tab from there left the panel open with its backdrop.
+  it('takes focus itself after a click on its padding, and Shift+Tab from there closes it', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    expect(panel()!.getAttribute('tabindex')).toBe('-1');
+    // What a click on the padding does: focus the nearest focusable ancestor.
+    panel()!.focus();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(panel());
+    expect(panel()).not.toBeNull();
+    expect(tab(panel()!, true)).toBeTrue();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+  });
+
   it('closes on Shift+Tab from the list when the panel has no filter', async () => {
     host.filter.set(false);
     await fixture.whenStable();
