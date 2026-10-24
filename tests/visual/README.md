@@ -22,8 +22,9 @@ scripts and fixtures are committed.
   and the cached comparison, the dataset lookups, the file lists, the first Globus listing
   (now with the home expanded), the endpoint search, the code exchange, the access check and
   the empty DDI-CDI output. Written new for the harness: the metadata, the REDCap variables,
-  the collections, the Globus `/` listing, the user email and the REDCap plugin (`redcap2`) in
-  the config. The frontend config has four plugins (local, GitHub, Globus with a token getter,
+  the collections, the Globus `/` listing, the user email, the REDCap plugin (`redcap2`) in
+  the config, and a Globus download (`download.json`, task `task-1`) with its status, still
+  running with 120 of 300 files (`globus-status-active.json`). The frontend config has four plugins (local, GitHub, Globus with a token getter,
   REDCap reports). Dataset `doi:10.1234/ABC` has 300 files on compare and download, 40 Python
   files on compute and 60 CSV files on DDI-CDI. A fixture whose `data` is
   `{"generate": {"count", "extension"}}` gets a generated list: every third file at the root,
@@ -101,6 +102,12 @@ order:
 - `compare-filter`: compare, then the status filter button in the table header.
 - `download`: the Globus OAuth callback `/connect?code=c1&state={"download": true, ...}`,
   which the app sends on to `/download`.
+- `download-card`: the same, then every file marked with the header toggle, `End` typed in
+  the endpoint search, `Endpoint A` picked, the folder placeholder expanded (the home is
+  preselected) and `Start transfer`: the transfer card above the table shows the running task
+  and polls its status every 5 s, and the success toast stays (`holdToasts`). At 1366x768
+  the card and a table of 12rem do not both fit, so the page host scrolls (`hostScrolls`,
+  below). The card's status icon spins, so its animations are stopped (`freezeAnimations`).
 - `compute-40`: `/compute`, first option of the dataset select: 40 Python files, rendered as
   19 rows (the 14 files at the root and the 5 folders, collapsed).
 - `compute-long-label`: the same with the long dataset label.
@@ -141,6 +148,9 @@ code only the toast lives are that long today. A toast timer that pauses on hove
 restarts with the remaining time can fall under 4000 ms and fire after all, so a toast page
 should still check that its toast is in the capture.
 
+A page with `freezeAnimations: true` gets `animation: none` on every element just before
+the capture, so a spinner is drawn the same way in every run.
+
 Captures are full page with the viewport at the top, so the dialog backdrop and other fixed
 elements cover only the first window height of a taller page. That is expected.
 
@@ -162,13 +172,19 @@ failed checks are printed; with `--strict` they make the run exit with code 1:
 - a table body is under 12rem (192 px);
 - a table header is shorter than its height with no rows.
 
+A page with `hostScrolls: true` shows more above its table than the window can leave room
+for, so its host may scroll instead: the host check then requires a scroll box (`overflow-y`
+`auto` or `scroll`) instead of content that fits, and the page is measured with the host
+scrolled to its end, where the table must still end above the footer, and captured with the
+host at its top. Today only `download-card` has it.
+
 Document and host heights are whole pixels rounded from fractional boxes, so both checks allow
 1 px. The document can fit the window while the page does not: host overflow does not push the
 footer down, so on compare up to 86 px of it (the 16 px container padding under the host and
 the 70 px footer) stays inside the document, and content cut off by an `overflow: hidden`
 ancestor never reaches the document height. The host and footer checks catch both. A host with
-an inline `display` (download, compute and DDI-CDI today) has no box of its own and reports 0
-for both heights, so only the footer check applies to it.
+an inline `display` has no box of its own and reports 0 for both heights, so only the footer
+check applies to it; the five fixed height pages have flex hosts since the review fixes.
 
 ## Compare two runs
 

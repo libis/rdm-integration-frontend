@@ -194,6 +194,14 @@ const ROUTES = [
   ["POST", "/api/common/checkaccess", () => fixture("checkaccess.json")],
   ["POST", "/api/common/useremail", () => fixture("useremail.json")],
   ["POST", "/api/common/metadata", () => fixture("metadata.json")],
+  // A Globus download: the task it starts and that task's status, still running, so the
+  // download page shows its transfer card.
+  ["POST", "/api/common/download", () => fixture("download.json")],
+  [
+    "GET",
+    "/api/common/globus/status",
+    () => fixture("globus-status-active.json"),
+  ],
 ];
 
 function noRoute(req, url) {

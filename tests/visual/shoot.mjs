@@ -205,7 +205,11 @@ async function openCompute(flow) {
 // tree table, so a missing or hidden one fails the table checks instead of skipping them.
 // variant: see server.mjs. expectedFailures: API paths whose error status is part of the flow,
 // so the browser's "Failed to load resource" message for them is recorded, not counted.
-// holdToasts: toasts stay until the capture (see HOLD_TIMEOUTS_MS).
+// holdToasts: toasts stay until the capture (see HOLD_TIMEOUTS_MS). freezeAnimations: CSS
+// animations stop before the capture, so a spinner is drawn the same way in every run.
+// hostScrolls: what the page shows above its table can be taller than the window leaves, so
+// its host may scroll: the host must then be a scroll box (overflow-y auto or scroll), and the
+// table is measured with the host scrolled to its end (see measure and checkLayout).
 const PAGES = [
   {
     name: "connect",
@@ -247,6 +251,39 @@ const PAGES = [
         oauthCallback({ download: true, datasetId: { value: DATASET } }),
       );
       await flow.waitFor("div[app-downloadablefile]");
+    },
+  },
+  {
+    // A running download: every file marked, Endpoint A and the preselected home folder, then
+    // Start transfer. The transfer card above the table polls the task status (every 5 s, on
+    // RxJS timers), and the success toast stays. At 1366x768 the card and a 12rem table do not
+    // both fit, so the page host scrolls; its status icon spins.
+    name: "download-card",
+    fixedHeight: true,
+    table: true,
+    holdToasts: true,
+    freezeAnimations: true,
+    hostScrolls: true,
+    steps: async (flow) => {
+      await flow.open(
+        oauthCallback({ download: true, datasetId: { value: DATASET } }),
+      );
+      await flow.waitFor("div[app-downloadablefile]");
+      await flow.click(".tt-header button.btn-outline-secondary");
+      await flow.click("#repoNameSearch");
+      await flow.page.type(
+        '.cdk-overlay-container input[placeholder="Filter"]',
+        "End",
+      );
+      await flow.settle();
+      await flow.click(".cdk-overlay-container .app-select-option", [
+        "Endpoint A",
+      ]);
+      await flow.click("app-folder-tree button.folder-toggle");
+      await flow.waitFor("app-folder-tree .folder-node.selected");
+      await flow.click(CLICKABLE, ["Start transfer"]);
+      await flow.waitFor("app-transfer-progress-card .progress");
+      await flow.waitFor("app-toast .toast");
     },
   },
   { name: "compute-40", fixedHeight: true, table: true, steps: openCompute },
@@ -375,8 +412,10 @@ function measure() {
       ? {
           element: host.localName,
           display: getComputedStyle(host).display,
+          overflowY: getComputedStyle(host).overflowY,
           clientHeight: host.clientHeight,
           scrollHeight: host.scrollHeight,
+          scrollTop: host.scrollTop,
         }
       : null,
     table: null,
@@ -417,6 +456,12 @@ function checkLayout(name, def, m) {
   if (def.fixedHeight) {
     if (!m.host) {
       fail("no page host (no element after router-outlet)");
+    } else if (def.hostScrolls) {
+      if (!["auto", "scroll"].includes(m.host.overflowY)) {
+        fail(
+          `page host <${m.host.element}> does not scroll (overflow-y ${m.host.overflowY})`,
+        );
+      }
     } else if (m.host.scrollHeight > m.host.clientHeight + ROUNDING_PX) {
       fail(
         `page host <${m.host.element}> content ${m.host.scrollHeight} px is taller than ` +
@@ -457,7 +502,8 @@ function describe(m) {
   const parts = [`document ${m.document}/${m.window}`];
   if (m.host) {
     parts.push(
-      `host ${m.host.element} ${m.host.scrollHeight}/${m.host.clientHeight}`,
+      `host ${m.host.element} ${m.host.scrollHeight}/${m.host.clientHeight}` +
+        (m.host.scrollTop ? ` scrolled ${m.host.scrollTop}` : ""),
     );
   }
   if (m.table) {
@@ -565,9 +611,31 @@ async function capture(def, viewport) {
     if (theme !== scheme) {
       throw new Error(`data-bs-theme is ${theme}, not ${scheme}`);
     }
+    if (def.freezeAnimations) {
+      await page.addStyleTag({
+        content: "*, *::before, *::after { animation: none !important; }",
+      });
+    }
     // Fixed overlays are drawn relative to the viewport, so keep it at the top of the page.
     await page.evaluate(() => window.scrollTo(0, 0));
+    // A host that may scroll is measured scrolled to its end, where its table must end above
+    // the footer, and captured at its top, as the user first sees it.
+    const scrollHost = (toEnd) =>
+      page.evaluate((toEnd) => {
+        const host = document.querySelector(
+          "app-root router-outlet",
+        )?.nextElementSibling;
+        if (host) {
+          host.scrollTop = toEnd ? host.scrollHeight : 0;
+        }
+      }, toEnd);
+    if (def.hostScrolls) {
+      await scrollHost(true);
+    }
     const m = await page.evaluate(measure);
+    if (def.hostScrolls) {
+      await scrollHost(false);
+    }
     await page.screenshot({
       path: path.join(args.out, `${name}.png`),
       fullPage: true,
@@ -579,6 +647,7 @@ async function capture(def, viewport) {
       fixedHeight: !!def.fixedHeight,
       expectTable: !!def.table,
       holdToasts: !!def.holdToasts,
+      hostScrolls: !!def.hostScrolls,
       ...m,
       checks: found,
       expectedFailures: expected,

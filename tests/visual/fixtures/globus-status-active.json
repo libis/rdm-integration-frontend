@@ -1,0 +1,12 @@
+{
+  "task_id": "task-1",
+  "status": "ACTIVE",
+  "nice_status": "OK",
+  "bytes_transferred": 52428800,
+  "bytes_expected": 157286400,
+  "files": 300,
+  "files_transferred": 120,
+  "files_skipped": 0,
+  "files_failed": 0,
+  "request_time": "2026-10-24 10:00:00+00:00"
+}
