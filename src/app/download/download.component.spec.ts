@@ -28,6 +28,7 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
+import { measurePage, resizeTestWindow } from '../../testing/page-layout';
 import { registerReauthAttempt } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
@@ -2126,9 +2127,11 @@ describe('DownloadComponent', () => {
 });
 
 describe('DownloadComponent layout', () => {
-  it('gives the tree table viewport a height with the page styles', async () => {
+  let plugin: MockPluginService;
+
+  beforeEach(async () => {
     sessionStorage.clear();
-    const plugin = new MockPluginService();
+    plugin = new MockPluginService();
     const routeSubject = new BehaviorSubject<
       Record<string, string | undefined>
     >({});
@@ -2158,10 +2161,18 @@ describe('DownloadComponent layout', () => {
         },
       ],
     }).compileComponents();
+  });
+
+  const create = () => {
     const fixture = TestBed.createComponent(DownloadComponent);
-    const comp = fixture.componentInstance;
     fixture.detectChanges();
-    comp.globusPlugin.set(plugin.getGlobusPlugin());
+    fixture.componentInstance.globusPlugin.set(plugin.getGlobusPlugin());
+    return fixture;
+  };
+
+  it('gives the tree table viewport a height with the page styles', async () => {
+    const fixture = create();
+    const comp = fixture.componentInstance;
     const folder: TreeNode<Datafile> = {
       key: 'dir',
       data: {
@@ -2230,5 +2241,52 @@ describe('DownloadComponent layout', () => {
       fixture.nativeElement.querySelectorAll('div[app-downloadablefile]')
         .length,
     ).toBe(2);
+  });
+
+  describe('in a 1366x768 window', () => {
+    let restoreWindow: () => void;
+    beforeEach(() => (restoreWindow = resizeTestWindow(1366, 768)));
+    afterEach(() => restoreWindow());
+
+    it('fits the window with 300 files', async () => {
+      const fixture = create();
+      const comp = fixture.componentInstance;
+      const files: TreeNode<Datafile>[] = Array.from(
+        { length: 300 },
+        (_, i) => ({
+          key: `file${i}.csv:file`,
+          data: {
+            id: `file${i}.csv`,
+            name: `file${i}.csv`,
+            path: '',
+            hidden: false,
+            action: Fileaction.Ignore,
+            attributes: { isFile: true },
+          },
+        }),
+      );
+      comp.rowNodeMap.set(new Map(files.map((f) => [f.key!, f])));
+      comp.rootNodeChildren.set(files);
+      comp.datasetId.set('doi:10.1234/ABC');
+      comp.data.set({
+        id: 'doi:10.1234/ABC',
+        url: 'https://example.org/ds',
+      } as CompareResult);
+      await fixture.whenStable();
+      const layout = measurePage(fixture.nativeElement);
+      expect(layout.window).toBe(768);
+      expect(layout.document).toBeLessThanOrEqual(layout.window);
+      expect(layout.body).toBeGreaterThanOrEqual(12 * layout.rem);
+      expect(layout.header).toBe(layout.headerNoRows);
+      expect(
+        fixture.nativeElement.querySelectorAll('div[app-downloadablefile]')
+          .length,
+      ).toBeGreaterThan(10);
+      // A long folder tree scrolls in its column instead of being cut off.
+      const right = fixture.nativeElement.querySelector(
+        '.download-split-right',
+      ) as HTMLElement;
+      expect(getComputedStyle(right).overflowY).toBe('auto');
+    });
   });
 });
