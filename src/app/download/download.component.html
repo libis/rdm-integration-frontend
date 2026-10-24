@@ -131,32 +131,36 @@
 
 <br />
 
-<div class="mb-3">
-  <label for="datasetId" class="form-label">Dataset DOI</label>
-  <app-select
-    class="w-100"
-    [editable]="datasetFieldEditable()"
-    inputId="datasetId"
-    [options]="doiItems()"
-    [filter]="true"
-    placeholder="Select dataset"
-    (filterChange)="onDatasetSearch($event)"
-    [ngModel]="datasetId()"
-    (ngModelChange)="datasetId.set($event)"
-    (opened)="getDoiOptions()"
-    (valueChange)="onDatasetChange()"
-  ></app-select>
-</div>
+<!-- One block, so the select's bottom margin and the card's top margin
+     collapse as they would without the page's flex column. -->
+<div>
+  <div class="mb-3">
+    <label for="datasetId" class="form-label">Dataset DOI</label>
+    <app-select
+      class="w-100"
+      [editable]="datasetFieldEditable()"
+      inputId="datasetId"
+      [options]="doiItems()"
+      [filter]="true"
+      placeholder="Select dataset"
+      (filterChange)="onDatasetSearch($event)"
+      [ngModel]="datasetId()"
+      (ngModelChange)="datasetId.set($event)"
+      (opened)="getDoiOptions()"
+      (valueChange)="onDatasetChange()"
+    ></app-select>
+  </div>
 
-<app-transfer-progress-card
-  [isGlobus]="true"
-  [taskId]="lastTransferTaskId()"
-  [monitorUrl]="globusMonitorUrl()"
-  [oauthSessionId]="token()"
-  [submitting]="downloadInProgress() && !lastTransferTaskId()"
-  (pollingChange)="onStatusPollingChange($event)"
-  (completed)="done.set(true)"
-></app-transfer-progress-card>
+  <app-transfer-progress-card
+    [isGlobus]="true"
+    [taskId]="lastTransferTaskId()"
+    [monitorUrl]="globusMonitorUrl()"
+    [oauthSessionId]="token()"
+    [submitting]="downloadInProgress() && !lastTransferTaskId()"
+    (pollingChange)="onStatusPollingChange($event)"
+    (completed)="done.set(true)"
+  ></app-transfer-progress-card>
+</div>
 
 <br />
 @if (datasetId() && data()?.id) {
