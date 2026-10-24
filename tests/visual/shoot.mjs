@@ -478,6 +478,12 @@ function checkLayout(name, def, m) {
   if (def.fixedHeight) {
     if (!m.host) {
       fail("no page host (no element after router-outlet)");
+    } else if (["inline", "contents"].includes(m.host.display)) {
+      // No box of its own: both heights read 0, so the host check could not fail.
+      fail(
+        `page host <${m.host.element}> is display ${m.host.display}, so its height cannot ` +
+          "be checked",
+      );
     } else if (def.hostScrolls) {
       if (!["auto", "scroll"].includes(m.host.overflowY)) {
         fail(

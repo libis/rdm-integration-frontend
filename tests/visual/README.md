@@ -172,8 +172,8 @@ are in document coordinates. Without `--strict` the failed checks are printed; w
 they make the run exit with code 1:
 
 - a page laid out to fit the window (compare, download, compute, DDI-CDI, metadata selector)
-  has a document taller than the window, a page host whose content is taller than the host,
-  or a table body that ends below the top of the footer;
+  has a document taller than the window, an inline page host, a page host whose content is
+  taller than the host, or a table body that ends below the top of the footer;
 - a page that shows a tree table (every page above) has no visible `.tt`;
 - a table body ends more than 0.5 px below the bottom it is clipped at, so its last rows are
   cut off by a container with `overflow: hidden` or out of reach of a scrolled host, even
@@ -193,9 +193,10 @@ Document and host heights are whole pixels rounded from fractional boxes, so bot
 footer down, so on compare up to 86 px of it (the 16 px container padding under the host and
 the 70 px footer) stays inside the document, and content cut off by an `overflow: hidden`
 ancestor never reaches the document height. The host, clip and footer checks catch both. A
-host with an inline `display` has no box of its own and reports 0 for both heights, so only
-the footer check applies to it; the five fixed height pages have flex hosts since the review
-fixes.
+host with an inline `display` (or `contents`) has no box of its own and reports 0 for both
+heights, so the host check could not fail: on a fixed height page such a host fails instead.
+The five fixed height pages have block flex column hosts that scroll vertically (`fill-window`
+in `src/app/shared/_page-layout.scss`).
 
 ## Compare two runs
 
