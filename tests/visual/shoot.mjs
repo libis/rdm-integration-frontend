@@ -627,10 +627,15 @@ const info = await browserInfo(browser);
 console.log(
   `browser ${info.version}, language ${info.language}, time zone ${info.timeZone}`,
 );
+// Captures in another locale or time zone would not compare with the others.
 if (info.language !== LANGUAGE || info.timeZone !== TIME_ZONE) {
-  console.warn(
-    `the browser did not take the pinned language ${LANGUAGE} and time zone ${TIME_ZONE}`,
+  console.error(
+    `the browser reports language ${info.language} and time zone ${info.timeZone}, ` +
+      `not the pinned ${LANGUAGE} and ${TIME_ZONE}`,
   );
+  await browser.close();
+  await server.close();
+  process.exit(1);
 }
 fs.mkdirSync(args.out, { recursive: true });
 const measurements = {};

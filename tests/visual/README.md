@@ -84,8 +84,8 @@ Time zone and locale: the browser runs with `TZ=UTC`, `--lang=en-US`, `LANG=en_U
 `LANGUAGE=en_US` (Chromium on Linux takes its locale from the last two, `--lang` alone does
 not change it), never the machine's settings. `measurements.json` records what the browser
 reports: its version (`browser.version()`), `navigator.language` and the time zone, so a
-browser upgrade or a locale change between two runs shows there. The run warns when the
-browser did not take the pinned values.
+browser upgrade or a locale change between two runs shows there. When the browser does not
+take the pinned values, the run stops with exit code 1 before the first capture.
 
 Scrollbars: `puppeteer-core` launches headless Chromium with `--hide-scrollbars`. Scrollbars
 are never painted and an `overflow: scroll` or `auto` box reserves no width for one, so a page
