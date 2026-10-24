@@ -160,6 +160,26 @@ describe('TreeTableComponent header', () => {
     expect(getComputedStyle(head).scrollbarGutter).toBe('stable');
     expect(head.clientWidth).toBe(body.clientWidth);
   });
+
+  it('centres its cells vertically', async () => {
+    const fixture = TestBed.createComponent(StaticHostComponent);
+    await fixture.whenStable();
+    const middle = (selector: string) => {
+      const box = (
+        fixture.nativeElement.querySelector(selector) as HTMLElement
+      ).getBoundingClientRect();
+      return box.top + box.height / 2;
+    };
+    const text = fixture.nativeElement.querySelector(
+      '.header-text',
+    ) as HTMLElement;
+    expect(text.getBoundingClientRect().height).toBeLessThan(
+      (
+        fixture.nativeElement.querySelector('.header-button') as HTMLElement
+      ).getBoundingClientRect().height,
+    );
+    expect(Math.abs(middle('.header-text') - middle('.header-button'))).toBe(0);
+  });
 });
 
 describe('TreeTableComponent', () => {
