@@ -294,6 +294,10 @@ export class SelectComponent implements ControlValueAccessor {
     const next =
       options.find((o) => !o.disabled && o.value === this.value()) ??
       options.find((o) => !o.disabled);
+    // _setActiveOption is a CDK internal API: @angular/cdk 22.1.7 has no
+    // public way to set the active option (the key manager is protected), and
+    // CdkOption itself calls it when an option is focused. It is declared in
+    // the typings, so a rename would fail the build.
     if (next) listbox._setActiveOption(next);
   }
 
