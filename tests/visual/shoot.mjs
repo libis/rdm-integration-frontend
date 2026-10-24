@@ -23,6 +23,9 @@ const SETTLE_MS = 500;
 const TIMEOUT_MS = 30000;
 // A table body under 12rem shows only a handful of rows.
 const MIN_BODY_REM = 12;
+// scrollHeight and clientHeight are whole pixels while the boxes they round are fractional, so
+// content that fits can still come out 1 px taller.
+const ROUNDING_PX = 1;
 const CLICKABLE = 'button, a, [role="button"]';
 const DATASET = "doi:10.1234/ABC";
 
@@ -348,7 +351,7 @@ const round1 = (n) => Math.round(n * 10) / 10;
 function checkLayout(name, def, m) {
   const failures = [];
   const fail = (text) => failures.push(`${name}: ${text}`);
-  if (def.fixedHeight && m.document > m.window) {
+  if (def.fixedHeight && m.document > m.window + ROUNDING_PX) {
     fail(
       `document ${m.document} px is taller than the window ${m.window} px ` +
         `(+${m.document - m.window})`,
@@ -357,7 +360,7 @@ function checkLayout(name, def, m) {
   if (def.fixedHeight) {
     if (!m.host) {
       fail("no page host (no element after router-outlet)");
-    } else if (m.host.scrollHeight > m.host.clientHeight) {
+    } else if (m.host.scrollHeight > m.host.clientHeight + ROUNDING_PX) {
       fail(
         `page host <${m.host.element}> content ${m.host.scrollHeight} px is taller than ` +
           `the host ${m.host.clientHeight} px ` +

@@ -113,11 +113,12 @@ failed checks are printed; with `--strict` they make the run exit with code 1:
 - a table body is under 12rem (192 px);
 - a table header is shorter than its height with no rows.
 
-The document can fit the window while the page does not: host overflow does not push the
+Document and host heights are whole pixels rounded from fractional boxes, so both checks allow
+1 px. The document can fit the window while the page does not: host overflow does not push the
 footer down, so on compare up to 86 px of it (the 16 px container padding under the host and
 the 70 px footer) stays inside the document, and content cut off by an `overflow: hidden`
-ancestor never reaches the document height. The host and footer checks catch both. A host with an
-inline `display` (download, compute and DDI-CDI today) has no box of its own and reports 0
+ancestor never reaches the document height. The host and footer checks catch both. A host with
+an inline `display` (download, compute and DDI-CDI today) has no box of its own and reports 0
 for both heights, so only the footer check applies to it.
 
 ## Compare two runs
