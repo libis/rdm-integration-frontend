@@ -13,17 +13,20 @@ scripts and fixtures are committed.
   one full page PNG per page and viewport, plus `measurements.json`. The Chromium binary comes
   from `--chromium <path>`, else the `CHROMIUM` environment variable, else
   `/usr/bin/chromium`.
-- `fixtures/`: the answers of the mock API, taken from the stubs of the 2026-10-24 review.
-  The frontend config has four plugins (local, GitHub, Globus with a token getter, REDCap
+- `fixtures/`: the answers of the mock API, taken from the stubs of the 2026-10-24 review. The
+  frontend config has four plugins (local, GitHub, Globus with a token getter, REDCap
   reports). Dataset `doi:10.1234/ABC` has 300 files on compare and download, 40 Python files
   on compute and 60 CSV files on DDI-CDI. A fixture whose `data` is
   `{"generate": {"count", "extension"}}` gets a generated list: every third file at the root,
   the others in `folder0` to `folder4`, the status cycling through equal, new, updated and
   deleted. `compare-cached.json` is a finished comparison (status 2), so the compare page does
-  not poll. The Globus folder listing follows the picker rules: the first listing is a
-  selectable `/` that is never preselected, with `/home/alice/` below it preselected;
-  expanding `/` lists `home` and `shared`. The REDCap variables mark three identifier fields
-  and carry two PHI-risk notes.
+  not poll. The Globus folder listings follow the picker rules and the backend's
+  `buildHierarchy`: the first listing (option `""`) is a selectable `/` that is never
+  preselected, with `/home/alice/` below it preselected and expanded and its folder
+  `Documents` listed. Expanding `/` lists `home` and `shared` (`options-globus-root.json`);
+  expanding a folder of the first listing lists the children it has there, so `/home/alice/`
+  lists `Documents` again. Any other options request is logged and answered with `[]`. The
+  REDCap variables mark three identifier fields and carry two PHI-risk notes.
 
 The commands below run from the repository root, with the Node version pinned in
 `.tool-versions` (installed with mise).
@@ -83,8 +86,11 @@ order:
 - `submit`: compare, `Copy`, then `Confirm file actions`.
 - `redcap2-export`: a REDCap connection with report 42 seeded into the connect page's session
   snapshot, then `Connect and compare`.
-- `globus-picker`: the OAuth callback for the Globus plugin on the connect page, endpoint
-  search `End`, `Endpoint A`, then the folder placeholder expanded once.
+- `globus-picker`: the OAuth callback for the Globus plugin on the connect page (one
+  `oauthtoken` code exchange), `End` typed in the endpoint search (one `search` request,
+  answered with `Endpoint A`), `Endpoint A` picked, then the folder placeholder expanded once:
+  one `options` request with option `""`, answered with the first listing above. The flow
+  requests no other listing.
 
 After every navigation or click the script waits until the network has been idle for
 1500 ms (the search inputs debounce by 750 ms), then 500 ms more. A page that cannot be

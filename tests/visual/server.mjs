@@ -87,10 +87,44 @@ function dvObjects(ctx) {
   );
 }
 
+// Finds the node with the given value in a nested listing.
+function findNode(items, value) {
+  for (const item of items) {
+    if (item.value === value) {
+      return item;
+    }
+    const found = item.children && findNode(item.children, value);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+
+// The Globus folder listings. The first one (option "") follows the picker rules and the
+// backend's buildHierarchy (globus/options.go): a selectable "/" that is never preselected,
+// with the resolved home below it preselected and expanded, its folders listed. Expanding "/"
+// lists options-globus-root.json, without another root wrapper. Expanding a folder of the first
+// listing lists the children it has there, flat (label and value), as the backend lists a
+// folder, so "/home/alice/" answers its Documents again. null for any other folder.
+function globusListing(option) {
+  const first = fixture("options-globus-home.json");
+  if (!option) {
+    return first;
+  }
+  if (option === "/") {
+    return fixture("options-globus-root.json");
+  }
+  return (
+    findNode(first, option)?.children?.map(({ label, value }) => ({
+      label,
+      value,
+    })) ?? null
+  );
+}
+
 // The REDCap export page asks for its variables through the options route; the Globus
-// picker asks for folders. The first Globus listing (option "") follows the picker rules:
-// a selectable "/" that is never preselected, with the resolved home below it preselected.
-// Expanding "/" lists its children without another root wrapper.
+// picker asks for folders. Any other request is logged and answered with an empty list.
 function options(ctx) {
   const body = ctx.body ?? {};
   let pluginOptions = {};
@@ -102,14 +136,14 @@ function options(ctx) {
   if (body.plugin === "redcap2" && pluginOptions.request === "variables") {
     return fixture("options-redcap-variables.json");
   }
-  if (body.plugin === "globus") {
-    if (!body.option) {
-      return fixture("options-globus-home.json");
-    }
-    if (body.option === "/") {
-      return fixture("options-globus-root.json");
-    }
+  const listing = body.plugin === "globus" ? globusListing(body.option) : null;
+  if (listing) {
+    return listing;
   }
+  console.warn(
+    `mock: no options for plugin ${body.plugin} option ${JSON.stringify(body.option)}, ` +
+      "answering []",
+  );
   return [];
 }
 

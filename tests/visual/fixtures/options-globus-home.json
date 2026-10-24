@@ -9,7 +9,15 @@
         "value": "/home/",
         "expanded": true,
         "children": [
-          { "label": "alice", "value": "/home/alice/", "selected": true }
+          {
+            "label": "alice",
+            "value": "/home/alice/",
+            "selected": true,
+            "expanded": true,
+            "children": [
+              { "label": "Documents", "value": "/home/alice/Documents/" }
+            ]
+          }
         ]
       }
     ]

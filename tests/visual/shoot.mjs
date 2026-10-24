@@ -285,9 +285,11 @@ const PAGES = [
       await flow.click(".cdk-overlay-container .app-select-option", [
         "Endpoint A",
       ]);
-      // Expand the placeholder once: the stub answers / > home > alice with alice selected.
+      // Expand the placeholder once: the first listing is / > home > alice > Documents, alice
+      // selected and expanded.
       await flow.click("app-folder-tree button.folder-toggle");
       await flow.waitFor("app-folder-tree .folder-node.selected");
+      await flow.waitFor("app-folder-tree .folder-label::-p-text(Documents)");
     },
   },
 ];
