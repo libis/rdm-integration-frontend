@@ -79,7 +79,9 @@
           <tbody>
             <tr class="file-list-header">
               <th>
-                <i [class]="icon_warning" style="color: red"></i> Files
+                <i [class]="icon_warning" style="color: red"></i>
+                {{ rejectedSize()!.length }}
+                {{ rejectedSize()!.length === 1 ? "file" : "files" }}
                 exceeding maximum allowed size ({{ maxFileSize() }} bytes):
               </th>
             </tr>
@@ -106,7 +108,9 @@
           <tbody>
             <tr class="file-list-header">
               <th>
-                <i [class]="icon_warning" style="color: red"></i> Files with
+                <i [class]="icon_warning" style="color: red"></i>
+                {{ rejectedName()!.length }}
+                {{ rejectedName()!.length === 1 ? "file" : "files" }} with
                 unsupported characters (allowed patterns shown below):
               </th>
             </tr>

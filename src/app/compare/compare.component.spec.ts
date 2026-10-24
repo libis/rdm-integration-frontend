@@ -1021,6 +1021,25 @@ describe('CompareComponent layout', () => {
     });
   }
 
+  it('counts the rejected files in the list headings', async () => {
+    const fixture = await render(12);
+    fixture.componentInstance.data.update((d) => ({
+      ...d,
+      maxFileSize: 1000,
+      rejectedSize: ['big.bin'],
+    }));
+    await fixture.whenStable();
+    const headings = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '.compare-rejected .file-list-header th',
+      ),
+    ).map((th) => th.textContent!.replace(/\s+/g, ' ').trim());
+    expect(headings).toEqual([
+      '1 file exceeding maximum allowed size (1000 bytes):',
+      '12 files with unsupported characters (allowed patterns shown below):',
+    ]);
+  });
+
   describe('in a 1366x768 window', () => {
     let restoreWindow: () => void;
     beforeEach(() => (restoreWindow = resizeTestWindow(1366, 768)));
