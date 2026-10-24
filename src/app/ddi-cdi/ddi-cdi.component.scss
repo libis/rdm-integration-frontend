@@ -1,5 +1,7 @@
 // Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License
 
+@use "../shared/page-layout";
+
 .alert {
   padding: 1rem;
   margin-bottom: 1rem;
@@ -21,50 +23,30 @@
   }
 }
 
-// The page is a column so the split takes the remaining height below the
-// application header and above the footer (heights in styles.scss), minus the
-// container padding, as on the compare page.
+// The page fits the window and the split takes the rest of it.
 :host {
-  display: flex;
-  flex-direction: column;
-  height: calc(
-    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
-  );
+  @include page-layout.fill-window;
 }
 
-// At least 12rem of rows below the tabs and the table header; a window too
-// small for that scrolls the page instead of hiding the table.
+// At least 12rem of rows below the tabs and the table header.
 .ddi-split {
-  display: flex;
-  gap: 1rem;
-  flex: 1 1 auto;
-  min-height: 17rem;
-  overflow: hidden;
+  @include page-layout.split(17rem);
 }
 
-// Both columns are flex columns with the height of the split, so the files
-// pane and its tree table, and the generated output, can fill them.
+// The files pane with its tree table, and the generated output, fill their
+// columns.
 .ddi-tabs-column,
 .ddi-preview-column {
-  flex: 1 1 50%;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+  @include page-layout.split-column;
 }
 
-.ddi-preview {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
+.ddi-preview,
 .tab-pane-files {
-  flex: 1 1 auto;
-  min-height: 0;
+  @include page-layout.fill;
 }
 
 .tab-pane-console {
-  flex: 1 1 auto;
-  min-height: 0;
+  @include page-layout.fill;
   overflow: auto;
 }
 

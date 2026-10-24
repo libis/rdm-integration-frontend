@@ -1,14 +1,10 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
-// The page is a column so the tree table takes the remaining height below the
-// application header and above the footer (heights in styles.scss), minus the
-// container padding.
+@use "../shared/page-layout";
+
+// The page fits the window and the tree table takes the rest of it.
 :host {
-  display: flex;
-  flex-direction: column;
-  height: calc(
-    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
-  );
+  @include page-layout.fill-window;
 }
 
 // The rejected file lists take at most 30% of the page and scroll, so a long
@@ -23,7 +19,5 @@
 // At least 12rem of rows below the header; a window too small for that
 // scrolls the page instead of hiding the table.
 .treetable-container {
-  flex: 1 1 auto;
-  min-height: 15rem;
-  overflow: hidden;
+  @include page-layout.fill-rest(15rem);
 }

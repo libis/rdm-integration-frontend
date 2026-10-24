@@ -1,43 +1,30 @@
+@use "../shared/page-layout";
+
 textarea {
   resize: horizontal;
   overflow: hidden;
   width: 100%;
 }
 
-// The page is a column so the split takes the remaining height below the
-// application header and above the footer (heights in styles.scss), minus the
-// container padding, as on the compare page.
+// The page fits the window and the split takes the rest of it.
 :host {
-  display: flex;
-  flex-direction: column;
-  height: calc(
-    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
-  );
+  @include page-layout.fill-window;
 }
 
-// At least 12rem of rows below the table header; a window too small for that
-// scrolls the page instead of hiding the table.
+// At least 12rem of rows below the table header.
 .compute-split {
-  display: flex;
-  gap: 1rem;
-  flex: 1 1 auto;
-  min-height: 15rem;
-  overflow: hidden;
+  @include page-layout.split(15rem);
 }
 
-.compute-split-left,
+.compute-split-left {
+  @include page-layout.split-column;
+}
+
 .compute-split-right {
   flex: 1 1 50%;
   min-width: 0;
 }
 
-.compute-split-left {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
 .compute-table {
-  flex: 1 1 auto;
-  min-height: 0;
+  @include page-layout.fill;
 }

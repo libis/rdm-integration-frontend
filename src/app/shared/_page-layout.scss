@@ -1,0 +1,45 @@
+// Author: Eryk Kulikowski @ KU Leuven (2026). Apache 2.0 License
+
+// Layout of the pages that fit the window (compare, download, compute, DDI-CDI
+// and the metadata selector): the page host is a column with the height left
+// between the application header and the footer (their heights are tokens in
+// styles.scss), minus the container padding, and the part with the tree table
+// takes what the rows above it leave.
+
+@mixin fill-window {
+  display: flex;
+  flex-direction: column;
+  height: calc(
+    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
+  );
+}
+
+// The part of the page with the tree table: the height the rows above leave,
+// but at least $min.
+@mixin fill-rest($min) {
+  flex: 1 1 auto;
+  min-height: $min;
+  overflow: hidden;
+}
+
+// The same part split into two columns.
+@mixin split($min) {
+  @include fill-rest($min);
+  display: flex;
+  gap: 1rem;
+}
+
+// A column of a split: a flex column, so the table in it can fill it.
+@mixin split-column {
+  flex: 1 1 50%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+// The table, or the pane with the table, inside a column.
+@mixin fill {
+  flex: 1 1 auto;
+  min-height: 0;
+}

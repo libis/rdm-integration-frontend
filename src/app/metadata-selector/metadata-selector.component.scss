@@ -1,17 +1,12 @@
-// Metadata selector component styles
-// The page is a column so the tree table takes the remaining height below the
-// application header (3.125rem, see .dataverse-header-block in styles.scss).
+@use "../shared/page-layout";
+
+// The page fits the window and the tree table takes the rest of it.
 :host {
-  display: flex;
-  flex-direction: column;
-  height: calc(
-    100vh - var(--app-header-height) - var(--app-footer-height) - 2rem
-  );
+  @include page-layout.fill-window;
 }
 
 .treetable-cell {
-  flex: 1 1 auto;
-  min-height: 0;
+  @include page-layout.fill;
   background-color: var(--app-bg);
   padding: 0;
 }
