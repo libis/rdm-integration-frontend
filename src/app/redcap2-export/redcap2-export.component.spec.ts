@@ -136,6 +136,29 @@ describe('Redcap2ExportComponent', () => {
     ]);
   });
 
+  // The accordion buttons named no panel and the panels were no regions.
+  it('wires each accordion button to the region it expands', async () => {
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(
+      host.querySelectorAll('.accordion-button'),
+    ) as HTMLButtonElement[];
+    expect(buttons.map((b) => b.textContent!.trim())).toEqual([
+      'Export settings',
+      'Variable anonymization',
+      'Generated files',
+    ]);
+    for (const button of buttons) {
+      const region = host.querySelector(
+        `#${CSS.escape(button.getAttribute('aria-controls')!)}`,
+      )!;
+      expect(region.classList).toContain('accordion-collapse');
+      expect(region.getAttribute('role')).toBe('region');
+      expect(region.getAttribute('aria-labelledby')).toBe(button.id);
+    }
+    expect(new Set(buttons.map((b) => b.id)).size).toBe(3);
+  });
+
   it('names each anonymization select after its variable', async () => {
     await fixture.whenStable();
     const triggers = Array.from(

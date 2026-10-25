@@ -39,6 +39,8 @@
         <button
           type="button"
           class="accordion-button"
+          [attr.id]="panel0.id + '-header'"
+          [attr.aria-controls]="panel0.id + '-body'"
           [class.collapsed]="!panel0.expanded"
           [attr.aria-expanded]="panel0.expanded"
           (click)="panel0.toggle()"
@@ -46,7 +48,13 @@
           Export settings
         </button>
       </h2>
-      <div class="accordion-collapse collapse" [class.show]="panel0.expanded">
+      <div
+        class="accordion-collapse collapse"
+        role="region"
+        [attr.id]="panel0.id + '-body'"
+        [attr.aria-labelledby]="panel0.id + '-header'"
+        [class.show]="panel0.expanded"
+      >
         <div class="accordion-body">
           <div
             class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"
@@ -325,6 +333,8 @@
         <button
           type="button"
           class="accordion-button"
+          [attr.id]="panel1.id + '-header'"
+          [attr.aria-controls]="panel1.id + '-body'"
           [class.collapsed]="!panel1.expanded"
           [attr.aria-expanded]="panel1.expanded"
           (click)="panel1.toggle()"
@@ -332,7 +342,13 @@
           Variable anonymization
         </button>
       </h2>
-      <div class="accordion-collapse collapse" [class.show]="panel1.expanded">
+      <div
+        class="accordion-collapse collapse"
+        role="region"
+        [attr.id]="panel1.id + '-body'"
+        [attr.aria-labelledby]="panel1.id + '-header'"
+        [class.show]="panel1.expanded"
+      >
         <div class="accordion-body">
           <div
             class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2"
@@ -453,6 +469,8 @@
         <button
           type="button"
           class="accordion-button"
+          [attr.id]="panel2.id + '-header'"
+          [attr.aria-controls]="panel2.id + '-body'"
           [class.collapsed]="!panel2.expanded"
           [attr.aria-expanded]="panel2.expanded"
           (click)="panel2.toggle()"
@@ -460,7 +478,13 @@
           Generated files
         </button>
       </h2>
-      <div class="accordion-collapse collapse" [class.show]="panel2.expanded">
+      <div
+        class="accordion-collapse collapse"
+        role="region"
+        [attr.id]="panel2.id + '-body'"
+        [attr.aria-labelledby]="panel2.id + '-header'"
+        [class.show]="panel2.expanded"
+      >
         <div class="accordion-body">
           <p class="hint-text small mb-2">
             All files are generated during the export; you can deselect

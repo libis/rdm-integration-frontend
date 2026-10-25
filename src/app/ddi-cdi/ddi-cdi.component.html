@@ -154,14 +154,17 @@
 
 <div class="ddi-split">
   <div class="ddi-tabs-column">
-    <ul class="nav nav-tabs" role="tablist">
+    <ul class="nav nav-tabs" role="tablist" (keydown)="onTabKeydown($event)">
       <li class="nav-item" role="presentation">
         <button
           type="button"
           class="nav-link"
           role="tab"
+          id="ddi-tab-files"
+          aria-controls="ddi-panel-files"
           [class.active]="activeTab() === 'files'"
           [attr.aria-selected]="activeTab() === 'files'"
+          [attr.tabindex]="activeTab() === 'files' ? 0 : -1"
           (click)="selectTab('files')"
         >
           Select files
@@ -172,8 +175,11 @@
           type="button"
           class="nav-link"
           role="tab"
+          id="ddi-tab-console"
+          aria-controls="ddi-panel-console"
           [class.active]="activeTab() === 'console'"
           [attr.aria-selected]="activeTab() === 'console'"
+          [attr.tabindex]="activeTab() === 'console' ? 0 : -1"
           (click)="selectTab('console')"
         >
           Console output
@@ -182,6 +188,8 @@
     </ul>
     <div
       role="tabpanel"
+      id="ddi-panel-files"
+      aria-labelledby="ddi-tab-files"
       class="tab-pane-files"
       [hidden]="activeTab() !== 'files'"
     >
@@ -250,6 +258,8 @@
     </div>
     <div
       role="tabpanel"
+      id="ddi-panel-console"
+      aria-labelledby="ddi-tab-console"
       class="tab-pane-console"
       [hidden]="activeTab() !== 'console'"
     >

@@ -1678,6 +1678,73 @@ describe('DdiCdiComponent', () => {
         );
       });
 
+      // The tabs had no ids, no aria-controls and no arrow keys.
+      describe('tabs', () => {
+        const tabs = (fixture: { nativeElement: HTMLElement }) =>
+          Array.from(
+            fixture.nativeElement.querySelectorAll('[role="tab"]'),
+          ) as HTMLButtonElement[];
+
+        it('wire each tab to its panel and keep only the selected tab in the tab order', async () => {
+          const fixture = await render();
+          const host = fixture.nativeElement as HTMLElement;
+          for (const tab of tabs(fixture)) {
+            const panel = host.querySelector(
+              `#${tab.getAttribute('aria-controls')}`,
+            )!;
+            expect(panel.getAttribute('role')).toBe('tabpanel');
+            expect(panel.getAttribute('aria-labelledby')).toBe(tab.id);
+          }
+          expect(
+            tabs(fixture).map((t) => [
+              t.getAttribute('aria-selected'),
+              t.tabIndex,
+            ]),
+          ).toEqual([
+            ['true', 0],
+            ['false', -1],
+          ]);
+        });
+
+        it('move and select with Left, Right, Home and End', async () => {
+          const fixture = await render();
+          const [files, consoleTab] = tabs(fixture);
+          files.focus();
+          const press = async (key: string) => {
+            const event = new KeyboardEvent('keydown', {
+              key,
+              bubbles: true,
+              cancelable: true,
+            });
+            (document.activeElement as HTMLElement).dispatchEvent(event);
+            await fixture.whenStable();
+            return event.defaultPrevented;
+          };
+          const state = () => [
+            fixture.componentInstance.activeTab(),
+            document.activeElement === consoleTab ? 'console' : 'files',
+            consoleTab.tabIndex,
+          ];
+          expect(await press('ArrowRight')).toBeTrue();
+          expect(state()).toEqual(['console', 'console', 0]);
+          expect(
+            (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+              '#ddi-panel-console',
+            )!.hidden,
+          ).toBeFalse();
+          await press('ArrowRight');
+          expect(state()).toEqual(['files', 'files', -1]);
+          await press('ArrowLeft');
+          expect(state()).toEqual(['console', 'console', 0]);
+          await press('Home');
+          expect(state()).toEqual(['files', 'files', -1]);
+          await press('End');
+          expect(state()).toEqual(['console', 'console', 0]);
+          expect(await press('a')).toBeFalse();
+          expect(state()).toEqual(['console', 'console', 0]);
+        });
+      });
+
       it('fits the window with a long generated output, which scrolls', async () => {
         const fixture = await render(
           Array.from({ length: 400 }, (_, i) => `"line ${i}": true`).join('\n'),

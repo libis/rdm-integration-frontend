@@ -121,6 +121,26 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly filesTable = viewChild<TreeTableComponent<Datafile>>('tt');
   private readonly renderInjector = inject(Injector);
 
+  // The tab list is one stop for Tab (only the selected tab is in the tab
+  // order); Left and Right move to the previous and next tab, wrapping around,
+  // Home and End to the first and last, and select it.
+  onTabKeydown(event: KeyboardEvent): void {
+    const tabs = ['files', 'console'] as const;
+    const current = tabs.indexOf(this.activeTab() as (typeof tabs)[number]);
+    const next = {
+      ArrowRight: (current + 1) % tabs.length,
+      ArrowLeft: (current - 1 + tabs.length) % tabs.length,
+      Home: 0,
+      End: tabs.length - 1,
+    }[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
+    this.selectTab(tabs[next]);
+    (event.currentTarget as HTMLElement)
+      .querySelector<HTMLElement>(`#ddi-tab-${tabs[next]}`)
+      ?.focus();
+  }
+
   selectTab(tab: 'files' | 'console'): void {
     this.activeTab.set(tab);
     if (tab === 'files') {

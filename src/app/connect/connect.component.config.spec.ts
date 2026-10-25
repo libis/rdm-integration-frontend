@@ -373,6 +373,34 @@ describe('ConnectComponent pilot plugin configuration', () => {
     return fixture.componentInstance;
   }
 
+  // The accordion buttons named no panel and the panels were no regions.
+  it('wires each accordion button to the region it expands', async () => {
+    const pluginService = TestBed.inject(PluginService);
+    const configPromise = pluginService.setConfig();
+    httpMock.expectOne('api/frontend/config').flush(PILOT_CONFIG);
+    await configPromise;
+    const fixture = TestBed.createComponent(ConnectComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(
+      host.querySelectorAll('.accordion-button'),
+    ) as HTMLButtonElement[];
+    expect(buttons.map((b) => b.textContent!.trim())).toEqual([
+      'Data/code source',
+      PILOT_CONFIG.dataverseHeader,
+    ]);
+    for (const button of buttons) {
+      const region = host.querySelector(
+        `#${CSS.escape(button.getAttribute('aria-controls')!)}`,
+      )!;
+      expect(region.classList).toContain('accordion-collapse');
+      expect(region.getAttribute('role')).toBe('region');
+      expect(region.getAttribute('aria-labelledby')).toBe(button.id);
+    }
+    expect(new Set(buttons.map((b) => b.id)).size).toBe(2);
+  });
+
   it('exposes pilot plugin families on demand', async () => {
     const component = await createComponent();
     component.getPlugins();

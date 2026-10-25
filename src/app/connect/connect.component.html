@@ -41,6 +41,8 @@
           <button
             type="button"
             class="accordion-button"
+            [attr.id]="panel0.id + '-header'"
+            [attr.aria-controls]="panel0.id + '-body'"
             [class.collapsed]="!panel0.expanded"
             [attr.aria-expanded]="panel0.expanded"
             (click)="panel0.toggle()"
@@ -48,7 +50,13 @@
             Data/code source
           </button>
         </h2>
-        <div class="accordion-collapse collapse" [class.show]="panel0.expanded">
+        <div
+          class="accordion-collapse collapse"
+          role="region"
+          [attr.id]="panel0.id + '-body'"
+          [attr.aria-labelledby]="panel0.id + '-header'"
+          [class.show]="panel0.expanded"
+        >
           <div class="accordion-body">
             <div>
               <div class="mb-3">
@@ -272,6 +280,8 @@
           <button
             type="button"
             class="accordion-button"
+            [attr.id]="panel1.id + '-header'"
+            [attr.aria-controls]="panel1.id + '-body'"
             [class.collapsed]="!panel1.expanded"
             [attr.aria-expanded]="panel1.expanded"
             (click)="panel1.toggle()"
@@ -279,7 +289,13 @@
             {{ dataverseHeader() }}
           </button>
         </h2>
-        <div class="accordion-collapse collapse" [class.show]="panel1.expanded">
+        <div
+          class="accordion-collapse collapse"
+          role="region"
+          [attr.id]="panel1.id + '-body'"
+          [attr.aria-labelledby]="panel1.id + '-header'"
+          [class.show]="panel1.expanded"
+        >
           <div class="accordion-body">
             <div>
               @if (showDVToken()) {
