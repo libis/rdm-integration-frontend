@@ -188,6 +188,18 @@ describe('ExecutablefileComponent', () => {
     ).toBe('Queue for script.py');
   });
 
+  // "Run on" after the queue select pointed at nothing; the name of the
+  // button says which file runs and starts with its visible label.
+  it('labels the run button Run and names the file in its accessible name', async () => {
+    initialiseComponent();
+    await fixture.whenStable();
+    const run = fixture.nativeElement.querySelector(
+      'button.btn-primary',
+    ) as HTMLButtonElement;
+    expect(run.textContent!.trim()).toBe('Run');
+    expect(run.getAttribute('aria-label')).toBe('Run script.py');
+  });
+
   it('gives the run button the height of the queue select', async () => {
     initialiseComponent();
     await fixture.whenStable();

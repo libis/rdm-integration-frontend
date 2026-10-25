@@ -30,10 +30,11 @@
       <button
         class="btn btn-primary"
         type="button"
+        attr.aria-label="Run {{ datafile().name }}"
         [disabled]="!computeEnabled()"
         (click)="compute()"
       >
-        <i [class]="icon_play"></i> Run on
+        <i [class]="icon_play"></i> Run
       </button>
     </div>
   </div>
