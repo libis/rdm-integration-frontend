@@ -1170,10 +1170,7 @@ export class DownloadComponent
   }
 
   onRepoChange() {
-    this.branchItems.set([]);
-    this._rootOptionsData.set(createPlaceholderRootOptions());
-    this.selectedOption.set(undefined);
-    this.option.set(undefined);
+    this.folderPicker.reset();
   }
 
   getRepoToken(reauth?: ReauthRequest) {
