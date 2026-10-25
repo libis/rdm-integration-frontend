@@ -147,6 +147,49 @@ describe('ToastService and ToastComponent', () => {
     expect(toast()).toBeNull();
   });
 
+  it('lets another toast expire on time while one is held', () => {
+    const fixture = TestBed.createComponent(ToastComponent);
+    const service = TestBed.inject(ToastService);
+    service.show({
+      severity: 'info',
+      summary: 'a',
+      detail: 'held',
+      life: 1000,
+    });
+    jasmine.clock().tick(200);
+    service.show({
+      severity: 'success',
+      summary: 'b',
+      detail: 'free',
+      life: 1000,
+    });
+    fixture.detectChanges();
+    const details = () =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll(
+          '.toast-body div',
+        ),
+      ).map((d) => d.textContent);
+    const held = fixture.nativeElement.querySelector('.toast') as HTMLElement;
+    jasmine.clock().tick(100);
+    held.dispatchEvent(new MouseEvent('mouseenter'));
+    // The free toast ends at 1200 ms, its full life after it was shown.
+    jasmine.clock().tick(899);
+    fixture.detectChanges();
+    expect(details()).toEqual(['held', 'free']);
+    jasmine.clock().tick(2);
+    fixture.detectChanges();
+    expect(details()).toEqual(['held']);
+    // The held one still has the 700 ms it had left at 300 ms.
+    held.dispatchEvent(new MouseEvent('mouseleave'));
+    jasmine.clock().tick(699);
+    fixture.detectChanges();
+    expect(details()).toEqual(['held']);
+    jasmine.clock().tick(2);
+    fixture.detectChanges();
+    expect(details()).toEqual([]);
+  });
+
   it('keeps a toast without a life until it is closed, also after a hover', () => {
     const { toast, tick } = showOne(0);
     toast()!.dispatchEvent(new MouseEvent('mouseenter'));
