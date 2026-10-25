@@ -422,12 +422,7 @@ export class ConnectComponent
     }
 
     // Load dataverseToken from localStorage if storeDvToken is enabled
-    if (this.pluginService.isStoreDvToken()) {
-      const dvToken = localStorage.getItem('dataverseToken');
-      if (dvToken !== null) {
-        this.dataverseToken.set(dvToken);
-      }
-    }
+    this.tokenEdit.restore();
 
     this.repoSearchResultsSubscription =
       this.repoSearchResultsObservable.subscribe({
@@ -1307,12 +1302,7 @@ export class ConnectComponent
     this.datasetId.set(undefined);
     this.collectionId.set(undefined);
     // Save dataverseToken to localStorage if storeDvToken is enabled
-    if (
-      this.dataverseToken() !== undefined &&
-      this.pluginService.isStoreDvToken()
-    ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken()!);
-    }
+    this.tokenEdit.store();
   }
 
   // DV OBJECTS: COMMON
