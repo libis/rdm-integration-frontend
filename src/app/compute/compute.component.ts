@@ -48,7 +48,14 @@ import { ExecutablefileComponent } from '../executablefile/executablefile.compon
 import { AutosizeModule } from 'ngx-autosize';
 
 // RxJS
-import { debounceTime, firstValueFrom, map, Observable, Subject } from 'rxjs';
+import {
+  debounceTime,
+  firstValueFrom,
+  map,
+  Observable,
+  Subject,
+  take,
+} from 'rxjs';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
@@ -241,8 +248,10 @@ export class ComputeComponent
     this.doiItems.set(this.loadingItems);
     this.datasetId.set(undefined);
 
-    const httpSubscription = this.dvObjectLookupService
+    // take(1) ends the request with its answer, also a synchronous one.
+    this.dvObjectLookupService
       .getItems('', 'Dataset', undefined, this.dataverseToken())
+      .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
           if (items && items.length > 0) {
@@ -252,7 +261,6 @@ export class ComputeComponent
             this.doiItems.set([]);
             this.datasetId.set(undefined);
           }
-          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
@@ -294,18 +302,18 @@ export class ComputeComponent
     this.loading.set(true);
     this.output.set('');
     this.outputDisabled.set(true);
-    const subscription = this.dataService
+    // take(1) ends the request with its answer, also a synchronous one.
+    this.listingSubscription = this.dataService
       .getExecutableFiles(datasetId!, this.dataverseToken())
+      .pipe(take(1))
       .subscribe({
         next: (data) => {
-          subscription?.unsubscribe();
           // A listing for a dataset that is no longer selected changes
           // nothing; the listing of the selected one ends the spinner.
           if (this.datasetId() !== datasetId) return;
           this.setData(data);
         },
         error: (err) => {
-          subscription?.unsubscribe();
           if (this.datasetId() !== datasetId) return;
           this.loading.set(false);
           this.notificationService.showError(
@@ -313,7 +321,6 @@ export class ComputeComponent
           );
         },
       });
-    this.listingSubscription = subscription;
   }
 
   setData(data: CompareResult): void {

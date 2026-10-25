@@ -15,7 +15,7 @@ import {
   withDisabledInitialNavigation,
 } from '@angular/router';
 import { SelectItem } from '../models/select-item';
-import { of, throwError } from 'rxjs';
+import { config, of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -1071,6 +1071,32 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(comp.datasetId()).toBe(`:${comp.NEW_DATASET}`);
       expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
       expect(getItems).toHaveBeenCalledTimes(2);
+    });
+
+    // A synchronous answer threw a ReferenceError in next, which read the
+    // subscription before subscribe had returned it.
+    it('takes a synchronous answer of the dataset list', () => {
+      const unhandled: unknown[] = [];
+      config.onUnhandledError = (err) => unhandled.push(err);
+      try {
+        const fixture = TestBed.createComponent(ConnectComponent);
+        const comp = fixture.componentInstance;
+        fixture.detectChanges();
+        spyOn(
+          TestBed.inject(DvObjectLookupService),
+          'getItems',
+        ).and.returnValue(of([{ label: 'Dataset A', value: 'doi:10.1/A' }]));
+        comp.getDoiOptions();
+        expect(comp.doiItems()).toEqual([
+          { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+          { label: 'Dataset A', value: 'doi:10.1/A' },
+        ]);
+        // RxJS reports an error thrown in next on a timer.
+        jasmine.clock().tick(0);
+        expect(unhandled).toEqual([]);
+      } finally {
+        config.onUnhandledError = null;
+      }
     });
 
     it('delivers dataset search results to the doi dropdown', async () => {

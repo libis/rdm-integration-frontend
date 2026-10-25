@@ -7,7 +7,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
-import { Observable, Subject, of } from 'rxjs';
+import { Observable, Subject, config, of } from 'rxjs';
 import { signal } from '@angular/core';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
@@ -436,6 +436,39 @@ describe('ComputeComponent', () => {
       ),
     ).toBeTrue();
     mockData.executableError = undefined;
+  });
+
+  // A synchronous answer threw a ReferenceError in next, which read the
+  // subscription before subscribe had returned it: the listing never reached
+  // setData and the spinner stayed on.
+  it('takes synchronous answers of the dataset lookup and the file listing', () => {
+    const unhandled: unknown[] = [];
+    config.onUnhandledError = (err) => unhandled.push(err);
+    jasmine.clock().install();
+    try {
+      spyOn(dvLookup, 'getItems').and.returnValue(
+        of([{ label: 'Dataset A', value: 'doi:10.1/A' }]),
+      );
+      component.getDoiOptions();
+      expect(component.doiItems()).toEqual([
+        { label: 'Dataset A', value: 'doi:10.1/A' },
+      ]);
+
+      spyOn(mockData, 'getExecutableFiles').and.returnValue(
+        of({ id: 'doi:10.1/A', data: [] }),
+      );
+      component.datasetId.set('doi:10.1/A');
+      component.onDatasetChange();
+      expect(component.data().id).toBe('doi:10.1/A');
+      expect(component.loading()).toBeFalse();
+
+      // RxJS reports an error thrown in next on a timer.
+      jasmine.clock().tick(0);
+      expect(unhandled).toEqual([]);
+    } finally {
+      jasmine.clock().uninstall();
+      config.onUnhandledError = null;
+    }
   });
 
   // The error branch left loading true, so the spinner never stopped.

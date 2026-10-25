@@ -1455,13 +1455,16 @@ export class ConnectComponent
     const lItems = this.loadingItems;
     setter(this, lItems);
 
-    const httpSubscription = this.dvObjectLookupService
+    // take(1) ends the request with its answer, also a synchronous one; the
+    // subscription is kept for ngOnDestroy until then.
+    const subscription = this.dvObjectLookupService
       .getItems(
         this.collectionId() ? this.collectionId()! : '',
         objectType,
         undefined,
         this.dataverseToken(),
       )
+      .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
           if (items && items.length > 0) {
@@ -1469,17 +1472,14 @@ export class ConnectComponent
           } else {
             setter(this, []);
           }
-          this.subscriptions.delete(httpSubscription);
-          httpSubscription?.unsubscribe();
         },
         error: (err) => {
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           setter(this, []);
-          this.subscriptions.delete(httpSubscription);
-          httpSubscription?.unsubscribe();
         },
       });
-    this.subscriptions.add(httpSubscription);
+    this.subscriptions.add(subscription);
+    subscription.add(() => this.subscriptions.delete(subscription));
   }
 
   // COLLECTIONS
