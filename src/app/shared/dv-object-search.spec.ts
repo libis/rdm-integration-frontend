@@ -19,7 +19,7 @@ describe('DvObjectSearch', () => {
     answer: (term: string) => Observable<SelectItem<string>[]> = () =>
       answerLater(found),
     extra: {
-      prepend?: SelectItem<string>;
+      prepend?: () => SelectItem<string>;
       answered?: (items: SelectItem<string>[]) => void;
       failed?: (err: { message: string }) => void;
     } = {},
@@ -73,7 +73,7 @@ describe('DvObjectSearch', () => {
     expect(items()).toEqual(found);
   });
 
-  it('puts the prepended option first and runs answered with the options set', async () => {
+  it('puts a new prepended option first and runs answered with the options set', async () => {
     const createNew = {
       label: '+ Create new dataset',
       value: 'CREATE_NEW_DATASET',
@@ -83,10 +83,14 @@ describe('DvObjectSearch', () => {
       .createSpy('answered')
       .and.callFake(() => (listed = items()));
     const { items, search } = setup(() => of(found), {
-      prepend: createNew,
+      prepend: () => ({ ...createNew }),
       answered,
     });
-    expect(await search.search('abc')).toEqual([createNew, ...found]);
+    const first = await search.search('abc');
+    expect(first).toEqual([createNew, ...found]);
+    const second = await search.search('abc');
+    expect(second[0]).toEqual(createNew);
+    expect(second[0]).not.toBe(first[0]);
     search.onSearch('abc');
     jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
     await settlePromises();

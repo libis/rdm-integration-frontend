@@ -17,8 +17,8 @@ interface DvObjectSearchConfig {
   readonly items: WritableSignal<SelectItem<string>[]>;
   /** The lookup of a term, with the page's parameters. */
   readonly lookup: (term: string) => Observable<SelectItem<string>[]>;
-  /** An option put before every answer, such as "+ Create new dataset". */
-  readonly prepend?: SelectItem<string>;
+  /** Makes the option put before every answer, such as "+ Create new dataset". */
+  readonly prepend?: () => SelectItem<string>;
   /** The resets of the page so far (TokenEdit.generation). */
   readonly generation: () => number;
   /** Runs after an answer is in the options. */
@@ -61,10 +61,10 @@ export class DvObjectSearch {
     this.terms.next(term);
   }
 
-  /** Looks the term up; the prepended option comes first. */
+  /** Looks the term up; a new prepended option comes first. */
   async search(term: string): Promise<SelectItem<string>[]> {
     const items = await firstValueFrom(this.config.lookup(term));
-    return this.config.prepend ? [this.config.prepend, ...items] : items;
+    return this.config.prepend ? [this.config.prepend(), ...items] : items;
   }
 
   /** Puts the answers in the options until the subscription ends. */

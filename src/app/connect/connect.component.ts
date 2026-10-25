@@ -75,6 +75,12 @@ import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
 
+/** The first option of a dataset list, a new one for each list. */
+const createNewDatasetOption = (): SelectItem<string> => ({
+  label: '+ Create new dataset',
+  value: 'CREATE_NEW_DATASET',
+});
+
 @Component({
   selector: 'app-connect',
   templateUrl: './connect.component.html',
@@ -365,7 +371,7 @@ export class ConnectComponent
         this.dataverseToken(),
       ),
     // Add "Create new dataset" option to the beginning of results
-    prepend: { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+    prepend: createNewDatasetOption,
     generation: () => this.tokenEdit.generation,
     failed: (err) =>
       this.notificationService.showError(
@@ -1395,10 +1401,7 @@ export class ConnectComponent
 
   setDoiItems(comp: ConnectComponent, items: SelectItem<string>[]): void {
     // Add "Create new dataset" option to the beginning of the list
-    const createNewOption: SelectItem<string> = {
-      label: '+ Create new dataset',
-      value: 'CREATE_NEW_DATASET',
-    };
+    const createNewOption = createNewDatasetOption();
 
     // Preserve an existing (restored) datasetId selection when coming back from Compare
     const existing = comp.datasetId();
