@@ -444,100 +444,57 @@ Notes for maintainers
 
 ### Frontend Stack & Theme System
 
-- Angular 18+ with standalone components and signals
-- PrimeNG v20.0.1 with Lara preset theme system
-- Theme configuration: `src/main.ts` using `definePreset()` with light/dark palettes
-- CSS variables: Theme uses `--p-*` CSS custom properties for dynamic theming
+- Angular 22 with standalone components, signals and zoneless change detection (`provideZonelessChangeDetection()` in `src/main.ts`); the components use `OnPush`.
+- UI: Bootstrap 5.3 (its stylesheet is in the `styles` of `angular.json`) and the Angular CDK. PrimeIcons is kept for the icon font only (the `pi pi-*` classes, imported in `src/styles.scss`); there is no PrimeNG package and no `--p-*` variable.
+- The widgets Bootstrap does not have are standalone, signal driven components in `src/app/shared/ui`:
+  - `select/`: `app-select`, a `form-select` trigger that opens a CDK listbox in a CDK connected overlay, with an optional filter and an editable mode, bound with `ngModel` (ControlValueAccessor).
+  - `folder-tree/`: `app-folder-tree`, a CDK tree for the folder pickers (Globus and the other repository options), which asks for the children of a node when it expands (`nodeExpand`).
+  - `tree-table/`: `app-tree-table`, the file and metadata tables: a `treegrid` filled from header and row templates (`appTreeTableHeader`, `appTreeTableRow`), with CDK virtual scrolling or a static body, and `app-tree-toggler` for the folder rows.
+  - `dialog/`: `app-dialog`, Bootstrap modal markup with a CDK focus trap, which stops the page behind it from scrolling while it is open.
+  - `toast/`: `app-toast` and `ToastService`, the Bootstrap toasts behind `NotificationService`.
+- The pages that fit the window share the mixins in `src/app/shared/_page-layout.scss` (`fill-window`, `fill-rest`, `split`, `split-column`, `split-pane`, `fill`).
 
-### PrimeNG Theme Configuration (Critical)
+### Colour Mode (Critical)
 
-**Color Palette Defaults** (src/main.ts):
-
-- Light mode uses **slate** color palette by default
-- Dark mode uses **zinc** color palette by default
-- Important: This is the PrimeNG showcase default, contrary to some documentation examples
-- Palette definition includes surface scale 0-950, but PrimeNG internally handles which surface values to use per mode
-
-**Surface Scale Understanding**:
-
-- Surface colors range from 0 (lightest) to 950 (darkest)
-- In palette definitions, surface.0 is always defined as '#ffffff'
-- PrimeNG's theme system internally maps these values differently in light vs dark mode
-- Don't assume surface-0 always renders as white in the UI - it's theme-contextual
+- The colour mode is Bootstrap 5.3's: `data-bs-theme` on `<html>`, `light` or `dark`.
+- An inline script in `src/index.html` sets it from `prefers-color-scheme` before the stylesheet applies, so the first paint is already in the right mode, and follows changes of the OS setting. The app has no theme switch of its own.
+- Dark rules key on `[data-bs-theme="dark"]` (in `src/styles.scss`, or `:host-context([data-bs-theme="dark"])` in a component), never on the media query, so the colours of the app always agree with the Bootstrap components.
 
 ### CSS Theming Best Practices (Lessons Learned)
 
-**Key to solving CSS theming issues**:
+1. **Use the tokens in `src/styles.scss`, not raw colours**:
+   - `--app-header-height`, `--app-footer-height`: the page hosts take their height from them.
+   - `--app-bg`, `--app-text`, `--app-muted`, `--app-border`, `--app-primary`, `--app-surface`: aliases of the mode aware Bootstrap variables `--bs-body-bg`, `--bs-body-color`, `--bs-secondary-color`, `--bs-border-color`, `--bs-primary` and `--bs-tertiary-bg`.
+   - `--app-file-action-{copy,update,delete,custom}-{bg,color}`: the file action rows, with their dark values under `[data-bs-theme="dark"]`.
+   - `--app-icon-success`, `--app-icon-info`, `--app-icon-danger`: the status icons, plain green, blue and red in light mode and Bootstrap's `--bs-success-text-emphasis`, `--bs-primary-text-emphasis` and `--bs-danger-text-emphasis` in dark mode (plain blue has 1.8:1 on the dark background). `APP_CONSTANTS.COLORS` in `src/app/shared/constants.ts` refers to them.
 
-1. **Use PrimeNG's semantic CSS variables** instead of guessing with surface/content variables
-   - Form fields: Use `--p-form-field-background`, `--p-form-field-color`, `--p-form-field-border-color`, etc.
-   - These are the exact same variables PrimeNG components use internally
-   - Available form field variables:
-     - `--p-form-field-background` - background color (adapts to light/dark)
-     - `--p-form-field-color` - text color
-     - `--p-form-field-border-color` - border color
-     - `--p-form-field-hover-border-color` - hover state border
-     - `--p-form-field-focus-border-color` - focus state border
-     - `--p-form-field-focus-ring-shadow` - focus ring/shadow
-     - `--p-form-field-disabled-background` - disabled state background
-     - `--p-form-field-disabled-color` - disabled state text
-     - `--p-form-field-placeholder-color` - placeholder text
-     - `--p-form-field-border-radius`, `--p-form-field-padding-x/y` - sizing
-     - `--p-form-field-transition-duration` - animation timing
+2. **For what Bootstrap draws, set its variables** (`--bs-btn-*`, `--bs-table-*`, `--bs-btn-close-filter`, ...) instead of overriding its colours; they switch with `data-bs-theme` by themselves.
 
-2. **Don't try to use surface variables directly** (`--p-surface-0`, `--p-surface-50`, etc.)
-   - These are low-level palette values that PrimeNG maps differently per mode
-   - Using them directly breaks light mode while trying to fix dark mode
+3. **Form controls**: `.form-control` and `.form-select` follow the colour mode; `src/styles.scss` puts the plain inputs, textareas and selects on the same `--bs-*` variables. Input groups follow Bootstrap 5.3: the input, the `.input-group-text` and the buttons are direct children of `.input-group` (the Bootstrap 4 `input-group-prepend` and `input-group-append` wrappers break the joined borders), and an optional member is rendered with `@if`, since a hidden last child still squares the corners of the input.
 
-3. **For non-PrimeNG components** (like Bootstrap `.form-control`):
-   - Apply PrimeNG's form field variables to match the look of PrimeNG components
-   - Example from `src/styles.scss`:
-     ```scss
-     .form-control,
-     input[type="text"],
-     input[type="password"],
-     /* ... other input types */
-     textarea,
-     select {
-       background: var(--p-form-field-background);
-       color: var(--p-form-field-color);
-       border: 1px solid var(--p-form-field-border-color);
-       /* ... use other --p-form-field-* variables for states */
-     }
-     ```
-
-4. **Text contrast adjustments**:
-   - Use `--p-text-muted-color` instead of `--p-text-color` where softer contrast is desired
-   - Helps reduce harsh white text in dark mode
-   - Apply to navigation links, headers, and labels
+4. **Contrast**: the comments next to the tokens record the measured contrast ratios; measure again after changing a colour, in both modes.
 
 5. **Testing approach**:
-   - Always test changes in BOTH light and dark modes
-   - Don't break light mode to fix dark mode
-   - If unsure about variable names, inspect PrimeNG components in browser DevTools to see which CSS variables they use
-
-6. **Background variables hierarchy**:
-   - `--p-content-background` - main content area background
-   - `--p-background` - general/page background
-   - `--p-accordion-header-background` - component-specific backgrounds
-   - Use the most specific variable available for the context
+   - Always check both modes; do not break light mode to fix dark mode.
+   - The screenshot harness in `tests/visual` shoots every page with the browser set to light and to dark (`--dark`) and checks `data-bs-theme`; compare the images of two runs (see its README).
+   - `src/app/shared/dark-mode.spec.ts` sets `data-bs-theme` and checks the dark colours of the global styles.
 
 ### KU Leuven Branding
 
-- Logo color: `#c55b28` (orange, preserved in all modes)
-- Footer background: `#1d8db0` (teal, preserved in all modes)
+- Logo colour: `#c55b28` (orange; `#e88a5d` in dark mode)
+- Footer background: `#1d8db0` (teal; `#156b84` in dark mode)
 - Custom assets in `conf/kul_customizations/assets/`
 
-### Inline Row Styling via getStyle (CRITICAL FIX)
+### Inline Row Styling via hostStyle (CRITICAL FIX)
 
 **Problem**: Dynamic file-action classes assigned with `@HostBinding` were fragile. The palette lived in scattered SCSS `::ng-deep` overrides that relied on `!important`, were hard to maintain across light/dark themes, and risked being tree-shaken.
 
-**Solution**: Replace dynamic classes with inline styles returned from component helpers. Each row component (`DatafileComponent`, `MetadatafieldComponent`, `SubmittedFileComponent`, `DownladablefileComponent`) exposes `getStyle()` that assembles CSS declarations from `getFileActionStyle()` tokens defined in `shared/constants.ts`. Templates export the row component instance and bind `[style]="rowRef.getStyle()"`, ensuring the colors stay intact in every rendering mode.
+**Solution**: Replace dynamic classes with inline styles. Each row component (`DatafileComponent`, `MetadatafieldComponent`, `SubmittedFileComponent`, `DownladablefileComponent`) exposes a `hostStyle()` computed signal that assembles CSS declarations from the `getFileActionStyle()` tokens defined in `shared/constants.ts`. Templates export the row component instance and bind `[style]="rowRef.hostStyle()"`, ensuring the colors stay intact in every rendering mode.
 
 **Why This Works**:
 
 - Inline `[style]` bindings have the highest specificity and bypass encapsulation issues.
-- `getFileActionStyle()` centralizes colors as semantic CSS variables (e.g., `--app-file-action-copy-bg`), so theme switches Just Work.
+- `getFileActionStyle()` centralizes colors as semantic CSS variables (e.g., `--app-file-action-copy-bg`), so the colour mode switches them with everything else.
 - No HostBinding means Angular’s optimizer no longer drops seemingly unused classes.
 - Tests assert the actual computed styles, giving fast feedback when tokens change.
 
@@ -560,36 +517,15 @@ Notes for maintainers
 **Common Mistakes to Avoid**:
 
 - ❌ Re-adding HostBinding-based classes (makes the palette brittle again)
-- ❌ Returning raw hex codes instead of CSS variables (breaks theme syncing)
-- ❌ Bypassing `buildInlineStyle()` or disabling `includeTableVariables` when rendering Bootstrap tables (cells will revert to theme defaults)
-- ❌ Forgetting the trailing semicolon in `getStyle()` (style attribute concatenation bugs)
+- ❌ Returning raw hex codes instead of CSS variables (breaks the colour mode)
+- ❌ Bypassing `buildInlineStyle()` or disabling `includeTableVariables` when rendering Bootstrap tables (cells will revert to the table defaults)
+- ❌ Dropping the trailing semicolon `buildInlineStyle()` ends with (style attribute concatenation bugs)
 - ❌ Skipping tests after tweaking `getFileActionStyle()` (risk of regressions)
 
-### Bootstrap Table Theme Helper
+### Bootstrap Tables
 
-- `.table-theme-adaptive` lives in `src/styles.scss` and maps PrimeNG theme variables onto Bootstrap’s table CSS custom properties. In browsers that support `color-mix`, it lightly brightens light-mode stripes and hover states while leaving dark mode untouched.
-- Components that render Bootstrap tables should apply `table table-theme-adaptive` so neutral rows inherit semantic backgrounds and borders, while action rows still override via their inline styles.
-
-### PrimeNG DataTable Dark Mode Fix
-
-**Problem**: PrimeNG DataTable rows and headers show white background in dark mode (specifically in Submit component).
-
-**Solution**: Use `::ng-deep` to override table background colors in global `styles.scss`:
-
-```scss
-::ng-deep .p-datatable .p-datatable-tbody > tr {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
-}
-
-::ng-deep .p-datatable .p-datatable-thead > tr > th {
-  background-color: var(--p-content-background);
-  color: var(--p-text-color);
-  border-color: var(--p-surface-border);
-}
-```
-
-This ensures table backgrounds adapt to light/dark theme using PrimeNG's semantic variables.
+- The rejected file lists of compare, the lists of the submit page and the REDCap variables are plain Bootstrap `.table` markup, which follows the colour mode through its `--bs-table-*` variables; no extra table theme class is needed.
+- Action rows override those variables with their inline styles (`buildInlineStyle()`), so their cells keep the colour of the row.
 
 ### CSS Selector Specificity for File Action Rows (CRITICAL FIX)
 
@@ -597,19 +533,17 @@ This ensures table backgrounds adapt to light/dark theme using PrimeNG's semanti
 
 **Root Cause**: The default selectors had higher or equal specificity and ran after the dynamic classes, resetting the background to the theme surface.
 
-**Solution**: Shift the palette into inline styles (see “Inline Row Styling via getStyle”) and keep parent SCSS limited to theme defaults without `!important`. Inline declarations outrank component styles, so action rows retain their colors while non-action rows inherit the table background.
+**Solution**: Shift the palette into inline styles (see “Inline Row Styling via hostStyle”) and keep the component styles free of row colours. Inline declarations outrank component styles, so action rows retain their colors while non-action rows inherit the table background.
 
 **Implementation Notes**:
 
-- Component SCSS now sets semantic fallbacks (`var(--p-content-background)`, `var(--p-text-color)`) on table sections only.
-- No `!important` needed—the inline `[style]` handles action colors.
+- The component styles set no row colours: the Bootstrap tables keep their defaults and the tree tables use the `--app-*` tokens (the table cell of the metadata selector has `--app-bg`).
+- No `!important` is needed: the inline `[style]` handles the action colors.
 - Tests verify that the computed background colors differ for each action and remain non-transparent.
 
 **Applied In**:
 
-- `src/app/submit/submit.component.scss`
-- `src/app/metadata-selector/metadata-selector.component.scss`
-- `src/app/compare/compare.component.scss`
+- The row components: `src/app/datafile`, `src/app/metadatafield`, `src/app/submitted-file`, `src/app/downloadablefile`
 
 **Testing**:
 
@@ -619,7 +553,7 @@ This ensures table backgrounds adapt to light/dark theme using PrimeNG's semanti
 
 - Card now captures a `ViewChild` reference and scrolls into view when first rendered so progress remains visible even if the user is far down the page.
 - Files progress header shows "Files processed" with a tight processed/total counter and a zero fallback when the backend omits totals; failed counts render as a distinct line below.
-- PrimeNG progress bar hides its inline percentage text to reduce duplication, relying on the formatted counter instead.
+- The progress bar (a Bootstrap `.progress`) shows no percentage text, which would repeat the formatted counter.
 - Specs cover the scroll-to-view behavior and updated layout strings; latest run `npm run test:ci` succeeded (400 specs, coverage: statements 90.07%, branches 81.08%, functions 90.63%, lines 90.74%).
 
 ### 401 Authentication Error Auto-Reset (CRITICAL FIX)
@@ -683,7 +617,7 @@ error: (err) => {
 **Test Organization**:
 
 - Unit tests colocated with components (`*.spec.ts`)
-- Integration tests for styling in dedicated files (`*-styling.spec.ts`), including `datafile`, `metadata-selector`, and `submit` coverage
+- Integration tests for styling in dedicated files (`*-styling.spec.ts`), including `datafile` and `metadata-selector` coverage
 - Error handling tests for services (`*-401-reset.spec.ts`)
 - Mock HTTP calls with `HttpTestingController` for API testing
 
