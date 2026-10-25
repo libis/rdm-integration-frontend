@@ -163,6 +163,7 @@
           class="btn btn-sm btn-primary"
           cdkOverlayOrigin
           #filterOrigin="cdkOverlayOrigin"
+          #filterButton
           [disabled]="loading()"
           aria-label="Filter by comparison status"
           title="Filter by comparison status"
@@ -179,10 +180,12 @@
           [cdkConnectedOverlayHasBackdrop]="true"
           cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
           (backdropClick)="filterOpen.set(false)"
-          (detach)="filterOpen.set(false)"
+          (detach)="filterOpen.set(false); filterButton.focus()"
         >
-          <!-- Focus moves to the first checkbox on open, stays in the panel and
-               goes back to the filter button when the panel closes. -->
+          <!-- Focus moves to the first checkbox on open and stays in the panel.
+               On close the trap gives focus back to what had it at open, which
+               is not the button after a click in Safari or Firefox on macOS;
+               the detach handler runs after that and focuses the button. -->
           <div
             class="dropdown-menu show position-static shadow p-2"
             role="dialog"

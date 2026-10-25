@@ -1300,4 +1300,34 @@ describe('CompareComponent table', () => {
     await fixture.whenStable();
     expect(filterAll()).not.toBeNull();
   });
+
+  // Safari and Firefox on macOS do not focus a button on a mouse click, so
+  // the focus trap had only the body to give focus back to.
+  it('returns focus to the filter button on close when the button had no focus at open', async () => {
+    const fixture = await render();
+    const button = filterButton(fixture);
+    const open = async () => {
+      (document.activeElement as HTMLElement | null)?.blur();
+      expect(document.activeElement).toBe(document.body);
+      button.click();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(filterAll());
+    };
+
+    await open();
+    pressEscape(document.activeElement!);
+    await fixture.whenStable();
+    expect(filterAll()).toBeNull();
+    expect(document.activeElement).toBe(button);
+
+    await open();
+    document
+      .querySelector<HTMLElement>(
+        '.cdk-overlay-container .cdk-overlay-backdrop',
+      )!
+      .click();
+    await fixture.whenStable();
+    expect(filterAll()).toBeNull();
+    expect(document.activeElement).toBe(button);
+  });
 });
