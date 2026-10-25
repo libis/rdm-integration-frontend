@@ -1,5 +1,6 @@
 // Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License
 
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -71,6 +72,7 @@ interface FileNodeBuckets {
     TreeTableRowDirective,
     CdkConnectedOverlay,
     CdkOverlayOrigin,
+    CdkTrapFocus,
     DatafileComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

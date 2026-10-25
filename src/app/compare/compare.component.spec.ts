@@ -1187,4 +1187,57 @@ describe('CompareComponent table', () => {
     expect(icons()).toEqual(['right', 'right']);
     expect(expanded()).toEqual(['false', 'false']);
   });
+
+  const filterButton = (fixture: ComponentFixture<CompareComponent>) =>
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.tt-header button.btn-primary',
+    )!;
+  const filterAll = () =>
+    document.querySelector<HTMLInputElement>(
+      '.cdk-overlay-container #filter-all',
+    );
+  const pressEscape = (el: Element) =>
+    el.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        keyCode: 27,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+  // The panel renders at the end of the body: the review needed 78 Tab
+  // presses to reach its first checkbox.
+  it('moves focus into the status filter on open and back to its button on Escape', async () => {
+    const fixture = await render();
+    const button = filterButton(fixture);
+    button.focus();
+    button.click();
+    await fixture.whenStable();
+    expect(filterAll()).not.toBeNull();
+    expect(document.activeElement).toBe(filterAll());
+
+    pressEscape(document.activeElement!);
+    await fixture.whenStable();
+    expect(filterAll()).toBeNull();
+    expect(document.activeElement).toBe(button);
+  });
+
+  // Escape closed the panel through the CDK while filterOpen stayed true, so
+  // the next click on the button only reset it and the panel stayed closed.
+  it('opens the status filter on the first click after Escape closed it', async () => {
+    const fixture = await render();
+    const button = filterButton(fixture);
+    button.focus();
+    button.click();
+    await fixture.whenStable();
+    pressEscape(filterAll()!);
+    await fixture.whenStable();
+    expect(filterAll()).toBeNull();
+    expect(fixture.componentInstance.filterOpen()).toBeFalse();
+
+    button.click();
+    await fixture.whenStable();
+    expect(filterAll()).not.toBeNull();
+  });
 });

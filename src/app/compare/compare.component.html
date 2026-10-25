@@ -165,6 +165,8 @@
             cdkOverlayOrigin
             #filterOrigin="cdkOverlayOrigin"
             [disabled]="loading()"
+            aria-haspopup="dialog"
+            [attr.aria-expanded]="filterOpen()"
             (click)="filterOpen.set(!filterOpen())"
           >
             <i class="pi pi-filter"></i>
@@ -177,8 +179,17 @@
           [cdkConnectedOverlayHasBackdrop]="true"
           cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
           (backdropClick)="filterOpen.set(false)"
+          (detach)="filterOpen.set(false)"
         >
-          <div class="dropdown-menu show position-static shadow p-2">
+          <!-- Focus moves to the first checkbox on open, stays in the panel and
+               goes back to the filter button when the panel closes. -->
+          <div
+            class="dropdown-menu show position-static shadow p-2"
+            role="dialog"
+            aria-label="Filter by comparison status"
+            cdkTrapFocus
+            cdkTrapFocusAutoCapture
+          >
             <div class="form-check">
               <input
                 type="checkbox"
