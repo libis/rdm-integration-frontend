@@ -348,9 +348,16 @@ export class ComputeComponent
         httpSubscription?.unsubscribe();
         this.getComputeData(key);
       },
-      error: (err) => {
+      error: (err: { error?: unknown; message?: string }) => {
         httpSubscription?.unsubscribe();
-        this.notificationService.showError(err);
+        this.loading.set(false);
+        // The backend answers with the error as text; without it (a network
+        // error) the message of the HTTP error says what failed.
+        const text =
+          typeof err?.error === 'string' && err.error !== ''
+            ? err.error
+            : (err?.message ?? 'unknown error');
+        this.notificationService.showError(`Compute request failed: ${text}`);
       },
     });
   }

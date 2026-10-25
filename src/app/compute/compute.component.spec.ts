@@ -454,6 +454,43 @@ describe('ComputeComponent', () => {
     expect(notification.errors.length).toBeGreaterThan(0);
   });
 
+  // The error branch left loading true and showed the error object itself,
+  // "[object Object]".
+  it('stops loading and shows the error text when the compute request fails', () => {
+    const answers = [new Subject<Key>(), new Subject<Key>()];
+    spyOn(mockData, 'compute').and.returnValues(...answers);
+    const submit = () => {
+      component.submitCompute({
+        persistentId: 'doi:1',
+        queue: 'q',
+        executable: 'run.py',
+        sendEmailOnSuccess: false,
+      });
+      component.continueSubmit();
+    };
+
+    submit();
+    expect(component.loading()).toBeTrue();
+    answers[0].error({
+      error: 'queue is full',
+      message:
+        'Http failure response for api/common/compute: 500 Internal Server Error',
+    });
+    expect(component.loading()).toBeFalse();
+
+    // A network error has no text from the backend.
+    submit();
+    answers[1].error({
+      error: new ProgressEvent('error'),
+      message: 'Http failure response for api/common/compute: 0 Unknown Error',
+    });
+    expect(component.loading()).toBeFalse();
+    expect(notification.errors).toEqual([
+      'Compute request failed: queue is full',
+      'Compute request failed: Http failure response for api/common/compute: 0 Unknown Error',
+    ]);
+  });
+
   it('compute polling surfaces backend error messages', async () => {
     component.submitCompute({
       persistentId: 'doi:1',
