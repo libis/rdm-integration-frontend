@@ -154,7 +154,12 @@
 
 <div class="ddi-split">
   <div class="ddi-tabs-column">
-    <ul class="nav nav-tabs" role="tablist" (keydown)="onTabKeydown($event)">
+    <ul
+      class="nav nav-tabs"
+      role="tablist"
+      aria-label="DDI-CDI generation"
+      (keydown)="onTabKeydown($event)"
+    >
       <li class="nav-item" role="presentation">
         <button
           type="button"
@@ -256,11 +261,14 @@
         </ng-template>
       </app-tree-table>
     </div>
+    <!-- A tab stop of its own only while the output is disabled and the panel
+         holds nothing to focus (the files panel starts with a link). -->
     <div
       role="tabpanel"
       id="ddi-panel-console"
       aria-labelledby="ddi-tab-console"
       class="tab-pane-console"
+      [attr.tabindex]="outputDisabled() ? 0 : null"
       [hidden]="activeTab() !== 'console'"
     >
       <textarea

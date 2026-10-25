@@ -1707,6 +1707,39 @@ describe('DdiCdiComponent', () => {
           ]);
         });
 
+        // Per the WAI-ARIA tabs pattern a panel is a tab stop when it holds
+        // nothing to focus: Tab from the Console tab skipped the panel while
+        // its output was disabled. And the tab list had no name.
+        it('name the tab list and make the console panel a tab stop while its output is disabled', async () => {
+          const fixture = await render();
+          const host = fixture.nativeElement as HTMLElement;
+          expect(
+            host.querySelector('[role="tablist"]')!.getAttribute('aria-label'),
+          ).toBe('DDI-CDI generation');
+          // The files panel starts with the dataset link and the select all
+          // button, so it needs no stop of its own.
+          const files = host.querySelector('#ddi-panel-files') as HTMLElement;
+          expect(files.hasAttribute('tabindex')).toBeFalse();
+          expect(
+            files
+              .querySelector('.tt-header a[href]')!
+              .compareDocumentPosition(
+                files.querySelector('.tt-header button')!,
+              ) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ).toBeTruthy();
+          const consolePanel = host.querySelector(
+            '#ddi-panel-console',
+          ) as HTMLElement;
+          const output = consolePanel.querySelector('textarea')!;
+          expect(output.disabled).toBeTrue();
+          expect(consolePanel.getAttribute('tabindex')).toBe('0');
+          // An enabled output is focusable itself: one stop, not two.
+          fixture.componentInstance.outputDisabled.set(false);
+          await fixture.whenStable();
+          expect(output.disabled).toBeFalse();
+          expect(consolePanel.hasAttribute('tabindex')).toBeFalse();
+        });
+
         it('move and select with Left, Right, Home and End', async () => {
           const fixture = await render();
           const [files, consoleTab] = tabs(fixture);

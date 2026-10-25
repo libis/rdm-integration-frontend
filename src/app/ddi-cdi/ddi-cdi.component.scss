@@ -51,11 +51,18 @@
   @include page-layout.fill;
 }
 
-// The console output fills its pane and scrolls on its own.
+// The console output fills its pane and scrolls on its own. While the output
+// is disabled the pane is a tab stop; the split clips anything outside it, so
+// its focus ring is drawn inside.
 .tab-pane-console {
   @include page-layout.fill;
   display: flex;
   flex-direction: column;
+
+  &:focus-visible {
+    outline: 0.25rem solid rgba(var(--bs-primary-rgb), 0.25);
+    outline-offset: -0.25rem;
+  }
 }
 
 .console-output {
