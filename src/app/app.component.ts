@@ -9,6 +9,7 @@ import {
 import { ToastComponent } from './shared/ui/toast/toast.component';
 import { DataService } from './data.service';
 import { DatasetService } from './dataset.service';
+import { Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { PluginService } from './plugin.service';
 import { NotificationService } from './shared/notification.service';
@@ -24,6 +25,7 @@ export class AppComponent implements OnInit {
   dataService = inject(DataService);
   private datasetService = inject(DatasetService);
   private router = inject(Router);
+  private location = inject(Location);
   private route = inject(ActivatedRoute);
   private pluginService = inject(PluginService);
   private notificationService = inject(NotificationService);
@@ -86,6 +88,15 @@ export class AppComponent implements OnInit {
       return true;
     }
 
+    // A load of the download page itself (a reload, or a link with datasetPid,
+    // downloadId or apiToken) gets there through the router, whose url is
+    // still '/' at the first query parameters: the redirect below would drop
+    // the URL's own parameters. Only that exact path skips it, so the
+    // Dataverse entry under /connect/download keeps its redirect.
+    if (this.isDownloadRoute(locationHref)) {
+      return true;
+    }
+
     // Check if URL contains /download but Angular routing failed (e.g., /connect/download)
     // In this case, parse the callback and navigate to /download with the correct params
     if (
@@ -144,6 +155,17 @@ export class AppComponent implements OnInit {
     }
 
     return false;
+  }
+
+  /** Whether the URL's path is the download route under the base href. */
+  private isDownloadRoute(locationHref: string): boolean {
+    try {
+      const url = new URL(locationHref);
+      const route = new URL(this.location.prepareExternalUrl('/download'), url);
+      return url.pathname.replace(/\/$/, '') === route.pathname;
+    } catch {
+      return false;
+    }
   }
 
   /**

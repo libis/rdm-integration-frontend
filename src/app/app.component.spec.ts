@@ -4,10 +4,19 @@ import {
   withXhr,
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Location } from '@angular/common';
+import { provideLocationMocks, SpyLocation } from '@angular/common/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
+import {
+  provideRouter,
+  Router,
+  withDisabledInitialNavigation,
+} from '@angular/router';
+import { of } from 'rxjs';
 import { settlePromises } from '../testing/promises';
 import { AppComponent } from './app.component';
+import { DatasetService } from './dataset.service';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -845,6 +854,94 @@ describe('AppComponent fetchAndRedirect', () => {
     await settlePromises();
     expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect'], {
       queryParams: { datasetDbId: '9999' },
+    });
+  });
+});
+
+// A page load: the router navigates to the URL of the page while the app takes
+// its first query parameters, with router.url still '/'. The base href is the
+// one of the production build, /integration/.
+describe('AppComponent on a page load', () => {
+  @Component({ template: '' })
+  class PageStub {}
+
+  let router: Router;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [
+        provideRouter([
+          { path: 'connect', component: PageStub },
+          { path: 'download', component: PageStub },
+        ]),
+        provideLocationMocks(),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+      ],
+    }).compileComponents();
+    router = TestBed.inject(Router);
+    (TestBed.inject(Location) as SpyLocation).setBaseHref('/integration');
+  });
+
+  async function load(href: string): Promise<void> {
+    const fixture = TestBed.createComponent(AppComponent);
+    (fixture.componentInstance as any)._testWindowLocationHref = href;
+    const url = new URL(href);
+    // No route matches /connect/download: that navigation fails, and the app
+    // redirects.
+    const navigation = router
+      .navigateByUrl(url.pathname.replace(/^\/integration/, '') + url.search)
+      .catch(() => false);
+    fixture.detectChanges();
+    await navigation;
+    await fixture.whenStable();
+  }
+
+  const page = () => {
+    const tree = router.parseUrl(router.url);
+    return {
+      path: router.url.split('?')[0],
+      queryParams: tree.queryParams,
+    };
+  };
+
+  // A reload of the page ended at a bare /download: at the first query
+  // parameters the app redirected the download URL as if it were the
+  // Dataverse entry, without its parameters.
+  it('keeps datasetPid and downloadId on a reload of the download page', async () => {
+    await load(
+      'https://host/integration/download?datasetPid=doi:10.1/ABC&downloadId=dl-1',
+    );
+    expect(page()).toEqual({
+      path: '/download',
+      queryParams: { datasetPid: 'doi:10.1/ABC', downloadId: 'dl-1' },
+    });
+  });
+
+  it('brings the apiToken of a link to the download page', async () => {
+    await load('https://host/integration/download?apiToken=secret');
+    expect(page()).toEqual({
+      path: '/download',
+      queryParams: { apiToken: 'secret' },
+    });
+  });
+
+  it('still sends the Dataverse entry with a callback on to the download page', async () => {
+    const getDatasetVersion = spyOn(
+      TestBed.inject(DatasetService),
+      'getDatasetVersion',
+    ).and.returnValue(of({ persistentId: 'doi:10.1/CB' }) as any);
+    const callback = btoa(
+      'https://host/api/v1/datasets/8153/globusDownloadParameters?locale=en&downloadId=dl-9',
+    );
+    await load(
+      `https://host/integration/connect/download?dvLocale=en&callback=${callback}`,
+    );
+    expect(getDatasetVersion).toHaveBeenCalledOnceWith('8153', undefined);
+    expect(page()).toEqual({
+      path: '/download',
+      queryParams: { datasetPid: 'doi:10.1/CB', downloadId: 'dl-9' },
     });
   });
 });
