@@ -21,12 +21,9 @@ export const APP_CONSTANTS = {
     NO_ACTION: 'pi pi-stop',
     UPDATE: 'pi pi-copy',
     MIRROR: 'pi pi-sync',
-    SUBMIT: 'pi pi-save',
-    COMPARE: 'pi pi-flag',
     ACTION: 'pi pi-bolt',
     // Use a clear warning triangle to avoid looking like an actionable checkbox/stop square
     WARNING: 'pi pi-exclamation-triangle',
-    FILTER: 'pi pi-filter',
     PLAY: 'pi pi-play',
     NEW_FILE: 'pi pi-plus-circle',
     CHANGED_FILE: 'pi pi-exclamation-circle',

@@ -123,7 +123,7 @@
       <th><i [class]="icon_copy"></i> Files that will be created</th>
     </tr>
     <tr>
-      <td class="inner-table-cell">
+      <td>
         <table class="table">
           <tbody>
             @for (datafile of created(); track datafile.id ?? $index) {
@@ -143,7 +143,7 @@
       <th><i [class]="icon_update"></i> Files that will be updated</th>
     </tr>
     <tr>
-      <td class="inner-table-cell">
+      <td>
         <table class="table">
           <tbody>
             @for (datafile of updated(); track datafile.id ?? $index) {
@@ -163,7 +163,7 @@
       <th><i [class]="icon_delete"></i> Files that will be deleted</th>
     </tr>
     <tr>
-      <td class="inner-table-cell">
+      <td>
         <table class="table">
           <tbody>
             @for (datafile of deleted(); track datafile.id ?? $index) {
