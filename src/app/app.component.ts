@@ -91,9 +91,10 @@ export class AppComponent implements OnInit {
     // A load of the download page itself (a reload, or a link with datasetPid,
     // downloadId or apiToken) gets there through the router, whose url is
     // still '/' at the first query parameters: the redirect below would drop
-    // the URL's own parameters. Only that exact path skips it, so the
-    // Dataverse entry under /connect/download keeps its redirect.
-    if (this.isDownloadRoute(locationHref)) {
+    // the URL's own parameters. Only that exact path without a callback skips
+    // it, so a Dataverse entry, which carries one, keeps its redirect whatever
+    // its path: the download page does not read callback.
+    if (this.isDownloadRoute(locationHref) && !this.hasCallback(locationHref)) {
       return true;
     }
 
@@ -155,6 +156,15 @@ export class AppComponent implements OnInit {
     }
 
     return false;
+  }
+
+  /** Whether the URL carries a callback, as the Dataverse Globus entry does. */
+  private hasCallback(locationHref: string): boolean {
+    try {
+      return new URL(locationHref).searchParams.has('callback');
+    } catch {
+      return false;
+    }
   }
 
   /** Whether the URL's path is the download route under the base href. */

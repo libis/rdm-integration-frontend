@@ -927,6 +927,27 @@ describe('AppComponent on a page load', () => {
     });
   });
 
+  // Dataverse builds its entry as :GlobusAppUrl + "/download?...&callback=";
+  // with :GlobusAppUrl set to the app root, the entry is the download path
+  // itself, and the download page does not read callback.
+  it('sends an entry with a callback on the download path on to the download page', async () => {
+    const getDatasetVersion = spyOn(
+      TestBed.inject(DatasetService),
+      'getDatasetVersion',
+    ).and.returnValue(of({ persistentId: 'doi:10.1/CB' }) as any);
+    const callback = btoa(
+      'https://host/api/v1/datasets/8153/globusDownloadParameters?locale=en&downloadId=dl-9',
+    );
+    await load(
+      `https://host/integration/download?dvLocale=en&callback=${callback}`,
+    );
+    expect(getDatasetVersion).toHaveBeenCalledOnceWith('8153', undefined);
+    expect(page()).toEqual({
+      path: '/download',
+      queryParams: { datasetPid: 'doi:10.1/CB', downloadId: 'dl-9' },
+    });
+  });
+
   it('still sends the Dataverse entry with a callback on to the download page', async () => {
     const getDatasetVersion = spyOn(
       TestBed.inject(DatasetService),
