@@ -363,6 +363,22 @@ describe('DdiCdiComponent', () => {
       expect(component.loading()).toBeFalse();
     });
 
+    // The token edit cancels the generation poll, so the console would keep
+    // describing a run the page no longer follows.
+    it('clears the console on a token edit', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      selectDataset(component);
+      component.output.set('DDI-CDI generation started...');
+      component.outputDisabled.set(false);
+      await fixture.whenStable();
+
+      editToken(fixture, 'token-1');
+      expect(component.output()).toBe('');
+      expect(component.outputDisabled()).toBeTrue();
+    });
+
     it('ignores a file listing that answers for a dataset no longer selected', () => {
       const first = new Subject<CompareResult>();
       const second = new Subject<CompareResult>();

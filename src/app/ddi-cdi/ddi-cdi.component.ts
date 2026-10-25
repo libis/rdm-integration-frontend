@@ -280,11 +280,13 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       return;
     }
     // What the old dataset produced goes with it: a listing or a generation
-    // still under way, the rows, the selection and the output, so nothing
-    // generates without a dataset.
+    // still under way, the rows, the selection, the output and the console,
+    // so nothing generates without a dataset.
     this.cancelPolling();
     this.listingSubscription?.unsubscribe();
     this.loading.set(false);
+    this.output.set('');
+    this.outputDisabled.set(true);
     this.doiItems.set([]);
     this.datasetId.set(undefined);
     this.data.set({});
