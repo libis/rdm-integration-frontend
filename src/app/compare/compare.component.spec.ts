@@ -1263,6 +1263,26 @@ describe('CompareComponent table', () => {
       '.tt-header button.btn-primary',
     )!;
 
+  // The action header had only an icon with a title on a span, the status
+  // header took the name of its filter button, and each status icon had only
+  // a title: their names were empty.
+  it('names the status and action column headers and the status icons', async () => {
+    const fixture = await render();
+    const headers = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '.tt-header > [role="columnheader"]',
+      ),
+      (cell) => cell.getAttribute('aria-label'),
+    );
+    expect(headers).toEqual([null, 'Comparison status', 'Action', null]);
+    const icon = rows(fixture)
+      .find((row) => row.textContent!.includes('b.txt'))!
+      .querySelector('.tt-cell:nth-child(2) i')!;
+    expect(icon.getAttribute('role')).toBe('img');
+    expect(icon.getAttribute('aria-label')).toBe('Unchanged file');
+    expect(icon.getAttribute('title')).toBe('Unchanged file');
+  });
+
   // The icon only buttons had no accessible name; the filter button's title
   // sat on the span around it.
   it('names the status filter button and the row action buttons', async () => {

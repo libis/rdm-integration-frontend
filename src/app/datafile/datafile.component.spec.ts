@@ -117,6 +117,28 @@ describe('DatafileComponent', () => {
     });
   });
 
+  // The status icon had only a title, so its cell had no name.
+  it('names the status icon after its title', () => {
+    const icon = fixture.nativeElement.querySelector(
+      '.tt-cell:nth-child(2) i',
+    ) as HTMLElement;
+    const statuses = [
+      Filestatus.New,
+      Filestatus.Equal,
+      Filestatus.Updated,
+      Filestatus.Deleted,
+      Filestatus.Unknown,
+    ];
+    for (const status of statuses) {
+      fixture.componentRef.setInput('datafile', { id: 'f', name: 'f', status });
+      fixture.componentRef.setInput('loading', false);
+      fixture.detectChanges();
+      expect(icon.getAttribute('role')).toBe('img');
+      expect(icon.getAttribute('aria-label')).toBe(component.comparisonTitle());
+      expect(icon.title).toBe(component.comparisonTitle());
+    }
+  });
+
   // The button held only an icon: no accessible name.
   it('names the action button after the current action', () => {
     const names: [Fileaction | undefined, string][] = [

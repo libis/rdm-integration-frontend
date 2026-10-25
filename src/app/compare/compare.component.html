@@ -158,7 +158,12 @@
           >({{ folderName() }})</span
         >
       </div>
-      <div class="tt-cell text-center" role="columnheader">
+      <!-- Named here: the filter button inside would name the header. -->
+      <div
+        class="tt-cell text-center"
+        role="columnheader"
+        aria-label="Comparison status"
+      >
         <button
           type="button"
           class="btn btn-sm btn-primary"
@@ -232,7 +237,7 @@
           </div>
         </ng-template>
       </div>
-      <div class="tt-cell text-center" role="columnheader">
+      <div class="tt-cell text-center" role="columnheader" aria-label="Action">
         <span title="Action"><i [class]="icon_action"></i></span>
       </div>
       <div class="tt-cell text-end" role="columnheader">
