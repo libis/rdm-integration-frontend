@@ -112,3 +112,23 @@ dark strict runs at both viewports.
 ## Deviations
 
 Recorded by the controller while executing, one line per deviation with the task id.
+
+- R0: puppeteer-core is Apache-2.0 (the plan said MIT or Apache for new packages: allowed). Two
+  fix rounds: strict checks for a table under the footer or cut by its container, inline hosts,
+  real pointer clicks, mock routes with statuses, `expectedFailures` by path and status, held
+  toast timers, pinned locale and time zone; each new check proven by a negative control.
+- R1: page hosts scroll inside (`overflow-y: auto`) when the part above the table is taller than
+  the window; the `hostScrolls` page option for download-card; the download right column and the
+  DDI-CDI preview scroll in their columns.
+- R2: the select trigger got `role="combobox"` and an `ariaLabel` input (reviewer's advice);
+  `CdkListbox._setActiveOption` is used (no public setter in @angular/cdk 22.1.7, commented).
+- R3: the `*` key is swallowed instead of expanding siblings (it bypassed the listing request).
+- R5: the colour mode moved to an inline script in index.html and `inlineCritical` is false in
+  the production configuration.
+- R6: merged into R3, R4 and R5 (Eryk, 2026-10-25).
+- R7: the two stale PrimeNG notes were deleted by the controller (8ecb8a6); the rest was split
+  into R7a and R7b; M4's label, M8 and M9 were put back after dropping out of the list.
+- R7a: also fixed a pre-existing loss of the query parameters on a reload of /download.
+- R7b: public members that no template or spec read were removed with the private copies;
+  spec only aliases were removed and their specs moved onto the live path.
+- R8: a changelog and a screenshot diff in the migration report instead of a written report.
