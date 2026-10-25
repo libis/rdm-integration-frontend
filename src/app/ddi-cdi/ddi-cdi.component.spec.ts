@@ -1678,7 +1678,8 @@ describe('DdiCdiComponent', () => {
         );
       });
 
-      // The tabs had no ids, no aria-controls and no arrow keys.
+      // The tabs had no ids, no aria-controls and no arrow keys, and the
+      // split cut off the focus ring of the first tab at the top and the left.
       describe('tabs', () => {
         const tabs = (fixture: { nativeElement: HTMLElement }) =>
           Array.from(
@@ -1742,6 +1743,22 @@ describe('DdiCdiComponent', () => {
           expect(state()).toEqual(['console', 'console', 0]);
           expect(await press('a')).toBeFalse();
           expect(state()).toEqual(['console', 'console', 0]);
+        });
+
+        it('leave room inside the split for the focus ring of the tabs', async () => {
+          const fixture = await render();
+          const host = fixture.nativeElement as HTMLElement;
+          const split = host
+            .querySelector('.ddi-split')!
+            .getBoundingClientRect();
+          const rem = parseFloat(
+            getComputedStyle(document.documentElement).fontSize,
+          );
+          for (const tab of tabs(fixture)) {
+            const box = tab.getBoundingClientRect();
+            expect(box.top - 0.25 * rem).toBeGreaterThanOrEqual(split.top);
+            expect(box.left - 0.25 * rem).toBeGreaterThanOrEqual(split.left);
+          }
         });
       });
 

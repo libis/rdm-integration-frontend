@@ -33,6 +33,12 @@
   @include page-layout.split(17rem);
 }
 
+// The split clips its overflow, so the tab list keeps room at the top and on
+// the left for the focus ring of its tabs (0.25rem).
+.ddi-tabs-column > .nav-tabs {
+  padding: 0.25rem 0 0 0.25rem;
+}
+
 // The files pane with its tree table, and the generated output, fill their
 // columns.
 .ddi-tabs-column,
