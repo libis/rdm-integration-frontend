@@ -87,8 +87,9 @@ cdk-accordion-item {
 }
 
 // The dark colours here and in the components follow the Bootstrap colour mode
-// (data-bs-theme on <html>, set by main.ts from the media query), so they
-// always agree with the Bootstrap components.
+// (data-bs-theme on <html>, set from the media query by an inline script in
+// index.html before the first paint), so they always agree with the Bootstrap
+// components.
 
 // The rows of the file actions, and the status icons (compare rows, the status
 // filter, the rejected file headings). The plain icon colours have 4:1 or more

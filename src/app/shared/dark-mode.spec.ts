@@ -1,6 +1,6 @@
 // The dark colours of the global styles follow the Bootstrap colour mode on <html>
-// (data-bs-theme, set by main.ts), not the media query, so they cannot disagree with the
-// Bootstrap components. The test browser prefers light, so dark results here come from the
+// (data-bs-theme, set by an inline script in index.html), not the media query, so they
+// cannot disagree with the Bootstrap components. The test browser prefers light, so dark results here come from the
 // attribute alone.
 describe('Dark mode colours of the global styles', () => {
   const added: HTMLElement[] = [];

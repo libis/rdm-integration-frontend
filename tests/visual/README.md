@@ -84,7 +84,8 @@ If `ELECTRON_RUN_AS_NODE` is set in the shell (VS Code terminals), run it with
 
 Colour scheme: the browser reports `prefers-color-scheme: light`, or `dark` with `--dark`,
 never the machine's own setting. The app follows it by setting `data-bs-theme` on `<html>`
-(`src/main.ts`), and every capture checks that the attribute matches and fails otherwise.
+(an inline script in `src/index.html`), and every capture checks that the attribute matches
+and fails otherwise.
 Shoot once without and once with `--dark`, into different `--out` folders.
 
 Time zone and locale: the browser runs with `TZ=UTC`, `--lang=en-US`, `LANG=en_US.UTF-8` and

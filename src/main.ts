@@ -37,14 +37,8 @@ async function initializeApp(): Promise<void> {
   }
 }
 
-const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-const applyColorMode = () =>
-  document.documentElement.setAttribute(
-    'data-bs-theme',
-    darkScheme.matches ? 'dark' : 'light',
-  );
-applyColorMode();
-darkScheme.addEventListener('change', applyColorMode);
+// The Bootstrap colour mode (data-bs-theme) is set by an inline script in
+// index.html, before the first paint.
 
 bootstrapApplication(AppComponent, {
   providers: [

@@ -3,6 +3,22 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <script>
+      // The Bootstrap colour mode follows the OS setting and its changes: the
+      // dark rules key on data-bs-theme. Set here, before the stylesheet
+      // applies, so the first paint is already in the right mode.
+      (function () {
+        var dark = window.matchMedia("(prefers-color-scheme: dark)");
+        function apply() {
+          document.documentElement.setAttribute(
+            "data-bs-theme",
+            dark.matches ? "dark" : "light",
+          );
+        }
+        apply();
+        dark.addEventListener("change", apply);
+      })();
+    </script>
     <title>Datasync</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
