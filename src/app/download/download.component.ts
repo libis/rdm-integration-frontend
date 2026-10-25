@@ -328,12 +328,7 @@ export class DownloadComponent
 
   async ngOnInit() {
     // Load dataverseToken from localStorage if storeDvToken is enabled
-    if (this.pluginService.isStoreDvToken()) {
-      const dvToken = localStorage.getItem('dataverseToken');
-      if (dvToken !== null) {
-        this.dataverseToken.set(dvToken);
-      }
-    }
+    this.tokenEdit.restore();
 
     // Restore download state from sessionStorage if available
     // This handles cases where user went through Shibboleth login
@@ -682,12 +677,7 @@ export class DownloadComponent
     this.rootNodeChildren.set([]);
     this.rowNodeMap.set(new Map<string, TreeNode<Datafile>>());
     // Save dataverseToken to localStorage if storeDvToken is enabled
-    if (
-      this.dataverseToken() !== undefined &&
-      this.pluginService.isStoreDvToken()
-    ) {
-      localStorage.setItem('dataverseToken', this.dataverseToken()!);
-    }
+    this.tokenEdit.store();
   }
 
   // DV OBJECTS: COMMON
