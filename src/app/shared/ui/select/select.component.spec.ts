@@ -517,6 +517,26 @@ describe('SelectComponent', () => {
     expect(list()!.contains(message)).toBeFalse();
   });
 
+  // The status region is there while the panel is open, so screen readers
+  // announce the message when the filter empties the list.
+  it('announces No results through a status region of the panel', async () => {
+    trigger().click();
+    await fixture.whenStable();
+    const status = () =>
+      panel()!.querySelector('[role="status"]') as HTMLElement | null;
+    expect(status()).not.toBeNull();
+    expect(status()!.textContent!.trim()).toBe('');
+    const region = status();
+    const input = panel()!.querySelector(
+      'input.form-control',
+    ) as HTMLInputElement;
+    input.value = 'zzz';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    expect(status()).toBe(region);
+    expect(status()!.textContent!.trim()).toBe('No results');
+  });
+
   it('shows the label of a value that is set from outside', async () => {
     host.value.set('a');
     await fixture.whenStable();

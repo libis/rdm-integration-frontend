@@ -117,8 +117,11 @@
         </li>
       }
     </ul>
-    @if (visibleOptions().length === 0) {
-      <div class="dropdown-item disabled app-select-empty">No results</div>
-    }
+    <!-- A live region from the start, so its message is announced. -->
+    <div role="status">
+      @if (visibleOptions().length === 0) {
+        <div class="dropdown-item disabled app-select-empty">No results</div>
+      }
+    </div>
   </div>
 </ng-template>
