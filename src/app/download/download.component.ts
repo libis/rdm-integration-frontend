@@ -762,10 +762,6 @@ export class DownloadComponent
     this.datasetSearcher.onSearch(searchTerm);
   }
 
-  datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return this.datasetSearcher.search(searchTerm);
-  }
-
   onDatasetChange() {
     const currentDatasetId = this.datasetId();
 

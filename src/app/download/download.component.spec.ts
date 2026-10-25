@@ -704,17 +704,45 @@ describe('DownloadComponent', () => {
     expect(component.statusPollingActive()).toBeFalse();
   });
 
-  it('datasetSearch resolves lookup results', async () => {
-    const comp = initComponent();
-    dvLookup.items = [
-      { label: 'Dataset 1', value: 'doi:1' },
-      { label: 'Dataset 2', value: 'doi:2' },
-    ];
+  // The search goes through the page's search wiring, DEBOUNCE_TIME after
+  // the term (debounceTime reads Date.now(), hence mockDate).
+  it('the dataset search lists the lookup results', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(2026, 9, 25));
+    try {
+      const comp = initComponent();
+      // The async ngOnInit subscribes to the searches after its awaits, and
+      // its dataset listing answers on a timer.
+      await settlePromises();
+      jasmine.clock().tick(0);
+      dvLookup.items = [
+        { label: 'Dataset 1', value: 'doi:1' },
+        { label: 'Dataset 2', value: 'doi:2' },
+      ];
+      // The mock declares no parameters; the page passes five.
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.callThrough();
 
-    const results = await comp.datasetSearch('Dat');
+      comp.onDatasetSearch('Dat');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataset',
+        'Dat',
+        undefined,
+        true,
+      );
+      jasmine.clock().tick(0);
+      await settlePromises();
 
-    expect(results.length).toBe(2);
-    expect(results[1].value).toBe('doi:2');
+      const results = comp.doiItems();
+      expect(results.length).toBe(2);
+      expect(results[1].value).toBe('doi:2');
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('getOptions populates branchItems when called without node', async () => {
