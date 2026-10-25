@@ -422,13 +422,14 @@ export class ConnectComponent
     this.collectionSearchResultsSubscription =
       this.collectionSearchResultsObservable.subscribe({
         next: (x) => {
-          // The search has just been sent with the current token; its answer
-          // is dropped when the token has changed since.
-          const token = this.dataverseToken();
+          // The search has just been sent; its answer is dropped when a token
+          // change has reset the page since.
+          const generation = this.resetGeneration;
           x.then((v) => {
-            if (this.dataverseToken() === token) this.collectionItems.set(v);
+            if (this.resetGeneration === generation)
+              this.collectionItems.set(v);
           }).catch((err) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             this.notificationService.showError(
               `Collection search failed: ${err.message}`,
             );
@@ -452,13 +453,13 @@ export class ConnectComponent
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) => {
-          // The search has just been sent with the current token; its answer
-          // is dropped when the token has changed since.
-          const token = this.dataverseToken();
+          // The search has just been sent; its answer is dropped when a token
+          // change has reset the page since.
+          const generation = this.resetGeneration;
           x.then((v) => {
-            if (this.dataverseToken() === token) this.doiItems.set(v);
+            if (this.resetGeneration === generation) this.doiItems.set(v);
           }).catch((err) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             this.notificationService.showError(
               `Dataset search failed: ${err.message}`,
             );
@@ -1418,6 +1419,8 @@ export class ConnectComponent
   // The token before an edit of the field, kept from the first input event of
   // the edit to the change event that commits it.
   private tokenBeforeEdit?: { value: string | undefined };
+  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
+  private resetGeneration = 0;
 
   onTokenInput(value: string | undefined): void {
     this.tokenBeforeEdit ??= { value: this.dataverseToken() };
@@ -1432,6 +1435,7 @@ export class ConnectComponent
     if (before === undefined || before.value === this.dataverseToken()) {
       return;
     }
+    this.resetGeneration++;
     this.doiItems.set([]);
     this.collectionItems.set([]);
     this.datasetId.set(undefined);
@@ -1462,21 +1466,21 @@ export class ConnectComponent
     setter(this, lItems);
 
     // take(1) ends the request with its answer, also a synchronous one; the
-    // subscription is kept for ngOnDestroy until then. An answer to a request
-    // with an older token is dropped: the token change reset the lists, and
-    // the next opening asks again.
-    const token = this.dataverseToken();
+    // subscription is kept for ngOnDestroy until then. An answer that a token
+    // change made stale is dropped: the change reset the lists, and the next
+    // opening asks again.
+    const generation = this.resetGeneration;
     const subscription = this.dvObjectLookupService
       .getItems(
         this.collectionId() ? this.collectionId()! : '',
         objectType,
         undefined,
-        token,
+        this.dataverseToken(),
       )
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
-          if (this.dataverseToken() !== token) return;
+          if (this.resetGeneration !== generation) return;
           if (items && items.length > 0) {
             setter(this, items);
           } else {
@@ -1484,7 +1488,7 @@ export class ConnectComponent
           }
         },
         error: (err) => {
-          if (this.dataverseToken() !== token) return;
+          if (this.resetGeneration !== generation) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           setter(this, []);
         },

@@ -939,6 +939,73 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    // Keystrokes that are never committed: input events and no change event,
+    // as x typed and taken back with Backspace before Tab.
+    const typeWithoutCommit = (
+      fixture: ComponentFixture<ConnectComponent>,
+      ...values: string[]
+    ) => {
+      const input = tokenInput(fixture);
+      for (const value of values) {
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+      }
+    };
+
+    // The rule compared with the live token, which every keystroke changes:
+    // an answer that came during an edit never committed was dropped, and a
+    // dropped search left its "searching" item, which no opening replaces.
+    it('keeps lookups answered while the token field is edited without a commit', async () => {
+      pluginService.datasetFieldEditable$ = signal(false).asReadonly();
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const list = new Subject<SelectItem<string>[]>();
+      const search = new Subject<SelectItem<string>[]>();
+      const collections = new Subject<SelectItem<string>[]>();
+      const createNew = {
+        label: '+ Create new dataset',
+        value: 'CREATE_NEW_DATASET',
+      };
+      const first = { label: 'Dataset A', value: 'doi:10.1/A' };
+      const found = { label: 'Dataset C', value: 'doi:10.1/C' };
+      const collection = { label: 'Collection C', value: 'root:C' };
+      spyOn(TestBed.inject(DvObjectLookupService), 'getItems').and.returnValues(
+        list,
+        search,
+        collections,
+      );
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        // The answers arrive in the middle of the edit.
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        typeWithoutCommit(fixture, 'x');
+        list.next([first]);
+        list.complete();
+        typeWithoutCommit(fixture, '');
+        expect(comp.doiItems()).toEqual([createNew, first]);
+
+        comp.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        comp.onCollectionSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        typeWithoutCommit(fixture, 'x');
+        search.next([found]);
+        search.complete();
+        collections.next([collection]);
+        collections.complete();
+        await settlePromises();
+        typeWithoutCommit(fixture, '');
+        expect(comp.doiItems()).toEqual([createNew, found]);
+        expect(comp.collectionItems()).toEqual([collection]);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
     // A lookup still under way when the token changed answered after the
     // reset: the select kept what the old token found and asked nothing with
     // the new one.
