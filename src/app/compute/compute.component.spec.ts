@@ -323,6 +323,24 @@ describe('ComputeComponent', () => {
     mockData.executableError = undefined;
   });
 
+  // The error branch left loading true, so the spinner never stopped.
+  it('stops the tree table spinner after a failed file listing', () => {
+    const listing = new Subject<CompareResult>();
+    spyOn(mockData, 'getExecutableFiles').and.returnValue(listing);
+    component.datasetId.set('doi:1');
+    component.onDatasetChange();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tt-loading')).not.toBeNull();
+
+    listing.error({ error: 'boom' });
+    fixture.detectChanges();
+    expect(notification.errors).toContain(
+      'Getting executable files failed: boom',
+    );
+    expect(component.loading()).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.tt-loading')).toBeNull();
+  });
+
   it('continueSubmit handles compute errors gracefully', async () => {
     mockData.computeError = { error: 'server down' };
     component.submitCompute({

@@ -275,6 +275,7 @@ export class ComputeComponent
         },
         error: (err) => {
           subscription?.unsubscribe();
+          this.loading.set(false);
           this.notificationService.showError(
             `Getting executable files failed: ${err.error}`,
           );

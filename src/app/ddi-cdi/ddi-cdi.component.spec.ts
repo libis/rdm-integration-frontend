@@ -15,7 +15,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
-import { Observable, Subscription, of, throwError } from 'rxjs';
+import { Observable, Subject, Subscription, of, throwError } from 'rxjs';
 
 import { DdiCdiComponent } from './ddi-cdi.component';
 import { DataService } from '../data.service';
@@ -411,6 +411,28 @@ describe('DdiCdiComponent', () => {
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'Getting files failed: Fetch error',
       );
+    });
+
+    // The error branch left loading true, so the spinner never stopped and
+    // the buttons that loading disables stayed disabled.
+    it('stops the tree table spinner after a failed file listing', () => {
+      const listing = new Subject<CompareResult>();
+      dataServiceStub.getDdiCdiCompatibleFiles.and.returnValue(listing);
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      component.datasetId.set('doi:123');
+      component.onDatasetChange();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.tt-loading')).not.toBeNull();
+
+      listing.error({ error: 'Fetch error' });
+      fixture.detectChanges();
+      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+        'Getting files failed: Fetch error',
+      );
+      expect(component.loading()).toBeFalse();
+      expect(fixture.nativeElement.querySelector('.tt-loading')).toBeNull();
     });
   });
 

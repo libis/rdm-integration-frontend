@@ -441,6 +441,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         error: (err) => {
           this.subscriptions.delete(subscription);
           subscription?.unsubscribe();
+          this.loading.set(false);
           this.notificationService.showError(
             `Getting files failed: ${err.error}`,
           );
