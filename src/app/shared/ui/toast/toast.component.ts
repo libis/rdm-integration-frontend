@@ -10,6 +10,15 @@ const SEVERITY_CLASS: Record<ToastSeverity, string> = {
   info: 'text-bg-info',
 };
 
+// The danger and success backgrounds are dark and take a white X; warning and info are light
+// and keep the black one.
+const WHITE_CLOSE: Record<ToastSeverity, boolean> = {
+  error: true,
+  success: true,
+  warning: false,
+  info: false,
+};
+
 @Component({
   selector: 'app-toast',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,7 +40,8 @@ const SEVERITY_CLASS: Record<ToastSeverity, string> = {
             </div>
             <button
               type="button"
-              class="btn-close btn-close-white me-2 m-auto"
+              class="btn-close me-2 m-auto"
+              [class.btn-close-white]="whiteClose(toast.severity)"
               aria-label="Close"
               (click)="toasts.dismiss(toast.id)"
             ></button>
@@ -46,6 +56,17 @@ const SEVERITY_CLASS: Record<ToastSeverity, string> = {
       top: var(--app-header-height);
       z-index: 10000;
     }
+
+    /* Bootstrap's dark mode puts the white X filter on every .btn-close, so the black X of
+       warning and info is set on the button itself. At 75 percent opacity (100 on hover and
+       focus) either X has at least 3:1 against its toast. */
+    .app-toasts .btn-close {
+      --bs-btn-close-opacity: 0.75;
+      --bs-btn-close-hover-opacity: 1;
+    }
+    .app-toasts .btn-close:not(.btn-close-white) {
+      --bs-btn-close-filter: none;
+    }
   `,
 })
 export class ToastComponent {
@@ -53,5 +74,9 @@ export class ToastComponent {
 
   severityClass(severity: ToastSeverity): string {
     return SEVERITY_CLASS[severity];
+  }
+
+  whiteClose(severity: ToastSeverity): boolean {
+    return WHITE_CLOSE[severity];
   }
 }
