@@ -6,6 +6,7 @@
         <button
           type="button"
           class="btn btn-sm btn-primary header-button"
+          [disabled]="!datasetId()"
           (click)="submitGenerate()"
         >
           <i class="pi pi-angle-double-left"></i>Regenerate

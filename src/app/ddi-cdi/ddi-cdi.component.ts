@@ -95,6 +95,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private readonly subscriptions = new Set<Subscription>();
   private readonly cancelPoll$ = new Subject<void>();
   private pollGeneration = 0;
+  /** The file listing of the dataset last picked. */
+  private listingSubscription?: Subscription;
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
@@ -260,8 +262,20 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   onUserChange() {
+    // What the old dataset produced goes with it: a listing or a generation
+    // still under way, the rows, the selection and the output, so nothing
+    // generates without a dataset.
+    this.cancelPolling();
+    this.listingSubscription?.unsubscribe();
+    this.loading.set(false);
     this.doiItems.set([]);
     this.datasetId.set(undefined);
+    this.data.set({});
+    this.rootNodeChildren.set([]);
+    this.rowNodeMap.set(new Map<string, TreeNode<Datafile>>());
+    this.selectedFiles.set(new Set<string>());
+    this.totalSelectableFiles.set(0);
+    this.resetOutputState();
     // Save dataverseToken to localStorage if storeDvToken is enabled
     const token = this.dataverseToken();
     if (token !== undefined && this.pluginService.isStoreDvToken()) {
@@ -436,11 +450,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         next: (data) => {
           this.subscriptions.delete(subscription);
           subscription?.unsubscribe();
+          // A listing for a dataset that is no longer selected changes
+          // nothing; the listing of the selected one ends the spinner.
+          if (this.datasetId() !== currentDatasetId) return;
           this.setData(data);
         },
         error: (err) => {
           this.subscriptions.delete(subscription);
           subscription?.unsubscribe();
+          if (this.datasetId() !== currentDatasetId) return;
           this.loading.set(false);
           this.notificationService.showError(
             `Getting files failed: ${err.error}`,
@@ -448,6 +466,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         },
       });
     this.subscriptions.add(subscription);
+    this.listingSubscription = subscription;
   }
 
   setData(data: CompareResult): void {
@@ -755,6 +774,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         next: (cache) => {
           this.subscriptions.delete(cacheSubscription);
           cacheSubscription?.unsubscribe();
+          // The output of a dataset that is no longer selected stays away.
+          if (this.datasetId() !== currentDatasetId) return;
           if (cache.errorMessage) {
             this.output.set(
               `Previous generation failed:\n${cache.errorMessage}`,

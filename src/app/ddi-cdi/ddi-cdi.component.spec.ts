@@ -277,6 +277,116 @@ describe('DdiCdiComponent', () => {
 
     afterEach(() => localStorage.removeItem('dataverseToken'));
 
+    const headerButton = (
+      fixture: ComponentFixture<DdiCdiComponent>,
+      text: string,
+    ) =>
+      Array.from(
+        fixture.nativeElement.querySelectorAll(
+          '.sticky-menu button',
+        ) as NodeListOf<HTMLButtonElement>,
+      ).find((b) => b.textContent!.includes(text));
+    const fileRows = (fixture: ComponentFixture<DdiCdiComponent>) =>
+      fixture.nativeElement.querySelectorAll('.tt-row').length;
+
+    // One compatible file, listed and selected as setData selects them all.
+    const listFile = (component: DdiCdiComponent) => {
+      const map = new Map<string, TreeNode<Datafile>>();
+      map.set('', {
+        data: { name: '', directoryLabel: '' } as Datafile,
+        children: [
+          {
+            key: 'a.csv:file',
+            data: { name: 'a.csv', directoryLabel: '' } as Datafile,
+            children: [],
+          },
+        ],
+      });
+      utilsServiceStub.mapDatafiles.and.returnValue(map);
+      component.setData({
+        id: 'doi:10.1/D',
+        url: 'https://example.org/ds',
+        data: [{ name: 'a.csv' } as Datafile],
+      });
+    };
+
+    // A token edit cleared only the dataset select: the rows, the selection
+    // and the output of the old dataset stayed, and Regenerate then OK posted
+    // a generation without a persistentId.
+    it('clears what the old dataset produced on a token edit, so nothing generates', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      selectDataset(component);
+      listFile(component);
+      component.generatedDdiCdi.set(GENERATED_TURTLE);
+      await fixture.whenStable();
+      expect(fileRows(fixture)).toBe(1);
+      expect(component.selectedFiles().size).toBe(1);
+      expect(headerButton(fixture, 'Regenerate')).toBeDefined();
+
+      editToken(fixture, 'token-1');
+      await fixture.whenStable();
+      expect(component.data()).toEqual({});
+      expect(component.rootNodeChildren()).toEqual([]);
+      expect(component.rowNodeMap().size).toBe(0);
+      expect(component.selectedFiles().size).toBe(0);
+      expect(component['totalSelectableFiles']()).toBe(0);
+      expect(component.generatedDdiCdi()).toBeUndefined();
+      expect(fileRows(fixture)).toBe(0);
+      expect(headerButton(fixture, 'Regenerate')).toBeUndefined();
+      const generate = headerButton(fixture, 'Generate DDI-CDI')!;
+      expect(generate.disabled).toBeTrue();
+      generate.click();
+      expect(dataServiceStub.generateDdiCdi).not.toHaveBeenCalled();
+
+      // A generation still polling for its result stops with its spinner.
+      const poll = new Subject<CachedComputeResponse>();
+      dataServiceStub.getCachedDdiCdiData.and.returnValue(poll);
+      selectDataset(component);
+      component.loading.set(true);
+      void component['getDdiCdiData']({ key: 'job-1' });
+      await settlePromises();
+      expect(poll.observed).toBeTrue();
+      editToken(fixture, 'token-2');
+      await settlePromises();
+      expect(poll.observed).toBeFalse();
+      expect(component.loading()).toBeFalse();
+    });
+
+    it('ignores a file listing that answers for a dataset no longer selected', () => {
+      const first = new Subject<CompareResult>();
+      const second = new Subject<CompareResult>();
+      dataServiceStub.getDdiCdiCompatibleFiles.and.returnValues(first, second);
+      utilsServiceStub.mapDatafiles.and.returnValue(new Map());
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      component.datasetId.set('doi:10.1/A');
+      component.onDatasetChange();
+      component.datasetId.set('doi:10.1/B');
+      component.onDatasetChange();
+
+      first.next({ id: 'doi:10.1/A', data: [{ name: 'a.csv' } as Datafile] });
+      expect(component.data()).toEqual({});
+      expect(component.loading()).toBeTrue();
+      second.next({ id: 'doi:10.1/B', data: [{ name: 'b.csv' } as Datafile] });
+      expect(component.data().id).toBe('doi:10.1/B');
+      expect(component.loading()).toBeFalse();
+    });
+
+    it('keeps Regenerate disabled while no dataset is selected', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      component.generatedDdiCdi.set(GENERATED_TURTLE);
+      await fixture.whenStable();
+      expect(headerButton(fixture, 'Regenerate')!.disabled).toBeTrue();
+      selectDataset(component);
+      await fixture.whenStable();
+      expect(headerButton(fixture, 'Regenerate')!.disabled).toBeFalse();
+    });
+
     it('resets the dataset list and the selection on an edit and stores the token only with storeDvToken', async () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
