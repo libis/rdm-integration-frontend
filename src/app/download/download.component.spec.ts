@@ -1729,6 +1729,63 @@ describe('DownloadComponent', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    // A lookup still under way when the token changed answered after the
+    // reset: the select kept what the old token found and asked nothing with
+    // the new one.
+    it('drops lookups answered after a token edit and asks again with the new token', async () => {
+      const list = new Subject<SelectItem<string>[]>();
+      const search = new Subject<SelectItem<string>[]>();
+      const old = [{ label: 'Dataset O', value: 'doi:10.1/O' }];
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.returnValues(
+        // The list the async ngOnInit asks for, empty.
+        of([]),
+        list,
+        search,
+        of([{ label: 'Dataset N', value: 'doi:10.1/N' }]),
+      );
+      initComponent();
+      await settlePromises();
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        // The first list: the select opened and closed, the token edited.
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        editToken('token-1');
+        list.next(old);
+        list.complete();
+        expect(component.doiItems()).toEqual([]);
+
+        // A search past its debounce, the token edited again.
+        component.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        editToken('token-2');
+        search.next(old);
+        search.complete();
+        await settlePromises();
+        expect(component.doiItems()).toEqual([]);
+
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        expect(getItems).toHaveBeenCalledTimes(4);
+        expect(getItems.calls.mostRecent().args).toEqual([
+          '',
+          'Dataset',
+          undefined,
+          'token-2',
+          true,
+        ]);
+        expect(selectPanelLabels()).toEqual(['Dataset N']);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
     // A change event without a new token, a browser filling in the restored
     // token again for instance, resets nothing.
     it('resets nothing when the field commits the token it already had', async () => {

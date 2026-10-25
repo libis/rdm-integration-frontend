@@ -433,17 +433,22 @@ export class DownloadComponent
     );
     this.trackSubscription(
       this.datasetSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => this.doiItems.set(v))
-            .catch((err) =>
-              this.doiItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]),
-            ),
+        next: (x) => {
+          // The search has just been sent with the current token; its answer
+          // is dropped when the token has changed since.
+          const token = this.dataverseToken();
+          x.then((v) => {
+            if (this.dataverseToken() === token) this.doiItems.set(v);
+          }).catch((err) => {
+            if (this.dataverseToken() !== token) return;
+            this.doiItems.set([
+              {
+                label: `search failed: ${err.message}`,
+                value: err.message,
+              },
+            ]);
+          });
+        },
         error: (err) =>
           this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
@@ -723,11 +728,15 @@ export class DownloadComponent
     this.doiItems.set(this.loadingItems);
     this.datasetId.set(undefined);
 
+    // An answer to a request with an older token is dropped: the token change
+    // reset the list, and the next opening asks again.
+    const token = this.dataverseToken();
     this.trackSubscription(
       this.dvObjectLookupService
-        .getItems('', 'Dataset', undefined, this.dataverseToken(), true)
+        .getItems('', 'Dataset', undefined, token, true)
         .subscribe({
           next: (items: SelectItem<string>[]) => {
+            if (this.dataverseToken() !== token) return;
             // Don't overwrite if a valid DOI was set while we were loading
             if (
               this.datasetId() &&
@@ -745,6 +754,7 @@ export class DownloadComponent
             }
           },
           error: (err) => {
+            if (this.dataverseToken() !== token) return;
             // Don't show error if a valid DOI was set while we were loading
             if (
               this.datasetId() &&
