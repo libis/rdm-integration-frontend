@@ -168,17 +168,22 @@ export class ComputeComponent
     );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => this.doiItems.set(v))
-            .catch((err) =>
-              this.doiItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]),
-            ),
+        next: (x) => {
+          // The search has just been sent with the current token; its answer
+          // is dropped when the token has changed since.
+          const token = this.dataverseToken();
+          x.then((v) => {
+            if (this.dataverseToken() === token) this.doiItems.set(v);
+          }).catch((err) => {
+            if (this.dataverseToken() !== token) return;
+            this.doiItems.set([
+              {
+                label: `search failed: ${err.message}`,
+                value: err.message,
+              },
+            ]);
+          });
+        },
         error: (err) =>
           this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
@@ -248,12 +253,16 @@ export class ComputeComponent
     this.doiItems.set(this.loadingItems);
     this.datasetId.set(undefined);
 
-    // take(1) ends the request with its answer, also a synchronous one.
+    // take(1) ends the request with its answer, also a synchronous one. An
+    // answer to a request with an older token is dropped: the token change
+    // reset the list, and the next opening asks again.
+    const token = this.dataverseToken();
     this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, this.dataverseToken())
+      .getItems('', 'Dataset', undefined, token)
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
+          if (this.dataverseToken() !== token) return;
           if (items && items.length > 0) {
             this.doiItems.set(items);
             this.datasetId.set(undefined);
@@ -263,6 +272,7 @@ export class ComputeComponent
           }
         },
         error: (err) => {
+          if (this.dataverseToken() !== token) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems.set([]);
           this.datasetId.set(undefined);
