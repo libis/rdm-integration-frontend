@@ -933,18 +933,16 @@ export class ConnectComponent
     this.repoName.set(undefined);
     this.selectedRepoName.set(undefined);
     this.foundRepoName.set(undefined);
-    this.option.set(undefined);
     this.dataverseToken.set(undefined);
     this.collectionId.set(undefined);
     this.datasetId.set(undefined);
     this.plugins.set([]);
     this.pluginIds.set([]);
     this.repoNames.set([]);
-    this.branchItems.set([]);
     this.collectionItems.set([]);
     this.doiItems.set([]);
-    this._rootOptionsData.set(createPlaceholderRootOptions());
-    this.selectedOption.set(undefined);
+    // The folder, its listing and the placeholder tree
+    this.folderPicker.reset();
     this.expandedPanels.set(['0', '1']);
   }
 
@@ -1166,10 +1164,7 @@ export class ConnectComponent
   }
 
   onRepoChange() {
-    this.branchItems.set([]);
-    this._rootOptionsData.set(createPlaceholderRootOptions());
-    this.selectedOption.set(undefined);
-    this.option.set(undefined);
+    this.folderPicker.reset();
     this.url.set(undefined);
     if (this.repoNameFieldName() === undefined) {
       this.repoName.set(undefined);
