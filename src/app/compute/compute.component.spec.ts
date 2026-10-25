@@ -1017,3 +1017,84 @@ describe('ComputeComponent layout and row state', () => {
     ).toBeFalse();
   });
 });
+
+// The rows come from the file listing of the dataset picked, built by the
+// real UtilsService: the file at the root and the folder, collapsed, whose
+// file shows one level down once it is expanded.
+describe('ComputeComponent rows from a listing', () => {
+  it('shows the files and folders of the listing of the dataset picked', async () => {
+    const data = new MockDataService();
+    data.executableResponse = {
+      id: 'doi:10.1/A',
+      data: [
+        {
+          id: 'top.py',
+          name: 'top.py',
+          path: '',
+          status: Filestatus.Equal,
+          action: Fileaction.Ignore,
+          attributes: { isFile: true },
+        },
+        {
+          id: 'src/run.py',
+          name: 'run.py',
+          path: 'src',
+          status: Filestatus.Equal,
+          action: Fileaction.Ignore,
+          attributes: { isFile: true },
+        },
+      ],
+    };
+    const lookup = new MockDvObjectLookupService();
+    lookup.items = [{ label: 'Dataset A', value: 'doi:10.1/A' }];
+    const plugin = new MockPluginService();
+    plugin.datasetEditable = false;
+    await TestBed.configureTestingModule({
+      imports: [ComputeComponent],
+      providers: [
+        provideRouter([], withDisabledInitialNavigation()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        { provide: DataService, useValue: data },
+        { provide: PluginService, useValue: plugin },
+        { provide: DvObjectLookupService, useValue: lookup },
+        {
+          provide: NotificationService,
+          useValue: new MockNotificationService(),
+        },
+        { provide: NavigationService, useValue: new MockNavigationService() },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ComputeComponent);
+    fixture.detectChanges();
+    jasmine.clock().install();
+    try {
+      openSelect(fixture.nativeElement, 'datasetId');
+      fixture.detectChanges();
+      jasmine.clock().tick(0);
+      await settlePromises();
+      fixture.detectChanges();
+      pickSelectOption('Dataset A');
+      fixture.detectChanges();
+      // The listing answers on a timer.
+      jasmine.clock().tick(0);
+      fixture.detectChanges();
+      expect(treegridStructure(fixture.nativeElement).rows).toEqual([
+        'top.py: row 2, level 1, expanded null',
+        'src: row 3, level 1, expanded false',
+      ]);
+
+      (fixture.nativeElement as HTMLElement)
+        .querySelectorAll<HTMLButtonElement>('app-tree-toggler button')[0]
+        .click();
+      fixture.detectChanges();
+      expect(treegridStructure(fixture.nativeElement).rows).toEqual([
+        'top.py: row 2, level 1, expanded null',
+        'src: row 3, level 1, expanded true',
+        'run.py: row 4, level 2, expanded null',
+      ]);
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+});
