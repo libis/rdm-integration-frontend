@@ -222,6 +222,7 @@ describe('MetadataSelectorComponent', () => {
         'author: row 7, level 1, expanded false',
       ],
       cells: ['gridcell'],
+      togglers: ['Toggle author', 'Toggle author'],
     });
   });
 

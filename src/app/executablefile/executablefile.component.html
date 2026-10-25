@@ -3,6 +3,7 @@
   <app-tree-toggler
     [node]="node()"
     [level]="level()"
+    [name]="datafile().name"
     (toggle)="toggle.emit()"
   ></app-tree-toggler
   >{{ datafile().name }}

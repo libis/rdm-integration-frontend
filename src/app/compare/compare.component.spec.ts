@@ -1238,6 +1238,7 @@ describe('CompareComponent table', () => {
         'b.txt: row 3, level 1, expanded null',
       ],
       cells: ['gridcell'],
+      togglers: ['Toggle dir', 'Toggle dir'],
     });
     folderRow(fixture)
       .querySelector<HTMLButtonElement>('app-tree-toggler button')!
@@ -1255,6 +1256,7 @@ describe('CompareComponent table', () => {
         'b.txt: row 4, level 1, expanded null',
       ],
       cells: ['gridcell'],
+      togglers: ['Toggle dir', 'Toggle dir'],
     });
   });
 

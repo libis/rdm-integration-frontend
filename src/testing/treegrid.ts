@@ -5,7 +5,8 @@
 // of the pages: the role, name and row count of the table, the role and row
 // index of its header row, the roles of the header cells, each rendered body
 // row as "<text of its first cell>: <role> <aria-rowindex>, level
-// <aria-level>, expanded <aria-expanded>", and the roles of the body cells.
+// <aria-level>, expanded <aria-expanded>", the roles of the body cells and
+// the names of the toggle buttons in the body rows.
 interface TreegridStructure {
   table: string | null;
   label: string | null;
@@ -14,6 +15,7 @@ interface TreegridStructure {
   headerCells: (string | null)[];
   rows: string[];
   cells: (string | null)[];
+  togglers: (string | null)[];
 }
 
 export function treegridStructure(host: HTMLElement): TreegridStructure {
@@ -38,5 +40,10 @@ export function treegridStructure(host: HTMLElement): TreegridStructure {
         `expanded ${row.getAttribute('aria-expanded')}`,
     ),
     cells: [...new Set(rows.flatMap((row) => roles(Array.from(row.children))))],
+    togglers: rows.flatMap((row) =>
+      Array.from(row.querySelectorAll('app-tree-toggler button'), (button) =>
+        button.getAttribute('aria-label'),
+      ),
+    ),
   };
 }

@@ -22,7 +22,7 @@ import { TreeTableComponent } from './tree-table.component';
         type="button"
         class="btn btn-link btn-sm p-0 tt-toggle"
         [attr.aria-expanded]="expanded()"
-        aria-label="Toggle folder"
+        [attr.aria-label]="label()"
         (click)="toggle.emit()"
       >
         <i
@@ -66,7 +66,12 @@ export class TreeTogglerComponent<T = unknown> {
   });
   readonly node = input.required<TreeNode<T>>();
   readonly level = input(0);
+  /** The name of the row, for the button: "Toggle <name>". */
+  readonly name = input<string>();
   readonly toggle = output<void>();
+  readonly label = computed(() =>
+    this.name() ? `Toggle ${this.name()}` : 'Toggle folder',
+  );
   /** Whether the node is expanded, or null for a node without children. */
   readonly expanded = computed(() =>
     this.table

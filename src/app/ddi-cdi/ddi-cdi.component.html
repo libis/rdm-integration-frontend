@@ -230,6 +230,7 @@
               <app-tree-toggler
                 [node]="node"
                 [level]="level"
+                [name]="node.data.name"
                 (toggle)="tt.toggle(node)"
               ></app-tree-toggler
               >{{ node.data.name }}

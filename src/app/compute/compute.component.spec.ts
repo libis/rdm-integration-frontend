@@ -459,6 +459,7 @@ describe('ComputeComponent layout and row state', () => {
         'top.py: row 4, level 1, expanded null',
       ],
       cells: ['gridcell'],
+      togglers: ['Toggle dir'],
     });
   });
 

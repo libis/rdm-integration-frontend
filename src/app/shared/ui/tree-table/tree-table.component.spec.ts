@@ -257,9 +257,12 @@ describe('TreeTableComponent', () => {
   it('expands a folder through the toggler and emits expandedChange', async () => {
     const fixture = TestBed.createComponent(HostComponent);
     await fixture.whenStable();
-    (
-      fixture.nativeElement.querySelector('.tt-toggle') as HTMLButtonElement
-    ).click();
+    const toggle = fixture.nativeElement.querySelector(
+      '.tt-toggle',
+    ) as HTMLButtonElement;
+    // Without a name the toggler names a folder.
+    expect(toggle.getAttribute('aria-label')).toBe('Toggle folder');
+    toggle.click();
     await fixture.whenStable();
     expect(rowsOf(fixture.nativeElement)).toEqual([
       'docs',

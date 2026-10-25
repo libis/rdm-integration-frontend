@@ -1559,6 +1559,7 @@ describe('DdiCdiComponent', () => {
           'b.tsv: row 4, level 1, expanded null',
         ],
         cells: ['gridcell'],
+        togglers: ['Toggle dir'],
       });
     });
 

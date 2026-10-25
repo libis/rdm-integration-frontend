@@ -2289,6 +2289,7 @@ describe('DownloadComponent layout', () => {
         'f: row 3, level 2, expanded null',
       ],
       cells: ['gridcell'],
+      togglers: ['Toggle dir'],
     });
   });
 

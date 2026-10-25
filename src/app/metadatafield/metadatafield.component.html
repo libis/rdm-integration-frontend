@@ -3,6 +3,7 @@
   <app-tree-toggler
     [node]="node()"
     [level]="level()"
+    [name]="fieldName()"
     (toggle)="toggle.emit()"
   ></app-tree-toggler
   >{{ fieldName() }}
