@@ -91,10 +91,62 @@ class CollapsedHostComponent {
   expanded: (string | undefined)[] = [];
 }
 
+// The pickers start with a placeholder that their first listing replaces.
+@Component({
+  imports: [FolderTreeComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `<app-folder-tree
+      [nodes]="nodes()"
+      [(selected)]="selected"
+      (nodeExpand)="expanded.push($event.data)"
+    ></app-folder-tree>
+    <button type="button" class="outside">Outside</button>`,
+})
+class PlaceholderHostComponent {
+  readonly nodes = signal<TreeNode<string>[]>([
+    { key: 'path:', label: 'Expand and select', data: '' },
+  ]);
+  readonly selected = signal<TreeNode<string> | undefined>(undefined);
+  expanded: (string | undefined)[] = [];
+
+  // The first listing, with or without a selected home.
+  answer(selectHome: boolean): void {
+    const alice: TreeNode<string> = {
+      key: 'path:/home/alice/',
+      label: 'alice',
+      data: '/home/alice/',
+      expanded: true,
+      children: [],
+    };
+    this.nodes.set([
+      {
+        key: 'path:/',
+        label: '/',
+        data: '/',
+        expanded: true,
+        children: [
+          {
+            key: 'path:/home/',
+            label: 'home',
+            data: '/home/',
+            expanded: true,
+            children: [alice],
+          },
+        ],
+      },
+    ]);
+    if (selectHome) this.selected.set(alice);
+  }
+}
+
 describe('FolderTreeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HostComponent, CollapsedHostComponent],
+      imports: [
+        HostComponent,
+        CollapsedHostComponent,
+        PlaceholderHostComponent,
+      ],
     }).compileComponents();
   });
 
@@ -421,5 +473,60 @@ describe('FolderTreeComponent', () => {
     await fixture.whenStable();
     expect(focused()).toBe('home');
     expect(fixture.componentInstance.selected()?.data).toBe('/home/');
+  });
+
+  it('moves the focus to the selected node when the focused placeholder is replaced', async () => {
+    const fixture = TestBed.createComponent(PlaceholderHostComponent);
+    await fixture.whenStable();
+    const placeholder = treeNodes(fixture.nativeElement)[0];
+    placeholder.focus();
+    key(placeholder, 'ArrowRight');
+    await fixture.whenStable();
+    expect(fixture.componentInstance.expanded).toEqual(['']);
+    fixture.componentInstance.answer(true);
+    await fixture.whenStable();
+    expect(placeholder.isConnected).toBeFalse();
+    expect(focused()).toBe('alice');
+  });
+
+  it('moves the focus to the first node when the replacing listing selects nothing', async () => {
+    const fixture = TestBed.createComponent(PlaceholderHostComponent);
+    await fixture.whenStable();
+    (
+      fixture.nativeElement.querySelector('.folder-toggle') as HTMLElement
+    ).click();
+    await fixture.whenStable();
+    expect(focused()).toBe('Expand and select');
+    fixture.componentInstance.answer(false);
+    await fixture.whenStable();
+    expect(focused()).toBe('/');
+  });
+
+  it('leaves the focus on the body when it went there before the placeholder was replaced', async () => {
+    const fixture = TestBed.createComponent(PlaceholderHostComponent);
+    await fixture.whenStable();
+    const placeholder = treeNodes(fixture.nativeElement)[0];
+    placeholder.focus();
+    // A click on a blank part of the page.
+    placeholder.blur();
+    await fixture.whenStable();
+    fixture.componentInstance.answer(true);
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('leaves the focus on the body when it left the tree before the placeholder was replaced', async () => {
+    const fixture = TestBed.createComponent(PlaceholderHostComponent);
+    await fixture.whenStable();
+    treeNodes(fixture.nativeElement)[0].focus();
+    const outside = fixture.nativeElement.querySelector(
+      '.outside',
+    ) as HTMLElement;
+    outside.focus();
+    outside.blur();
+    await fixture.whenStable();
+    fixture.componentInstance.answer(true);
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(document.body);
   });
 });

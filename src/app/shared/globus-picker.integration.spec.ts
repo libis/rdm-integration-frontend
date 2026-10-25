@@ -326,6 +326,46 @@ for (const scenario of [
       expect(selectedNode()).toBeNull();
     });
 
+    it('keeps the focus in the tree when the first listing replaces the placeholder', async () => {
+      const placeholder = element('cdk-tree-node');
+      placeholder.focus();
+      placeholder.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowRight',
+          keyCode: 39,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      await answer('', [
+        {
+          label: '/',
+          value: '/',
+          expanded: true,
+          children: [
+            {
+              label: 'home',
+              value: '/home/',
+              expanded: true,
+              children: [
+                {
+                  label: 'alice',
+                  value: '/home/alice/',
+                  selected: true,
+                  expanded: true,
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+      expect(labels()).toEqual(['/', 'home', 'alice']);
+      expect(document.activeElement)
+        .withContext('focus must not fall to the body')
+        .toBe(element('.folder-node.selected'));
+    });
+
     it('names the folder tree after its label', () => {
       const id = element('[role="tree"]').getAttribute('aria-labelledby');
       expect(id).toBe('repoBranchTreeLabel');

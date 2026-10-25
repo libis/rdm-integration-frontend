@@ -6,6 +6,8 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
+  inject,
   input,
   model,
   output,
@@ -23,6 +25,10 @@ function nodeKey(node: TreeNode<string>): string {
   styleUrl: './folder-tree.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CdkTreeModule],
+  host: {
+    '(focusin)': 'onFocusIn($event)',
+    '(focusout)': 'onFocusOut($event)',
+  },
 })
 export class FolderTreeComponent {
   readonly nodes = input.required<TreeNode<string>[]>();
@@ -44,6 +50,12 @@ export class FolderTreeComponent {
     return s === undefined ? undefined : nodeKey(s);
   });
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  // The element in the tree that has the focus, kept after a listing removes
+  // it (the first one replaces the placeholder) and forgotten when the focus
+  // leaves the tree.
+  private lastFocused: HTMLElement | null = null;
+
   constructor() {
     // Restore expansion from the data whenever the node objects change.
     effect(() => {
@@ -56,8 +68,46 @@ export class FolderTreeComponent {
           if (n.children?.length) visit(n.children);
         }
       };
-      queueMicrotask(() => visit(nodes));
+      queueMicrotask(() => {
+        visit(nodes);
+        this.restoreFocus();
+      });
     });
+  }
+
+  onFocusIn(event: FocusEvent): void {
+    this.lastFocused = event.target as HTMLElement;
+  }
+
+  onFocusOut(event: FocusEvent): void {
+    const target = event.target as HTMLElement;
+    const next = event.relatedTarget as Node | null;
+    if (next !== null) {
+      if (!this.host.nativeElement.contains(next)) this.lastFocused = null;
+      return;
+    }
+    // The focus went to the body. Chromium also sends this, with the target
+    // still connected, when the focused node is being removed, so only a
+    // target still there afterwards (a click on a blank area) is forgotten.
+    queueMicrotask(() => {
+      if (target.isConnected && this.lastFocused === target) {
+        this.lastFocused = null;
+      }
+    });
+  }
+
+  // A listing that removed the focused node leaves the focus on the body:
+  // put it on the selected node, else on the one the CDK tree made focusable.
+  private restoreFocus(): void {
+    const last = this.lastFocused;
+    if (!last || last.isConnected || document.activeElement !== document.body) {
+      return;
+    }
+    const host = this.host.nativeElement;
+    (
+      host.querySelector<HTMLElement>('cdk-tree-node.selected') ??
+      host.querySelector<HTMLElement>('cdk-tree-node[tabindex="0"]')
+    )?.focus();
   }
 
   isSelected(node: TreeNode<string>): boolean {
