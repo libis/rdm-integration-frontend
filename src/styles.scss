@@ -92,9 +92,12 @@ cdk-accordion-item {
 // components.
 
 // The rows of the file actions, and the status icons (compare rows, the status
-// filter, the rejected file headings). The plain icon colours have 4:1 or more
-// on the light background; on the dark one blue has 1.8:1, so dark mode takes
-// Bootstrap's text emphasis colours (6:1 or more).
+// filter, the rejected file headings). Light mode keeps the plain icon colours:
+// 4:1 or more on white, less on the light action rows, red least (2.63:1 on
+// delete, 2.76:1 on update, 2.95:1 on copy, 3.70:1 on custom; green 3.38:1 and
+// blue 5.66:1 or more). On the dark background blue has 1.8:1, so dark mode
+// takes Bootstrap's text emphasis colours: 6:1 or more on the page, 3.84:1 or
+// more on the dark action rows.
 :root {
   --app-file-action-copy-bg: #c3e6cb;
   --app-file-action-copy-color: #1a1a1a;
