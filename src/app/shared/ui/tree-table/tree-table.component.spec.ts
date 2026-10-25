@@ -41,10 +41,16 @@ import { TreeTogglerComponent } from './tree-toggler.component';
           <div class="tt-cell" role="columnheader">Name</div>
           <div class="tt-cell" role="columnheader">Size</div>
         </ng-template>
-        <ng-template appTreeTableRow let-node let-level="level">
+        <ng-template
+          appTreeTableRow
+          let-node
+          let-level="level"
+          let-rowIndex="rowIndex"
+        >
           <div
             class="tt-row"
             role="row"
+            [attr.aria-rowindex]="rowIndex"
             [attr.aria-level]="level + 1"
             [attr.aria-expanded]="tt.expandedState(node)"
           >
@@ -113,8 +119,18 @@ class HostComponent {
             </button>
           </div>
         </ng-template>
-        <ng-template appTreeTableRow let-node let-level="level">
-          <div class="tt-row" role="row" [attr.aria-level]="level + 1">
+        <ng-template
+          appTreeTableRow
+          let-node
+          let-level="level"
+          let-rowIndex="rowIndex"
+        >
+          <div
+            class="tt-row"
+            role="row"
+            [attr.aria-rowindex]="rowIndex"
+            [attr.aria-level]="level + 1"
+          >
             <div class="tt-cell" role="gridcell">{{ node.data }}</div>
             <div class="tt-cell" role="gridcell"></div>
           </div>
@@ -282,6 +298,21 @@ describe('TreeTableComponent', () => {
         .filter((child) => !child.matches('cdk-virtual-scroll-viewport'))
         .map((child) => child.getAttribute('role')),
     ).toEqual(['row', 'row']);
+    // The loading row is the second row: the body rows follow it.
+    expect(table.getAttribute('aria-rowcount')).toBe('4');
+    expect(
+      table.querySelector('.tt-header')!.getAttribute('aria-rowindex'),
+    ).toBe('1');
+    expect(loading.getAttribute('aria-rowindex')).toBe('2');
+    const rowIndexes = () =>
+      Array.from(table.querySelectorAll('.tt-body .tt-row'), (row) =>
+        row.getAttribute('aria-rowindex'),
+      );
+    expect(rowIndexes()).toEqual(['3', '4']);
+    fixture.componentInstance.loading.set(false);
+    await fixture.whenStable();
+    expect(table.getAttribute('aria-rowcount')).toBe('3');
+    expect(rowIndexes()).toEqual(['2', '3']);
   });
 
   it('virtualises long lists: renders far fewer rows than nodes', async () => {

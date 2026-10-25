@@ -1004,6 +1004,34 @@ describe('CompareComponent layout', () => {
       .injector.get(CdkVirtualScrollViewport)
       .getViewportSize();
 
+  // Virtual scrolling renders a window of the rows: each rendered row keeps
+  // its position in the whole table and the table its full row count.
+  it('numbers the rendered rows within all rows of the treegrid while scrolling', async () => {
+    const fixture = await render(0);
+    const table = fixture.nativeElement.querySelector('.tt') as HTMLElement;
+    const indexes = () =>
+      Array.from(
+        table.querySelectorAll<HTMLElement>('.tt-body div[app-datafile]'),
+        (row) => Number(row.getAttribute('aria-rowindex')),
+      );
+    // 100 files at the root and the five folders, plus the header row.
+    expect(table.getAttribute('aria-rowcount')).toBe('106');
+    const top = indexes();
+    expect(top[0]).toBe(2);
+    expect(top.length).toBeLessThan(105);
+    const body = table.querySelector('.tt-body') as HTMLElement;
+    body.scrollTop = body.scrollHeight;
+    body.dispatchEvent(new Event('scroll'));
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await fixture.whenStable();
+    }
+    const bottom = indexes();
+    expect(bottom[0]).toBeGreaterThan(2);
+    expect(bottom[bottom.length - 1]).toBe(106);
+    expect(bottom).toEqual(bottom.map((_, i) => bottom[0] + i));
+  });
+
   const rejectedList = (fixture: ComponentFixture<CompareComponent>) =>
     fixture.nativeElement.querySelector('.compare-rejected') as HTMLElement;
 
@@ -1201,12 +1229,14 @@ describe('CompareComponent table', () => {
     ];
     expect(treegridStructure(fixture.nativeElement)).toEqual({
       table: 'treegrid',
-      header: 'row',
+      label: 'Files',
+      rowCount: '3',
+      header: 'row 1',
       headerCells: header,
-      rows: jasmine.arrayWithExactContents([
-        'dir: row 1 false',
-        'b.txt: row 1 null',
-      ]),
+      rows: [
+        'dir: row 2, level 1, expanded false',
+        'b.txt: row 3, level 1, expanded null',
+      ],
       cells: ['gridcell'],
     });
     folderRow(fixture)
@@ -1215,13 +1245,15 @@ describe('CompareComponent table', () => {
     await fixture.whenStable();
     expect(treegridStructure(fixture.nativeElement)).toEqual({
       table: 'treegrid',
-      header: 'row',
+      label: 'Files',
+      rowCount: '4',
+      header: 'row 1',
       headerCells: header,
-      rows: jasmine.arrayWithExactContents([
-        'dir: row 1 true',
-        'a.txt: row 2 null',
-        'b.txt: row 1 null',
-      ]),
+      rows: [
+        'dir: row 2, level 1, expanded true',
+        'a.txt: row 3, level 2, expanded null',
+        'b.txt: row 4, level 1, expanded null',
+      ],
       cells: ['gridcell'],
     });
   });

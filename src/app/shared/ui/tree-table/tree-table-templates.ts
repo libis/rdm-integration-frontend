@@ -6,6 +6,8 @@ import { TreeNode } from '../../../models/tree-node';
 interface TreeRowContext<T> {
   $implicit: TreeNode<T>;
   level: number;
+  /** aria-rowindex of the row among all rows, the header row is 1. */
+  rowIndex: number;
 }
 
 @Directive({ selector: 'ng-template[appTreeTableHeader]' })

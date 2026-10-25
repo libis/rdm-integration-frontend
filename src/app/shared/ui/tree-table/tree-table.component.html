@@ -1,19 +1,23 @@
 <!-- A treegrid: the header row and the body rows are rows of the .tt element
      (the virtual scroll elements in between have no role), each page's row
-     template gives its rows aria-level and aria-expanded and its cells
-     gridcell, its header template gives its cells columnheader. -->
+     template gives its rows aria-rowindex, aria-level and aria-expanded and
+     its cells gridcell, its header template gives its cells columnheader.
+     Virtual scrolling renders only some rows, so the table states the row
+     count and every row its index among all rows. -->
 <div
   class="tt"
   role="treegrid"
+  [attr.aria-label]="ariaLabel() ?? null"
+  [attr.aria-rowcount]="rowCount()"
   [style.--tt-columns]="columns()"
   [style.--tt-row-height.px]="rowHeight()"
 >
-  <div class="tt-header" role="row">
+  <div class="tt-header" role="row" aria-rowindex="1">
     <ng-container *ngTemplateOutlet="headerTemplate().template"></ng-container>
   </div>
   @if (loading()) {
     <!-- A row of its own: a treegrid owns rows only. -->
-    <div class="tt-loading" role="row">
+    <div class="tt-loading" role="row" aria-rowindex="2">
       <span role="gridcell"
         ><span
           class="spinner-border spinner-border-sm"
@@ -33,6 +37,7 @@
       <ng-container
         *cdkVirtualFor="
           let row of rows();
+          let index = index;
           trackBy: trackRow;
           templateCacheSize: 0
         "
@@ -40,7 +45,11 @@
         <ng-container
           *ngTemplateOutlet="
             rowTemplate().template;
-            context: { $implicit: row.node, level: row.level }
+            context: {
+              $implicit: row.node,
+              level: row.level,
+              rowIndex: index + firstRowIndex(),
+            }
           "
         ></ng-container>
       </ng-container>
@@ -51,7 +60,11 @@
         <ng-container
           *ngTemplateOutlet="
             rowTemplate().template;
-            context: { $implicit: row.node, level: row.level }
+            context: {
+              $implicit: row.node,
+              level: row.level,
+              rowIndex: $index + firstRowIndex(),
+            }
           "
         ></ng-container>
       }

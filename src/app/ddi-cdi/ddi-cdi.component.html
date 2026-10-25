@@ -187,6 +187,7 @@
     >
       <app-tree-table
         #tt
+        ariaLabel="Files"
         [nodes]="rootNodeChildren()"
         [loading]="loading()"
         columns="1fr 4rem"
@@ -207,10 +208,16 @@
             </button>
           </div>
         </ng-template>
-        <ng-template appTreeTableRow let-node let-level="level">
+        <ng-template
+          appTreeTableRow
+          let-node
+          let-level="level"
+          let-rowIndex="rowIndex"
+        >
           <div
             class="tt-row"
             role="row"
+            [attr.aria-rowindex]="rowIndex"
             [attr.aria-level]="level + 1"
             [attr.aria-expanded]="tt.expandedState(node)"
             [style]="

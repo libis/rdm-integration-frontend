@@ -36,6 +36,8 @@ export class TreeTableComponent<T = unknown> {
   readonly virtual = input(true);
   readonly rowHeight = input(41);
   readonly columns = input('1fr');
+  /** The name of the treegrid, for example "Files". */
+  readonly ariaLabel = input<string>();
   readonly expandedChange = output<TreeNode<T>>();
 
   readonly headerTemplate = contentChild.required(TreeTableHeaderDirective);
@@ -49,6 +51,13 @@ export class TreeTableComponent<T = unknown> {
     this.version();
     return flattenVisibleRows(this.nodes());
   });
+
+  // aria-rowindex of the first body row: the header row is row 1 and the
+  // loading row, while it shows, row 2.
+  readonly firstRowIndex = computed(() => (this.loading() ? 3 : 2));
+  readonly rowCount = computed(
+    () => this.rows().length + this.firstRowIndex() - 1,
+  );
 
   /**
    * Whether the node is expanded, or null for a node without children. Read

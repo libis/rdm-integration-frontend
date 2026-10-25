@@ -2280,9 +2280,14 @@ describe('DownloadComponent layout', () => {
     ).toBe(2);
     expect(treegridStructure(fixture.nativeElement)).toEqual({
       table: 'treegrid',
-      header: 'row',
+      label: 'Files',
+      rowCount: '3',
+      header: 'row 1',
       headerCells: ['columnheader', 'columnheader'],
-      rows: ['dir: row 1 true', 'f: row 2 null'],
+      rows: [
+        'dir: row 2, level 1, expanded true',
+        'f: row 3, level 2, expanded null',
+      ],
       cells: ['gridcell'],
     });
   });

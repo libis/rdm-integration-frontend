@@ -204,7 +204,9 @@ describe('MetadataSelectorComponent', () => {
     await fixture.whenStable();
     expect(treegridStructure(fixture.nativeElement)).toEqual({
       table: 'treegrid',
-      header: 'row',
+      label: 'Metadata fields',
+      rowCount: '7',
+      header: 'row 1',
       headerCells: [
         'columnheader',
         'columnheader',
@@ -212,12 +214,12 @@ describe('MetadataSelectorComponent', () => {
         'columnheader',
       ],
       rows: [
-        'title: row 1 null',
-        'keyword: row 1 null',
-        'author: row 1 true',
-        'authorName: row 2 null',
-        'authorAffiliation: row 2 null',
-        'author: row 1 false',
+        'title: row 2, level 1, expanded null',
+        'keyword: row 3, level 1, expanded null',
+        'author: row 4, level 1, expanded true',
+        'authorName: row 5, level 2, expanded null',
+        'authorAffiliation: row 6, level 2, expanded null',
+        'author: row 7, level 1, expanded false',
       ],
       cells: ['gridcell'],
     });

@@ -146,6 +146,7 @@
 <div class="treetable-container">
   <app-tree-table
     #tt
+    ariaLabel="Files"
     [nodes]="rootNodeChildrenView()"
     [loading]="loading()"
     columns="1fr 4rem 4rem 1fr"
@@ -245,12 +246,18 @@
         )
       </div>
     </ng-template>
-    <ng-template appTreeTableRow let-node let-level="level">
+    <ng-template
+      appTreeTableRow
+      let-node
+      let-level="level"
+      let-rowIndex="rowIndex"
+    >
       <div
         app-datafile
         #datafileRow="appDatafile"
         class="tt-row"
         role="row"
+        [attr.aria-rowindex]="rowIndex"
         [attr.aria-level]="level + 1"
         [attr.aria-expanded]="tt.expandedState(node)"
         [hidden]="node.data.hidden"

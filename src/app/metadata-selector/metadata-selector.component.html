@@ -26,7 +26,12 @@
   <i [class]="icon_copy"></i> Metadata that will be copied
 </div>
 <div class="treetable-cell">
-  <app-tree-table #tt [nodes]="rootNodeChildren()" columns="2fr 2fr 1fr 4rem">
+  <app-tree-table
+    #tt
+    ariaLabel="Metadata fields"
+    [nodes]="rootNodeChildren()"
+    columns="2fr 2fr 1fr 4rem"
+  >
     <ng-template appTreeTableHeader>
       <div class="tt-cell" role="columnheader">Metadata field</div>
       <div class="tt-cell" role="columnheader">Value</div>
@@ -43,12 +48,18 @@
         </button>
       </div>
     </ng-template>
-    <ng-template appTreeTableRow let-node let-level="level">
+    <ng-template
+      appTreeTableRow
+      let-node
+      let-level="level"
+      let-rowIndex="rowIndex"
+    >
       <div
         app-metadatafield
         #metadataRow="appMetadatafield"
         class="tt-row"
         role="row"
+        [attr.aria-rowindex]="rowIndex"
         [attr.aria-level]="level + 1"
         [attr.aria-expanded]="tt.expandedState(node)"
         [field]="node.data"

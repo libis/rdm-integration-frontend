@@ -449,9 +449,15 @@ describe('ComputeComponent layout and row state', () => {
     await fixture.whenStable();
     expect(treegridStructure(fixture.nativeElement)).toEqual({
       table: 'treegrid',
-      header: 'row',
+      label: 'Files',
+      rowCount: '4',
+      header: 'row 1',
       headerCells: ['columnheader', 'columnheader'],
-      rows: ['dir: row 1 true', 'run.py: row 2 null', 'top.py: row 1 null'],
+      rows: [
+        'dir: row 2, level 1, expanded true',
+        'run.py: row 3, level 2, expanded null',
+        'top.py: row 4, level 1, expanded null',
+      ],
       cells: ['gridcell'],
     });
   });
