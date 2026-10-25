@@ -15,7 +15,7 @@ import {
   withDisabledInitialNavigation,
 } from '@angular/router';
 import { SelectItem } from '../models/select-item';
-import { of, throwError } from 'rxjs';
+import { from, of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -33,6 +33,11 @@ import {
 } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { settlePromises } from '../../testing/promises';
+import {
+  openSelect,
+  pickSelectOption,
+  typeInSelectFilter,
+} from '../../testing/select';
 import { ConnectComponent } from './connect.component';
 
 class DataStateServiceStub {
@@ -980,6 +985,53 @@ describe('ConnectComponent additional behavior/validation', () => {
       jasmine.clock().mockDate(new Date(2026, 9, 25));
     });
     afterEach(() => jasmine.clock().uninstall());
+
+    // The dataset select drives the page with three bindings: (opened) loads
+    // the first list, (filterChange) searches after the debounce and
+    // (valueChange) turns "+ Create new dataset" into a new dataset.
+    it('loads, searches and picks a dataset through the select', async () => {
+      pluginService.datasetFieldEditable$ = signal(false).asReadonly();
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      const dvLookup = TestBed.inject(DvObjectLookupService);
+      // Answered later, as HTTP is: the page reads its subscription in the
+      // callback.
+      const getItems = spyOn(dvLookup, 'getItems').and.callFake(() =>
+        from(Promise.resolve([{ label: 'Dataset A', value: 'doi:10.1/A' }])),
+      );
+
+      openSelect(fixture.nativeElement, 'datasetId');
+      fixture.detectChanges();
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataset',
+        undefined,
+        undefined,
+      );
+      await settlePromises();
+      fixture.detectChanges();
+
+      typeInSelectFilter('dat');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(getItems).toHaveBeenCalledTimes(1);
+      jasmine.clock().tick(1);
+      expect(getItems).toHaveBeenCalledTimes(2);
+      expect(getItems.calls.mostRecent().args).toEqual([
+        '',
+        'Dataset',
+        'dat',
+        undefined,
+      ]);
+      await settlePromises();
+      fixture.detectChanges();
+
+      pickSelectOption('+ Create new dataset');
+      fixture.detectChanges();
+      expect(comp.datasetId()).toBe(`:${comp.NEW_DATASET}`);
+      expect(comp.showNewDatasetCreatedMessage()).toBeTrue();
+      expect(getItems).toHaveBeenCalledTimes(2);
+    });
 
     it('delivers dataset search results to the doi dropdown', async () => {
       const fixture = TestBed.createComponent(ConnectComponent);

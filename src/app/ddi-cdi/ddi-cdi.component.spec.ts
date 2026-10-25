@@ -30,6 +30,11 @@ import {
   scrolledContainers,
 } from '../../testing/page-layout';
 import { settlePromises } from '../../testing/promises';
+import {
+  openSelect,
+  pickSelectOption,
+  typeInSelectFilter,
+} from '../../testing/select';
 import { treegridStructure } from '../../testing/treegrid';
 import { APP_CONSTANTS } from '../shared/constants';
 import {
@@ -541,6 +546,60 @@ describe('DdiCdiComponent', () => {
         jasmine.clock().uninstall();
       }
     });
+  });
+
+  // The dataset select drives the page with three bindings: (opened) loads
+  // the first list, (filterChange) searches after the debounce and
+  // (valueChange) lists the files of the dataset picked.
+  it('loads, searches and picks a dataset through the select', async () => {
+    pluginServiceStub.datasetFieldEditable$.set(false);
+    dvObjectLookupServiceStub.getItems.and.returnValue(
+      of([
+        { label: 'Dataset A', value: 'doi:10.1/A' },
+        { label: 'Dataset B', value: 'doi:10.1/B' },
+      ]),
+    );
+    const fixture = TestBed.createComponent(DdiCdiComponent);
+    fixture.detectChanges();
+    const getItems = dvObjectLookupServiceStub.getItems;
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(2026, 9, 25));
+    try {
+      openSelect(fixture.nativeElement, 'datasetId');
+      fixture.detectChanges();
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataset',
+        undefined,
+        undefined,
+      );
+      await settlePromises();
+      fixture.detectChanges();
+
+      typeInSelectFilter('dat');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(getItems).toHaveBeenCalledTimes(1);
+      jasmine.clock().tick(1);
+      expect(getItems).toHaveBeenCalledTimes(2);
+      expect(getItems.calls.mostRecent().args).toEqual([
+        '',
+        'Dataset',
+        'dat',
+        undefined,
+      ]);
+      await settlePromises();
+      fixture.detectChanges();
+
+      pickSelectOption('Dataset B');
+      fixture.detectChanges();
+      expect(dataServiceStub.getDdiCdiCompatibleFiles).toHaveBeenCalledOnceWith(
+        'doi:10.1/B',
+        undefined,
+      );
+      expect(getItems).toHaveBeenCalledTimes(2);
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   describe('onDatasetChange', () => {
