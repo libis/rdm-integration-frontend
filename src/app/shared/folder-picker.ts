@@ -25,7 +25,8 @@ interface FolderPickerState {
  * folder, in the page's own signals. The rules are in
  * context/globus_options_problem.md of rdm-integration: only a node the
  * backend marks as selected is selected by itself, never the root "/";
- * unselecting clears the path; every listing gives the tree a new array.
+ * unselecting clears the path; a listing gives the tree a new array, which
+ * the folder tree needs to render it (an empty first listing leaves the tree).
  */
 export class FolderPicker {
   constructor(private readonly state: FolderPickerState) {}
