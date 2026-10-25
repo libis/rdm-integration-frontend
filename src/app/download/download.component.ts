@@ -657,6 +657,14 @@ export class DownloadComponent
   }
 
   onUserChange() {
+    // A file listing for the old token would keep loading on, and the dataset
+    // select loads no options while loading. The globusDownloadParameters
+    // lookup keeps its own loading.
+    if (this.listingSubscription && !this.listingSubscription.closed) {
+      this.listingSubscription.unsubscribe();
+      this.listingSubscription = null;
+      this.loading.set(false);
+    }
     this.doiItems.set([]);
     this.datasetId.set(undefined);
     // Save dataverseToken to localStorage if storeDvToken is enabled

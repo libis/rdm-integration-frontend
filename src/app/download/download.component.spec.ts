@@ -21,7 +21,7 @@ import {
 } from '@angular/router';
 import { TreeNode } from '../models/tree-node';
 import { SelectItem } from '../models/select-item';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, of, throwError } from 'rxjs';
 import { DataService } from '../data.service';
 import { DvObjectLookupService } from '../dvobject.lookup.service';
 import { CompareResult } from '../models/compare-result';
@@ -1505,6 +1505,49 @@ describe('DownloadComponent', () => {
     });
 
     afterEach(() => localStorage.removeItem('dataverseToken'));
+
+    // The dataset select of the page, opened with its own button.
+    const openDatasetSelect = () =>
+      (fixture.nativeElement.querySelector('#datasetId') as HTMLElement)
+        .parentElement!.querySelector<HTMLButtonElement>('button')!
+        .click();
+
+    // A token edit during a file listing left loading on: "Loading dataset
+    // files" stayed and the dataset select loaded nothing, since getDoiOptions
+    // waits while loading.
+    it('cancels a file listing on a token edit, so the dataset select loads its list again', async () => {
+      const listing = new Subject<CompareResult>();
+      spyOn(dataService, 'getDownloadableFiles').and.returnValue(listing);
+      const getItems: jasmine.Spy = spyOn(dvLookup, 'getItems').and.returnValue(
+        of([]),
+      );
+      const comp = initComponent();
+      await settlePromises();
+      selectDataset(comp);
+      comp.onDatasetChange();
+      await fixture.whenStable();
+      expect(comp.loading()).toBeTrue();
+      expect(listing.observed).toBeTrue();
+
+      editToken('token-1');
+      await fixture.whenStable();
+      expect(listing.observed).toBeFalse();
+      expect(comp.loading()).toBeFalse();
+      expect(fixture.nativeElement.textContent).not.toContain(
+        'Loading dataset files',
+      );
+
+      getItems.calls.reset();
+      openDatasetSelect();
+      await fixture.whenStable();
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataset',
+        undefined,
+        'token-1',
+        true,
+      );
+    });
 
     it('resets the dataset list and the selection on an edit and stores the token only with storeDvToken', async () => {
       const comp = initComponent();
