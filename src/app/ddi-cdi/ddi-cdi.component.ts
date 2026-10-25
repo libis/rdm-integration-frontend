@@ -261,7 +261,23 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.datasetSearchResultsSubscription?.unsubscribe();
   }
 
+  // The token before an edit of the field, kept from the first input event of
+  // the edit to the change event that commits it.
+  private tokenBeforeEdit?: { value: string | undefined };
+
+  onTokenInput(value: string | undefined): void {
+    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
+    this.dataverseToken.set(value);
+  }
+
   onUserChange() {
+    // A commit that leaves the token as it was, a browser filling in the
+    // same token again for instance, changes nothing.
+    const before = this.tokenBeforeEdit;
+    this.tokenBeforeEdit = undefined;
+    if (before === undefined || before.value === this.dataverseToken()) {
+      return;
+    }
     // What the old dataset produced goes with it: a listing or a generation
     // still under way, the rows, the selection and the output, so nothing
     // generates without a dataset.

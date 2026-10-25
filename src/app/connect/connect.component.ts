@@ -1409,7 +1409,23 @@ export class ConnectComponent
     window.open(url, '_blank');
   }
 
+  // The token before an edit of the field, kept from the first input event of
+  // the edit to the change event that commits it.
+  private tokenBeforeEdit?: { value: string | undefined };
+
+  onTokenInput(value: string | undefined): void {
+    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
+    this.dataverseToken.set(value);
+  }
+
   onUserChange() {
+    // A commit that leaves the token as it was, a browser filling in the
+    // same token again for instance, changes nothing.
+    const before = this.tokenBeforeEdit;
+    this.tokenBeforeEdit = undefined;
+    if (before === undefined || before.value === this.dataverseToken()) {
+      return;
+    }
     this.doiItems.set([]);
     this.collectionItems.set([]);
     this.datasetId.set(undefined);

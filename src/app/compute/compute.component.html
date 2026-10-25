@@ -20,7 +20,7 @@
           id="dataverseToken"
           placeholder="Dataverse API token"
           [ngModel]="dataverseToken()"
-          (ngModelChange)="dataverseToken.set($event)"
+          (ngModelChange)="onTokenInput($event)"
           #ctrl="ngModel"
           (change)="onUserChange()"
         />

@@ -326,7 +326,8 @@ describe('ComputeComponent', () => {
   });
 
   it('onUserChange clears selections', () => {
-    component.dataverseToken.set('dvTok');
+    // The field edited to a new token, as its input events do.
+    component.onTokenInput('dvTok');
     component.doiItems.set([{ label: 'a', value: 'a' }]);
     component.datasetId.set('a');
     component.onUserChange();
@@ -513,6 +514,25 @@ describe('ComputeComponent', () => {
       second.next({ id: 'doi:10.1/B', data: [pyFile('b.py')] });
       expect(component.data().id).toBe('doi:10.1/B');
       expect(component.loading()).toBeFalse();
+    });
+
+    // A change event without a new token, a browser filling in the restored
+    // token again for instance, resets nothing.
+    it('resets nothing when the field commits the token it already had', async () => {
+      plugin.showDvToken = true;
+      plugin.storeDvToken = true;
+      localStorage.setItem('dataverseToken', 'stored-token');
+      const loaded = TestBed.createComponent(ComputeComponent);
+      const comp = loaded.componentInstance;
+      loaded.detectChanges();
+      await loaded.whenStable();
+      selectDataset(comp);
+      editToken(loaded, 'stored-token');
+      expect(comp.datasetId()).toBe('doi:10.1/D');
+      expect(comp.doiItems().length).toBe(1);
+      editToken(loaded, 'other-token');
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('other-token');
     });
 
     it('resets nothing when the token is restored at load or set in code', async () => {

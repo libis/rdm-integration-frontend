@@ -932,6 +932,24 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    // A change event without a new token, a browser filling in the restored
+    // token again for instance, resets nothing.
+    it('resets nothing when the field commits the token it already had', async () => {
+      pluginService.isStoreDvToken = () => true;
+      localStorage.setItem('dataverseToken', 'stored-token');
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      selectDataset(comp);
+      editToken(fixture, 'stored-token');
+      expect(comp.collectionId()).toBe('root:C');
+      expect(comp.datasetId()).toBe('doi:10.1/D');
+      editToken(fixture, 'other-token');
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('other-token');
+    });
+
     it('resets nothing when the token is restored at load or set in code', async () => {
       pluginService.isStoreDvToken = () => true;
       localStorage.setItem('dataverseToken', 'stored-token');

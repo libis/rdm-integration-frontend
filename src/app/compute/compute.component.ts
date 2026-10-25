@@ -192,7 +192,23 @@ export class ComputeComponent
     this.navigation.assign('connect');
   }
 
+  // The token before an edit of the field, kept from the first input event of
+  // the edit to the change event that commits it.
+  private tokenBeforeEdit?: { value: string | undefined };
+
+  onTokenInput(value: string | undefined): void {
+    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
+    this.dataverseToken.set(value);
+  }
+
   onUserChange() {
+    // A commit that leaves the token as it was, a browser filling in the
+    // same token again for instance, changes nothing.
+    const before = this.tokenBeforeEdit;
+    this.tokenBeforeEdit = undefined;
+    if (before === undefined || before.value === this.dataverseToken()) {
+      return;
+    }
     // A file listing for the old token would only keep the spinner going.
     if (this.listingSubscription && !this.listingSubscription.closed) {
       this.listingSubscription.unsubscribe();

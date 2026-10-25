@@ -240,6 +240,8 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component.doiItems.set([{ label: 'test', value: 'test' }]);
       component.datasetId.set('doi:test');
+      // The field edited to a new token, as its input events do.
+      component.onTokenInput('dvTok');
       component.onUserChange();
       expect(component.doiItems()).toEqual([]);
       expect(component.datasetId()).toBeUndefined();
@@ -406,6 +408,24 @@ describe('DdiCdiComponent', () => {
       expect(component.doiItems()).toEqual([]);
       expect(component.datasetId()).toBeUndefined();
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
+    });
+
+    // A change event without a new token, a browser filling in the restored
+    // token again for instance, resets nothing.
+    it('resets nothing when the field commits the token it already had', async () => {
+      pluginServiceStub.isStoreDvToken.and.returnValue(true);
+      localStorage.setItem('dataverseToken', 'stored-token');
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      selectDataset(component);
+      editToken(fixture, 'stored-token');
+      expect(component.datasetId()).toBe('doi:10.1/D');
+      expect(component.doiItems().length).toBe(1);
+      editToken(fixture, 'other-token');
+      expect(component.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('other-token');
     });
 
     it('resets nothing when the token is restored at load or set in code', async () => {

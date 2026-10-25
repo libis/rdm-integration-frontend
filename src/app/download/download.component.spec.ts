@@ -878,7 +878,8 @@ describe('DownloadComponent', () => {
 
   it('onUserChange resets selections', () => {
     initComponent();
-    component.dataverseToken.set('dvTok');
+    // The field edited to a new token, as its input events do.
+    component.onTokenInput('dvTok');
     component.doiItems.set([{ label: 'a', value: 'a' }]);
     component.datasetId.set('a');
     component.onUserChange();
@@ -1636,6 +1637,22 @@ describe('DownloadComponent', () => {
       expect(comp.doiItems()).toEqual([]);
       expect(comp.datasetId()).toBeUndefined();
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
+    });
+
+    // A change event without a new token, a browser filling in the restored
+    // token again for instance, resets nothing.
+    it('resets nothing when the field commits the token it already had', async () => {
+      plugin.storeDvToken = true;
+      localStorage.setItem('dataverseToken', 'stored-token');
+      const comp = initComponent();
+      await fixture.whenStable();
+      selectDataset(comp);
+      editToken('stored-token');
+      expect(comp.datasetId()).toBe('doi:10.1/D');
+      expect(comp.doiItems().length).toBe(1);
+      editToken('other-token');
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('other-token');
     });
 
     it('resets nothing when the token is restored at load or set in code', async () => {
