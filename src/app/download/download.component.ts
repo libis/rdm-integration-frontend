@@ -142,7 +142,9 @@ export class DownloadComponent
   /** Subscription for the currently in-flight getDownloadableFiles request. */
   private listingSubscription: Subscription | null = null;
   // The edits of the token field; a lookup sent before a reset is stale.
-  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken, () =>
+    this.pluginService.isStoreDvToken(),
+  );
   private readonly datasetSearcher = new DvObjectSearch({
     items: this.doiItems,
     lookup: (term) =>

@@ -2,12 +2,16 @@
 
 import { WritableSignal } from '@angular/core';
 
+/** The localStorage key of the token, kept when the configuration says so. */
+const STORED_TOKEN = 'dataverseToken';
+
 /**
  * The edits of the Dataverse token field of a page. The field binds
  * (ngModelChange) to input() and (change) to the page's onUserChange, which
  * resets what the page looked up with the old token when commit() returns
  * true. Every such reset counts: a dataset lookup keeps the generation it was
- * sent in and drops its answer when a reset came since.
+ * sent in and drops its answer when a reset came since. With storeDvToken in
+ * the configuration (storeToken), the token is kept in localStorage.
  */
 export class TokenEdit {
   // The token before an edit of the field, kept from the first input event of
@@ -15,11 +19,32 @@ export class TokenEdit {
   private before?: { value: string | undefined };
   private resets = 0;
 
-  constructor(private readonly token: WritableSignal<string | undefined>) {}
+  constructor(
+    private readonly token: WritableSignal<string | undefined>,
+    private readonly storeToken: () => boolean,
+  ) {}
 
   /** The resets so far; a lookup sent before one is stale. */
   get generation(): number {
     return this.resets;
+  }
+
+  /** Takes the token kept in localStorage, when the configuration keeps it. */
+  restore(): void {
+    if (this.storeToken()) {
+      const stored = localStorage.getItem(STORED_TOKEN);
+      if (stored !== null) {
+        this.token.set(stored);
+      }
+    }
+  }
+
+  /** Keeps the token in localStorage, when there is one and the configuration keeps it. */
+  store(): void {
+    const token = this.token();
+    if (token !== undefined && this.storeToken()) {
+      localStorage.setItem(STORED_TOKEN, token);
+    }
   }
 
   /** An input event of the field. */

@@ -345,7 +345,9 @@ export class ConnectComponent
   readonly configLoaded = this.pluginService.configLoaded$;
 
   // The edits of the token field; a lookup sent before a reset is stale.
-  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken, () =>
+    this.pluginService.isStoreDvToken(),
+  );
   private readonly collectionSearcher = new DvObjectSearch({
     items: this.collectionItems,
     lookup: (term) =>

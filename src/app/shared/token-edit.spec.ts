@@ -2,10 +2,47 @@ import { signal } from '@angular/core';
 import { TokenEdit } from './token-edit';
 
 describe('TokenEdit', () => {
+  let keep: jasmine.Spy<() => boolean>;
   const setup = (initial?: string) => {
     const token = signal<string | undefined>(initial);
-    return { token, edit: new TokenEdit(token) };
+    return { token, edit: new TokenEdit(token, keep) };
   };
+
+  beforeEach(() => {
+    keep = jasmine.createSpy('storeToken').and.returnValue(false);
+    localStorage.removeItem('dataverseToken');
+  });
+  afterEach(() => localStorage.removeItem('dataverseToken'));
+
+  it('restores the kept token only when the configuration keeps it', () => {
+    localStorage.setItem('dataverseToken', 'kept');
+    const { token, edit } = setup('initial');
+    edit.restore();
+    expect(token()).toBe('initial');
+    keep.and.returnValue(true);
+    edit.restore();
+    expect(token()).toBe('kept');
+    localStorage.removeItem('dataverseToken');
+    token.set('other');
+    edit.restore();
+    expect(token()).toBe('other');
+    // A restore is no edit: the next commit resets nothing.
+    expect(edit.commit()).toBeFalse();
+  });
+
+  it('stores a token only when there is one and the configuration keeps it', () => {
+    const { token, edit } = setup('tok');
+    edit.store();
+    expect(localStorage.getItem('dataverseToken')).toBeNull();
+    keep.and.returnValue(true);
+    edit.store();
+    expect(localStorage.getItem('dataverseToken')).toBe('tok');
+    token.set(undefined);
+    keep.calls.reset();
+    edit.store();
+    expect(localStorage.getItem('dataverseToken')).toBe('tok');
+    expect(keep).not.toHaveBeenCalled();
+  });
 
   it('takes every input and resets on a commit that changed the token', () => {
     const { token, edit } = setup('old');

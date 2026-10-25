@@ -116,7 +116,9 @@ export class ComputeComponent
 
   // INTERNAL STATE VARIABLES
   // The edits of the token field; a lookup sent before a reset is stale.
-  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken, () =>
+    this.pluginService.isStoreDvToken(),
+  );
   private readonly datasetSearcher = new DvObjectSearch({
     items: this.doiItems,
     lookup: (term) =>
