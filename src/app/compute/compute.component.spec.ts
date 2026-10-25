@@ -191,9 +191,7 @@ describe('ComputeComponent', () => {
         { provide: UtilsService, useClass: MockUtilsService },
         { provide: NavigationService, useValue: navigation },
       ],
-    })
-      .overrideComponent(ComputeComponent, { set: { template: '<div></div>' } })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ComputeComponent);
     component = fixture.componentInstance;

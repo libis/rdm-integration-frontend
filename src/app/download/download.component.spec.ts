@@ -305,11 +305,7 @@ describe('DownloadComponent', () => {
           useValue: { queryParams: routeSubject.asObservable() },
         },
       ],
-    })
-      .overrideComponent(DownloadComponent, {
-        set: { template: '<div></div>' },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
   });
