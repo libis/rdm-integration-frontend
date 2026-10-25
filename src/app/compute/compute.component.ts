@@ -282,12 +282,10 @@ export class ComputeComponent
       this.loading.set(false);
       return;
     }
-    const rowDataMap = this.utils.mapDatafiles(data.data);
-    rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
-    const rootNode = rowDataMap.get('');
-    this.rowNodeMap.set(rowDataMap);
-    if (rootNode?.children) {
-      this.rootNodeChildren.set(rootNode.children);
+    const { rowNodeMap, rootChildren } = this.utils.buildFileTree(data.data);
+    this.rowNodeMap.set(rowNodeMap);
+    if (rootChildren) {
+      this.rootNodeChildren.set(rootChildren);
     }
     this.loading.set(false);
   }

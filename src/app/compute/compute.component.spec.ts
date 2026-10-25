@@ -91,6 +91,7 @@ class MockUtilsService {
   addChild(_v: any, _map: Map<string, any>) {
     /* no-op for test */
   }
+  buildFileTree = UtilsService.prototype.buildFileTree;
 }
 
 class MockPluginService {
