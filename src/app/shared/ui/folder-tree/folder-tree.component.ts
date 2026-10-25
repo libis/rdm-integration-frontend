@@ -27,6 +27,9 @@ function nodeKey(node: TreeNode<string>): string {
 export class FolderTreeComponent {
   readonly nodes = input.required<TreeNode<string>[]>();
   readonly loading = input(false);
+  // The id of the element that names the tree, such as its visible label. A
+  // label's for attribute does not name a tree, which is no form control.
+  readonly ariaLabelledby = input<string>();
   readonly selected = model<TreeNode<string> | undefined>(undefined);
   readonly nodeExpand = output<TreeNode<string>>();
 

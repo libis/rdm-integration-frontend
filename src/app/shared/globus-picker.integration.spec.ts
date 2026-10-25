@@ -326,6 +326,12 @@ for (const scenario of [
       expect(selectedNode()).toBeNull();
     });
 
+    it('names the folder tree after its label', () => {
+      const id = element('[role="tree"]').getAttribute('aria-labelledby');
+      expect(id).toBe('repoBranchTreeLabel');
+      expect(element(`#${id}`).textContent!.trim()).toBe('Folder');
+    });
+
     it('keeps an unresolved home unselected and expands the separate root', async () => {
       element('.folder-toggle').click();
       await answer('', [

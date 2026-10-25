@@ -8,19 +8,27 @@
 <cdk-tree
   #tree
   class="folder-tree"
+  [attr.aria-labelledby]="ariaLabelledby() ?? null"
   [dataSource]="nodes()"
   [childrenAccessor]="children"
   [expansionKey]="nodeKey"
   [trackBy]="trackNode"
 >
+  <!-- A click on the toggle or the label focuses the node itself, so the arrow
+    keys work right after it. The node is named after its folder alone, not
+    after its content, which includes the toggle's name. -->
   <cdk-tree-node
+    #treeNode
     *cdkTreeNodeDef="let node"
     class="folder-node"
     [class.selected]="isSelected(node)"
+    [attr.aria-selected]="isSelected(node)"
+    [attr.aria-label]="node.label"
     [isExpandable]="isExpandable(node)"
     cdkTreeNodePadding
     [cdkTreeNodePaddingIndent]="16"
     (keydown)="onKeydown($event, node)"
+    (click)="treeNode.focus()"
   >
     @if (isExpandable(node)) {
       <button
@@ -40,13 +48,6 @@
     } @else {
       <span class="folder-toggle"></span>
     }
-    <button
-      type="button"
-      class="btn btn-link btn-sm folder-label"
-      tabindex="-1"
-      (click)="select(node)"
-    >
-      <span>{{ node.label }}</span>
-    </button>
+    <span class="folder-label" (click)="select(node)">{{ node.label }}</span>
   </cdk-tree-node>
 </cdk-tree>

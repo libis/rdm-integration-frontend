@@ -14,11 +14,18 @@
   border-radius: var(--bs-border-radius);
 }
 
-.folder-toggle,
-.folder-label {
+.folder-toggle {
   text-decoration: none;
 }
 
+// Plain text in the box of the small link button it replaces: the node is the
+// only focus stop of a row.
 .folder-label {
+  padding: 0.25rem 0.5rem;
+  border: var(--bs-border-width) solid transparent;
+  font-size: 0.875rem;
+  line-height: 1.5;
   color: var(--app-text);
+  cursor: pointer;
+  user-select: none;
 }

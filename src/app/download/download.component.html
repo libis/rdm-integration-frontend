@@ -226,11 +226,12 @@
           ></app-select>
         </div>
         <div class="mb-3">
-          <label for="repoBranchTree" class="form-label">{{
+          <label id="repoBranchTreeLabel" class="form-label">{{
             optionFieldName()
           }}</label
           ><br />
           <app-folder-tree
+            ariaLabelledby="repoBranchTreeLabel"
             [nodes]="rootOptions()"
             [loading]="optionsLoading()"
             [selected]="selectedOption()"

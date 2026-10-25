@@ -6,12 +6,14 @@ import { FolderTreeComponent } from './folder-tree.component';
 @Component({
   imports: [FolderTreeComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
-  template: `<app-folder-tree
-    [nodes]="nodes()"
-    [loading]="loading()"
-    [(selected)]="selected"
-    (nodeExpand)="expanded.push($event.data)"
-  ></app-folder-tree>`,
+  template: `<label id="folder-tree-label">Folder</label>
+    <app-folder-tree
+      ariaLabelledby="folder-tree-label"
+      [nodes]="nodes()"
+      [loading]="loading()"
+      [(selected)]="selected"
+      (nodeExpand)="expanded.push($event.data)"
+    ></app-folder-tree>`,
 })
 class HostComponent {
   readonly nodes = signal<TreeNode<string>[]>([
@@ -103,6 +105,8 @@ describe('FolderTreeComponent', () => {
   const keyCodes = {
     ArrowRight: 39,
     ArrowLeft: 37,
+    ArrowDown: 40,
+    ArrowUp: 38,
     '*': 56,
   };
   const key = (el: Element, k: keyof typeof keyCodes) =>
@@ -316,5 +320,106 @@ describe('FolderTreeComponent', () => {
     alice.focus();
     await fixture.whenStable();
     expect(tabs()).toEqual(['-1', '-1', '0', '-1']);
+  });
+
+  it('marks the selected node with aria-selected', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const selected = () =>
+      treeNodes(fixture.nativeElement).map((n) =>
+        n.getAttribute('aria-selected'),
+      );
+    expect(selected()).toEqual(['false', 'false', 'false', 'false']);
+    const alice = nodeNamed(fixture.nativeElement, 'alice');
+    (alice.querySelector('.folder-label') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(selected()).toEqual(['false', 'false', 'true', 'false']);
+    (alice.querySelector('.folder-label') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(selected()).toEqual(['false', 'false', 'false', 'false']);
+  });
+
+  it('names every node after its folder alone, without the toggle', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    expect(
+      treeNodes(fixture.nativeElement).map((n) => n.getAttribute('aria-label')),
+    ).toEqual(['/', 'home', 'alice', 'shared']);
+  });
+
+  it('names the tree after the element given by ariaLabelledby', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const tree = (fixture.nativeElement as HTMLElement).querySelector(
+      '[role="tree"]',
+    )!;
+    const id = tree.getAttribute('aria-labelledby');
+    expect(id).toBe('folder-tree-label');
+    expect(document.getElementById(id!)!.textContent).toBe('Folder');
+  });
+
+  it('leaves the tree unnamed without ariaLabelledby', async () => {
+    const fixture = TestBed.createComponent(CollapsedHostComponent);
+    await fixture.whenStable();
+    const tree = (fixture.nativeElement as HTMLElement).querySelector(
+      '[role="tree"]',
+    )!;
+    expect(tree.hasAttribute('aria-labelledby')).toBeFalse();
+  });
+
+  it('exposes the level and the expansion of every node from the CDK tree', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    expect(
+      treeNodes(fixture.nativeElement).map((n) => [
+        n.getAttribute('role'),
+        n.getAttribute('aria-level'),
+        n.getAttribute('aria-expanded'),
+      ]),
+    ).toEqual([
+      ['treeitem', '1', 'true'],
+      ['treeitem', '2', 'true'],
+      ['treeitem', '3', 'false'],
+      ['treeitem', '2', 'false'],
+    ]);
+  });
+
+  it('puts the focus on the node itself after a click on its label', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const alice = nodeNamed(fixture.nativeElement, 'alice');
+    const label = alice.querySelector('.folder-label') as HTMLElement;
+    // The label is plain text: the node is the only focus stop of a row.
+    expect(label.tagName).toBe('SPAN');
+    expect(label.hasAttribute('tabindex')).toBeFalse();
+    label.click();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(alice);
+    expect(alice.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('puts the focus on the node itself after a click on its toggle', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const shared = nodeNamed(fixture.nativeElement, 'shared');
+    (shared.querySelector('.folder-toggle') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(shared);
+    expect(fixture.componentInstance.expanded).toEqual(['/shared/']);
+  });
+
+  it('moves with ArrowDown and ArrowUp right after a click', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const home = nodeNamed(fixture.nativeElement, 'home');
+    (home.querySelector('.folder-label') as HTMLElement).click();
+    await fixture.whenStable();
+    key(document.activeElement!, 'ArrowDown');
+    await fixture.whenStable();
+    expect(focused()).toBe('alice');
+    key(document.activeElement!, 'ArrowUp');
+    await fixture.whenStable();
+    expect(focused()).toBe('home');
+    expect(fixture.componentInstance.selected()?.data).toBe('/home/');
   });
 });
