@@ -192,8 +192,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       }
     },
   });
-  readonly datasetSearchSubject = this.datasetSearcher.terms;
-  readonly datasetSearchResultsObservable = this.datasetSearcher.results;
   datasetSearchResultsSubscription?: Subscription;
   req?: DdiCdiRequest;
 
@@ -336,10 +334,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   onDatasetSearch(searchTerm: string | null) {
     this.datasetSearcher.onSearch(searchTerm);
-  }
-
-  datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return this.datasetSearcher.search(searchTerm);
   }
 
   private ensureSelectedDatasetOption(pid: string, label?: string): void {

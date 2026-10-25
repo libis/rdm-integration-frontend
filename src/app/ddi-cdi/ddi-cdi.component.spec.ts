@@ -667,12 +667,27 @@ describe('DdiCdiComponent', () => {
       expect(component.doiItems()[0].label).toContain('at least three letters');
     });
 
+    // The search goes through the page's search wiring, DEBOUNCE_TIME after
+    // the term (debounceTime reads Date.now(), hence mockDate).
     it('should trigger search for valid search terms', () => {
       const fixture = TestBed.createComponent(DdiCdiComponent);
       const component = fixture.componentInstance;
-      spyOn(component.datasetSearchSubject, 'next');
-      component.onDatasetSearch('test');
-      expect(component.datasetSearchSubject.next).toHaveBeenCalledWith('test');
+      fixture.detectChanges();
+      dvObjectLookupServiceStub.getItems.calls.reset();
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        component.onDatasetSearch('test');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledOnceWith(
+          '',
+          'Dataset',
+          'test',
+          undefined,
+        );
+      } finally {
+        jasmine.clock().uninstall();
+      }
     });
 
     // The search waits DEBOUNCE_TIME after the last term on the mock clock
@@ -1258,13 +1273,12 @@ describe('DdiCdiComponent', () => {
       it('should show searching message for valid term', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        spyOn(component['datasetSearchSubject'], 'next');
         component.onDatasetSearch('test');
         expect(component.doiItems()[0].label).toContain('searching');
       });
     });
 
-    describe('datasetSearch', () => {
+    describe('dataset search', () => {
       it('should call service with correct parameters', async () => {
         const mockItems: SelectItem<string>[] = [
           { label: 'doi:1', value: 'doi:1' },
@@ -1272,15 +1286,24 @@ describe('DdiCdiComponent', () => {
         dvObjectLookupServiceStub.getItems.and.returnValue(of(mockItems));
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
+        fixture.detectChanges();
         component.dataverseToken.set('token');
-        const result = await component.datasetSearch('search-term');
-        expect(result).toEqual(mockItems);
-        expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledWith(
-          '',
-          'Dataset',
-          'search-term',
-          'token',
-        );
+        jasmine.clock().install();
+        jasmine.clock().mockDate(new Date(2026, 9, 25));
+        try {
+          component.onDatasetSearch('search-term');
+          jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+          await settlePromises();
+          expect(component.doiItems()).toEqual(mockItems);
+          expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledWith(
+            '',
+            'Dataset',
+            'search-term',
+            'token',
+          );
+        } finally {
+          jasmine.clock().uninstall();
+        }
       });
     });
 
@@ -1516,10 +1539,22 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('constructor and observable setup', () => {
-      it('should create datasetSearchResultsObservable with debounce', () => {
+      it('should debounce the dataset search set up at construction', () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
-        expect(component['datasetSearchResultsObservable']).toBeDefined();
+        fixture.detectChanges();
+        dvObjectLookupServiceStub.getItems.calls.reset();
+        jasmine.clock().install();
+        jasmine.clock().mockDate(new Date(2026, 9, 25));
+        try {
+          component.onDatasetSearch('abc');
+          jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+          expect(dvObjectLookupServiceStub.getItems).not.toHaveBeenCalled();
+          jasmine.clock().tick(1);
+          expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledTimes(1);
+        } finally {
+          jasmine.clock().uninstall();
+        }
       });
     });
 
@@ -1527,13 +1562,17 @@ describe('DdiCdiComponent', () => {
       it('should handle subscription errors', async () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
+        fixture.detectChanges();
 
-        // Manually trigger an error in the subscription
-        component['datasetSearchSubject'].error(new Error('Test error'));
+        // Manually trigger an error in the page's search terms
+        component['datasetSearcher'].terms.error(new Error('Test error'));
 
         await settlePromises();
-        // The component should still be in a valid state
+        // The component should still be in a valid state, the failure listed
         expect(component).toBeDefined();
+        expect(component.doiItems()).toEqual([
+          { label: 'search failed: Test error', value: 'Test error' },
+        ]);
       });
     });
 
