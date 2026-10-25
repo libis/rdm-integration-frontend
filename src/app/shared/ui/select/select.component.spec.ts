@@ -243,6 +243,30 @@ describe('SelectComponent', () => {
     expect(active.backgroundColor).not.toBe(selected.backgroundColor);
   });
 
+  // Chromium accepts both outlines and its CSSOM rule keeps only the last, so
+  // the spec finds the rule through the CSSOM and reads the source of its
+  // stylesheet: without the first line Firefox draws no ring at all.
+  it('keeps the outline Firefox reads before the one it drops', () => {
+    const holds = (sheet: CSSStyleSheet) => {
+      try {
+        return Array.from(sheet.cssRules).some(
+          (r) =>
+            r.cssText.includes('.cdk-option-active') &&
+            r.cssText.includes('outline'),
+        );
+      } catch {
+        return false;
+      }
+    };
+    const sheet = Array.from(document.styleSheets).find(holds);
+    const source = (sheet?.ownerNode?.textContent ?? '').replace(/\s/g, '');
+    const block = /\.cdk-option-active[^{]*\{([^}]*)\}/.exec(source)?.[1];
+    expect(block?.match(/outline:[^;]*/g)).toEqual([
+      'outline:auto1px',
+      'outline:auto1px-webkit-focus-ring-color',
+    ]);
+  });
+
   it('focuses the list with the first option active when the panel has no filter', async () => {
     host.filter.set(false);
     await fixture.whenStable();
