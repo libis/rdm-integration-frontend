@@ -45,22 +45,12 @@ import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.compo
 // Third-party
 
 // RxJS
-import {
-  EmptyError,
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-  takeUntil,
-} from 'rxjs';
+import { EmptyError, firstValueFrom, Subject, takeUntil } from 'rxjs';
 
 // Constants and types
-import {
-  APP_CONSTANTS,
-  buildInlineStyle,
-  getFileActionStyle,
-} from '../shared/constants';
+import { buildInlineStyle, getFileActionStyle } from '../shared/constants';
+import { DvObjectSearch } from '../shared/dv-object-search';
+import { TokenEdit } from '../shared/token-edit';
 import { SubscriptionManager } from '../shared/types';
 
 @Component({
@@ -97,11 +87,6 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private pollGeneration = 0;
   /** The file listing of the dataset last picked. */
   private listingSubscription?: Subscription;
-  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
-  private resetGeneration = 0;
-
-  // CONSTANTS
-  readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
 
   // NG MODEL FIELDS (signals)
   readonly dataverseToken = signal<string | undefined>(undefined);
@@ -186,17 +171,31 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   readonly doiItems = signal<SelectItem<string>[]>([]);
 
   // INTERNAL STATE VARIABLES
-  datasetSearchSubject: Subject<string> = new Subject();
-  datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+  // The edits of the token field; a lookup sent before a reset is stale.
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly datasetSearcher = new DvObjectSearch({
+    items: this.doiItems,
+    lookup: (term) =>
+      this.dvObjectLookupService.getItems(
+        '',
+        'Dataset',
+        term,
+        this.dataverseToken(),
+      ),
+    generation: () => this.tokenEdit.generation,
+    // The selected dataset stays in the list.
+    answered: (items) => {
+      const currentDatasetId = this.datasetId();
+      if (currentDatasetId) {
+        const match = items.find((item) => item.value === currentDatasetId);
+        this.ensureSelectedDatasetOption(currentDatasetId, match?.label);
+      }
+    },
+  });
+  readonly datasetSearchSubject = this.datasetSearcher.terms;
+  readonly datasetSearchResultsObservable = this.datasetSearcher.results;
   datasetSearchResultsSubscription?: Subscription;
   req?: DdiCdiRequest;
-
-  constructor() {
-    this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
-      debounceTime(this.DEBOUNCE_TIME),
-      map((searchText) => this.datasetSearch(searchText)),
-    );
-  }
 
   async ngOnInit() {
     // Load dataverseToken from localStorage if storeDvToken is enabled
@@ -221,35 +220,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         }
       }),
     );
-    this.datasetSearchResultsSubscription =
-      this.datasetSearchResultsObservable.subscribe({
-        next: (x) => {
-          // The search has just been sent; its answer is dropped when a token
-          // change has reset the page since.
-          const generation = this.resetGeneration;
-          x.then((v) => {
-            if (this.resetGeneration !== generation) return;
-            this.doiItems.set(v);
-            const currentDatasetId = this.datasetId();
-            if (currentDatasetId) {
-              const match = v.find((item) => item.value === currentDatasetId);
-              this.ensureSelectedDatasetOption(currentDatasetId, match?.label);
-            }
-          }).catch((err) => {
-            if (this.resetGeneration !== generation) return;
-            this.doiItems.set([
-              {
-                label: `search failed: ${err.message}`,
-                value: err.message,
-              },
-            ]);
-          });
-        },
-        error: (err) =>
-          this.doiItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]),
-      });
+    this.datasetSearchResultsSubscription = this.datasetSearcher.start();
   }
 
   ngOnDestroy(): void {
@@ -264,24 +235,15 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.datasetSearchResultsSubscription?.unsubscribe();
   }
 
-  // The token before an edit of the field, kept from the first input event of
-  // the edit to the change event that commits it.
-  private tokenBeforeEdit?: { value: string | undefined };
-
   onTokenInput(value: string | undefined): void {
-    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
-    this.dataverseToken.set(value);
+    this.tokenEdit.input(value);
   }
 
   onUserChange() {
-    // A commit that leaves the token as it was, a browser filling in the
-    // same token again for instance, changes nothing.
-    const before = this.tokenBeforeEdit;
-    this.tokenBeforeEdit = undefined;
-    if (before === undefined || before.value === this.dataverseToken()) {
+    // A commit that left the token as it was resets nothing.
+    if (!this.tokenEdit.commit()) {
       return;
     }
-    this.resetGeneration++;
     // What the old dataset produced goes with it: a listing or a generation
     // still under way, the rows, the selection, the output and the console,
     // so nothing generates without a dataset.
@@ -327,7 +289,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // An answer that a token change made stale is dropped: the change reset
     // the list and the selection, and the next opening asks again.
-    const generation = this.resetGeneration;
+    const generation = this.tokenEdit.generation;
     let httpSubscription: Subscription;
     // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     httpSubscription = this.dvObjectLookupService
@@ -336,7 +298,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         next: (items: SelectItem<string>[]) => {
           this.subscriptions.delete(httpSubscription);
           httpSubscription?.unsubscribe();
-          if (this.resetGeneration !== generation) return;
+          if (this.tokenEdit.generation !== generation) return;
           if (items && items.length > 0) {
             this.doiItems.set(items);
             if (previouslySelected) {
@@ -361,7 +323,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         error: (err) => {
           this.subscriptions.delete(httpSubscription);
           httpSubscription?.unsubscribe();
-          if (this.resetGeneration !== generation) return;
+          if (this.tokenEdit.generation !== generation) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems.set([]);
           if (!previouslySelected) {
@@ -373,30 +335,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.doiItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.datasetSearchSubject.next(searchTerm);
+    this.datasetSearcher.onSearch(searchTerm);
   }
 
-  async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(
-      this.dvObjectLookupService.getItems(
-        '',
-        'Dataset',
-        searchTerm,
-        this.dataverseToken(),
-      ),
-    );
+  datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    return this.datasetSearcher.search(searchTerm);
   }
 
   private ensureSelectedDatasetOption(pid: string, label?: string): void {
@@ -436,7 +379,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     // A label that a token change made stale is dropped: the change reset the
     // list and the selection.
-    const generation = this.resetGeneration;
+    const generation = this.tokenEdit.generation;
     try {
       const items = await firstValueFrom(
         this.dvObjectLookupService.getItems(
@@ -446,7 +389,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
           this.dataverseToken(),
         ),
       );
-      if (this.resetGeneration !== generation) return;
+      if (this.tokenEdit.generation !== generation) return;
       const match = items.find(
         (item: SelectItem<string>) => item.value === pid,
       );
