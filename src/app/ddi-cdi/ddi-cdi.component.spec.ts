@@ -142,10 +142,15 @@ describe('DdiCdiComponent', () => {
       'mapDatafiles',
       'addChild',
       'sleep',
+      'buildFileTree',
     ]);
 
     // Default stub behaviors
     utilsServiceStub.sleep.and.returnValue(Promise.resolve());
+    // The real builder over the stubbed mapDatafiles and addChild.
+    utilsServiceStub.buildFileTree.and.callFake((data) =>
+      UtilsService.prototype.buildFileTree.call(utilsServiceStub, data),
+    );
     dvObjectLookupServiceStub.getItems.and.returnValue(of([]));
     dataServiceStub.getCachedDdiCdiOutput.and.returnValue(
       throwError(() => ({ status: 404 })),
