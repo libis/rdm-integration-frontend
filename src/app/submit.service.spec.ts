@@ -73,9 +73,7 @@ describe('SubmitService', () => {
   });
 
   it('submit builds correct payload', () => {
-    const selected: Datafile[] = [
-      { id: '1', name: 'f1', path: '/', hidden: false } as any,
-    ];
+    const selected: Datafile[] = [{ id: '1', name: 'f1', path: '/' } as any];
     service.submit(selected, true).subscribe();
     const req = httpMock.expectOne('api/common/store');
     expect(req.request.method).toBe('POST');
@@ -94,9 +92,7 @@ describe('SubmitService', () => {
   });
 
   it('download builds correct payload', () => {
-    const selected: Datafile[] = [
-      { id: '2', name: 'f2', path: '/', hidden: false } as any,
-    ];
+    const selected: Datafile[] = [{ id: '2', name: 'f2', path: '/' } as any];
     let response: any;
     service
       .download(

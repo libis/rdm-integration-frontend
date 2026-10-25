@@ -14,7 +14,6 @@ describe('DownladablefileComponent', () => {
         id: '',
         name: '',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [],
@@ -26,7 +25,6 @@ describe('DownladablefileComponent', () => {
         id: 'file1',
         name: 'README.md',
         path: 'docs',
-        hidden: false,
         action: Fileaction.Ignore,
         attributes: { isFile: true },
       } as Datafile,
@@ -58,7 +56,6 @@ describe('DownladablefileComponent', () => {
       id: 'file1',
       name: 'README.md',
       path: 'docs',
-      hidden: false,
       action: Fileaction.Download,
       attributes: { isFile: true },
     });
@@ -118,7 +115,6 @@ describe('DownladablefileComponent', () => {
         id: 'file2',
         name: 'notes.txt',
         path: 'docs',
-        hidden: false,
         action: Fileaction.Download,
         attributes: { isFile: true },
       },
@@ -138,7 +134,6 @@ describe('DownladablefileComponent', () => {
         id: 'parent',
         name: 'folder',
         path: 'docs',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [
@@ -148,7 +143,6 @@ describe('DownladablefileComponent', () => {
             id: 'child',
             name: 'file',
             path: 'docs',
-            hidden: false,
             action: Fileaction.Ignore,
             attributes: { isFile: true },
           },
@@ -174,7 +168,6 @@ describe('DownladablefileComponent', () => {
       id: child.data!.id,
       name: child.data!.name,
       path: child.data!.path,
-      hidden: child.data!.hidden,
       action: Fileaction.Custom,
       attributes: { isFile: true },
     });
@@ -200,7 +193,6 @@ describe('DownladablefileComponent', () => {
       id: child.data!.id,
       name: child.data!.name,
       path: child.data!.path,
-      hidden: child.data!.hidden,
       attributes: { isFile: true },
     });
     fixture.componentRef.setInput('rowNodeMap', map);
@@ -220,7 +212,6 @@ describe('DownladablefileComponent', () => {
         id: 'leaf',
         name: 'leaf.txt',
         path: 'docs',
-        hidden: false,
         action: Fileaction.Download,
         attributes: { isFile: true },
       },

@@ -87,8 +87,8 @@ describe('DataStateService', () => {
         ready: true,
         res: {
           data: [
-            { id: 'b', name: 'b', path: '', hidden: false },
-            { id: 'a', name: 'a', path: '', hidden: false },
+            { id: 'b', name: 'b', path: '' },
+            { id: 'a', name: 'a', path: '' },
           ],
         },
       });

@@ -58,7 +58,6 @@ export class UtilsService {
       path: '',
       name: '',
       action: Fileaction.Ignore,
-      hidden: false,
       id: '',
     };
 
@@ -85,7 +84,6 @@ export class UtilsService {
             path: path,
             name: folder,
             action: Fileaction.Ignore,
-            hidden: false,
             id: id,
           };
           rowDataMap.set(id, {

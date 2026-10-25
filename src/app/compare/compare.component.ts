@@ -460,7 +460,7 @@ export class CompareComponent
       const visibleFiles = this.getVisibleFileNodes();
       visibleFiles.forEach((rowNode) => {
         const datafile = rowNode.data;
-        if (!datafile || datafile.hidden) {
+        if (!datafile) {
           return;
         }
         datafile.action = Fileaction.Ignore;
@@ -474,7 +474,7 @@ export class CompareComponent
       const visibleFiles = this.getVisibleFileNodes();
       visibleFiles.forEach((rowNode) => {
         const datafile = rowNode.data;
-        if (!datafile || datafile.hidden) {
+        if (!datafile) {
           return;
         }
         switch (datafile.status) {
@@ -501,7 +501,7 @@ export class CompareComponent
       const visibleFiles = this.getVisibleFileNodes();
       visibleFiles.forEach((rowNode) => {
         const datafile = rowNode.data;
-        if (!datafile || datafile.hidden) {
+        if (!datafile) {
           return;
         }
         switch (datafile.status) {

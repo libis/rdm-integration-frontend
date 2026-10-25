@@ -303,7 +303,6 @@ describe('CompareComponent', () => {
         id: 'file1',
         name: 'test.txt',
         path: '',
-        hidden: false,
         attributes: { isFile: true },
         action: Fileaction.Copy,
       } as any;
@@ -412,22 +411,22 @@ describe('CompareComponent', () => {
       id: string,
       status: Filestatus,
       action: Fileaction = Fileaction.Ignore,
-      hidden = false,
     ): Datafile =>
       ({
         id,
         name: 'f',
         path: '',
-        hidden,
         status,
         action,
         attributes: { isFile: true },
       }) as unknown as Datafile;
 
+    // The status filter shows the new files only.
     it('noActionSelection resets only visible nodes', () => {
-      const visible = makeDatafile('v', Filestatus.New, Fileaction.Copy, false);
-      const hidden = makeDatafile('h', Filestatus.New, Fileaction.Delete, true);
+      const visible = makeDatafile('v', Filestatus.New, Fileaction.Copy);
+      const hidden = makeDatafile('h', Filestatus.Deleted, Fileaction.Delete);
       component.data.set({ id: 'test', data: [visible, hidden] } as any);
+      component.selectedFilterItems.set([component.filterItems[0]]);
 
       component.noActionSelection();
       const map = component.rowNodeMap();
@@ -494,7 +493,6 @@ describe('CompareComponent', () => {
           path: '',
           status: Filestatus.New,
           action: Fileaction.Copy,
-          hidden: false,
           attributes: { isFile: true },
         } as unknown as Datafile,
         {
@@ -503,7 +501,6 @@ describe('CompareComponent', () => {
           path: '',
           status: Filestatus.Equal,
           action: Fileaction.Ignore,
-          hidden: false,
           attributes: { isFile: true },
         } as unknown as Datafile,
       ];
@@ -530,7 +527,6 @@ describe('CompareComponent', () => {
         id: 'file1',
         name: 'f',
         path: '',
-        hidden: false,
         status: Filestatus.New,
         action: Fileaction.Copy,
         attributes: { isFile: true },
@@ -550,7 +546,6 @@ describe('CompareComponent', () => {
         id: 'id',
         name: 'File',
         path: '',
-        hidden: false,
         attributes: { isFile: true },
       } as unknown as Datafile;
 
@@ -580,7 +575,6 @@ describe('CompareComponent', () => {
             path: 'folder',
             status: Filestatus.New,
             action: Fileaction.Ignore,
-            hidden: false,
             attributes: { isFile: true },
           },
           {
@@ -589,7 +583,6 @@ describe('CompareComponent', () => {
             path: 'folder',
             status: Filestatus.New,
             action: Fileaction.Ignore,
-            hidden: false,
             attributes: { isFile: true },
           },
         ],
@@ -953,7 +946,6 @@ describe('CompareComponent layout', () => {
         id: path ? `${path}/file${i}.txt` : `file${i}.txt`,
         name: `file${i}.txt`,
         path,
-        hidden: false,
         status: statuses[i % 4],
         action: Fileaction.Ignore,
         attributes: { isFile: true },
@@ -1152,7 +1144,6 @@ describe('CompareComponent table', () => {
           id: 'dir/a.txt',
           name: 'a.txt',
           path: 'dir',
-          hidden: false,
           status: Filestatus.New,
           action: Fileaction.Ignore,
           attributes: { isFile: true },
@@ -1161,7 +1152,6 @@ describe('CompareComponent table', () => {
           id: 'b.txt',
           name: 'b.txt',
           path: '',
-          hidden: false,
           status: Filestatus.Equal,
           action: Fileaction.Ignore,
           attributes: { isFile: true },

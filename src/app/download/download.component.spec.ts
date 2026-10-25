@@ -177,7 +177,6 @@ class MockUtilsService {
         id: '',
         name: '',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       } as Datafile,
       children: [],
@@ -337,7 +336,7 @@ describe('DownloadComponent', () => {
   it('downloadDisabled true when no selected download actions', () => {
     initComponent();
     component.rowNodeMap().set('', {
-      data: { id: '', name: '', path: '', hidden: false },
+      data: { id: '', name: '', path: '' },
     });
     expect(component.downloadDisabled()).toBeTrue();
   });
@@ -359,7 +358,6 @@ describe('DownloadComponent', () => {
         id: '',
         name: '',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [],
@@ -571,7 +569,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap().set('1:file', { data: df });
@@ -595,7 +592,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap().set('1:file', { data: df });
@@ -623,7 +619,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap().set('1:file', { data: df });
@@ -647,7 +642,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap().set('1:file', { data: df });
@@ -678,7 +672,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap().set('1:file', { data: df });
@@ -1001,7 +994,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Download,
     } as any;
     component.rowNodeMap().set('1', { data: df });
@@ -1020,7 +1012,6 @@ describe('DownloadComponent', () => {
       id: '1',
       name: 'f',
       path: '',
-      hidden: false,
       action: Fileaction.Ignore,
     } as any;
     component.rowNodeMap().set('1', { data: df });
@@ -1042,14 +1033,12 @@ describe('DownloadComponent', () => {
           id: 'b',
           name: 'B',
           path: '',
-          hidden: false,
           action: Fileaction.Download,
         } as Datafile,
         {
           id: 'a',
           name: 'A',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
         } as Datafile,
       ],
@@ -1072,7 +1061,6 @@ describe('DownloadComponent', () => {
           id: 'file1.txt',
           name: 'file1.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1083,7 +1071,6 @@ describe('DownloadComponent', () => {
           id: 'data/file2.csv',
           name: 'file2.csv',
           path: 'data',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1094,7 +1081,6 @@ describe('DownloadComponent', () => {
           id: 'file3.dat',
           name: 'file3.dat',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1128,7 +1114,6 @@ describe('DownloadComponent', () => {
           id: 'file1.txt',
           name: 'file1.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1157,7 +1142,6 @@ describe('DownloadComponent', () => {
           id: 'file1.txt',
           name: 'file1.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1188,7 +1172,6 @@ describe('DownloadComponent', () => {
           id: 'file1.txt',
           name: 'file1.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1218,7 +1201,6 @@ describe('DownloadComponent', () => {
           id: 'file-old.txt',
           name: 'file-old.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1244,7 +1226,6 @@ describe('DownloadComponent', () => {
           id: 'file-new.txt',
           name: 'file-new.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             isFile: true,
@@ -1287,7 +1268,6 @@ describe('DownloadComponent', () => {
           id: 'stale-file',
           name: 'stale-file.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
         } as Datafile,
       ],
@@ -1316,7 +1296,6 @@ describe('DownloadComponent', () => {
           id: 'first-file',
           name: 'first-file.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
         } as Datafile,
       ],
@@ -1328,7 +1307,6 @@ describe('DownloadComponent', () => {
           id: 'second-file',
           name: 'second-file.txt',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
         } as Datafile,
       ],
@@ -1655,7 +1633,6 @@ describe('DownloadComponent', () => {
           id,
           name: id,
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: { isFile: true },
         }) as Datafile;
@@ -1972,7 +1949,6 @@ describe('DownloadComponent', () => {
           id: '',
           name: '',
           path: '',
-          hidden: false,
           action: Fileaction.Download,
         },
         children: [],
@@ -2122,7 +2098,6 @@ describe('DownloadComponent', () => {
           id: '123',
           name: 'test.txt',
           path: '/test.txt',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             destinationFile: { id: 123 } as any,
@@ -2136,7 +2111,6 @@ describe('DownloadComponent', () => {
           id: '',
           name: '',
           path: '',
-          hidden: false,
           action: Fileaction.Ignore,
         } as Datafile,
         children: [fileNode],
@@ -2160,7 +2134,6 @@ describe('DownloadComponent', () => {
           id: '123',
           name: 'test.txt',
           path: '/test.txt',
-          hidden: false,
           action: Fileaction.Ignore,
           attributes: {
             destinationFile: { id: 123 } as any,
@@ -2638,7 +2611,6 @@ describe('DownloadComponent layout', () => {
         id: 'dir',
         name: 'dir',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [],
@@ -2649,7 +2621,6 @@ describe('DownloadComponent layout', () => {
         id: 'dir/f',
         name: 'f',
         path: 'dir',
-        hidden: false,
         action: Fileaction.Ignore,
         attributes: { isFile: true },
       },
@@ -2663,7 +2634,6 @@ describe('DownloadComponent layout', () => {
         id: '',
         name: '',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [folder],
@@ -2761,7 +2731,6 @@ describe('DownloadComponent layout', () => {
             id: `file${i}.csv`,
             name: `file${i}.csv`,
             path: '',
-            hidden: false,
             action: Fileaction.Ignore,
             attributes: { isFile: true },
           },
@@ -2805,7 +2774,6 @@ describe('DownloadComponent layout', () => {
             id: `file${i}.csv`,
             name: `file${i}.csv`,
             path: '',
-            hidden: false,
             action: Fileaction.Ignore,
             attributes: { isFile: true },
           },

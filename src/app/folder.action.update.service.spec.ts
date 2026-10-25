@@ -17,7 +17,6 @@ describe('FolderActionUpdateService', () => {
         id: `${status}:${action}`,
         name: '',
         path: '',
-        hidden: false,
         action,
         status,
       },
@@ -26,7 +25,7 @@ describe('FolderActionUpdateService', () => {
 
   it('aggregates all equal -> Ignore', () => {
     const root: TreeNode<Datafile> = {
-      data: { id: 'root', name: '', path: '', hidden: false },
+      data: { id: 'root', name: '', path: '' },
       children: [
         node(Fileaction.Ignore, Filestatus.Equal),
         node(Fileaction.Ignore, Filestatus.Equal),
@@ -38,7 +37,7 @@ describe('FolderActionUpdateService', () => {
 
   it('aggregates all deleted -> Delete', () => {
     const root: TreeNode<Datafile> = {
-      data: { id: 'root', name: '', path: '', hidden: false },
+      data: { id: 'root', name: '', path: '' },
       children: [
         node(Fileaction.Delete, Filestatus.Deleted),
         node(Fileaction.Delete, Filestatus.Deleted),
@@ -50,7 +49,7 @@ describe('FolderActionUpdateService', () => {
 
   it('aggregates matching status/action pairs -> Update', () => {
     const root: TreeNode<Datafile> = {
-      data: { id: 'root', name: '', path: '', hidden: false },
+      data: { id: 'root', name: '', path: '' },
       children: [
         node(Fileaction.Copy, Filestatus.New),
         node(Fileaction.Ignore, Filestatus.Equal),
@@ -64,7 +63,7 @@ describe('FolderActionUpdateService', () => {
     const map = new Map<string, TreeNode<Datafile>>();
     // root folder
     map.set('', {
-      data: { id: '', name: '', path: '', hidden: false },
+      data: { id: '', name: '', path: '' },
       children: [],
     });
     // file nodes with isFile attribute so they retain action
@@ -73,7 +72,6 @@ describe('FolderActionUpdateService', () => {
         id: 'f1',
         name: 'f1',
         path: '',
-        hidden: false,
         action: Fileaction.Copy,
         status: Filestatus.New,
         attributes: { isFile: true },
@@ -84,7 +82,6 @@ describe('FolderActionUpdateService', () => {
         id: 'f2',
         name: 'f2',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
         status: Filestatus.Equal,
         attributes: { isFile: true },
@@ -101,7 +98,6 @@ describe('FolderActionUpdateService', () => {
         id: 'folder/f1',
         name: 'f1',
         path: 'folder',
-        hidden: false,
         action: Fileaction.Copy,
         status: Filestatus.New,
         attributes: { isFile: true },
@@ -112,7 +108,6 @@ describe('FolderActionUpdateService', () => {
         id: 'folder/f2',
         name: 'f2',
         path: 'folder',
-        hidden: false,
         action: Fileaction.Ignore,
         status: Filestatus.Equal,
         attributes: { isFile: true },
@@ -123,7 +118,6 @@ describe('FolderActionUpdateService', () => {
         id: 'folder',
         name: 'folder',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [file1, file2],
@@ -133,7 +127,6 @@ describe('FolderActionUpdateService', () => {
         id: '',
         name: '',
         path: '',
-        hidden: false,
         action: Fileaction.Ignore,
       },
       children: [folder],

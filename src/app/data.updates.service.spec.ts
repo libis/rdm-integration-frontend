@@ -33,8 +33,8 @@ describe('DataUpdatesService', () => {
     service
       .updateData(
         [
-          { id: 'b', name: 'b', path: '', hidden: false },
-          { id: 'a', name: 'a', path: '', hidden: false },
+          { id: 'b', name: 'b', path: '' },
+          { id: 'a', name: 'a', path: '' },
         ] as any,
         'doi:123',
       )
@@ -45,8 +45,8 @@ describe('DataUpdatesService', () => {
     const req = http.expectOne('api/common/compare');
     req.flush({
       data: [
-        { id: 'b', name: 'b', path: '', hidden: false },
-        { id: 'a', name: 'a', path: '', hidden: false },
+        { id: 'b', name: 'b', path: '' },
+        { id: 'a', name: 'a', path: '' },
       ],
     });
   });
@@ -64,8 +64,8 @@ describe('DataUpdatesService', () => {
     service
       .updateData(
         [
-          { id: undefined, name: 'b', path: '', hidden: false },
-          { id: 'a', name: 'a', path: '', hidden: false },
+          { id: undefined, name: 'b', path: '' },
+          { id: 'a', name: 'a', path: '' },
         ] as any,
         'doi:789',
       )
@@ -76,8 +76,8 @@ describe('DataUpdatesService', () => {
     const req = http.expectOne('api/common/compare');
     req.flush({
       data: [
-        { id: undefined, name: 'b', path: '', hidden: false },
-        { id: 'a', name: 'a', path: '', hidden: false },
+        { id: undefined, name: 'b', path: '' },
+        { id: 'a', name: 'a', path: '' },
       ],
     });
   });

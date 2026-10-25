@@ -333,7 +333,6 @@ describe('ComputeComponent', () => {
       id: 'f1',
       path: 'x',
       name: 'f1',
-      hidden: false,
       status: Filestatus.New,
       action: Fileaction.Copy,
     };
@@ -418,7 +417,6 @@ describe('ComputeComponent', () => {
       id: '1',
       name: 'file',
       path: '',
-      hidden: false,
       status: Filestatus.New,
       action: Fileaction.Copy,
     } as any;
@@ -603,7 +601,6 @@ describe('ComputeComponent', () => {
       id,
       name: id,
       path: '',
-      hidden: false,
       status: Filestatus.Equal,
       action: Fileaction.Ignore,
       attributes: { isFile: true },
@@ -826,7 +823,6 @@ describe('ComputeComponent layout and row state', () => {
     id,
     name: id,
     path: '',
-    hidden: false,
     status: Filestatus.Equal,
     action: Fileaction.Ignore,
     attributes: { isFile: true },
@@ -899,7 +895,7 @@ describe('ComputeComponent layout and row state', () => {
     component.rootNodeChildren.set([
       {
         key: 'dir',
-        data: { id: 'dir', name: 'dir', path: '', hidden: false },
+        data: { id: 'dir', name: 'dir', path: '' },
         children: [
           { key: 'dir/run.py:file', data: { ...file('run.py'), path: 'dir' } },
         ],

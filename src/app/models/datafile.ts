@@ -22,7 +22,6 @@ export interface Datafile {
   name?: string;
   status?: Filestatus;
   action?: Fileaction;
-  hidden?: boolean;
   id?: string;
   attributes?: Attributes;
 }

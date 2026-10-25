@@ -25,7 +25,6 @@ describe('SubmittedFileComponent', () => {
       id: '1',
       name: 'file.txt',
       path: 'docs',
-      hidden: false,
       action: Fileaction.Copy,
       status: Filestatus.Equal,
     } as Datafile;
