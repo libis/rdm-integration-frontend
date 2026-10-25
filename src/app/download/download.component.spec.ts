@@ -195,6 +195,8 @@ class MockUtilsService {
   addChild(): void {
     // already linked in mapDatafiles
   }
+
+  buildFileTree = UtilsService.prototype.buildFileTree;
 }
 
 class MockPluginService {
