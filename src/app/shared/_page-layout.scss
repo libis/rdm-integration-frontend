@@ -38,10 +38,17 @@
   gap: 1rem;
 }
 
-// A column of a split: a flex column, so the table in it can fill it.
-@mixin split-column {
+// A pane of a split: half of the width, and it may get narrower than its
+// content.
+@mixin split-pane {
   flex: 1 1 50%;
   min-width: 0;
+}
+
+// A column of a split: a pane that is a flex column, so the table in it can
+// fill it.
+@mixin split-column {
+  @include split-pane;
   min-height: 0;
   display: flex;
   flex-direction: column;

@@ -22,8 +22,7 @@
 
 // An expanded folder tree scrolls instead of being cut off at the bottom.
 .download-split-right {
-  flex: 1 1 50%;
-  min-width: 0;
+  @include page-layout.split-pane;
   overflow-x: hidden;
   overflow-y: auto;
 }

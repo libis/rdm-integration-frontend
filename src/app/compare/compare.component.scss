@@ -16,8 +16,8 @@
   overflow: auto;
 }
 
-// At least 12rem of rows below the header; a window too small for that
-// scrolls the page instead of hiding the table.
+// At least 12rem of rows below the header; in a window too small for that
+// the page host scrolls instead of hiding the table.
 .treetable-container {
   @include page-layout.fill-rest(15rem);
 }
