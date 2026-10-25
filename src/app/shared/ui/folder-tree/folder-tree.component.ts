@@ -80,15 +80,24 @@ export class FolderTreeComponent {
   }
 
   onKeydown(event: KeyboardEvent, node: TreeNode<string>): void {
-    if (event.key === 'ArrowRight' && !this.tree().isExpanded(node)) {
-      event.preventDefault();
-      this.toggle(node);
-    } else if (event.key === 'ArrowLeft' && this.tree().isExpanded(node)) {
-      event.preventDefault();
+    const expanded = this.tree().isExpanded(node);
+    if (
+      (event.key === 'ArrowRight' && !expanded) ||
+      (event.key === 'ArrowLeft' && expanded)
+    ) {
       this.toggle(node);
     } else if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
       this.select(node);
+    } else if (event.key !== '*') {
+      // The CDK tree moves the focus: ArrowRight into an expanded node,
+      // ArrowLeft to the parent, ArrowUp, ArrowDown, Home, End and typeahead.
+      return;
     }
+    // Handled here, so the key must not reach the CDK tree as well: its key
+    // manager would act on the changed state and move the focus in the same
+    // press. "*" would expand every sibling without nodeExpand, so without
+    // their listings, and is ignored.
+    event.preventDefault();
+    event.stopPropagation();
   }
 }

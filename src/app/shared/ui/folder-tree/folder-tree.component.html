@@ -20,7 +20,6 @@
     [isExpandable]="isExpandable(node)"
     cdkTreeNodePadding
     [cdkTreeNodePaddingIndent]="16"
-    tabindex="0"
     (keydown)="onKeydown($event, node)"
   >
     @if (isExpandable(node)) {
