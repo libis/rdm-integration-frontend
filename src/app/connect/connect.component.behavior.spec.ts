@@ -15,7 +15,7 @@ import {
   withDisabledInitialNavigation,
 } from '@angular/router';
 import { SelectItem } from '../models/select-item';
-import { from, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -33,9 +33,11 @@ import {
 } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 import { settlePromises } from '../../testing/promises';
+import { answerLater } from '../../testing/answer-later';
 import {
   openSelect,
   pickSelectOption,
+  selectPanelLabels,
   typeInSelectFilter,
 } from '../../testing/select';
 import { ConnectComponent } from './connect.component';
@@ -988,17 +990,22 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     // The dataset select drives the page with three bindings: (opened) loads
     // the first list, (filterChange) searches after the debounce and
-    // (valueChange) turns "+ Create new dataset" into a new dataset.
+    // (valueChange) turns "+ Create new dataset" into a new dataset. The
+    // search finds a dataset the first list lacks, so the panel shows what
+    // each answer holds.
     it('loads, searches and picks a dataset through the select', async () => {
       pluginService.datasetFieldEditable$ = signal(false).asReadonly();
       const fixture = TestBed.createComponent(ConnectComponent);
       const comp = fixture.componentInstance;
       fixture.detectChanges();
       const dvLookup = TestBed.inject(DvObjectLookupService);
-      // Answered later, as HTTP is: the page reads its subscription in the
-      // callback.
-      const getItems = spyOn(dvLookup, 'getItems').and.callFake(() =>
-        from(Promise.resolve([{ label: 'Dataset A', value: 'doi:10.1/A' }])),
+      const first = [
+        { label: 'Dataset A', value: 'doi:10.1/A' },
+        { label: 'Dataset B', value: 'doi:10.1/B' },
+      ];
+      const found = [{ label: 'Dataset C', value: 'doi:10.1/C' }];
+      const getItems = spyOn(dvLookup, 'getItems').and.callFake(
+        (_parent, _type, searchTerm) => answerLater(searchTerm ? found : first),
       );
 
       openSelect(fixture.nativeElement, 'datasetId');
@@ -1009,10 +1016,27 @@ describe('ConnectComponent additional behavior/validation', () => {
         undefined,
         undefined,
       );
+      expect(selectPanelLabels()).toEqual([
+        '+ Create new dataset',
+        'Loading...',
+      ]);
+      jasmine.clock().tick(0);
       await settlePromises();
       fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        '+ Create new dataset',
+        'Dataset A',
+        'Dataset B',
+      ]);
 
-      typeInSelectFilter('dat');
+      typeInSelectFilter('se');
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        'start typing to search (at least three letters)',
+      ]);
+      typeInSelectFilter('set');
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['searching "set"...']);
       jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
       expect(getItems).toHaveBeenCalledTimes(1);
       jasmine.clock().tick(1);
@@ -1020,12 +1044,28 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(getItems.calls.mostRecent().args).toEqual([
         '',
         'Dataset',
-        'dat',
+        'set',
         undefined,
       ]);
+      jasmine.clock().tick(0);
       await settlePromises();
       fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        '+ Create new dataset',
+        'Dataset C',
+      ]);
 
+      pickSelectOption('Dataset C');
+      fixture.detectChanges();
+      expect(comp.datasetId()).toBe('doi:10.1/C');
+
+      // The list holds the search answer, so opening asks for nothing.
+      openSelect(fixture.nativeElement, 'datasetId');
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        '+ Create new dataset',
+        'Dataset C',
+      ]);
       pickSelectOption('+ Create new dataset');
       fixture.detectChanges();
       expect(comp.datasetId()).toBe(`:${comp.NEW_DATASET}`);

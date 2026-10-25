@@ -30,9 +30,11 @@ import {
   scrolledContainers,
 } from '../../testing/page-layout';
 import { settlePromises } from '../../testing/promises';
+import { answerLater } from '../../testing/answer-later';
 import {
   openSelect,
   pickSelectOption,
+  selectPanelLabels,
   typeInSelectFilter,
 } from '../../testing/select';
 import { treegridStructure } from '../../testing/treegrid';
@@ -550,18 +552,20 @@ describe('DdiCdiComponent', () => {
 
   // The dataset select drives the page with three bindings: (opened) loads
   // the first list, (filterChange) searches after the debounce and
-  // (valueChange) lists the files of the dataset picked.
+  // (valueChange) lists the files of the dataset picked. The search finds a
+  // dataset the first list lacks, so the panel shows what each answer holds.
   it('loads, searches and picks a dataset through the select', async () => {
     pluginServiceStub.datasetFieldEditable$.set(false);
-    dvObjectLookupServiceStub.getItems.and.returnValue(
-      of([
-        { label: 'Dataset A', value: 'doi:10.1/A' },
-        { label: 'Dataset B', value: 'doi:10.1/B' },
-      ]),
+    const first = [
+      { label: 'Dataset A', value: 'doi:10.1/A' },
+      { label: 'Dataset B', value: 'doi:10.1/B' },
+    ];
+    const found = [{ label: 'Dataset C', value: 'doi:10.1/C' }];
+    const getItems = dvObjectLookupServiceStub.getItems.and.callFake(
+      (_parent, _type, searchTerm) => answerLater(searchTerm ? found : first),
     );
     const fixture = TestBed.createComponent(DdiCdiComponent);
     fixture.detectChanges();
-    const getItems = dvObjectLookupServiceStub.getItems;
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date(2026, 9, 25));
     try {
@@ -573,10 +577,20 @@ describe('DdiCdiComponent', () => {
         undefined,
         undefined,
       );
+      expect(selectPanelLabels()).toEqual(['Loading...']);
+      jasmine.clock().tick(0);
       await settlePromises();
       fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['Dataset A', 'Dataset B']);
 
-      typeInSelectFilter('dat');
+      typeInSelectFilter('se');
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        'start typing to search (at least three letters)',
+      ]);
+      typeInSelectFilter('set');
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['searching "set"...']);
       jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
       expect(getItems).toHaveBeenCalledTimes(1);
       jasmine.clock().tick(1);
@@ -584,16 +598,18 @@ describe('DdiCdiComponent', () => {
       expect(getItems.calls.mostRecent().args).toEqual([
         '',
         'Dataset',
-        'dat',
+        'set',
         undefined,
       ]);
+      jasmine.clock().tick(0);
       await settlePromises();
       fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['Dataset C']);
 
-      pickSelectOption('Dataset B');
+      pickSelectOption('Dataset C');
       fixture.detectChanges();
       expect(dataServiceStub.getDdiCdiCompatibleFiles).toHaveBeenCalledOnceWith(
-        'doi:10.1/B',
+        'doi:10.1/C',
         undefined,
       );
       expect(getItems).toHaveBeenCalledTimes(2);

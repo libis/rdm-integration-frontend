@@ -15,15 +15,27 @@ export function openSelect(host: HTMLElement, inputId: string): void {
   button.click();
 }
 
-/** Types the text into the filter of the open panel, one letter at a time. */
+/**
+ * Types the text into the filter of the open panel, one letter at a time,
+ * going on from what the filter holds when that is the start of the text.
+ */
 export function typeInSelectFilter(text: string): void {
   const filter = document.querySelector(
     '.cdk-overlay-container input[placeholder="Filter"]',
   ) as HTMLInputElement;
-  for (let i = 1; i <= text.length; i++) {
+  const typed = text.startsWith(filter.value) ? filter.value.length : 0;
+  for (let i = typed + 1; i <= text.length; i++) {
     filter.value = text.slice(0, i);
     filter.dispatchEvent(new Event('input'));
   }
+}
+
+/** The labels of the options the open panel shows, in their order. */
+export function selectPanelLabels(): string[] {
+  return Array.from(
+    document.querySelectorAll('.cdk-overlay-container .app-select-option'),
+    (o) => o.textContent!.trim(),
+  );
 }
 
 /** Clicks the option of the open panel whose text contains the label. */
