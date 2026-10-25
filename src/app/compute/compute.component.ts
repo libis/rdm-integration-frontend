@@ -129,6 +129,8 @@ export class ComputeComponent
   req?: ComputeRequest;
   /** The file listing of the dataset last picked. */
   private listingSubscription?: Subscription;
+  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
+  private resetGeneration = 0;
 
   // Direct references to pluginService signals (no wrapper computed needed)
   readonly showDVToken = this.pluginService.showDVToken$;
@@ -169,13 +171,13 @@ export class ComputeComponent
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) => {
-          // The search has just been sent with the current token; its answer
-          // is dropped when the token has changed since.
-          const token = this.dataverseToken();
+          // The search has just been sent; its answer is dropped when a token
+          // change has reset the page since.
+          const generation = this.resetGeneration;
           x.then((v) => {
-            if (this.dataverseToken() === token) this.doiItems.set(v);
+            if (this.resetGeneration === generation) this.doiItems.set(v);
           }).catch((err) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             this.doiItems.set([
               {
                 label: `search failed: ${err.message}`,
@@ -221,6 +223,7 @@ export class ComputeComponent
     if (before === undefined || before.value === this.dataverseToken()) {
       return;
     }
+    this.resetGeneration++;
     // A file listing for the old token would only keep the spinner going.
     if (this.listingSubscription && !this.listingSubscription.closed) {
       this.listingSubscription.unsubscribe();
@@ -254,15 +257,15 @@ export class ComputeComponent
     this.datasetId.set(undefined);
 
     // take(1) ends the request with its answer, also a synchronous one. An
-    // answer to a request with an older token is dropped: the token change
-    // reset the list, and the next opening asks again.
-    const token = this.dataverseToken();
+    // answer that a token change made stale is dropped: the change reset the
+    // list, and the next opening asks again.
+    const generation = this.resetGeneration;
     this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, token)
+      .getItems('', 'Dataset', undefined, this.dataverseToken())
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
-          if (this.dataverseToken() !== token) return;
+          if (this.resetGeneration !== generation) return;
           if (items && items.length > 0) {
             this.doiItems.set(items);
             this.datasetId.set(undefined);
@@ -272,7 +275,7 @@ export class ComputeComponent
           }
         },
         error: (err) => {
-          if (this.dataverseToken() !== token) return;
+          if (this.resetGeneration !== generation) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems.set([]);
           this.datasetId.set(undefined);
