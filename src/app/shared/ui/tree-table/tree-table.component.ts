@@ -16,7 +16,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { TreeNode } from '../../../models/tree-node';
-import { flattenVisibleRows, TreeRow } from './tree-rows';
+import { expansionOf, flattenVisibleRows, TreeRow } from './tree-rows';
 import {
   TreeTableHeaderDirective,
   TreeTableRowDirective,
@@ -42,11 +42,24 @@ export class TreeTableComponent<T = unknown> {
   readonly rowTemplate = contentChild.required(TreeTableRowDirective<T>);
   readonly viewport = viewChild(CdkVirtualScrollViewport);
 
+  // The expansion is mutated in place on the nodes; the version tells every
+  // reader that it changed.
   private readonly version = signal(0);
   readonly rows = computed<TreeRow<T>[]>(() => {
     this.version();
     return flattenVisibleRows(this.nodes());
   });
+
+  /**
+   * Whether the node is expanded, or null for a node without children. Read
+   * through the version signal, so every view that shows the state of a node
+   * (both togglers of a compare row) refreshes on each toggle, not only the
+   * one that was clicked.
+   */
+  expandedState(node: TreeNode<T>): boolean | null {
+    this.version();
+    return expansionOf(node);
+  }
 
   toggle(node: TreeNode<T>): void {
     node.expanded = !node.expanded;

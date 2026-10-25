@@ -1090,3 +1090,101 @@ describe('CompareComponent layout', () => {
     }
   });
 });
+
+// A folder with one file and a file at the root, rendered with the real
+// template: the folder row has a toggler in the source and in the destination
+// column.
+describe('CompareComponent table', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CompareComponent],
+      providers: [
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+        { provide: DataStateService, useClass: StubDataStateService },
+        { provide: DataUpdatesService, useClass: StubDataUpdatesService },
+        { provide: CredentialsService, useValue: createCredentialsStub() },
+        { provide: PluginService, useClass: StubPluginService },
+        {
+          provide: SnapshotStorageService,
+          useClass: StubSnapshotStorageService,
+        },
+        { provide: Router, useClass: StubRouter },
+      ],
+    }).compileComponents();
+  });
+
+  const render = async () => {
+    const fixture = TestBed.createComponent(CompareComponent);
+    fixture.componentInstance.data.set({
+      id: 'doi:10.1234/ABC',
+      data: [
+        {
+          id: 'dir/a.txt',
+          name: 'a.txt',
+          path: 'dir',
+          hidden: false,
+          status: Filestatus.New,
+          action: Fileaction.Ignore,
+          attributes: { isFile: true },
+        },
+        {
+          id: 'b.txt',
+          name: 'b.txt',
+          path: '',
+          hidden: false,
+          status: Filestatus.Equal,
+          action: Fileaction.Ignore,
+          attributes: { isFile: true },
+        },
+      ] as Datafile[],
+    });
+    fixture.componentInstance.loading.set(false);
+    await fixture.whenStable();
+    return fixture;
+  };
+
+  const rows = (fixture: ComponentFixture<CompareComponent>) =>
+    Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        'div[app-datafile]',
+      ),
+    );
+  const folderRow = (fixture: ComponentFixture<CompareComponent>) =>
+    rows(fixture).find((row) => row.querySelector('app-tree-toggler button'))!;
+
+  // The review's demo: after a click on the source toggler the destination
+  // toggler still showed a collapsed folder.
+  it('shows the same state in both togglers of a row after a click on either', async () => {
+    const fixture = await render();
+    const row = folderRow(fixture);
+    const togglers = () =>
+      Array.from(
+        row.querySelectorAll<HTMLButtonElement>('app-tree-toggler button'),
+      );
+    const icons = () =>
+      togglers().map((b) =>
+        b.querySelector('i')!.classList.contains('pi-chevron-down')
+          ? 'down'
+          : b.querySelector('i')!.classList.contains('pi-chevron-right')
+            ? 'right'
+            : 'none',
+      );
+    const expanded = () =>
+      togglers().map((b) => b.getAttribute('aria-expanded'));
+    expect(togglers().length).toBe(2);
+    expect(icons()).toEqual(['right', 'right']);
+
+    togglers()[0].click();
+    await fixture.whenStable();
+    expect(rows(fixture).length).toBe(3);
+    expect(icons()).toEqual(['down', 'down']);
+    expect(expanded()).toEqual(['true', 'true']);
+
+    togglers()[1].click();
+    await fixture.whenStable();
+    expect(rows(fixture).length).toBe(2);
+    expect(icons()).toEqual(['right', 'right']);
+    expect(expanded()).toEqual(['false', 'false']);
+  });
+});

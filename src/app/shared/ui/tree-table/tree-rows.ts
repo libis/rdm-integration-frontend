@@ -7,6 +7,11 @@ export interface TreeRow<T> {
   level: number;
 }
 
+/** Whether a node is expanded, or null for a node without children. */
+export function expansionOf<T>(node: TreeNode<T>): boolean | null {
+  return node.children?.length ? !!node.expanded : null;
+}
+
 export function flattenVisibleRows<T>(
   nodes: TreeNode<T>[],
   level = 0,
