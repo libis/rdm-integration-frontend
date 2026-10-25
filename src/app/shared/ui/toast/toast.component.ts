@@ -19,6 +19,10 @@ const WHITE_CLOSE: Record<ToastSeverity, boolean> = {
   info: false,
 };
 
+// The container is the live region and is there before the first toast, since screen readers
+// announce changes inside an existing region only. Each toast is read as one unit: errors as
+// assertive alerts, the other severities as polite status messages. A toast stays while the
+// pointer is over it or the focus is in it.
 @Component({
   selector: 'app-toast',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,12 +30,18 @@ const WHITE_CLOSE: Record<ToastSeverity, boolean> = {
     <div
       class="toast-container position-fixed end-0 p-3 app-toasts"
       aria-live="polite"
-      aria-atomic="true"
     >
       @for (toast of toasts.messages(); track toast.id) {
         <div
+          #toastEl
           [class]="'toast show ' + severityClass(toast.severity)"
-          role="alert"
+          [attr.role]="toast.severity === 'error' ? 'alert' : 'status'"
+          [attr.aria-live]="toast.severity === 'error' ? 'assertive' : 'polite'"
+          aria-atomic="true"
+          (mouseenter)="toasts.hold(toast.id, 'hover')"
+          (mouseleave)="toasts.release(toast.id, 'hover')"
+          (focusin)="toasts.hold(toast.id, 'focus')"
+          (focusout)="onFocusOut($event, toastEl, toast.id)"
         >
           <div class="d-flex">
             <div class="toast-body">
@@ -78,5 +88,11 @@ export class ToastComponent {
 
   whiteClose(severity: ToastSeverity): boolean {
     return WHITE_CLOSE[severity];
+  }
+
+  // Focus moving between the toast's own elements keeps it held.
+  onFocusOut(event: FocusEvent, toast: HTMLElement, id: number): void {
+    if (toast.contains(event.relatedTarget as Node | null)) return;
+    this.toasts.release(id, 'focus');
   }
 }

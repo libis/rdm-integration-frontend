@@ -5,6 +5,8 @@ import { ToastService } from './toast.service';
 describe('ToastService and ToastComponent', () => {
   beforeEach(async () => {
     jasmine.clock().install();
+    // The paused toasts keep their remaining life, measured with Date.now().
+    jasmine.clock().mockDate(new Date(2026, 9, 25));
     await TestBed.configureTestingModule({
       imports: [ToastComponent],
     }).compileComponents();
@@ -43,6 +45,127 @@ describe('ToastService and ToastComponent', () => {
     ).click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.toast')).toBeNull();
+  });
+
+  const showOne = (life: number) => {
+    const fixture = TestBed.createComponent(ToastComponent);
+    TestBed.inject(ToastService).show({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'read me',
+      life,
+    });
+    fixture.detectChanges();
+    const toast = (): HTMLElement | null =>
+      fixture.nativeElement.querySelector('.toast');
+    const tick = (ms: number) => {
+      jasmine.clock().tick(ms);
+      fixture.detectChanges();
+    };
+    return { fixture, toast, tick };
+  };
+
+  it('announces errors assertively as alerts and the other severities politely as status', () => {
+    const fixture = TestBed.createComponent(ToastComponent);
+    const service = TestBed.inject(ToastService);
+    for (const severity of ['error', 'success', 'warning', 'info'] as const) {
+      service.show({ severity, summary: severity, detail: 'x', life: 0 });
+    }
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const container = host.querySelector('.toast-container')!;
+    // The live region is there before the first toast, and each toast is read as one unit.
+    expect(container.getAttribute('aria-live')).toBe('polite');
+    expect(container.hasAttribute('aria-atomic')).toBeFalse();
+    const toasts = Array.from(host.querySelectorAll('.toast'));
+    expect(
+      toasts.map((t) => [
+        t.getAttribute('role'),
+        t.getAttribute('aria-live'),
+        t.getAttribute('aria-atomic'),
+      ]),
+    ).toEqual([
+      ['alert', 'assertive', 'true'],
+      ['status', 'polite', 'true'],
+      ['status', 'polite', 'true'],
+      ['status', 'polite', 'true'],
+    ]);
+  });
+
+  it('holds the toast while the pointer is over it and keeps the rest of its life after', () => {
+    const { toast, tick } = showOne(1000);
+    tick(600);
+    toast()!.dispatchEvent(new MouseEvent('mouseenter'));
+    tick(5000);
+    expect(toast()).not.toBeNull();
+    toast()!.dispatchEvent(new MouseEvent('mouseleave'));
+    tick(399);
+    expect(toast()).not.toBeNull();
+    tick(2);
+    expect(toast()).toBeNull();
+  });
+
+  it('holds the toast while the focus is in it and lets it go when the focus leaves', () => {
+    const { fixture, toast, tick } = showOne(1000);
+    const close = toast()!.querySelector('.btn-close') as HTMLButtonElement;
+    tick(300);
+    close.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    tick(5000);
+    expect(toast()).not.toBeNull();
+    // Focus moving within the toast keeps it.
+    close.dispatchEvent(
+      new FocusEvent('focusout', { bubbles: true, relatedTarget: toast() }),
+    );
+    tick(5000);
+    expect(toast()).not.toBeNull();
+    close.dispatchEvent(
+      new FocusEvent('focusout', {
+        bubbles: true,
+        relatedTarget: document.body,
+      }),
+    );
+    tick(699);
+    expect(toast()).not.toBeNull();
+    tick(2);
+    expect(fixture.nativeElement.querySelector('.toast')).toBeNull();
+  });
+
+  it('stays while either the pointer or the focus holds it', () => {
+    const { toast, tick } = showOne(1000);
+    const close = toast()!.querySelector('.btn-close') as HTMLButtonElement;
+    toast()!.dispatchEvent(new MouseEvent('mouseenter'));
+    close.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    toast()!.dispatchEvent(new MouseEvent('mouseleave'));
+    tick(5000);
+    expect(toast()).not.toBeNull();
+    toast()!.dispatchEvent(new MouseEvent('mouseenter'));
+    close.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    tick(5000);
+    expect(toast()).not.toBeNull();
+    toast()!.dispatchEvent(new MouseEvent('mouseleave'));
+    tick(1001);
+    expect(toast()).toBeNull();
+  });
+
+  it('keeps a toast without a life until it is closed, also after a hover', () => {
+    const { toast, tick } = showOne(0);
+    toast()!.dispatchEvent(new MouseEvent('mouseenter'));
+    toast()!.dispatchEvent(new MouseEvent('mouseleave'));
+    tick(60000);
+    expect(toast()).not.toBeNull();
+  });
+
+  it('cancels the timer of a toast closed by hand', () => {
+    const fixture = TestBed.createComponent(ToastComponent);
+    const service = TestBed.inject(ToastService);
+    service.show({ severity: 'info', summary: 'a', detail: 'a', life: 1000 });
+    fixture.detectChanges();
+    const dismiss = spyOn(service, 'dismiss').and.callThrough();
+    (
+      fixture.nativeElement.querySelector('.btn-close') as HTMLButtonElement
+    ).click();
+    jasmine.clock().tick(2000);
+    expect(dismiss).toHaveBeenCalledTimes(1);
   });
 });
 
