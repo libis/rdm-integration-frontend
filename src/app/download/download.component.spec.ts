@@ -984,6 +984,8 @@ describe('DownloadComponent', () => {
 
   it('downloadDisabled requires option and at least one download action', () => {
     initComponent();
+    // With a dataset selected, the option and the actions decide.
+    component.datasetId.set('doi:10.1/D');
     const df: Datafile = {
       id: '1',
       name: 'f',
@@ -1001,6 +1003,8 @@ describe('DownloadComponent', () => {
 
   it('downloadDisabled recomputes after in-place row action mutation when refresh is triggered', () => {
     initComponent();
+    // With a dataset selected, the option and the actions decide.
+    component.datasetId.set('doi:10.1/D');
     const df: Datafile = {
       id: '1',
       name: 'f',
@@ -1547,6 +1551,72 @@ describe('DownloadComponent', () => {
         'token-1',
         true,
       );
+    });
+
+    // A dataset with two files, listed, every file marked for download and a
+    // destination folder chosen, so Start transfer is enabled.
+    const listTwoFiles = async (comp: DownloadComponent) => {
+      const file = (id: string) =>
+        ({
+          id,
+          name: id,
+          path: '',
+          hidden: false,
+          action: Fileaction.Ignore,
+          attributes: { isFile: true },
+        }) as Datafile;
+      spyOn(dataService, 'getDownloadableFiles').and.returnValue(
+        of({
+          id: 'doi:10.1/D',
+          url: 'https://example.org/ds',
+          data: [file('a.csv'), file('b.csv')],
+        }),
+      );
+      selectDataset(comp);
+      comp.onDatasetChange();
+      comp.toggleAction();
+      comp.option.set('/home/alice/');
+      await fixture.whenStable();
+    };
+    const startTransfer = () =>
+      Array.from(
+        fixture.nativeElement.querySelectorAll(
+          'button',
+        ) as NodeListOf<HTMLButtonElement>,
+      ).find((b) => b.textContent!.includes('Start transfer'))!;
+    const fileRows = () =>
+      fixture.nativeElement.querySelectorAll('div[app-downloadablefile]')
+        .length;
+
+    // A token edit cleared only the dataset select: the rows of the old
+    // dataset stayed, and Start transfer posted them without a persistentId.
+    it('clears the rows of the old dataset on a token edit, so Start transfer posts nothing', async () => {
+      const post = spyOn(submit, 'download').and.callThrough();
+      const comp = initComponent();
+      await settlePromises();
+      await listTwoFiles(comp);
+      expect(fileRows()).toBe(2);
+      expect(startTransfer().disabled).toBeFalse();
+
+      editToken('token-1');
+      await fixture.whenStable();
+      expect(comp.data()).toBeUndefined();
+      expect(comp.rootNodeChildren()).toEqual([]);
+      expect(comp.rowNodeMap().size).toBe(0);
+      expect(fileRows()).toBe(0);
+      expect(startTransfer().disabled).toBeTrue();
+      startTransfer().click();
+      expect(post).not.toHaveBeenCalled();
+    });
+
+    it('keeps Start transfer disabled while no dataset is selected', async () => {
+      const comp = initComponent();
+      await settlePromises();
+      await listTwoFiles(comp);
+      expect(startTransfer().disabled).toBeFalse();
+      comp.datasetId.set(undefined);
+      await fixture.whenStable();
+      expect(startTransfer().disabled).toBeTrue();
     });
 
     it('resets the dataset list and the selection on an edit and stores the token only with storeDvToken', async () => {

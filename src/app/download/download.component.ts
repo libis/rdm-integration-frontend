@@ -235,6 +235,7 @@ export class DownloadComponent
 
   readonly downloadDisabled = computed(() => {
     return (
+      !this.datasetId() ||
       this.downloadRequested() ||
       this.downloadInProgress() ||
       this.statusPollingActive() ||
@@ -667,6 +668,11 @@ export class DownloadComponent
     }
     this.doiItems.set([]);
     this.datasetId.set(undefined);
+    // The rows of the old dataset go with it, so Start transfer has nothing
+    // to post.
+    this.data.set(undefined);
+    this.rootNodeChildren.set([]);
+    this.rowNodeMap.set(new Map<string, TreeNode<Datafile>>());
     // Save dataverseToken to localStorage if storeDvToken is enabled
     if (
       this.dataverseToken() !== undefined &&
