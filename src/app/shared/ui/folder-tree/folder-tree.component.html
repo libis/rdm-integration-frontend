@@ -31,12 +31,13 @@
     (click)="treeNode.focus()"
   >
     @if (isExpandable(node)) {
+      <!-- A pointer target only: the node exposes the expansion state and
+        takes the arrow keys. -->
       <button
         type="button"
         class="btn btn-link btn-sm p-0 folder-toggle"
         tabindex="-1"
-        aria-label="Toggle"
-        [attr.aria-expanded]="tree.isExpanded(node)"
+        aria-hidden="true"
         (click)="toggle(node)"
       >
         <i

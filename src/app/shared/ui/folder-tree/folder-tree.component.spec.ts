@@ -579,4 +579,25 @@ describe('FolderTreeComponent', () => {
     expect(focused()).toBe('/');
     expect(fixture.componentInstance.expanded).toEqual([]);
   });
+
+  it('hides the toggle from assistive technology and keeps it clickable', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    await fixture.whenStable();
+    const toggles = Array.from(
+      fixture.nativeElement.querySelectorAll('button.folder-toggle'),
+    ) as HTMLElement[];
+    expect(toggles.length).toBe(4);
+    expect(
+      toggles.map((t) => [
+        t.getAttribute('aria-hidden'),
+        t.getAttribute('tabindex'),
+      ]),
+    ).toEqual(Array(4).fill(['true', '-1']));
+    // The node carries the expansion state and takes the arrow keys.
+    const shared = nodeNamed(fixture.nativeElement, 'shared');
+    (shared.querySelector('.folder-toggle') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(shared.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.componentInstance.expanded).toEqual(['/shared/']);
+  });
 });
