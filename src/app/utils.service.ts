@@ -2,6 +2,14 @@ import { Injectable } from '@angular/core';
 import { TreeNode } from './models/tree-node';
 import { Datafile, Fileaction } from './models/datafile';
 
+/** The rows of a file list. */
+interface FileTree {
+  /** Every file and folder node, linked to its parent; the root is ''. */
+  rowNodeMap: Map<string, TreeNode<Datafile>>;
+  /** The children of the root node. */
+  rootChildren?: TreeNode<Datafile>[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -12,6 +20,16 @@ export class UtilsService {
 
   sleep(ms: number): Promise<void> {
     return new Promise<void>((f) => setTimeout(f, ms));
+  }
+
+  /**
+   * The tree of a file list: the nodes of mapDatafiles, each added to its
+   * parent with addChild, and the children of the root.
+   */
+  buildFileTree(data: Datafile[]): FileTree {
+    const rowNodeMap = this.mapDatafiles(data);
+    rowNodeMap.forEach((v) => this.addChild(v, rowNodeMap));
+    return { rowNodeMap, rootChildren: rowNodeMap.get('')?.children };
   }
 
   addChild(
