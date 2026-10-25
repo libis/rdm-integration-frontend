@@ -67,8 +67,10 @@ import {
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
+import { DvObjectSearch } from '../shared/dv-object-search';
 import { FolderPicker } from '../shared/folder-picker';
 import { createPlaceholderRootOptions } from '../shared/tree-utils';
+import { TokenEdit } from '../shared/token-edit';
 import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
@@ -336,12 +338,45 @@ export class ConnectComponent
   readonly externalURL = this.pluginService.externalURL$;
   readonly configLoaded = this.pluginService.configLoaded$;
 
+  // The edits of the token field; a lookup sent before a reset is stale.
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly collectionSearcher = new DvObjectSearch({
+    items: this.collectionItems,
+    lookup: (term) =>
+      this.dvObjectLookupService.getItems(
+        this.collectionId() ? this.collectionId()! : '',
+        'Dataverse',
+        term,
+        this.dataverseToken(),
+      ),
+    generation: () => this.tokenEdit.generation,
+    failed: (err) =>
+      this.notificationService.showError(
+        `Collection search failed: ${err.message}`,
+      ),
+  });
+  private readonly datasetSearcher = new DvObjectSearch({
+    items: this.doiItems,
+    lookup: (term) =>
+      this.dvObjectLookupService.getItems(
+        this.collectionId() ? this.collectionId()! : '',
+        'Dataset',
+        term,
+        this.dataverseToken(),
+      ),
+    // Add "Create new dataset" option to the beginning of results
+    prepend: { label: '+ Create new dataset', value: 'CREATE_NEW_DATASET' },
+    generation: () => this.tokenEdit.generation,
+    failed: (err) =>
+      this.notificationService.showError(
+        `Dataset search failed: ${err.message}`,
+      ),
+  });
+
   repoSearchSubject: Subject<string> = new Subject();
-  collectionSearchSubject: Subject<string> = new Subject();
-  datasetSearchSubject: Subject<string> = new Subject();
+  readonly collectionSearchSubject = this.collectionSearcher.terms;
+  readonly datasetSearchSubject = this.datasetSearcher.terms;
   repoSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
-  collectionSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
-  datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   repoSearchResultsSubscription?: Subscription;
   collectionSearchResultsSubscription?: Subscription;
   datasetSearchResultsSubscription?: Subscription;
@@ -351,14 +386,6 @@ export class ConnectComponent
     this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.repoNameSearch(searchText)),
-    );
-    this.collectionSearchResultsObservable = this.collectionSearchSubject.pipe(
-      debounceTime(this.DEBOUNCE_TIME),
-      map((searchText) => this.collectionSearch(searchText)),
-    );
-    this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
-      debounceTime(this.DEBOUNCE_TIME),
-      map((searchText) => this.datasetSearch(searchText)),
     );
 
     // Idempotent restoration on each navigation end to /connect (component reuse scenario)
@@ -425,67 +452,8 @@ export class ConnectComponent
           ]);
         },
       });
-    this.collectionSearchResultsSubscription =
-      this.collectionSearchResultsObservable.subscribe({
-        next: (x) => {
-          // The search has just been sent; its answer is dropped when a token
-          // change has reset the page since.
-          const generation = this.resetGeneration;
-          x.then((v) => {
-            if (this.resetGeneration === generation)
-              this.collectionItems.set(v);
-          }).catch((err) => {
-            if (this.resetGeneration !== generation) return;
-            this.notificationService.showError(
-              `Collection search failed: ${err.message}`,
-            );
-            this.collectionItems.set([
-              {
-                label: `search failed: ${err.message}`,
-                value: err.message,
-              },
-            ]);
-          });
-        },
-        error: (err) => {
-          this.notificationService.showError(
-            `Collection search failed: ${err.message}`,
-          );
-          this.collectionItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]);
-        },
-      });
-    this.datasetSearchResultsSubscription =
-      this.datasetSearchResultsObservable.subscribe({
-        next: (x) => {
-          // The search has just been sent; its answer is dropped when a token
-          // change has reset the page since.
-          const generation = this.resetGeneration;
-          x.then((v) => {
-            if (this.resetGeneration === generation) this.doiItems.set(v);
-          }).catch((err) => {
-            if (this.resetGeneration !== generation) return;
-            this.notificationService.showError(
-              `Dataset search failed: ${err.message}`,
-            );
-            this.doiItems.set([
-              {
-                label: `search failed: ${err.message}`,
-                value: err.message,
-              },
-            ]);
-          });
-        },
-        error: (err) => {
-          this.notificationService.showError(
-            `Dataset search failed: ${err.message}`,
-          );
-          this.doiItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]);
-        },
-      });
+    this.collectionSearchResultsSubscription = this.collectionSearcher.start();
+    this.datasetSearchResultsSubscription = this.datasetSearcher.start();
     const queryParamsSubscription = this.route.queryParams.subscribe(
       (params) => {
         this.handleQueryParams(params);
@@ -1324,26 +1292,15 @@ export class ConnectComponent
     window.open(url, '_blank');
   }
 
-  // The token before an edit of the field, kept from the first input event of
-  // the edit to the change event that commits it.
-  private tokenBeforeEdit?: { value: string | undefined };
-  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
-  private resetGeneration = 0;
-
   onTokenInput(value: string | undefined): void {
-    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
-    this.dataverseToken.set(value);
+    this.tokenEdit.input(value);
   }
 
   onUserChange() {
-    // A commit that leaves the token as it was, a browser filling in the
-    // same token again for instance, changes nothing.
-    const before = this.tokenBeforeEdit;
-    this.tokenBeforeEdit = undefined;
-    if (before === undefined || before.value === this.dataverseToken()) {
+    // A commit that left the token as it was resets nothing.
+    if (!this.tokenEdit.commit()) {
       return;
     }
-    this.resetGeneration++;
     this.doiItems.set([]);
     this.collectionItems.set([]);
     this.datasetId.set(undefined);
@@ -1377,7 +1334,7 @@ export class ConnectComponent
     // subscription is kept for ngOnDestroy until then. An answer that a token
     // change made stale is dropped: the change reset the lists, and the next
     // opening asks again.
-    const generation = this.resetGeneration;
+    const generation = this.tokenEdit.generation;
     const subscription = this.dvObjectLookupService
       .getItems(
         this.collectionId() ? this.collectionId()! : '',
@@ -1388,7 +1345,7 @@ export class ConnectComponent
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
-          if (this.resetGeneration !== generation) return;
+          if (this.tokenEdit.generation !== generation) return;
           if (items && items.length > 0) {
             setter(this, items);
           } else {
@@ -1396,7 +1353,7 @@ export class ConnectComponent
           }
         },
         error: (err) => {
-          if (this.resetGeneration !== generation) return;
+          if (this.tokenEdit.generation !== generation) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           setter(this, []);
         },
@@ -1429,30 +1386,11 @@ export class ConnectComponent
   }
 
   onCollectionSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.collectionItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.collectionItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.collectionSearchSubject.next(searchTerm);
+    this.collectionSearcher.onSearch(searchTerm);
   }
 
-  async collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(
-      this.dvObjectLookupService.getItems(
-        this.collectionId() ? this.collectionId()! : '',
-        'Dataverse',
-        searchTerm,
-        this.dataverseToken(),
-      ),
-    );
+  collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    return this.collectionSearcher.search(searchTerm);
   }
 
   // DATASETS
@@ -1515,38 +1453,11 @@ export class ConnectComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.doiItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.datasetSearchSubject.next(searchTerm);
+    this.datasetSearcher.onSearch(searchTerm);
   }
 
-  async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    const items = await firstValueFrom(
-      this.dvObjectLookupService.getItems(
-        this.collectionId() ? this.collectionId()! : '',
-        'Dataset',
-        searchTerm,
-        this.dataverseToken(),
-      ),
-    );
-
-    // Add "Create new dataset" option to the beginning of results
-    const createNewOption: SelectItem<string> = {
-      label: '+ Create new dataset',
-      value: 'CREATE_NEW_DATASET',
-    };
-
-    return [createNewOption, ...items];
+  datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    return this.datasetSearcher.search(searchTerm);
   }
 
   onDatasetSelectionChange(value: string | undefined) {
