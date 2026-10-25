@@ -258,6 +258,7 @@ behave the same unless a line says otherwise.
 ### Commits by task
 
 ### Plan and process (6)
+
 - `7ce4bfe` Add the review fixes plan
 - `6d7c54e` Ignore the local ledger folder in prettier
 - `4c935c8` Merge the ARIA task into R3 to R5 and hand the cleanup to Ozgur
@@ -266,6 +267,7 @@ behave the same unless a line says otherwise.
 - `7a33c26` Split R7 into fixes and refactoring and add M4, M8 and M9
 
 ### R0: visual check harness (mock API, strict layout checks, light and dark) (20)
+
 - `4648a3a` Add harness fixtures
 - `ab2e5c6` Add the visual check harness
 - `031d9f0` Fail strict when a table ends under the footer or the page host overflows
@@ -288,6 +290,7 @@ behave the same unless a line says otherwise.
 - `2c221c2` Rewrap two harness comments
 
 ### R1: layout (C1, I4, I5, M2, M3, M5 trigger, M4 height, M14 layout specs) (20)
+
 - `67ba2c9` Keep the tree table header at its height
 - `b705181` Hide the dead scrollbar in the tree table header
 - `e0feb66` Centre the tree table header cells
@@ -310,6 +313,7 @@ behave the same unless a line says otherwise.
 - `c84a1ad` Check the transfer card spacing in the download layout spec
 
 ### R2: select (I1, I7, I12, M1, compute rows 48 px, overlays follow a scrolling host) (18)
+
 - `9fcc6e5` Close the select when the selected option is activated again
 - `b3d7f1d` Render the select id only when inputId is set
 - `defb7f0` Keep focus on the select list when its options are replaced
@@ -330,6 +334,7 @@ behave the same unless a line says otherwise.
 - `50d2baa` Name the select list after ariaLabel first, as the trigger
 
 ### R3: folder tree (I2, I11, tree ARIA) (6)
+
 - `8da4000` Handle each folder tree key once, ignore * and drop the dead tabindex
 - `315f6fa` Announce the selected folder and the tree name, and focus the node on a click
 - `0e09d31` Keep the focus in the folder tree when a listing replaces the focused node
@@ -338,6 +343,7 @@ behave the same unless a line says otherwise.
 - `45aa86e` Never expand a folder tree leaf or emit nodeExpand for it
 
 ### R4: compare togglers and status filter, treegrid, button names (I3, I8, I9, I10) (8)
+
 - `cb32119` Show the same folder state in both togglers of a compare row
 - `6730b0c` Focus the compare status filter on open and close its state on Escape
 - `327ec94` Expose the tree tables as treegrids with levels, expansion and cell roles
@@ -348,6 +354,7 @@ behave the same unless a line says otherwise.
 - `e149dc6` Name each folder toggle after its row
 
 ### R5: toasts, dialog scroll lock, dark mode leftovers, tabs and accordions (I6, M10, M6, M7, M11) (12)
+
 - `df5371b` Show the toast close button at 3:1 or more on every severity in both modes
 - `40762ba` Announce only error toasts assertively and hold a toast under the pointer or the focus
 - `c7cb63f` Stop the page and its scrolling host behind an open dialog and raise overlays above it
@@ -362,9 +369,11 @@ behave the same unless a line says otherwise.
 - `3a09e9b` Check that a toast expires on time while another is held
 
 ### R7: stale PrimeNG notes deleted (1)
+
 - `8ecb8a6` Delete the two stale PrimeNG notes
 
 ### R7a: token, spinner and label fixes, leftovers, test patterns, docs (M4, M8, M9, M12, M14, M15), and the download reload fix (31)
+
 - `b263c28` Render the real template in the main compute and download suites
 - `4d5787f` Reset the dataset lists and store the token on a token field change
 - `13d77d4` Stop the compute and DDI-CDI spinners after a failed file listing
@@ -398,6 +407,7 @@ behave the same unless a line says otherwise.
 - `b808445` Redirect a download entry with a callback whatever its path
 
 ### R7b: shared Globus folder picker, token edit and dataset search helpers, file tree builder (M13) (30)
+
 - `1814f80` Add a shared Globus folder picker helper
 - `fb0a64d` Use the shared folder picker on connect
 - `9d386ab` Use the shared folder picker on download

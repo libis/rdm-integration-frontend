@@ -24,6 +24,7 @@ assertions of `globus-picker.integration.spec.ts` stay in force.
 ## Tasks
 
 ### Task R0: Screenshot harness and baseline
+
 `tests/visual/` modelled on `/home/eryk/workspaces/redcap/rdm-review-dashboard/tests/visual/`
 (read its `server.mjs`, `shoot.mjs` and `README.md`): a Node only mock API serving the built
 app from `dist/` and answering `/api/*` from fixtures taken from the reviewer's `lib.cjs`
@@ -40,6 +41,7 @@ run without `--strict` into `tests/visual/out/baseline` before any fix, every im
 at. README. `tests/visual/out` gitignored.
 
 ### Task R1: Layout
+
 C1, I4, I5, M2, M3, M5 (the trigger part), M4's inline height. Host as a flex column sized
 from the header and footer tokens as the compare page does, rejected files block that can
 shrink and scroll, table container with a minimum height, `.tt-header { flex: none }` with
@@ -48,6 +50,7 @@ with a `title`. Strict harness run green at both viewports; layout specs tighten
 realistic content, assertions against the window height.
 
 ### Task R2: Select
+
 I1, I7, I12, M1, M5 (the `title`). Close on activating the already selected option (click,
 Enter, Space); keep focus when options are replaced while open (active descendant or
 refocus); `aria-haspopup`, `aria-controls`, `combobox` role and `aria-expanded` on the
@@ -57,6 +60,7 @@ specs from `review-shared-ui.spec.ts` and `review-select-focus.spec.ts`. The con
 flows that use the select (repository type, dataset search, free DOI) keep their specs green.
 
 ### Task R3: Folder tree
+
 I2, I11, and the `*` key, plus the tree's own ARIA (R6 merged here, Eryk 2026-10-25:
 "ARIA belongs with the component being touched"). `stopPropagation()` in the handled branches, no dead `tabindex`,
 `aria-selected`, a name for the tree, the label as a non-focusable span with focus on the
@@ -65,6 +69,7 @@ integration spec passes unchanged in meaning; the picker rules hold. Pilot check
 endpoint stays with Eryk.
 
 ### Task R4: Compare togglers, status filter, table semantics and button names
+
 I3 and I8, plus I9 (`treegrid` structure with levels and expansion state, `columnheader`
 and `gridcell`) and I10 (`aria-label` on every icon only button: action toggles, toggle
 all, filter), since they live in the tree table and its rows (R6 merged here). Chevron state driven by a signal shared by both togglers of a row; the filter
@@ -73,6 +78,7 @@ close. Regression spec from `review-compare-toggler.spec.ts` plus a keyboard spe
 filter.
 
 ### Task R5: Toasts, dialog, dark mode leftovers, tabs and accordions
+
 I6, M10, M6, M7, plus M11 (tab and accordion wiring with arrow keys on the tab list, and
 the DDI-CDI active tab focus ring clipped by `.ddi-split`), R6 merged here. Close button visible on every severity in both modes; `aria-live`
 assertive only for errors; timers pause on hover and focus; body scroll locked while a dialog
@@ -82,6 +88,7 @@ button styles from the reviewer's demo. Screenshots: only the intended pixels ch
 in the task report.
 
 ### Task R7a: Bug fixes, leftovers, test patterns, docs
+
 Items 2, 3, 5, 6 and 7 of `docs/superpowers/plans/2026-10-24-review-fixes-r7.md`, plus
 three findings that belong to the cleanup and were missing from that list: M8 (the token
 fields bind `(onChange)`, which is not a DOM event, so `onUserChange()` never runs: a
@@ -91,6 +98,7 @@ queue select becomes "Run", its accessible name names the file). Done before R7b
 the bug fixes and the real template suites guard the refactoring.
 
 ### Task R7b: Refactoring of the duplicated page logic
+
 Item 4 of the R7 list (review M13; Eryk: do the refactoring). Measured on 2026-10-25:
 `handleOptionsResponse`, `updateExpandedNodeChildren` and `optionSelected` are identical in
 connect and download apart from comments; `onDatasetSearch` and the debounced search wiring
@@ -103,6 +111,7 @@ acceptance spec passes unchanged in meaning, every page suite stays green, the s
 harness stays byte identical.
 
 ### Task R8: Changelog and screenshot diff
+
 No written report (Eryk, 2026-10-25). The controller appends to
 `docs/superpowers/plans/2026-09-22-cdk-migration-report.md` a short section: the commit list
 since 091d5e5 from the one line messages, grouped by task; the screenshot comparison per
