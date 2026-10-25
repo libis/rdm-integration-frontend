@@ -1729,6 +1729,61 @@ describe('DownloadComponent', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    // Keystrokes that are never committed: input events and no change event,
+    // as x typed and taken back with Backspace before Tab.
+    const typeWithoutCommit = (...values: string[]) => {
+      const input = tokenInput();
+      for (const value of values) {
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+      }
+    };
+
+    // The rule compared with the live token, which every keystroke changes:
+    // an answer that came during an edit never committed was dropped, and a
+    // dropped search left its "searching" item, which no opening replaces.
+    it('keeps lookups answered while the token field is edited without a commit', async () => {
+      const list = new Subject<SelectItem<string>[]>();
+      const search = new Subject<SelectItem<string>[]>();
+      const first = [{ label: 'Dataset A', value: 'doi:10.1/A' }];
+      const found = [{ label: 'Dataset C', value: 'doi:10.1/C' }];
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.returnValues(
+        // The list the async ngOnInit asks for, empty.
+        of([]),
+        list,
+        search,
+      );
+      initComponent();
+      await settlePromises();
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        // The answers arrive in the middle of the edit.
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        typeWithoutCommit('x');
+        list.next(first);
+        list.complete();
+        typeWithoutCommit('');
+        expect(component.doiItems()).toEqual(first);
+
+        component.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        typeWithoutCommit('x');
+        search.next(found);
+        search.complete();
+        await settlePromises();
+        typeWithoutCommit('');
+        expect(component.doiItems()).toEqual(found);
+        expect(getItems).toHaveBeenCalledTimes(3);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
     // A lookup still under way when the token changed answered after the
     // reset: the select kept what the old token found and asked nothing with
     // the new one.

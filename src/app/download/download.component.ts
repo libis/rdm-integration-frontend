@@ -141,6 +141,8 @@ export class DownloadComponent
   private lastLoadedDatasetId: string | undefined = undefined;
   /** Subscription for the currently in-flight getDownloadableFiles request. */
   private listingSubscription: Subscription | null = null;
+  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
+  private resetGeneration = 0;
   datasetSearchSubject: Subject<string> = new Subject();
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   downloadRequested = signal(false);
@@ -434,13 +436,13 @@ export class DownloadComponent
     this.trackSubscription(
       this.datasetSearchResultsObservable.subscribe({
         next: (x) => {
-          // The search has just been sent with the current token; its answer
-          // is dropped when the token has changed since.
-          const token = this.dataverseToken();
+          // The search has just been sent; its answer is dropped when a token
+          // change has reset the page since.
+          const generation = this.resetGeneration;
           x.then((v) => {
-            if (this.dataverseToken() === token) this.doiItems.set(v);
+            if (this.resetGeneration === generation) this.doiItems.set(v);
           }).catch((err) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             this.doiItems.set([
               {
                 label: `search failed: ${err.message}`,
@@ -679,6 +681,7 @@ export class DownloadComponent
     if (before === undefined || before.value === this.dataverseToken()) {
       return;
     }
+    this.resetGeneration++;
     // A file listing for the old token would keep loading on, and the dataset
     // select loads no options while loading. The globusDownloadParameters
     // lookup keeps its own loading.
@@ -728,15 +731,15 @@ export class DownloadComponent
     this.doiItems.set(this.loadingItems);
     this.datasetId.set(undefined);
 
-    // An answer to a request with an older token is dropped: the token change
-    // reset the list, and the next opening asks again.
-    const token = this.dataverseToken();
+    // An answer that a token change made stale is dropped: the change reset
+    // the list, and the next opening asks again.
+    const generation = this.resetGeneration;
     this.trackSubscription(
       this.dvObjectLookupService
-        .getItems('', 'Dataset', undefined, token, true)
+        .getItems('', 'Dataset', undefined, this.dataverseToken(), true)
         .subscribe({
           next: (items: SelectItem<string>[]) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             // Don't overwrite if a valid DOI was set while we were loading
             if (
               this.datasetId() &&
@@ -754,7 +757,7 @@ export class DownloadComponent
             }
           },
           error: (err) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             // Don't show error if a valid DOI was set while we were loading
             if (
               this.datasetId() &&
