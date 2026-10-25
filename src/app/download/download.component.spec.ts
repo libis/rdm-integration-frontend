@@ -2394,6 +2394,11 @@ describe('DownloadComponent layout', () => {
       comp.lastTransferTaskId.set('task-1');
       comp.globusMonitorUrl.set('https://app.globus.org/activity/task-1');
       await fixture.whenStable();
+      // The guest dialog, open for a user who is not logged in, stops the host
+      // from scrolling.
+      expect(comp.showGuestLoginPopup()).toBeTrue();
+      comp.showGuestLoginPopup.set(false);
+      await fixture.whenStable();
       const host = fixture.nativeElement as HTMLElement;
       const card = host.querySelector('.transfer-status') as HTMLElement;
       expect(card.offsetHeight).toBeGreaterThan(150);

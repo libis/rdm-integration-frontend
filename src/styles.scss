@@ -3,6 +3,14 @@
 @import "primeicons/primeicons.css";
 @import "@angular/cdk/overlay-prebuilt.css";
 
+// The CDK overlays (the select panels, the compare status filter) sit at 1000,
+// under the header (1030) and the Bootstrap modal (1055). While a dialog is
+// open (app-dialog puts this class on the body) they go above the modal, so a
+// select inside a dialog opens on top of it; the toasts (10000) stay above.
+body.app-dialog-open > .cdk-overlay-container {
+  z-index: 1060;
+}
+
 :root {
   --app-header-height: 3.125rem;
   --app-footer-height: 4.375rem;

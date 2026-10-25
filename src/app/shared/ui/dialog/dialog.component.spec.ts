@@ -1,3 +1,4 @@
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DialogComponent } from './dialog.component';
@@ -31,6 +32,23 @@ class HostComponent {
   readonly closable = signal(true);
   readonly position = signal<'center' | 'topright'>('center');
   hidden = 0;
+}
+
+// Two dialogs inside a scrolling page host, as on the pages that fit the window.
+@Component({
+  imports: [DialogComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <div class="page-host" style="height: 100px; overflow-y: auto">
+      <div style="height: 400px">Rows</div>
+      <app-dialog header="First" [(visible)]="first"><p>One</p></app-dialog>
+      <app-dialog header="Second" [(visible)]="second"><p>Two</p></app-dialog>
+    </div>
+  `,
+})
+class ScrollingHostComponent {
+  readonly first = signal(false);
+  readonly second = signal(false);
 }
 
 describe('DialogComponent', () => {
@@ -120,5 +138,98 @@ describe('DialogComponent', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await fixture.whenStable();
     expect(fixture.componentInstance.visible()).toBeTrue();
+  });
+
+  describe('behind an open dialog', () => {
+    const overflowY = (el: Element) => getComputedStyle(el).overflowY;
+
+    beforeEach(async () => {
+      await TestBed.configureTestingModule({
+        imports: [ScrollingHostComponent],
+      }).compileComponents();
+    });
+
+    it('stops the page and the scrolling page host and puts them back on close', async () => {
+      const fixture = TestBed.createComponent(ScrollingHostComponent);
+      await fixture.whenStable();
+      const host = fixture.nativeElement.querySelector(
+        '.page-host',
+      ) as HTMLElement;
+      host.scrollTop = 50;
+      const width = host.clientWidth;
+      const pageWidth = document.body.getBoundingClientRect().width;
+      // ChromeHeadless draws classic scrollbars, so the gutters below are real.
+      expect(host.offsetWidth - width).toBeGreaterThan(0);
+      const bodyBefore = overflowY(document.body);
+      expect(overflowY(host)).toBe('auto');
+
+      fixture.componentInstance.first.set(true);
+      await fixture.whenStable();
+      expect(overflowY(document.body)).toBe('hidden');
+      expect(overflowY(host)).toBe('hidden');
+      expect(document.body.classList).toContain('app-dialog-open');
+      // Where the host showed a scrollbar its gutter stays, so nothing moves.
+      expect(host.scrollTop).toBe(50);
+      expect(host.clientWidth).toBe(width);
+      expect(document.body.getBoundingClientRect().width).toBe(pageWidth);
+
+      fixture.componentInstance.first.set(false);
+      await fixture.whenStable();
+      expect(overflowY(document.body)).toBe(bodyBefore);
+      expect(overflowY(host)).toBe('auto');
+      expect(host.clientWidth).toBe(width);
+      expect(document.documentElement.getAttribute('style')).toBeNull();
+      expect(host.getAttribute('style')).toBe(
+        'height: 100px; overflow-y: auto;',
+      );
+      expect(document.body.classList).not.toContain('app-dialog-open');
+    });
+
+    it('keeps them stopped until the last open dialog closes', async () => {
+      const fixture = TestBed.createComponent(ScrollingHostComponent);
+      const host = fixture.nativeElement.querySelector(
+        '.page-host',
+      ) as HTMLElement;
+      fixture.componentInstance.first.set(true);
+      await fixture.whenStable();
+      fixture.componentInstance.second.set(true);
+      await fixture.whenStable();
+      fixture.componentInstance.first.set(false);
+      await fixture.whenStable();
+      expect(overflowY(host)).toBe('hidden');
+      expect(overflowY(document.body)).toBe('hidden');
+      fixture.componentInstance.second.set(false);
+      await fixture.whenStable();
+      expect(overflowY(host)).toBe('auto');
+      expect(document.body.classList).not.toContain('app-dialog-open');
+    });
+
+    it('puts them back when an open dialog is destroyed', async () => {
+      const fixture = TestBed.createComponent(ScrollingHostComponent);
+      const bodyBefore = overflowY(document.body);
+      fixture.componentInstance.first.set(true);
+      await fixture.whenStable();
+      fixture.destroy();
+      expect(overflowY(document.body)).toBe(bodyBefore);
+      expect(document.body.classList).not.toContain('app-dialog-open');
+    });
+
+    it('raises the CDK overlays above the modal only while a dialog is open', async () => {
+      const overlays = TestBed.inject(OverlayContainer).getContainerElement();
+      const fixture = TestBed.createComponent(ScrollingHostComponent);
+      await fixture.whenStable();
+      expect(getComputedStyle(overlays).zIndex).toBe('1000');
+      fixture.componentInstance.first.set(true);
+      await fixture.whenStable();
+      const modal = fixture.nativeElement.querySelector(
+        '.modal',
+      ) as HTMLElement;
+      expect(Number(getComputedStyle(overlays).zIndex)).toBeGreaterThan(
+        Number(getComputedStyle(modal).zIndex),
+      );
+      fixture.componentInstance.first.set(false);
+      await fixture.whenStable();
+      expect(getComputedStyle(overlays).zIndex).toBe('1000');
+    });
   });
 });
