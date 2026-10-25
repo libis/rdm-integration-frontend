@@ -70,11 +70,13 @@ import {
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
+import { DvObjectSearch } from '../shared/dv-object-search';
 import {
   bumpRefreshTrigger,
   mutateWithRefresh,
 } from '../shared/refresh-trigger';
 import { FolderPicker } from '../shared/folder-picker';
+import { TokenEdit } from '../shared/token-edit';
 import { createPlaceholderRootOptions } from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
@@ -139,10 +141,20 @@ export class DownloadComponent
   private lastLoadedDatasetId: string | undefined = undefined;
   /** Subscription for the currently in-flight getDownloadableFiles request. */
   private listingSubscription: Subscription | null = null;
-  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
-  private resetGeneration = 0;
-  datasetSearchSubject: Subject<string> = new Subject();
-  datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+  // The edits of the token field; a lookup sent before a reset is stale.
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly datasetSearcher = new DvObjectSearch({
+    items: this.doiItems,
+    lookup: (term) =>
+      this.dvObjectLookupService.getItems(
+        '',
+        'Dataset',
+        term,
+        this.dataverseToken(),
+        true,
+      ),
+    generation: () => this.tokenEdit.generation,
+  });
   downloadRequested = signal(false);
   downloadInProgress = signal(false);
   lastTransferTaskId = signal<string | undefined>(undefined);
@@ -285,10 +297,6 @@ export class DownloadComponent
   readonly configLoaded = this.pluginService.configLoaded$;
 
   constructor() {
-    this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
-      debounceTime(this.DEBOUNCE_TIME),
-      map((searchText) => this.datasetSearch(searchText)),
-    );
     this.repoSearchResultsObservable = this.repoSearchSubject.pipe(
       debounceTime(this.DEBOUNCE_TIME),
       map((searchText) => this.repoNameSearch(searchText)),
@@ -439,30 +447,7 @@ export class DownloadComponent
         }
       }),
     );
-    this.trackSubscription(
-      this.datasetSearchResultsObservable.subscribe({
-        next: (x) => {
-          // The search has just been sent; its answer is dropped when a token
-          // change has reset the page since.
-          const generation = this.resetGeneration;
-          x.then((v) => {
-            if (this.resetGeneration === generation) this.doiItems.set(v);
-          }).catch((err) => {
-            if (this.resetGeneration !== generation) return;
-            this.doiItems.set([
-              {
-                label: `search failed: ${err.message}`,
-                value: err.message,
-              },
-            ]);
-          });
-        },
-        error: (err) =>
-          this.doiItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]),
-      }),
-    );
+    this.trackSubscription(this.datasetSearcher.start());
     this.trackSubscription(
       this.repoSearchResultsObservable.subscribe({
         next: (x) =>
@@ -670,24 +655,15 @@ export class DownloadComponent
     return { token, datasetDbId };
   }
 
-  // The token before an edit of the field, kept from the first input event of
-  // the edit to the change event that commits it.
-  private tokenBeforeEdit?: { value: string | undefined };
-
   onTokenInput(value: string | undefined): void {
-    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
-    this.dataverseToken.set(value);
+    this.tokenEdit.input(value);
   }
 
   onUserChange() {
-    // A commit that leaves the token as it was, a browser filling in the
-    // same token again for instance, changes nothing.
-    const before = this.tokenBeforeEdit;
-    this.tokenBeforeEdit = undefined;
-    if (before === undefined || before.value === this.dataverseToken()) {
+    // A commit that left the token as it was resets nothing.
+    if (!this.tokenEdit.commit()) {
       return;
     }
-    this.resetGeneration++;
     // A file listing for the old token would keep loading on, and the dataset
     // select loads no options while loading. The globusDownloadParameters
     // lookup keeps its own loading.
@@ -739,13 +715,13 @@ export class DownloadComponent
 
     // An answer that a token change made stale is dropped: the change reset
     // the list, and the next opening asks again.
-    const generation = this.resetGeneration;
+    const generation = this.tokenEdit.generation;
     this.trackSubscription(
       this.dvObjectLookupService
         .getItems('', 'Dataset', undefined, this.dataverseToken(), true)
         .subscribe({
           next: (items: SelectItem<string>[]) => {
-            if (this.resetGeneration !== generation) return;
+            if (this.tokenEdit.generation !== generation) return;
             // Don't overwrite if a valid DOI was set while we were loading
             if (
               this.datasetId() &&
@@ -763,7 +739,7 @@ export class DownloadComponent
             }
           },
           error: (err) => {
-            if (this.resetGeneration !== generation) return;
+            if (this.tokenEdit.generation !== generation) return;
             // Don't show error if a valid DOI was set while we were loading
             if (
               this.datasetId() &&
@@ -783,31 +759,11 @@ export class DownloadComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.doiItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.datasetSearchSubject.next(searchTerm);
+    this.datasetSearcher.onSearch(searchTerm);
   }
 
-  async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(
-      this.dvObjectLookupService.getItems(
-        '',
-        'Dataset',
-        searchTerm,
-        this.dataverseToken(),
-        true,
-      ),
-    );
+  datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
+    return this.datasetSearcher.search(searchTerm);
   }
 
   onDatasetChange() {
