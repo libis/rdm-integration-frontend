@@ -1208,6 +1208,124 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(getItems).toHaveBeenCalledTimes(2);
     });
 
+    // The lookups go through the real DvObjectLookupService to the HTTP
+    // testing backend, so the specs see the bodies the page posts.
+    const postLookups = (): HttpTestingController => {
+      const lookup = TestBed.runInInjectionContext(
+        () => new DvObjectLookupService(),
+      );
+      spyOn(TestBed.inject(DvObjectLookupService), 'getItems').and.callFake(
+        (...args: Parameters<DvObjectLookupService['getItems']>) =>
+          lookup.getItems(...args),
+      );
+      return TestBed.inject(HttpTestingController);
+    };
+
+    it('lists and searches the collections as Dataverse objects through the select', async () => {
+      pluginService.collectionFieldEditable$ = signal(false).asReadonly();
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      const http = postLookups();
+
+      openSelect(fixture.nativeElement, 'collectionId');
+      fixture.detectChanges();
+      const list = http.expectOne('api/common/dvobjects');
+      expect(list.request.body).toEqual(
+        jasmine.objectContaining({
+          collectionId: '',
+          objectType: 'Dataverse',
+          searchTerm: undefined,
+        }),
+      );
+      list.flush([{ label: 'Collection A', value: 'root:A' }]);
+      await settlePromises();
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['Collection A']);
+
+      typeInSelectFilter('col');
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['searching "col"...']);
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      const search = http.expectOne('api/common/dvobjects');
+      expect(search.request.body).toEqual(
+        jasmine.objectContaining({
+          collectionId: '',
+          objectType: 'Dataverse',
+          searchTerm: 'col',
+        }),
+      );
+      search.flush([{ label: 'Collection C', value: 'root:C' }]);
+      await settlePromises();
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual(['Collection C']);
+
+      pickSelectOption('Collection C');
+      fixture.detectChanges();
+      expect(comp.collectionId()).toBe('root:C');
+      http.verify();
+    });
+
+    it('lists and searches the datasets of the collection picked', async () => {
+      pluginService.collectionFieldEditable$ = signal(false).asReadonly();
+      pluginService.datasetFieldEditable$ = signal(false).asReadonly();
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      const http = postLookups();
+      openSelect(fixture.nativeElement, 'collectionId');
+      fixture.detectChanges();
+      http
+        .expectOne('api/common/dvobjects')
+        .flush([{ label: 'Collection C', value: 'root:C' }]);
+      await settlePromises();
+      fixture.detectChanges();
+      pickSelectOption('Collection C');
+      fixture.detectChanges();
+
+      openSelect(fixture.nativeElement, 'datasetId');
+      fixture.detectChanges();
+      const list = http.expectOne('api/common/dvobjects');
+      expect(list.request.body).toEqual(
+        jasmine.objectContaining({
+          collectionId: 'root:C',
+          objectType: 'Dataset',
+          searchTerm: undefined,
+        }),
+      );
+      list.flush([{ label: 'Dataset A', value: 'doi:10.1/A' }]);
+      await settlePromises();
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        '+ Create new dataset',
+        'Dataset A',
+      ]);
+
+      typeInSelectFilter('set');
+      fixture.detectChanges();
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      const search = http.expectOne('api/common/dvobjects');
+      expect(search.request.body).toEqual(
+        jasmine.objectContaining({
+          collectionId: 'root:C',
+          objectType: 'Dataset',
+          searchTerm: 'set',
+        }),
+      );
+      search.flush([{ label: 'Dataset S', value: 'doi:10.1/S' }]);
+      await settlePromises();
+      fixture.detectChanges();
+      expect(selectPanelLabels()).toEqual([
+        '+ Create new dataset',
+        'Dataset S',
+      ]);
+
+      pickSelectOption('Dataset S');
+      fixture.detectChanges();
+      expect(comp.datasetId()).toBe('doi:10.1/S');
+      http.verify();
+    });
+
     // A synchronous answer threw a ReferenceError in next, which read the
     // subscription before subscribe had returned it.
     it('takes a synchronous answer of the dataset list', () => {
