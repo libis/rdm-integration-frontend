@@ -221,27 +221,28 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     );
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => {
-              this.doiItems.set(v);
-              const currentDatasetId = this.datasetId();
-              if (currentDatasetId) {
-                const match = v.find((item) => item.value === currentDatasetId);
-                this.ensureSelectedDatasetOption(
-                  currentDatasetId,
-                  match?.label,
-                );
-              }
-            })
-            .catch((err) =>
-              this.doiItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]),
-            ),
+        next: (x) => {
+          // The search has just been sent with the current token; its answer
+          // is dropped when the token has changed since.
+          const token = this.dataverseToken();
+          x.then((v) => {
+            if (this.dataverseToken() !== token) return;
+            this.doiItems.set(v);
+            const currentDatasetId = this.datasetId();
+            if (currentDatasetId) {
+              const match = v.find((item) => item.value === currentDatasetId);
+              this.ensureSelectedDatasetOption(currentDatasetId, match?.label);
+            }
+          }).catch((err) => {
+            if (this.dataverseToken() !== token) return;
+            this.doiItems.set([
+              {
+                label: `search failed: ${err.message}`,
+                value: err.message,
+              },
+            ]);
+          });
+        },
         error: (err) =>
           this.doiItems.set([
             { label: `search failed: ${err.message}`, value: err.message },
@@ -319,12 +320,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.datasetId.set(undefined);
     }
 
+    // An answer to a request with an older token is dropped: the token change
+    // reset the list and the selection, and the next opening asks again.
+    const token = this.dataverseToken();
     let httpSubscription: Subscription;
     // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     httpSubscription = this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, this.dataverseToken())
+      .getItems('', 'Dataset', undefined, token)
       .subscribe({
         next: (items: SelectItem<string>[]) => {
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
+          if (this.dataverseToken() !== token) return;
           if (items && items.length > 0) {
             this.doiItems.set(items);
             if (previouslySelected) {
@@ -345,17 +352,16 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
               this.datasetId.set(undefined);
             }
           }
-          this.subscriptions.delete(httpSubscription);
-          httpSubscription?.unsubscribe();
         },
         error: (err) => {
+          this.subscriptions.delete(httpSubscription);
+          httpSubscription?.unsubscribe();
+          if (this.dataverseToken() !== token) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems.set([]);
           if (!previouslySelected) {
             this.datasetId.set(undefined);
           }
-          this.subscriptions.delete(httpSubscription);
-          httpSubscription?.unsubscribe();
         },
       });
     this.subscriptions.add(httpSubscription!);
@@ -423,15 +429,14 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     this.ensureSelectedDatasetOption(pid);
 
+    // A label looked up with a token that is no longer current is dropped:
+    // the token change reset the list and the selection.
+    const token = this.dataverseToken();
     try {
       const items = await firstValueFrom(
-        this.dvObjectLookupService.getItems(
-          '',
-          'Dataset',
-          pid,
-          this.dataverseToken(),
-        ),
+        this.dvObjectLookupService.getItems('', 'Dataset', pid, token),
       );
+      if (this.dataverseToken() !== token) return;
       const match = items.find(
         (item: SelectItem<string>) => item.value === pid,
       );

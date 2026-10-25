@@ -417,6 +417,75 @@ describe('DdiCdiComponent', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    // A lookup still under way when the token changed answered after the
+    // reset: the select kept what the old token found (on a deep link the old
+    // dataset alone) and asked nothing with the new one.
+    it('drops lookups answered after a token edit and asks again with the new token', async () => {
+      pluginServiceStub.datasetFieldEditable$.set(false);
+      (TestBed.inject(ActivatedRoute) as { queryParams: unknown }).queryParams =
+        of({ datasetPid: 'doi:10.1/D' });
+      const label = new Subject<SelectItem<string>[]>();
+      const list = new Subject<SelectItem<string>[]>();
+      const search = new Subject<SelectItem<string>[]>();
+      const old = [{ label: 'doi:10.1/D - Old', value: 'doi:10.1/D' }];
+      const getItems = dvObjectLookupServiceStub.getItems.and.returnValues(
+        label,
+        list,
+        search,
+        of([{ label: 'Dataset N', value: 'doi:10.1/N' }]),
+      );
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      // The deep link shows its dataset while the label lookup is under way.
+      expect(component.doiItems()).toEqual([
+        { label: 'doi:10.1/D', value: 'doi:10.1/D' },
+      ]);
+      editToken(fixture, 'token-1');
+      label.next(old);
+      label.complete();
+      await settlePromises();
+      expect(component.doiItems()).toEqual([]);
+
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        // The first list: the select opened and closed, the token edited.
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        editToken(fixture, 'token-2');
+        list.next(old);
+        list.complete();
+        expect(component.doiItems()).toEqual([]);
+        expect(component.datasetId()).toBeUndefined();
+
+        // A search past its debounce, the token edited again.
+        component.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        editToken(fixture, 'token-3');
+        search.next(old);
+        search.complete();
+        await settlePromises();
+        expect(component.doiItems()).toEqual([]);
+
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        expect(getItems).toHaveBeenCalledTimes(4);
+        expect(getItems.calls.mostRecent().args).toEqual([
+          '',
+          'Dataset',
+          undefined,
+          'token-3',
+        ]);
+        expect(selectPanelLabels()).toEqual(['Dataset N']);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
     // A change event without a new token, a browser filling in the restored
     // token again for instance, resets nothing.
     it('resets nothing when the field commits the token it already had', async () => {
