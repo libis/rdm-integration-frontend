@@ -1,9 +1,10 @@
 // Mock backend for the visual checks: serves the built app and answers /api/* from the JSON
 // fixtures in fixtures/. Run alone:
 // node server.mjs --dist <browser dir> [--rejected <n>] [--rejected-size <n>] [--long-label]
-//   [--port 4300]
-// The variant (files rejected by name or by size on compare, long dataset label on compute)
-// can also be changed while the server runs: GET /__variant?rejected=12&longLabel=true.
+//   [--logged-out] [--port 4300]
+// The variant (files rejected by name or by size on compare, long dataset label on compute, a
+// user who is not logged in) can also be changed while the server runs:
+// GET /__variant?rejected=12&longLabel=true&loggedOut=true.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -33,10 +34,12 @@ const CONTENT_TYPES = {
 // rejected: how many of the names in compare-cached.json the compare result lists as rejected
 // for their characters (rejectedName); rejectedSize: how many of its rejectedSize ids it lists
 // as too large. longLabel: answer the dataset lookups with dvobjects-datasets-long-label.json.
+// loggedOut: the user info says the user is not logged in.
 export const DEFAULT_VARIANT = {
   rejected: 0,
   rejectedSize: 0,
   longLabel: false,
+  loggedOut: false,
 };
 
 // A route handler returns the JSON body of a 200 answer, or reply(status, body) for any other
@@ -175,7 +178,12 @@ function options(ctx) {
 
 const ROUTES = [
   ["GET", "/api/frontend/config", () => fixture("frontend-config.json")],
-  ["GET", "/api/common/userinfo", () => fixture("userinfo.json")],
+  [
+    "GET",
+    "/api/common/userinfo",
+    (ctx) =>
+      ctx.variant.loggedOut ? { loggedIn: false } : fixture("userinfo.json"),
+  ],
   ["POST", "/api/plugin/compare", () => fixture("compare-key.json")],
   ["POST", "/api/common/cached", (ctx) => compareCached(ctx.variant)],
   ["POST", "/api/common/dvobjects", dvObjects],
@@ -189,10 +197,16 @@ const ROUTES = [
     "/api/common/downloadable",
     () => withFiles(fixture("downloadable.json")),
   ],
+  // Only doi:10.1234/ABC has files DDI-CDI can read; the other dataset has none.
   [
     "POST",
     "/api/common/ddicdicompatible",
-    () => withFiles(fixture("ddicdi-compatible.json")),
+    (ctx) => {
+      const result = withFiles(fixture("ddicdi-compatible.json"));
+      return ctx.body?.persistentId === result.id
+        ? result
+        : { ...result, id: ctx.body?.persistentId, data: [] };
+    },
   ],
   // No previously generated DDI-CDI output. The backend (ddi_cdi.go) answers that with
   // reply(404, "404 - no cached output found"); the page treats {} the same, and {} logs no
@@ -280,15 +294,16 @@ function parseVariant(changes) {
       variant[key] = count;
     }
   }
-  if (changes.longLabel !== undefined) {
-    variant.longLabel =
-      changes.longLabel === true || changes.longLabel === "true";
+  for (const key of ["longLabel", "loggedOut"]) {
+    if (changes[key] !== undefined) {
+      variant[key] = changes[key] === true || changes[key] === "true";
+    }
   }
   return variant;
 }
 
 // Resolves to {url, close, setVariant, variant, takeProblems}; setVariant({rejected,
-// rejectedSize, longLabel}) changes what the following API requests answer. takeProblems()
+// rejectedSize, longLabel, loggedOut}) changes what the following API requests answer. takeProblems()
 // returns and forgets the requests the mock could not answer as meant: no route (answered 404)
 // or a handler that threw (answered 500).
 export function startServer({ dist, port = 0, ...variant }) {
@@ -402,6 +417,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
       rejected: { type: "string" },
       "rejected-size": { type: "string" },
       "long-label": { type: "boolean" },
+      "logged-out": { type: "boolean" },
     },
   });
   const { url, variant } = await startServer({
@@ -410,6 +426,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === import.meta.filename) {
     rejected: args.rejected,
     rejectedSize: args["rejected-size"],
     longLabel: args["long-label"],
+    loggedOut: args["logged-out"],
   });
   console.log(
     `mock server on ${url}, variant ${JSON.stringify(variant)} (Ctrl+C to stop)`,

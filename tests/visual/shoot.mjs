@@ -377,6 +377,40 @@ const PAGES = [
     },
   },
   {
+    // Toasts of the two light severities, whose close button is a black X: a user who is not
+    // logged in, with the login redirect already tried twice in the last 30 s, gets a warning
+    // instead of a third redirect (app.component.ts); picking the other dataset, which has no
+    // files DDI-CDI can read, adds an info. Both stay until the capture (holdToasts).
+    name: "ddi-cdi-toasts",
+    fixedHeight: true,
+    table: true,
+    holdToasts: true,
+    variant: { loggedOut: true },
+    steps: async (flow) => {
+      await flow.page.evaluateOnNewDocument(() =>
+        sessionStorage.setItem(
+          "loginRedirectAttempt",
+          JSON.stringify({ count: 2, timestamp: Date.now() }),
+        ),
+      );
+      await flow.open("/ddi-cdi");
+      await flow.waitFor("app-toast .toast.text-bg-warning");
+      await flow.choose("#datasetId", "doi:10.1234/DEF - Other");
+      await flow.waitFor("app-toast .toast.text-bg-info");
+      const toasts = await flow.page.$$eval("app-toast .toast", (all) =>
+        all.map((t) => [...t.classList].find((c) => c.startsWith("text-bg-"))),
+      );
+      if (
+        JSON.stringify(toasts) !==
+        JSON.stringify(["text-bg-warning", "text-bg-info"])
+      ) {
+        throw new Error(
+          `toasts ${JSON.stringify(toasts)}, not a warning and an info`,
+        );
+      }
+    },
+  },
+  {
     name: "metadata-selector",
     fixedHeight: true,
     table: true,

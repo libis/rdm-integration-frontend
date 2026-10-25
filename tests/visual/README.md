@@ -7,9 +7,10 @@ turns the layout measurements into checks. Images go to `out/`, which is gitigno
 scripts and fixtures are committed.
 
 - `server.mjs`: serves a built app and answers `/api/*` from `fixtures/*.json`. Only Node
-  built ins. Exports `startServer({dist, port, rejected, rejectedSize, longLabel})`, which
-  resolves to `{url, close, setVariant, variant, takeProblems}`:
-  `setVariant({rejected, rejectedSize, longLabel})` changes what the following requests answer
+  built ins. Exports `startServer({dist, port, rejected, rejectedSize, longLabel, loggedOut})`,
+  which resolves to `{url, close, setVariant, variant, takeProblems}`:
+  `setVariant({rejected, rejectedSize, longLabel, loggedOut})` changes what the following
+  requests answer
   and the `variant` getter returns the current variant. A route answers 200 with the JSON its
   handler returns, or any other status with `reply(status, body)`, a string body as
   `text/plain` the way the Go backend writes its errors. A request without a route (answered
@@ -30,7 +31,8 @@ scripts and fixtures are committed.
   Globus download (`download.json`, task `task-1`) with its status, still running with 120 of
   300 files (`globus-status-active.json`). The frontend config has four plugins (local,
   GitHub, Globus with a token getter, REDCap reports). Dataset `doi:10.1234/ABC` has 300 files
-  on compare and download, 40 Python files on compute and 60 CSV files on DDI-CDI. A fixture
+  on compare and download, 40 Python files on compute and 60 CSV files on DDI-CDI; the other
+  dataset, `doi:10.1234/DEF`, has no files DDI-CDI can read. A fixture
   whose `data` is `{"generate": {"count", "extension"}}` gets a generated list: every third
   file at the root, the others in `folder0` to `folder4`, the status cycling through equal,
   new, updated and deleted. `compare-cached.json` is a finished comparison (status 2), so the
@@ -63,9 +65,10 @@ node tests/visual/server.mjs --dist dist/datasync/browser --port 4300
 Open `http://localhost:4300/connect`. Variants: `--rejected <n>` lists the first `n` of the 12
 rejected file names in `compare-cached.json` on the compare page (default 0),
 `--rejected-size <n>` the first `n` of its 12 file ids rejected for their size (default 0),
-and `--long-label` answers the dataset lookups with `dvobjects-datasets-long-label.json`.
-While the server runs,
-`http://localhost:4300/__variant?rejected=12&rejectedSize=12&longLabel=true` changes them.
+`--long-label` answers the dataset lookups with `dvobjects-datasets-long-label.json`, and
+`--logged-out` answers the user info with `{"loggedIn": false}`. While the server runs,
+`http://localhost:4300/__variant?rejected=12&rejectedSize=12&longLabel=true&loggedOut=true`
+changes them.
 
 ## Shoot
 
@@ -121,6 +124,12 @@ order:
 - `compute-long-label`: the same with the long dataset label.
 - `compute-dialog`: compute, first queue in the first row, then its run button.
 - `ddi-cdi`: `/ddi-cdi?datasetPid=doi:10.1234/ABC`.
+- `ddi-cdi-toasts`: a warning and an info toast, the two severities with a black close
+  button, on `/ddi-cdi`. The user is not logged in (`loggedOut`) and the session already
+  records two login redirects in the last 30 s (`loginRedirectAttempt`), so the app warns
+  instead of redirecting; picking `doi:10.1234/DEF`, which has no files DDI-CDI can read, adds
+  the info. Both stay (`holdToasts`), and the capture checks that they are the only toasts, in
+  that order.
 - `metadata-selector`: `/metadata-selector`.
 - `submit`: compare, `Copy`, then `Confirm file actions`.
 - `redcap2-export`: a REDCap connection with report 42 seeded into the connect page's session
