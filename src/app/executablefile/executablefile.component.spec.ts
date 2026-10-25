@@ -200,6 +200,28 @@ describe('ExecutablefileComponent', () => {
     expect(run.getAttribute('aria-label')).toBe('Run script.py');
   });
 
+  // Run then OK posted a computation without a persistentId when the rows
+  // of a dataset outlived its selection.
+  it('disables Run while no dataset is selected', async () => {
+    initialiseComponent();
+    const events: unknown[] = [];
+    component.computeClicked.subscribe((evt) => events.push(evt));
+    fixture.componentRef.setInput('pid', undefined);
+    component.queue.set('gpu');
+    component.computeEnabled.set(true);
+    await fixture.whenStable();
+    const run = fixture.nativeElement.querySelector(
+      'button.btn-primary',
+    ) as HTMLButtonElement;
+    expect(run.disabled).toBeTrue();
+    run.click();
+    expect(events).toEqual([]);
+
+    fixture.componentRef.setInput('pid', 'doi:10.123/ABC');
+    await fixture.whenStable();
+    expect(run.disabled).toBeFalse();
+  });
+
   it('gives the run button the height of the queue select', async () => {
     initialiseComponent();
     await fixture.whenStable();

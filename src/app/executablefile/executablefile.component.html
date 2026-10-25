@@ -31,7 +31,7 @@
         class="btn btn-primary"
         type="button"
         attr.aria-label="Run {{ datafile().name }}"
-        [disabled]="!computeEnabled()"
+        [disabled]="!computeEnabled() || !pid()"
         (click)="compute()"
       >
         <i [class]="icon_play"></i> Run

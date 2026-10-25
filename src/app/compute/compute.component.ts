@@ -120,6 +120,8 @@ export class ComputeComponent
   datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   datasetSearchResultsSubscription?: Subscription;
   req?: ComputeRequest;
+  /** The file listing of the dataset last picked. */
+  private listingSubscription?: Subscription;
 
   // Direct references to pluginService signals (no wrapper computed needed)
   readonly showDVToken = this.pluginService.showDVToken$;
@@ -191,8 +193,17 @@ export class ComputeComponent
   }
 
   onUserChange() {
+    // A file listing for the old token would only keep the spinner going.
+    if (this.listingSubscription && !this.listingSubscription.closed) {
+      this.listingSubscription.unsubscribe();
+      this.loading.set(false);
+    }
     this.doiItems.set([]);
     this.datasetId.set(undefined);
+    // The rows of the old dataset go with it, so nothing runs without one.
+    this.data.set({});
+    this.rootNodeChildren.set([]);
+    this.rowNodeMap.set(new Map<string, TreeNode<Datafile>>());
     // Save dataverseToken to localStorage if storeDvToken is enabled
     if (
       this.dataverseToken() !== undefined &&
@@ -263,24 +274,30 @@ export class ComputeComponent
   }
 
   onDatasetChange() {
+    const datasetId = this.datasetId();
     this.loading.set(true);
     this.output.set('');
     this.outputDisabled.set(true);
     const subscription = this.dataService
-      .getExecutableFiles(this.datasetId()!, this.dataverseToken())
+      .getExecutableFiles(datasetId!, this.dataverseToken())
       .subscribe({
         next: (data) => {
           subscription?.unsubscribe();
+          // A listing for a dataset that is no longer selected changes
+          // nothing; the listing of the selected one ends the spinner.
+          if (this.datasetId() !== datasetId) return;
           this.setData(data);
         },
         error: (err) => {
           subscription?.unsubscribe();
+          if (this.datasetId() !== datasetId) return;
           this.loading.set(false);
           this.notificationService.showError(
             `Getting executable files failed: ${err.error}`,
           );
         },
       });
+    this.listingSubscription = subscription;
   }
 
   setData(data: CompareResult): void {

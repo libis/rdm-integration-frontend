@@ -450,6 +450,71 @@ describe('ComputeComponent', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    const pyFile = (id: string): Datafile => ({
+      id,
+      name: id,
+      path: '',
+      hidden: false,
+      status: Filestatus.Equal,
+      action: Fileaction.Ignore,
+      attributes: { isFile: true },
+    });
+    const fileRows = () =>
+      fixture.nativeElement.querySelectorAll('div[app-executablefile]').length;
+
+    // A token edit cleared only the dataset select: the rows of the old
+    // dataset stayed, and Run then OK posted a computation without a
+    // persistentId.
+    it('clears the rows of the old dataset and cancels its listing on a token edit', async () => {
+      plugin.showDvToken = true;
+      selectDataset(component);
+      component.data.set({ id: 'doi:10.1/D', url: 'https://example.org/ds' });
+      component.rowNodeMap.set(
+        new Map([
+          ['run.py:file', { key: 'run.py:file', data: pyFile('run.py') }],
+        ]),
+      );
+      component.rootNodeChildren.set([
+        { key: 'run.py:file', data: pyFile('run.py') },
+      ]);
+      await fixture.whenStable();
+      expect(fileRows()).toBe(1);
+
+      editToken(fixture, 'token-1');
+      await fixture.whenStable();
+      expect(component.data()).toEqual({});
+      expect(component.rootNodeChildren()).toEqual([]);
+      expect(component.rowNodeMap().size).toBe(0);
+      expect(fileRows()).toBe(0);
+
+      // A listing in flight when the token changes is dropped with its spinner.
+      const listing = new Subject<CompareResult>();
+      spyOn(mockData, 'getExecutableFiles').and.returnValue(listing);
+      selectDataset(component);
+      component.onDatasetChange();
+      expect(component.loading()).toBeTrue();
+      editToken(fixture, 'token-2');
+      expect(listing.observed).toBeFalse();
+      expect(component.loading()).toBeFalse();
+    });
+
+    it('ignores a file listing that answers for a dataset no longer selected', () => {
+      const first = new Subject<CompareResult>();
+      const second = new Subject<CompareResult>();
+      spyOn(mockData, 'getExecutableFiles').and.returnValues(first, second);
+      component.datasetId.set('doi:10.1/A');
+      component.onDatasetChange();
+      component.datasetId.set('doi:10.1/B');
+      component.onDatasetChange();
+
+      first.next({ id: 'doi:10.1/A', data: [pyFile('a.py')] });
+      expect(component.data()).toEqual({});
+      expect(component.loading()).toBeTrue();
+      second.next({ id: 'doi:10.1/B', data: [pyFile('b.py')] });
+      expect(component.data().id).toBe('doi:10.1/B');
+      expect(component.loading()).toBeFalse();
+    });
+
     it('resets nothing when the token is restored at load or set in code', async () => {
       plugin.showDvToken = true;
       plugin.storeDvToken = true;
