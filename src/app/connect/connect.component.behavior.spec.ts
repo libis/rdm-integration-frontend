@@ -1064,9 +1064,12 @@ describe('ConnectComponent additional behavior/validation', () => {
       );
 
       comp.onDatasetSearch('data');
-      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(dvLookup.getItems).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
       await settlePromises();
 
+      expect(dvLookup.getItems).toHaveBeenCalledTimes(1);
       expect(comp.doiItems()[0].label).toContain('search failed');
       expect(notification.errors.pop()).toContain('Dataset search failed');
     });
@@ -1081,9 +1084,12 @@ describe('ConnectComponent additional behavior/validation', () => {
       );
 
       comp.onCollectionSearch('abc');
-      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(dvLookup.getItems).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
       await settlePromises();
 
+      expect(dvLookup.getItems).toHaveBeenCalledTimes(1);
       expect(comp.collectionItems()[0].label).toContain('search failed');
       expect(notification.errors.pop()).toContain('Collection search failed');
     });
