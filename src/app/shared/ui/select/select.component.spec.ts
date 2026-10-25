@@ -699,6 +699,13 @@ describe('SelectComponent with options that arrive while it is open', () => {
       [options]="options"
       [editable]="true"
     ></app-select>
+    <label for="both">Queue</label>
+    <app-select
+      class="both"
+      inputId="both"
+      ariaLabel="Queue for run.py"
+      [options]="options"
+    ></app-select>
     <label for="free">DOI</label>
     <app-select
       class="free"
@@ -777,6 +784,17 @@ describe('SelectComponent ARIA', () => {
       el('.named-free input.form-control').getAttribute('aria-label'),
     ).toBe('Free DOI');
     expect(el('.labelled .form-select').hasAttribute('aria-label')).toBeFalse();
+    trigger.click();
+    await fixture.whenStable();
+    expect(list()!.getAttribute('aria-label')).toBe('Queue for run.py');
+  });
+
+  // aria-label wins over the label element in the trigger's name, so the
+  // list takes the same name.
+  it('names the trigger and the list after ariaLabel when there is a label too', async () => {
+    const trigger = el('.both .form-select') as HTMLButtonElement;
+    expect(trigger.labels.length).toBe(1);
+    expect(trigger.getAttribute('aria-label')).toBe('Queue for run.py');
     trigger.click();
     await fixture.whenStable();
     expect(list()!.getAttribute('aria-label')).toBe('Queue for run.py');

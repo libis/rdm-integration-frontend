@@ -86,7 +86,7 @@ export class SelectComponent implements ControlValueAccessor {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   readonly listId = `app-select-list-${nextListId++}`;
-  /** The name of the list: the label of the trigger, ariaLabel or the placeholder. */
+  /** The name of the list, as the trigger's: ariaLabel, the label, else the placeholder. */
   readonly listLabel = signal('Options');
 
   /** The form value. May be free text in editable mode. */
@@ -174,8 +174,8 @@ export class SelectComponent implements ControlValueAccessor {
   show(intoList = false): void {
     if (this.open()) return;
     this.listLabel.set(
-      this.triggerLabel() ||
-        this.ariaLabel() ||
+      this.ariaLabel() ||
+        this.triggerLabel() ||
         this.placeholder() ||
         'Options',
     );
