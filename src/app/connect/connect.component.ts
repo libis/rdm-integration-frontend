@@ -67,10 +67,8 @@ import {
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { APP_CONSTANTS } from '../shared/constants';
-import {
-  convertToTreeNodes,
-  createPlaceholderRootOptions,
-} from '../shared/tree-utils';
+import { FolderPicker } from '../shared/folder-picker';
+import { createPlaceholderRootOptions } from '../shared/tree-utils';
 import { SubscriptionManager } from '../shared/types';
 
 const new_dataset = 'New Dataset';
@@ -173,6 +171,14 @@ export class ConnectComponent
   readonly pluginIdSelectHidden = signal(true);
   readonly optionsLoading = signal(false);
   readonly showNewDatasetCreatedMessage = signal(false);
+  // The folder tree of the option field, in the signals above.
+  private readonly folderPicker = new FolderPicker({
+    rootOptions: this._rootOptionsData,
+    branchItems: this.branchItems,
+    option: this.option,
+    selectedOption: this.selectedOption,
+    optionsLoading: this.optionsLoading,
+  });
   // Computed Properties for UI - these must read all signals they depend on
 
   // Single lookup for the current plugin – avoids 18 independent getPlugin() calls
@@ -1269,7 +1275,7 @@ export class ConnectComponent
       .pipe(take(1))
       .subscribe({
         next: (items: HierarchicalSelectItem<string>[]) => {
-          this.handleOptionsResponse(items, node);
+          this.folderPicker.handleOptionsResponse(items, node);
         },
         error: (err) => {
           if (this.handleReauthError(err)) return;
@@ -1301,108 +1307,10 @@ export class ConnectComponent
     return true;
   }
 
-  /**
-   * Handle response from options lookup API.
-   * Builds tree from items and auto-selects if backend marked a node.
-   */
-  private handleOptionsResponse(
-    items: HierarchicalSelectItem<string>[],
-    node?: TreeNode<string>,
-  ): void {
-    if (items && node && !this.isRootListing(node, items)) {
-      // Expanding an existing node - add children
-      const nodes = convertToTreeNodes(items);
-      // Keep event-node mutation for compatibility, then synchronize
-      // canonical tree state in case expanded node instance is detached.
-      node.children = nodes.treeNodes;
-      const updated = this.updateExpandedNodeChildren(
-        this._rootOptionsData(),
-        node,
-        nodes.treeNodes,
-      );
-      if (updated.found) {
-        this._rootOptionsData.set(updated.tree);
-      } else {
-        // Fallback: still force a new reference for zoneless refresh.
-        this._rootOptionsData.set([...this._rootOptionsData()]);
-      }
-      this.optionsLoading.set(false);
-      this.autoSelectNode(nodes.selectedNode);
-    } else if (items && items.length > 0) {
-      // Initial load - convert items directly (backend returns from appropriate starting point)
-      const nodes = convertToTreeNodes(items);
-      this._rootOptionsData.set(nodes.treeNodes);
-      this.branchItems.set(items);
-      this.optionsLoading.set(false);
-      this.autoSelectNode(nodes.selectedNode);
-    } else {
-      this.branchItems.set([]);
-      this.optionsLoading.set(false);
-    }
-  }
-
-  // The placeholder was expanded and the backend answered with the
-  // collection root: show that root instead of nesting it under the placeholder.
-  private isRootListing(
-    node: TreeNode<string>,
-    items: HierarchicalSelectItem<string>[],
-  ): boolean {
-    return node.data === '' && items.length > 0 && items[0].value === '/';
-  }
-
-  private updateExpandedNodeChildren(
-    currentTree: TreeNode<string>[],
-    target: TreeNode<string>,
-    children: TreeNode<string>[],
-  ): { tree: TreeNode<string>[]; found: boolean } {
-    let found = false;
-    const updatedTree = currentTree.map((node) => {
-      const isTarget =
-        node === target ||
-        (node.data === target.data && node.label === target.label);
-      if (isTarget) {
-        found = true;
-        return { ...node, children };
-      }
-      if (node.children && node.children.length > 0) {
-        const nested = this.updateExpandedNodeChildren(
-          node.children,
-          target,
-          children,
-        );
-        if (nested.found) {
-          found = true;
-          return { ...node, children: nested.tree };
-        }
-      }
-      return node;
-    });
-    return { tree: updatedTree, found };
-  }
-
-  /**
-   * Auto-select node if backend marked it as selected.
-   */
-  private autoSelectNode(selectedNode?: TreeNode<string>): void {
-    if (selectedNode) {
-      this.option.set(selectedNode.data);
-      this.selectedOption.set(selectedNode);
-    }
-  }
-
   optionSelected(
     selection: TreeNode<string> | TreeNode<string>[] | null | undefined,
   ): void {
-    const node = Array.isArray(selection) ? undefined : selection;
-    const v = node?.data;
-    if (v === undefined || v === null) {
-      this.selectedOption.set(undefined);
-      this.option.set(undefined);
-    } else {
-      // Allow selecting root "/" or any other folder
-      this.option.set(v);
-      this.selectedOption.set(node ?? undefined);
-    }
+    this.folderPicker.optionSelected(selection);
   }
 
   /****************************************
