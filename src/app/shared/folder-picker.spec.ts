@@ -143,6 +143,21 @@ describe('FolderPicker', () => {
     expect(alice.children).toEqual([]);
   });
 
+  it('goes back to the placeholder with nothing listed and nothing selected', () => {
+    const { state, picker } = setup();
+    picker.handleOptionsResponse(home);
+    state.optionsLoading.set(true);
+    const listed = state.rootOptions();
+    picker.reset();
+    expect(state.rootOptions()).not.toBe(listed);
+    expect(state.rootOptions()).toEqual(createPlaceholderRootOptions());
+    expect(state.branchItems()).toEqual([]);
+    expect(state.option()).toBeUndefined();
+    expect(state.selectedOption()).toBeUndefined();
+    // A listing under way keeps its spinner.
+    expect(state.optionsLoading()).toBeTrue();
+  });
+
   it('selects any folder, the root included, and unselecting clears the path', () => {
     const { state, picker } = setup();
     const root: TreeNode<string> = { label: '/', data: '/' };

@@ -3,7 +3,7 @@
 import { WritableSignal } from '@angular/core';
 import { HierarchicalSelectItem } from '../models/hierarchical-select-item';
 import { TreeNode } from '../models/tree-node';
-import { convertToTreeNodes } from './tree-utils';
+import { convertToTreeNodes, createPlaceholderRootOptions } from './tree-utils';
 
 /** The signals of a page that its folder picker writes and its template reads. */
 interface FolderPickerState {
@@ -72,6 +72,14 @@ export class FolderPicker {
       branchItems.set([]);
       optionsLoading.set(false);
     }
+  }
+
+  /** Back to the placeholder, with nothing listed and nothing selected. */
+  reset(): void {
+    this.state.branchItems.set([]);
+    this.state.rootOptions.set(createPlaceholderRootOptions());
+    this.state.selectedOption.set(undefined);
+    this.state.option.set(undefined);
   }
 
   optionSelected(
