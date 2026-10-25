@@ -23,7 +23,7 @@ the strict screenshot harness in `tests/visual` shows whether a page changed.
    `compare.component.html:236` is always false; a `table` sits directly in a `tr` at
    `compare.component.html:86-98`; PrimeNG comments in `connect.component.advanced.spec.ts:538`
    and `download.component.spec.ts:485`. Line numbers are from 091d5e5; grep for the names.
-4. Duplicated page logic (review M13): `onDatasetSearch`, `getDoiOptions`, `datasetSearch`,
+4. R7b. Duplicated page logic (review M13): `onDatasetSearch`, `getDoiOptions`, `datasetSearch`,
    `onUserChange` and the "start typing to search" items exist four times (connect,
    download, compute, ddi-cdi); the `mapDatafiles` plus `addChild` plus root children block
    four times (compare, download, compute, ddi-cdi); `handleOptionsResponse`,
@@ -44,3 +44,9 @@ the strict screenshot harness in `tests/visual` shows whether a page changed.
    "a window too small for that scrolls the page" (it is the page host that scrolls); the
    right panes of compute and download repeat `flex: 1 1 50%; min-width: 0`, a `split-pane`
    mixin in `src/app/shared/_page-layout.scss` would hold it.
+8. R7a. Added on 2026-10-25 (they belong here and were missing from the list above): M8,
+   the token fields in connect, download, compute and ddi-cdi bind `(onChange)`, which is
+   not a DOM event, so `onUserChange()` never runs (with `storeDvToken` the token is never
+   saved, and editing the token never resets the dataset lists); M9, compute keeps its
+   spinner after a failed file listing (`onDatasetChange` error branch); M4's label, "Run
+   on" after the queue select becomes "Run" with the file in its accessible name.

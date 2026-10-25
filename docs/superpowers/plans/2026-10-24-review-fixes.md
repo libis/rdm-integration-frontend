@@ -81,15 +81,26 @@ emphasis tokens and dark rules keyed on `[data-bs-theme=dark]`. Regression spec 
 button styles from the reviewer's demo. Screenshots: only the intended pixels change, listed
 in the task report.
 
-### Task R7: Cleanup
-The item list is in `docs/superpowers/plans/2026-10-24-review-fixes-r7.md`: delete the two
-stale files (`progress.md`, `TRANSFER_CARD_VISUAL_ENHANCEMENTS.md`), M12 leftovers, M13
-(the dataset search quartet, the file tree builder, the connect and download picker pair;
-Eryk: do the refactoring), M15 test patterns, the rest of M14 (page suites that replace
-the template with a placeholder), the `ai-context.md` theming section, and the two R1
-minors (stale comment in `compare.component.scss`, a `split-pane` mixin). Same implementer
-and reviewer loop as the other tasks; strict harness byte identical except where the
-refactoring is proven equal by the specs.
+### Task R7a: Bug fixes, leftovers, test patterns, docs
+Items 2, 3, 5, 6 and 7 of `docs/superpowers/plans/2026-10-24-review-fixes-r7.md`, plus
+three findings that belong to the cleanup and were missing from that list: M8 (the token
+fields bind `(onChange)`, which is not a DOM event, so `onUserChange()` never runs: a
+stored token is never saved and editing the token never resets the dataset lists), M9
+(compute keeps its spinner after a failed file listing) and M4's label ("Run on" after the
+queue select becomes "Run", its accessible name names the file). Done before R7b so that
+the bug fixes and the real template suites guard the refactoring.
+
+### Task R7b: Refactoring of the duplicated page logic
+Item 4 of the R7 list (review M13; Eryk: do the refactoring). Measured on 2026-10-25:
+`handleOptionsResponse`, `updateExpandedNodeChildren` and `optionSelected` are identical in
+connect and download apart from comments; `onDatasetSearch` and the debounced search wiring
+are identical in connect, download, compute and ddi-cdi, while `datasetSearch` differs only
+in its parameters (connect passes the collection and prepends "+ Create new dataset",
+download passes an extra flag); `getDoiOptions` differs on purpose per page and stays; the
+`mapDatafiles` plus `addChild` plus root children block repeats in compare, compute,
+download and ddi-cdi. Shared helpers with no behaviour change: the Globus picker
+acceptance spec passes unchanged in meaning, every page suite stays green, the strict
+harness stays byte identical.
 
 ### Task R8: Changelog and screenshot diff
 No written report (Eryk, 2026-10-25). The controller appends to
