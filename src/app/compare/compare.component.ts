@@ -156,9 +156,7 @@ export class CompareComponent
     if (!d.data || d.data.length === 0) {
       return new Map<string, TreeNode<Datafile>>();
     }
-    const rowDataMap = this.utils.mapDatafiles(d.data);
-    rowDataMap.forEach((v) => this.utils.addChild(v, rowDataMap));
-    return rowDataMap;
+    return this.utils.buildFileTree(d.data).rowNodeMap;
   });
 
   readonly fileNodeBuckets = computed<FileNodeBuckets>(() => {
