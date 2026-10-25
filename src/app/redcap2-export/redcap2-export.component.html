@@ -110,16 +110,14 @@
                     (blur)="onReportIdBlur()"
                     placeholder="e.g. 3010"
                   />
-                  <div class="input-group-append">
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      (click)="reloadVariables()"
-                      title="Load the report's variables for anonymization"
-                    >
-                      Load variables
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="reloadVariables()"
+                    title="Load the report's variables for anonymization"
+                  >
+                    Load variables
+                  </button>
                 </div>
                 <small class="hint-text"
                   >Find this in REDCap under My Reports &amp; Exports. Reports
@@ -417,9 +415,7 @@
             </p>
           } @else {
             <div class="table-responsive">
-              <table
-                class="table table-sm table-theme-adaptive align-middle mb-0"
-              >
+              <table class="table table-sm align-middle mb-0">
                 <thead>
                   <tr class="file-list-header">
                     <th scope="col">Variable</th>

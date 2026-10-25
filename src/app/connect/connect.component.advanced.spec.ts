@@ -535,8 +535,8 @@ describe('ConnectComponent advanced behaviors', () => {
     comp.option.set(undefined);
     comp.branchItems.set([]);
 
-    // Repro: PrimeNG can emit an expanded node instance that is detached from
-    // the canonical tree held in component state.
+    // The expanded node is a copy, detached from the canonical tree held in
+    // component state: the listing still goes into the stored tree.
     const detachedExpandedNode: TreeNode<string> = {
       label: 'Expand and select',
       data: '',

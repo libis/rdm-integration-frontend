@@ -24,7 +24,7 @@
       This data is currently not openly available. Either go back and log in, or
       paste a provided preview URL below.
     </p>
-    <div class="p-inputgroup mt-3">
+    <div class="mt-3">
       <input
         type="text"
         [ngModel]="previewUrlInput()"
@@ -89,9 +89,7 @@
   @if (configLoaded() && showDVToken()) {
     <div class="col-auto">
       <div class="input-group">
-        <div class="input-group-prepend">
-          <span class="input-group-text">Token:&nbsp;</span>
-        </div>
+        <span class="input-group-text">Token:&nbsp;</span>
         <input
           type="password"
           class="form-control"

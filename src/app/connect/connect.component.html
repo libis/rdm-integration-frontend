@@ -129,7 +129,7 @@
                       (ngModelChange)="token.set($event)"
                       #ctrl="ngModel"
                     />
-                    <div class="input-group-append">
+                    @if (showRepoTokenGetter()) {
                       <button
                         style="
                           width: 12rem;
@@ -140,11 +140,10 @@
                         class="btn btn-primary"
                         (click)="getRepoToken()"
                         title="Get API token"
-                        [hidden]="!showRepoTokenGetter()"
                       >
                         Get token
                       </button>
-                    </div>
+                    }
                   </div>
                 </div>
                 <div class="mb-3" [hidden]="sourceUrlFieldName() === undefined">
@@ -313,21 +312,19 @@
                       (change)="onUserChange()"
                     />
                     @if (showDVTokenGetter()) {
-                      <div class="input-group-append">
-                        <button
-                          style="
-                            width: 12rem;
-                            align-items: center;
-                            justify-content: center;
-                          "
-                          type="button"
-                          class="btn btn-primary"
-                          (click)="getDataverseToken()"
-                          title="Get API token"
-                        >
-                          Get token
-                        </button>
-                      </div>
+                      <button
+                        style="
+                          width: 12rem;
+                          align-items: center;
+                          justify-content: center;
+                        "
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="getDataverseToken()"
+                        title="Get API token"
+                      >
+                        Get token
+                      </button>
                     }
                   </div>
                 </div>

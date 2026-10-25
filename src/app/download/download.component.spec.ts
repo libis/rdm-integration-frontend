@@ -501,8 +501,8 @@ describe('DownloadComponent', () => {
       },
     ] as any;
 
-    // Repro: PrimeNG can emit a node instance that is not referentially equal
-    // to the node stored in component state.
+    // The expanded node is a copy, not the node stored in component state:
+    // the listing still goes into the stored tree.
     const detachedExpandedNode: TreeNode<string> = {
       label: 'Expand and select',
       data: '',

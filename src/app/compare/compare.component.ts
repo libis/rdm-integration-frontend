@@ -101,11 +101,8 @@ export class CompareComponent
   readonly icon_noaction = APP_CONSTANTS.ICONS.NO_ACTION;
   readonly icon_update = APP_CONSTANTS.ICONS.UPDATE;
   readonly icon_mirror = APP_CONSTANTS.ICONS.MIRROR;
-  readonly icon_submit = APP_CONSTANTS.ICONS.SUBMIT;
-  readonly icon_compare = APP_CONSTANTS.ICONS.COMPARE;
   readonly icon_action = APP_CONSTANTS.ICONS.ACTION;
   readonly icon_warning = APP_CONSTANTS.ICONS.WARNING;
-  readonly icon_status = APP_CONSTANTS.ICONS.FILTER;
 
   // Signals for state
   readonly data = signal<CompareResult>({});

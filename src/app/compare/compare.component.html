@@ -75,7 +75,7 @@
   <div class="mb-3 compare-rejected">
     @if (rejectedSize() && rejectedSize()!.length) {
       <div>
-        <table class="table table-theme-adaptive">
+        <table class="table">
           <tbody>
             <tr class="file-list-header">
               <th>
@@ -89,17 +89,19 @@
               </th>
             </tr>
             <tr>
-              <table class="table table-theme-adaptive">
-                <tbody>
-                  @for (fileName of rejectedSize(); track fileName) {
-                    <tr>
-                      <td>
-                        <span>{{ fileName }}</span>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+              <td class="p-0 border-0">
+                <table class="table">
+                  <tbody>
+                    @for (fileName of rejectedSize(); track fileName) {
+                      <tr>
+                        <td>
+                          <span>{{ fileName }}</span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -107,7 +109,7 @@
     }
     @if (rejectedName() && rejectedName()!.length) {
       <div>
-        <table class="table table-theme-adaptive">
+        <table class="table">
           <tbody>
             <tr class="file-list-header">
               <th>
@@ -121,17 +123,19 @@
               </th>
             </tr>
             <tr>
-              <table class="table table-theme-adaptive">
-                <tbody>
-                  @for (fileName of rejectedName(); track fileName) {
-                    <tr>
-                      <td>
-                        <span>{{ fileName }}</span>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+              <td class="p-0 border-0">
+                <table class="table">
+                  <tbody>
+                    @for (fileName of rejectedName(); track fileName) {
+                      <tr>
+                        <td>
+                          <span>{{ fileName }}</span>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </td>
             </tr>
             <tr>
               <td class="small px-3 pb-2">
@@ -271,7 +275,6 @@
         [attr.aria-rowindex]="rowIndex"
         [attr.aria-level]="level + 1"
         [attr.aria-expanded]="tt.expandedState(node)"
-        [hidden]="node.data.hidden"
         [datafile]="node.data"
         [node]="node"
         [level]="level"

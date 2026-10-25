@@ -117,14 +117,14 @@
   </div>
 </app-dialog>
 
-<table class="table table-theme-adaptive">
+<table class="table">
   <tbody>
     <tr class="file-list-header">
       <th><i [class]="icon_copy"></i> Files that will be created</th>
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <table class="table table-theme-adaptive">
+        <table class="table">
           <tbody>
             @for (datafile of created(); track datafile.id ?? $index) {
               <tr
@@ -144,7 +144,7 @@
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <table class="table table-theme-adaptive">
+        <table class="table">
           <tbody>
             @for (datafile of updated(); track datafile.id ?? $index) {
               <tr
@@ -164,7 +164,7 @@
     </tr>
     <tr>
       <td class="inner-table-cell">
-        <table class="table table-theme-adaptive">
+        <table class="table">
           <tbody>
             @for (datafile of deleted(); track datafile.id ?? $index) {
               <tr

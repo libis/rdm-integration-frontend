@@ -146,17 +146,11 @@ export class ConnectComponent
   readonly branchItems = signal<HierarchicalSelectItem<string>[]>([]);
   readonly collectionItems = signal<SelectItem<string>[]>([]);
   readonly doiItems = signal<SelectItem<string>[]>([]);
-  // Internal storage for tree nodes; use rootOptions() computed for reading
+  // Internal storage for tree nodes; read them through rootOptions()
   private readonly _rootOptionsData = signal<TreeNode<string>[]>(
     createPlaceholderRootOptions(),
   );
-  // Used to trigger view updates when tree nodes are mutated
-  readonly refreshTrigger = signal(0);
-  // Computed signal that tracks refreshTrigger for change detection
-  readonly rootOptions = computed(() => {
-    this.refreshTrigger(); // Track refresh trigger to force re-render
-    return this._rootOptionsData();
-  });
+  readonly rootOptions = this._rootOptionsData.asReadonly();
   readonly selectedOption = signal<TreeNode<string> | undefined>(undefined);
 
   // Both accordion panels expanded by default

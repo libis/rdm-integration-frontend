@@ -83,7 +83,6 @@ export class MetadataSelectorComponent implements OnDestroy {
   readonly metadata = signal<Metadata | undefined>(undefined);
   readonly root = signal<TreeNode<Field> | undefined>(undefined);
   readonly rowNodeMap = signal<Map<string, TreeNode<Field>>>(new Map());
-  readonly treeTableColumnCount = signal(4);
 
   // Used to trigger view updates when row actions are mutated
   readonly refreshTrigger = signal(0);
