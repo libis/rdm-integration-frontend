@@ -100,6 +100,15 @@ export class MetadataSelectorComponent implements OnDestroy {
     return MetadatafieldComponent.icon_ignore;
   });
 
+  /** The name and title of the toggle all button. */
+  readonly actionLabel = computed(() => {
+    // Read refreshTrigger to re-evaluate when row actions change
+    this.refreshTrigger();
+    const r = this.root();
+    const action = r ? MetadatafieldComponent.actionNameFromNode(r) : 'none';
+    return `Action for all fields: ${action}, change`;
+  });
+
   constructor() {
     this.loadData();
 

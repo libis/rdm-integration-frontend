@@ -74,6 +74,30 @@ describe('DownladablefileComponent', () => {
     expect(cells[0].textContent).toContain('README.md');
   });
 
+  // The button held only an icon: no accessible name.
+  it('names the action button after the current action', () => {
+    const { child, map } = buildTree();
+    fixture.componentRef.setInput('datafile', child.data);
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput('node', child);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector(
+      '.tt-cell button',
+    ) as HTMLButtonElement;
+    const names: [Fileaction, string][] = [
+      [Fileaction.Ignore, 'Action: none, change'],
+      [Fileaction.Download, 'Action: download, change'],
+      [Fileaction.Custom, 'Action: mixed, change'],
+    ];
+    names.forEach(([action, name], i) => {
+      child.data!.action = action;
+      fixture.componentRef.setInput('trigger', i + 1);
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-label')).toBe(name);
+      expect(button.title).toBe(name);
+    });
+  });
+
   it('toggleAction cycles file actions and updates parent folder', () => {
     const { child, root, map } = buildTree();
     fixture.componentRef.setInput('datafile', child.data);

@@ -62,6 +62,25 @@ export class MetadatafieldComponent {
     }
   }
 
+  /** The name and title of the action button: the action it shows now. */
+  readonly actionLabel = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.refreshTrigger();
+    return `Action: ${MetadatafieldComponent.actionNameFromNode(this.node())}, change`;
+  });
+
+  /** The action of the node in words, as actionIconFromNode shows it. */
+  public static actionNameFromNode(node: TreeNode<Field>): string {
+    switch (node.data?.action) {
+      case Fieldaction.Copy:
+        return 'copy';
+      case Fieldaction.Custom:
+        return 'mixed';
+      default:
+        return 'none';
+    }
+  }
+
   readonly fieldName = computed(() => `${this.field().name}`);
 
   readonly fieldValue = computed(() => {

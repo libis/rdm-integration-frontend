@@ -223,6 +223,29 @@ describe('MetadataSelectorComponent', () => {
     });
   });
 
+  // The icon only buttons had no accessible name.
+  it('names the toggle all button and the row buttons after their action', async () => {
+    await fixture.whenStable();
+    const toggleAll = fixture.nativeElement.querySelector(
+      '.tt-header button',
+    ) as HTMLButtonElement;
+    const rowButton = () =>
+      fixture.nativeElement.querySelector(
+        'div[app-metadatafield] .btn-outline-secondary',
+      ) as HTMLButtonElement;
+    expect(toggleAll.getAttribute('aria-label')).toBe(
+      'Action for all fields: copy, change',
+    );
+    expect(toggleAll.title).toBe('Action for all fields: copy, change');
+    expect(rowButton().getAttribute('aria-label')).toBe('Action: copy, change');
+    toggleAll.click();
+    await fixture.whenStable();
+    expect(toggleAll.getAttribute('aria-label')).toBe(
+      'Action for all fields: none, change',
+    );
+    expect(rowButton().getAttribute('aria-label')).toBe('Action: none, change');
+  });
+
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {
     // prepare a fake root and spy on static methods
     const root: any = { data: { name: 'root' } };

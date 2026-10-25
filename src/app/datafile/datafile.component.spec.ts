@@ -117,6 +117,27 @@ describe('DatafileComponent', () => {
     });
   });
 
+  // The button held only an icon: no accessible name.
+  it('names the action button after the current action', () => {
+    const names: [Fileaction | undefined, string][] = [
+      [Fileaction.Ignore, 'Action: none, change'],
+      [Fileaction.Copy, 'Action: copy, change'],
+      [Fileaction.Update, 'Action: update, change'],
+      [Fileaction.Delete, 'Action: delete, change'],
+      [Fileaction.Custom, 'Action: mixed, change'],
+      [undefined, 'Action: unknown, change'],
+    ];
+    const button = fixture.nativeElement.querySelector(
+      '.tt-cell button',
+    ) as HTMLButtonElement;
+    for (const [action, name] of names) {
+      fixture.componentRef.setInput('datafile', { id: 'f', name: 'f', action });
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-label')).toBe(name);
+      expect(button.title).toBe(name);
+    }
+  });
+
   it('setNodeAction cascades to children and file-in-folder rules apply', () => {
     // folder parent
     const folder: Datafile = {

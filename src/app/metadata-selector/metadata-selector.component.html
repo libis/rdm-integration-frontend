@@ -35,6 +35,8 @@
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary"
+          [attr.aria-label]="actionLabel()"
+          [title]="actionLabel()"
           (click)="toggleAction()"
         >
           <i [class]="action()"></i>

@@ -1230,6 +1230,28 @@ describe('CompareComponent table', () => {
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       '.tt-header button.btn-primary',
     )!;
+
+  // The icon only buttons had no accessible name; the filter button's title
+  // sat on the span around it.
+  it('names the status filter button and the row action buttons', async () => {
+    const fixture = await render();
+    const filter = filterButton(fixture);
+    expect(filter.getAttribute('aria-label')).toBe(
+      'Filter by comparison status',
+    );
+    expect(filter.title).toBe('Filter by comparison status');
+    const file = rows(fixture).find((row) =>
+      row.textContent!.includes('b.txt'),
+    )!;
+    const action = file.querySelector<HTMLButtonElement>(
+      '.btn-outline-secondary',
+    )!;
+    expect(action.getAttribute('aria-label')).toBe('Action: none, change');
+    action.click();
+    await fixture.whenStable();
+    expect(action.getAttribute('aria-label')).toBe('Action: delete, change');
+    expect(action.title).toBe('Action: delete, change');
+  });
   const filterAll = () =>
     document.querySelector<HTMLInputElement>(
       '.cdk-overlay-container #filter-all',

@@ -2201,7 +2201,8 @@ describe('DownloadComponent layout', () => {
     ).toEqual([fixture.nativeElement]);
   });
 
-  it('gives the tree table viewport a height with the page styles', async () => {
+  // A folder with one file, collapsed.
+  const renderFolder = async () => {
     const fixture = create();
     const comp = fixture.componentInstance;
     const folder: TreeNode<Datafile> = {
@@ -2254,6 +2255,11 @@ describe('DownloadComponent layout', () => {
       url: 'https://example.org/ds',
     } as CompareResult);
     await fixture.whenStable();
+    return fixture;
+  };
+
+  it('gives the tree table viewport a height with the page styles', async () => {
+    const fixture = await renderFolder();
     const body = fixture.nativeElement.querySelector('.tt-body') as HTMLElement;
     expect(body.offsetHeight).toBeGreaterThan(0);
     const viewport = fixture.debugElement
@@ -2279,6 +2285,31 @@ describe('DownloadComponent layout', () => {
       rows: ['dir: row 1 true', 'f: row 2 null'],
       cells: ['gridcell'],
     });
+  });
+
+  // The icon only buttons had no accessible name.
+  it('names the toggle all button and the row buttons after their action', async () => {
+    const fixture = await renderFolder();
+    const toggleAll = fixture.nativeElement.querySelector(
+      '.tt-header button',
+    ) as HTMLButtonElement;
+    const rowButton = () =>
+      fixture.nativeElement.querySelector(
+        'div[app-downloadablefile] .btn-outline-secondary',
+      ) as HTMLButtonElement;
+    expect(toggleAll.getAttribute('aria-label')).toBe(
+      'Action for all files: none, change',
+    );
+    expect(toggleAll.title).toBe('Action for all files: none, change');
+    expect(rowButton().getAttribute('aria-label')).toBe('Action: none, change');
+    toggleAll.click();
+    await fixture.whenStable();
+    expect(toggleAll.getAttribute('aria-label')).toBe(
+      'Action for all files: download, change',
+    );
+    expect(rowButton().getAttribute('aria-label')).toBe(
+      'Action: download, change',
+    );
   });
 
   describe('in a 1366x768 window', () => {

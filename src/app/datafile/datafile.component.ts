@@ -131,6 +131,25 @@ export class DatafileComponent {
     return DatafileComponent.icon_unknown;
   });
 
+  /** The name and title of the action button: the action it shows now. */
+  readonly actionLabel = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
+    switch (Number(this.datafile().action)) {
+      case Fileaction.Ignore:
+        return 'Action: none, change';
+      case Fileaction.Copy:
+        return 'Action: copy, change';
+      case Fileaction.Delete:
+        return 'Action: delete, change';
+      case Fileaction.Update:
+        return 'Action: update, change';
+      case Fileaction.Custom:
+        return 'Action: mixed, change';
+    }
+    return 'Action: unknown, change';
+  });
+
   readonly targetFile = computed(() => {
     const datafile = this.datafile();
     if (

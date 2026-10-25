@@ -80,6 +80,30 @@ describe('MetadatafieldComponent', () => {
     expect(cells[2].textContent).toContain('codemeta.json');
   });
 
+  // The button held only an icon: no accessible name.
+  it('names the action button after the current action', () => {
+    const { childNode, map } = buildFieldTree();
+    fixture.componentRef.setInput('field', childNode.data);
+    fixture.componentRef.setInput('rowNodeMap', map);
+    fixture.componentRef.setInput('node', childNode);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector(
+      '.tt-cell button',
+    ) as HTMLButtonElement;
+    const names: [Fieldaction, string][] = [
+      [Fieldaction.Copy, 'Action: copy, change'],
+      [Fieldaction.Ignore, 'Action: none, change'],
+      [Fieldaction.Custom, 'Action: mixed, change'],
+    ];
+    names.forEach(([action, name], i) => {
+      childNode.data!.action = action;
+      fixture.componentRef.setInput('refreshTrigger', i + 1);
+      fixture.detectChanges();
+      expect(button.getAttribute('aria-label')).toBe(name);
+      expect(button.title).toBe(name);
+    });
+  });
+
   it('source falls back to first leaf child when parent lacks metadata', () => {
     const { parentNode, map } = buildFieldTree();
     parentNode.data = {

@@ -61,6 +61,25 @@ export class DownladablefileComponent {
     }
   }
 
+  /** The name and title of the action button: the action it shows now. */
+  readonly actionLabel = computed(() => {
+    // Track trigger to update when action changes via mutation
+    this.trigger();
+    return `Action: ${DownladablefileComponent.actionNameFromNode(this.node())}, change`;
+  });
+
+  /** The action of the node in words, as actionIconFromNode shows it. */
+  public static actionNameFromNode(node: TreeNode<Datafile>): string {
+    switch (node.data?.action) {
+      case Fileaction.Download:
+        return 'download';
+      case Fileaction.Custom:
+        return 'mixed';
+      default:
+        return 'none';
+    }
+  }
+
   readonly fileName = computed(() => `${this.datafile().name}`);
 
   readonly hostStyle = computed(() => {

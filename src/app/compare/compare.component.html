@@ -158,20 +158,20 @@
         >
       </div>
       <div class="tt-cell text-center" role="columnheader">
-        <span title="Comparison status">
-          <button
-            type="button"
-            class="btn btn-sm btn-primary"
-            cdkOverlayOrigin
-            #filterOrigin="cdkOverlayOrigin"
-            [disabled]="loading()"
-            aria-haspopup="dialog"
-            [attr.aria-expanded]="filterOpen()"
-            (click)="filterOpen.set(!filterOpen())"
-          >
-            <i class="pi pi-filter"></i>
-          </button>
-        </span>
+        <button
+          type="button"
+          class="btn btn-sm btn-primary"
+          cdkOverlayOrigin
+          #filterOrigin="cdkOverlayOrigin"
+          [disabled]="loading()"
+          aria-label="Filter by comparison status"
+          title="Filter by comparison status"
+          aria-haspopup="dialog"
+          [attr.aria-expanded]="filterOpen()"
+          (click)="filterOpen.set(!filterOpen())"
+        >
+          <i class="pi pi-filter"></i>
+        </button>
         <ng-template
           cdkConnectedOverlay
           [cdkConnectedOverlayOrigin]="filterOrigin"

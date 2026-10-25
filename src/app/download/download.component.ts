@@ -195,6 +195,16 @@ export class DownloadComponent
     return DownladablefileComponent.icon_ignore;
   });
 
+  /** The name and title of the toggle all button. */
+  readonly actionLabel = computed(() => {
+    this.refreshTrigger(); // Track refresh trigger
+    const root = this.rowNodeMap().get('');
+    const action = root
+      ? DownladablefileComponent.actionNameFromNode(root)
+      : 'none';
+    return `Action for all files: ${action}, change`;
+  });
+
   readonly fileNodes = computed(() => {
     const files: TreeNode<Datafile>[] = [];
     this.rowNodeMap().forEach((node) => {
