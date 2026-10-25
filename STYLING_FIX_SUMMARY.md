@@ -17,12 +17,12 @@ Action-based row colors (green for copy, yellow for custom) were not displaying 
 ```
 // OLD (overwrote action colors):
 .table tr {
-  background-color: var(--p-content-background);
+  background-color: var(--app-bg);
 }
 
 // NEW (excludes action rows):
 .table tr:not([class*="file-action-"]) {
-  background-color: var(--p-content-background);
+  background-color: var(--app-bg);
 }
 ```
 
@@ -44,7 +44,7 @@ buildInlineStyle(style) =>
 
 // NEW (excludes action rows):
 .table tr:not([class*="file-action-"]) {
-background-color: var(--p-content-background);
+background-color: var(--app-bg);
 }
 
 ````
@@ -88,7 +88,7 @@ background-color: var(--p-content-background);
 
 ### 9. `/src/styles.scss`
 
-- Introduces `.table-theme-adaptive`, a reusable helper that maps PrimeNG theme variables into Bootstrap's table CSS custom properties. Light mode uses brighter `color-mix` blends; dark mode inherits PrimeNG defaults.
+- Defines the `--app-*` tokens (`--app-bg`, `--app-text`, `--app-border`, ...) on Bootstrap's colour mode variables. Bootstrap's `.table` follows `data-bs-theme` through its own `--bs-table-*` variables, so tables need no helper class.
 
 ## Color Styling Source of Truth
 
@@ -124,7 +124,7 @@ The variables live in `styles.scss`, so the palette automatically adapts to ligh
 
 ## Testing
 
-Expanded `/src/app/datafile/datafile-styling.spec.ts`, `/src/app/metadata-selector/metadata-selector-styling.spec.ts`, and `/src/app/submit/submit-styling.spec.ts` to validate:
+Expanded `/src/app/datafile/datafile-styling.spec.ts` and `/src/app/metadata-selector/metadata-selector-styling.spec.ts` to validate:
 
 1. Inline `[style]` bindings emit the expected CSS custom properties.
 2. Computed backgrounds are non-transparent in the rendered DOM.

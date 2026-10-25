@@ -91,14 +91,14 @@ Fixed SHACL form styling by overriding CSS custom properties that inherit into s
 ```scss
 shacl-form {
   // Critical -inner suffix variables for shadow DOM content
-  --rokit-background-color-inner: var(--p-form-field-background);
-  --rokit-light-background-color-inner: var(--p-content-background);
-  --rokit-light-background-darker-color-inner: var(--p-surface-100);
+  --rokit-background-color-inner: var(--bs-body-bg);
+  --rokit-light-background-color-inner: var(--app-bg);
+  --rokit-light-background-darker-color-inner: var(--bs-secondary-bg);
   
   // Additional theme mappings
-  --rokit-background-color: var(--p-form-field-background);
-  --rokit-surface-color: var(--p-content-background);
-  --rokit-text-color: var(--p-form-field-color);
+  --rokit-background-color: var(--bs-body-bg);
+  --rokit-surface-color: var(--app-bg);
+  --rokit-text-color: var(--bs-body-color);
   // ... (other color overrides)
 }
 ```
