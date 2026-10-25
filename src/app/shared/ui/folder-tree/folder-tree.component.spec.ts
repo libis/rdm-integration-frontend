@@ -1,5 +1,6 @@
 import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { TreeNode } from '../../../models/tree-node';
 import { FolderTreeComponent } from './folder-tree.component';
 
@@ -599,5 +600,43 @@ describe('FolderTreeComponent', () => {
     await fixture.whenStable();
     expect(shared.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.componentInstance.expanded).toEqual(['/shared/']);
+  });
+
+  it('never expands a leaf node or emits nodeExpand for it', async () => {
+    const fixture = TestBed.createComponent(CollapsedHostComponent);
+    const leaf: TreeNode<string> = {
+      key: 'path:/notes.txt',
+      label: 'notes.txt',
+      data: '/notes.txt',
+      leaf: true,
+    };
+    fixture.componentInstance.nodes.set([
+      {
+        key: 'path:/',
+        label: '/',
+        data: '/',
+        expanded: true,
+        children: [leaf],
+      },
+    ]);
+    await fixture.whenStable();
+    const node = nodeNamed(fixture.nativeElement, 'notes.txt');
+    expect(node.querySelector('button.folder-toggle')).toBeNull();
+    node.focus();
+    key(node, 'ArrowRight');
+    await fixture.whenStable();
+    expect(node.hasAttribute('aria-expanded')).toBeFalse();
+    expect(focused()).toBe('notes.txt');
+    const tree = fixture.debugElement.query(By.directive(FolderTreeComponent))
+      .componentInstance as FolderTreeComponent;
+    tree.toggle(leaf);
+    await fixture.whenStable();
+    expect(tree.tree().isExpanded(leaf)).toBeFalse();
+    expect(leaf.expanded).toBeUndefined();
+    expect(fixture.componentInstance.expanded).toEqual([]);
+    // ArrowLeft on a leaf still moves to its parent.
+    key(node, 'ArrowLeft');
+    await fixture.whenStable();
+    expect(focused()).toBe('/');
   });
 });

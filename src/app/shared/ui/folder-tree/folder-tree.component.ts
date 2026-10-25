@@ -125,6 +125,7 @@ export class FolderTreeComponent {
   }
 
   toggle(node: TreeNode<string>): void {
+    if (!this.isExpandable(node)) return;
     const tree = this.tree();
     const expanding = !tree.isExpanded(node);
     node.expanded = expanding;
@@ -137,13 +138,16 @@ export class FolderTreeComponent {
     node: TreeNode<string>,
     element: HTMLElement,
   ): void {
-    const expanded = this.tree().isExpanded(node);
+    // A leaf is never expanded: its arrow keys go to the CDK tree.
+    const expandable = this.isExpandable(node);
+    const expanded = expandable && this.tree().isExpanded(node);
     if (
-      (event.key === 'ArrowRight' && !expanded) ||
-      (event.key === 'ArrowLeft' && expanded)
+      expandable &&
+      ((event.key === 'ArrowRight' && !expanded) ||
+        (event.key === 'ArrowLeft' && expanded))
     ) {
       this.toggle(node);
-    } else if (event.key === 'ArrowRight') {
+    } else if (event.key === 'ArrowRight' && expanded) {
       this.focusFirstChild(element);
     } else if (event.key === 'Enter' || event.key === ' ') {
       this.select(node);
