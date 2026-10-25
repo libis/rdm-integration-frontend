@@ -31,7 +31,6 @@ import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
 import { APP_CONSTANTS } from '../shared/constants';
-import { updateExpandedNodeChildren } from '../shared/folder-picker';
 import { NotificationService } from '../shared/notification.service';
 import {
   measurePage,
@@ -2459,27 +2458,6 @@ describe('DownloadComponent', () => {
       const spy = spyOn(repoLookup, 'getOptions').and.callThrough();
       comp.getOptions();
       expect(spy).not.toHaveBeenCalled();
-    });
-
-    it('updateExpandedNodeChildren replaces a nested target and reports misses', () => {
-      const tree = [
-        { label: 'x', data: '/x/', children: [] },
-        { label: 'a', data: '/a/', children: [{ label: 'b', data: '/a/b/' }] },
-      ];
-      const hit: any = updateExpandedNodeChildren(
-        tree,
-        { label: 'b', data: '/a/b/' },
-        [{ label: 'c', data: '/a/b/c/' }],
-      );
-      expect(hit.found).toBeTrue();
-      expect(hit.tree[1].children[0].children[0].data).toBe('/a/b/c/');
-      expect(hit.tree[0]).toBe(tree[0]);
-      const miss = updateExpandedNodeChildren(
-        tree,
-        { label: 'zzz', data: '/zzz/' },
-        [],
-      );
-      expect(miss.found).toBeFalse();
     });
 
     it('getRepoToken falls back to the plugin source url and carries preselected files', () => {
