@@ -86,6 +86,14 @@ cdk-accordion-item {
   white-space: nowrap;
 }
 
+// The dark colours here and in the components follow the Bootstrap colour mode
+// (data-bs-theme on <html>, set by main.ts from the media query), so they
+// always agree with the Bootstrap components.
+
+// The rows of the file actions, and the status icons (compare rows, the status
+// filter, the rejected file headings). The plain icon colours have 4:1 or more
+// on the light background; on the dark one blue has 1.8:1, so dark mode takes
+// Bootstrap's text emphasis colours (6:1 or more).
 :root {
   --app-file-action-copy-bg: #c3e6cb;
   --app-file-action-copy-color: #1a1a1a;
@@ -95,19 +103,23 @@ cdk-accordion-item {
   --app-file-action-delete-color: #1a1a1a;
   --app-file-action-custom-bg: #fffaa0;
   --app-file-action-custom-color: #1a1a1a;
+  --app-icon-success: green;
+  --app-icon-info: blue;
+  --app-icon-danger: red;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --app-file-action-copy-bg: #1e4620;
-    --app-file-action-copy-color: #c3e6cb;
-    --app-file-action-update-bg: #1a3d5c;
-    --app-file-action-update-color: #b8daff;
-    --app-file-action-delete-bg: #4a1f23;
-    --app-file-action-delete-color: #f5c6cb;
-    --app-file-action-custom-bg: #4a4520;
-    --app-file-action-custom-color: #fffaa0;
-  }
+[data-bs-theme="dark"] {
+  --app-file-action-copy-bg: #1e4620;
+  --app-file-action-copy-color: #c3e6cb;
+  --app-file-action-update-bg: #1a3d5c;
+  --app-file-action-update-color: #b8daff;
+  --app-file-action-delete-bg: #4a1f23;
+  --app-file-action-delete-color: #f5c6cb;
+  --app-file-action-custom-bg: #4a4520;
+  --app-file-action-custom-color: #fffaa0;
+  --app-icon-success: var(--bs-success-text-emphasis);
+  --app-icon-info: var(--bs-primary-text-emphasis);
+  --app-icon-danger: var(--bs-danger-text-emphasis);
 }
 
 body {
@@ -164,7 +176,7 @@ img {
   color: #c55b28;
   padding: 0;
 
-  @media (prefers-color-scheme: dark) {
+  [data-bs-theme="dark"] & {
     color: #e88a5d;
   }
 }
@@ -201,7 +213,7 @@ footer {
   background-color: #1d8db0;
   height: var(--app-footer-height);
 
-  @media (prefers-color-scheme: dark) {
+  [data-bs-theme="dark"] & {
     color: #a0a0a0;
     background-color: #156b84;
   }
@@ -212,7 +224,7 @@ footer > div {
   bottom: 0.35rem;
   color: #ffffff;
 
-  @media (prefers-color-scheme: dark) {
+  [data-bs-theme="dark"] & {
     color: #e0e0e0;
   }
 }

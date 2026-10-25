@@ -34,12 +34,13 @@ export const APP_CONSTANTS = {
     DELETED_FILE: 'pi pi-minus-circle',
   },
 
-  // Color scheme
+  // Status icon colours, from the tokens in styles.scss that follow the colour
+  // mode; the neutral icon takes the colour of its row.
   COLORS: {
-    SUCCESS: 'green',
-    INFO: 'blue',
-    NEUTRAL: 'foreground',
-    DANGER: 'red',
+    SUCCESS: 'var(--app-icon-success)',
+    INFO: 'var(--app-icon-info)',
+    NEUTRAL: 'inherit',
+    DANGER: 'var(--app-icon-danger)',
   },
 } as const;
 

@@ -791,4 +791,22 @@ describe('SubmitComponent', () => {
     component.ngOnInit();
     expect(component.loadData).toHaveBeenCalled();
   });
+
+  // The dark rules followed the media query instead of the colour mode.
+  for (const [theme, colour] of [
+    ['light', 'rgb(255, 77, 79)'],
+    ['dark', 'rgb(255, 120, 117)'],
+  ]) {
+    it(`colours the safety warning icon for data-bs-theme=${theme}`, () => {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      try {
+        const icon = fixture.nativeElement.querySelector(
+          '.safety-warning i',
+        ) as HTMLElement;
+        expect(getComputedStyle(icon).color).toBe(colour);
+      } finally {
+        document.documentElement.removeAttribute('data-bs-theme');
+      }
+    });
+  }
 });

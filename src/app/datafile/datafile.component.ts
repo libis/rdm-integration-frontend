@@ -13,6 +13,7 @@ import { TreeTogglerComponent } from '../shared/ui/tree-table/tree-toggler.compo
 import { FolderActionUpdateService } from '../folder.action.update.service';
 import { Datafile, Fileaction, Filestatus } from '../models/datafile';
 import {
+  APP_CONSTANTS,
   FileActionStyle,
   buildInlineStyle,
   getFileActionStyle,
@@ -86,15 +87,13 @@ export class DatafileComponent {
   readonly comparisonColor = computed(() => {
     switch (Number(this.datafile().status)) {
       case Filestatus.New:
-        return 'green';
-      case Filestatus.Equal:
-        return 'foreground';
+        return APP_CONSTANTS.COLORS.SUCCESS;
       case Filestatus.Updated:
-        return 'blue';
+        return APP_CONSTANTS.COLORS.INFO;
       case Filestatus.Deleted:
-        return 'red';
+        return APP_CONSTANTS.COLORS.DANGER;
     }
-    return 'foreground';
+    return APP_CONSTANTS.COLORS.NEUTRAL;
   });
 
   readonly comparisonTitle = computed(() => {

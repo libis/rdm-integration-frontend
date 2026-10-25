@@ -89,6 +89,55 @@ describe('DatafileComponent', () => {
     // simplified default branch coverage
   });
 
+  // Plain blue, green and red, and 'foreground', which is no CSS colour: blue
+  // was nearly invisible on the dark background. The unchanged icon takes the
+  // colour of its row.
+  const statusColours: Record<string, [Filestatus, string | null][]> = {
+    light: [
+      [Filestatus.New, 'rgb(0, 128, 0)'],
+      [Filestatus.Updated, 'rgb(0, 0, 255)'],
+      [Filestatus.Deleted, 'rgb(255, 0, 0)'],
+      [Filestatus.Equal, null],
+    ],
+    dark: [
+      [Filestatus.New, 'rgb(117, 183, 152)'],
+      [Filestatus.Updated, 'rgb(110, 168, 254)'],
+      [Filestatus.Deleted, 'rgb(234, 134, 143)'],
+      [Filestatus.Equal, null],
+    ],
+  };
+  for (const theme of ['light', 'dark']) {
+    it(`draws the status icons in the ${theme} mode colours`, () => {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      try {
+        for (const [status, colour] of statusColours[theme]) {
+          const df: Datafile = {
+            id: `id${status}`,
+            name: `f${status}`,
+            path: '',
+            hidden: false,
+            status,
+            action: Fileaction.Copy,
+            attributes: { isFile: true },
+          };
+          setInputs(
+            df,
+            new Map([[`${df.id}:file`, { data: df } as TreeNode<Datafile>]]),
+          );
+          fixture.detectChanges();
+          const icon = fixture.nativeElement.querySelector(
+            'i[role="img"]',
+          ) as HTMLElement;
+          expect(getComputedStyle(icon).color)
+            .withContext(`${theme} status ${status}`)
+            .toBe(colour ?? getComputedStyle(icon.parentElement!).color);
+        }
+      } finally {
+        document.documentElement.removeAttribute('data-bs-theme');
+      }
+    });
+  }
+
   it('actionIcon returns correct icons', () => {
     const actions = [
       Fileaction.Ignore,

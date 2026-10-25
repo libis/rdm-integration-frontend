@@ -1423,4 +1423,27 @@ describe('TransferProgressCardComponent', () => {
     expect(compiled.textContent).toContain('Task ID:');
     expect(compiled.textContent).toContain('display-task-123');
   });
+
+  // The dark rules followed the media query instead of the colour mode.
+  for (const [theme, shadow] of [
+    ['light', 'rgba(0, 0, 0, 0.05) 0px 2px 4px 0px'],
+    ['dark', 'rgba(0, 0, 0, 0.3) 0px 2px 8px 0px'],
+  ]) {
+    it(`draws the card for data-bs-theme=${theme}`, async () => {
+      document.documentElement.setAttribute('data-bs-theme', theme);
+      try {
+        submit.statuses = [{ task_id: 'theme-task', status: 'ACTIVE' }];
+        fixture.componentRef.setInput('isGlobus', true);
+        fixture.componentRef.setInput('taskId', 'theme-task');
+        await new Promise<void>((r) => setTimeout(r));
+        fixture.detectChanges();
+        const card = fixture.nativeElement.querySelector(
+          '.transfer-status',
+        ) as HTMLElement;
+        expect(getComputedStyle(card).boxShadow).toBe(shadow);
+      } finally {
+        document.documentElement.removeAttribute('data-bs-theme');
+      }
+    });
+  }
 });
