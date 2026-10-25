@@ -199,12 +199,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
   async ngOnInit() {
     // Load dataverseToken from localStorage if storeDvToken is enabled
-    if (this.pluginService.isStoreDvToken()) {
-      const dvToken = localStorage.getItem('dataverseToken');
-      if (dvToken !== null) {
-        this.dataverseToken.set(dvToken);
-      }
-    }
+    this.tokenEdit.restore();
 
     this.subscriptions.add(
       this.route.queryParams.subscribe((params) => {
@@ -261,10 +256,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.totalSelectableFiles.set(0);
     this.resetOutputState();
     // Save dataverseToken to localStorage if storeDvToken is enabled
-    const token = this.dataverseToken();
-    if (token !== undefined && this.pluginService.isStoreDvToken()) {
-      localStorage.setItem('dataverseToken', token);
-    }
+    this.tokenEdit.store();
   }
 
   // DV OBJECTS: COMMON
