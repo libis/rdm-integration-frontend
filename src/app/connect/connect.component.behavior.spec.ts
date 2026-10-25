@@ -15,7 +15,7 @@ import {
   withDisabledInitialNavigation,
 } from '@angular/router';
 import { SelectItem } from '../models/select-item';
-import { config, of, throwError } from 'rxjs';
+import { Subject, config, of, throwError } from 'rxjs';
 import { CredentialsService } from '../credentials.service';
 import { DataStateService } from '../data.state.service';
 import { DatasetService } from '../dataset.service';
@@ -937,6 +937,74 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(comp.doiItems()).toEqual([]);
       expect(comp.datasetId()).toBeUndefined();
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
+    });
+
+    // A lookup still under way when the token changed answered after the
+    // reset: the select kept what the old token found and asked nothing with
+    // the new one.
+    it('drops lookups answered after a token edit and asks again with the new token', async () => {
+      pluginService.datasetFieldEditable$ = signal(false).asReadonly();
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+      const list = new Subject<SelectItem<string>[]>();
+      const search = new Subject<SelectItem<string>[]>();
+      const collections = new Subject<SelectItem<string>[]>();
+      const old = [{ label: 'Dataset O', value: 'doi:10.1/O' }];
+      const getItems = spyOn(
+        TestBed.inject(DvObjectLookupService),
+        'getItems',
+      ).and.returnValues(
+        list,
+        search,
+        collections,
+        of([{ label: 'Dataset N', value: 'doi:10.1/N' }]),
+      );
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        // The first list: the select opened and closed, the token edited.
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        editToken(fixture, 'token-1');
+        list.next(old);
+        list.complete();
+        expect(comp.doiItems()).toEqual([]);
+
+        // A dataset and a collection search past their debounce, the token
+        // edited again.
+        comp.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        comp.onCollectionSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        editToken(fixture, 'token-2');
+        search.next(old);
+        search.complete();
+        collections.next([{ label: 'Collection O', value: 'root:O' }]);
+        collections.complete();
+        await settlePromises();
+        expect(comp.doiItems()).toEqual([]);
+        expect(comp.collectionItems()).toEqual([]);
+
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        expect(getItems).toHaveBeenCalledTimes(4);
+        expect(getItems.calls.mostRecent().args).toEqual([
+          '',
+          'Dataset',
+          undefined,
+          'token-2',
+        ]);
+        expect(selectPanelLabels()).toEqual([
+          '+ Create new dataset',
+          'Dataset N',
+        ]);
+      } finally {
+        jasmine.clock().uninstall();
+      }
     });
 
     // A change event without a new token, a browser filling in the restored

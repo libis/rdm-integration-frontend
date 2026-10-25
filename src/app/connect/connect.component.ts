@@ -421,22 +421,25 @@ export class ConnectComponent
       });
     this.collectionSearchResultsSubscription =
       this.collectionSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => {
-              this.collectionItems.set(v);
-            })
-            .catch((err) => {
-              this.notificationService.showError(
-                `Collection search failed: ${err.message}`,
-              );
-              this.collectionItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]);
-            }),
+        next: (x) => {
+          // The search has just been sent with the current token; its answer
+          // is dropped when the token has changed since.
+          const token = this.dataverseToken();
+          x.then((v) => {
+            if (this.dataverseToken() === token) this.collectionItems.set(v);
+          }).catch((err) => {
+            if (this.dataverseToken() !== token) return;
+            this.notificationService.showError(
+              `Collection search failed: ${err.message}`,
+            );
+            this.collectionItems.set([
+              {
+                label: `search failed: ${err.message}`,
+                value: err.message,
+              },
+            ]);
+          });
+        },
         error: (err) => {
           this.notificationService.showError(
             `Collection search failed: ${err.message}`,
@@ -448,22 +451,25 @@ export class ConnectComponent
       });
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
-        next: (x) =>
-          x
-            .then((v) => {
-              this.doiItems.set(v);
-            })
-            .catch((err) => {
-              this.notificationService.showError(
-                `Dataset search failed: ${err.message}`,
-              );
-              this.doiItems.set([
-                {
-                  label: `search failed: ${err.message}`,
-                  value: err.message,
-                },
-              ]);
-            }),
+        next: (x) => {
+          // The search has just been sent with the current token; its answer
+          // is dropped when the token has changed since.
+          const token = this.dataverseToken();
+          x.then((v) => {
+            if (this.dataverseToken() === token) this.doiItems.set(v);
+          }).catch((err) => {
+            if (this.dataverseToken() !== token) return;
+            this.notificationService.showError(
+              `Dataset search failed: ${err.message}`,
+            );
+            this.doiItems.set([
+              {
+                label: `search failed: ${err.message}`,
+                value: err.message,
+              },
+            ]);
+          });
+        },
         error: (err) => {
           this.notificationService.showError(
             `Dataset search failed: ${err.message}`,
@@ -1456,17 +1462,21 @@ export class ConnectComponent
     setter(this, lItems);
 
     // take(1) ends the request with its answer, also a synchronous one; the
-    // subscription is kept for ngOnDestroy until then.
+    // subscription is kept for ngOnDestroy until then. An answer to a request
+    // with an older token is dropped: the token change reset the lists, and
+    // the next opening asks again.
+    const token = this.dataverseToken();
     const subscription = this.dvObjectLookupService
       .getItems(
         this.collectionId() ? this.collectionId()! : '',
         objectType,
         undefined,
-        this.dataverseToken(),
+        token,
       )
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
+          if (this.dataverseToken() !== token) return;
           if (items && items.length > 0) {
             setter(this, items);
           } else {
@@ -1474,6 +1484,7 @@ export class ConnectComponent
           }
         },
         error: (err) => {
+          if (this.dataverseToken() !== token) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           setter(this, []);
         },
