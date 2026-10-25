@@ -8,7 +8,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
   provideRouter,
@@ -878,6 +878,85 @@ describe('ConnectComponent additional behavior/validation', () => {
       expect(comp.getRepoToken).not.toHaveBeenCalled();
       // Demand was never consumed, so it is still available for a later attempt.
       expect(takePendingReauth()).toEqual({ scopes: ['scope-b'] });
+    });
+  });
+
+  // The token field bound (onChange), which is no DOM event, so editing the
+  // token never reset the lists nor stored the token.
+  describe('dataverse token field', () => {
+    const tokenInput = (fixture: ComponentFixture<ConnectComponent>) =>
+      fixture.nativeElement.querySelector(
+        '#dataverseToken',
+      ) as HTMLInputElement;
+
+    // Typing fires input events; leaving the field after an edit fires change.
+    const editToken = (
+      fixture: ComponentFixture<ConnectComponent>,
+      value: string,
+    ) => {
+      const input = tokenInput(fixture);
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
+    };
+
+    const selectDataset = (comp: ConnectComponent) => {
+      comp.collectionItems.set([{ label: 'Collection', value: 'root:C' }]);
+      comp.collectionId.set('root:C');
+      comp.doiItems.set([{ label: 'Dataset', value: 'doi:10.1/D' }]);
+      comp.datasetId.set('doi:10.1/D');
+    };
+
+    beforeEach(() => {
+      window.history.replaceState({}, '');
+      localStorage.removeItem('dataverseToken');
+      pluginService.showDVToken$ = signal(true).asReadonly();
+    });
+
+    afterEach(() => localStorage.removeItem('dataverseToken'));
+
+    it('resets the lists and the selection on an edit and stores the token only with storeDvToken', async () => {
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      selectDataset(comp);
+      editToken(fixture, 'token-1');
+      expect(comp.dataverseToken()).toBe('token-1');
+      expect(comp.collectionItems()).toEqual([]);
+      expect(comp.collectionId()).toBeUndefined();
+      expect(comp.doiItems()).toEqual([]);
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBeNull();
+
+      pluginService.isStoreDvToken = () => true;
+      selectDataset(comp);
+      editToken(fixture, 'token-2');
+      expect(comp.doiItems()).toEqual([]);
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('token-2');
+    });
+
+    it('resets nothing when the token is restored at load or set in code', async () => {
+      pluginService.isStoreDvToken = () => true;
+      localStorage.setItem('dataverseToken', 'stored-token');
+      const fixture = TestBed.createComponent(ConnectComponent);
+      const comp = fixture.componentInstance;
+      const onUserChange = spyOn(comp, 'onUserChange').and.callThrough();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      // ngModel writes the restored token into the field without a change event.
+      expect(tokenInput(fixture).value).toBe('stored-token');
+
+      selectDataset(comp);
+      comp.dataverseToken.set('token-from-code');
+      await fixture.whenStable();
+      expect(tokenInput(fixture).value).toBe('token-from-code');
+      expect(onUserChange).not.toHaveBeenCalled();
+      expect(comp.collectionId()).toBe('root:C');
+      expect(comp.datasetId()).toBe('doi:10.1/D');
+      expect(comp.doiItems().length).toBe(1);
     });
   });
 

@@ -349,6 +349,72 @@ describe('ComputeComponent', () => {
     await new Promise<void>((r) => setTimeout(r));
     expect(notification.errors.some((e) => e.includes('failure'))).toBeTrue();
   });
+
+  // The token field bound (onChange), which is no DOM event, so editing the
+  // token never reset the dataset list nor stored the token.
+  describe('dataverse token field', () => {
+    const tokenInput = (f: ComponentFixture<ComputeComponent>) =>
+      f.nativeElement.querySelector('#dataverseToken') as HTMLInputElement;
+
+    // Typing fires input events; leaving the field after an edit fires change.
+    const editToken = (
+      f: ComponentFixture<ComputeComponent>,
+      value: string,
+    ) => {
+      const input = tokenInput(f);
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
+    };
+
+    const selectDataset = (comp: ComputeComponent) => {
+      comp.doiItems.set([{ label: 'Dataset', value: 'doi:10.1/D' }]);
+      comp.datasetId.set('doi:10.1/D');
+    };
+
+    beforeEach(() => localStorage.removeItem('dataverseToken'));
+    afterEach(() => localStorage.removeItem('dataverseToken'));
+
+    it('resets the dataset list and the selection on an edit and stores the token only with storeDvToken', async () => {
+      plugin.showDvToken = true;
+      await fixture.whenStable();
+
+      selectDataset(component);
+      editToken(fixture, 'token-1');
+      expect(component.dataverseToken()).toBe('token-1');
+      expect(component.doiItems()).toEqual([]);
+      expect(component.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBeNull();
+
+      plugin.storeDvToken = true;
+      selectDataset(component);
+      editToken(fixture, 'token-2');
+      expect(component.doiItems()).toEqual([]);
+      expect(component.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('token-2');
+    });
+
+    it('resets nothing when the token is restored at load or set in code', async () => {
+      plugin.showDvToken = true;
+      plugin.storeDvToken = true;
+      localStorage.setItem('dataverseToken', 'stored-token');
+      const loaded = TestBed.createComponent(ComputeComponent);
+      const comp = loaded.componentInstance;
+      const onUserChange = spyOn(comp, 'onUserChange').and.callThrough();
+      loaded.detectChanges();
+      await loaded.whenStable();
+      // ngModel writes the restored token into the field without a change event.
+      expect(tokenInput(loaded).value).toBe('stored-token');
+
+      selectDataset(comp);
+      comp.dataverseToken.set('token-from-code');
+      await loaded.whenStable();
+      expect(tokenInput(loaded).value).toBe('token-from-code');
+      expect(onUserChange).not.toHaveBeenCalled();
+      expect(comp.datasetId()).toBe('doi:10.1/D');
+      expect(comp.doiItems().length).toBe(1);
+    });
+  });
 });
 
 describe('ComputeComponent layout and row state', () => {

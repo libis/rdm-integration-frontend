@@ -11,7 +11,7 @@ import {
   CdkVirtualScrollViewport,
   ScrollDispatcher,
 } from '@angular/cdk/scrolling';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import {
@@ -36,6 +36,7 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { settlePromises } from '../../testing/promises';
 import { treegridStructure } from '../../testing/treegrid';
 import { registerReauthAttempt } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
@@ -260,6 +261,7 @@ async function waitForSignal(
 
 describe('DownloadComponent', () => {
   let component: DownloadComponent;
+  let fixture: ComponentFixture<DownloadComponent>;
 
   let notification: MockNotificationService;
   let repoLookup: MockRepoLookupService;
@@ -322,6 +324,7 @@ describe('DownloadComponent', () => {
     compInstance.globusPlugin.set(plugin.getGlobusPlugin());
     navigation.assign.calls.reset();
     component = compInstance;
+    fixture = fixtureInstance;
     return compInstance;
   }
 
@@ -1468,6 +1471,96 @@ describe('DownloadComponent', () => {
       plugin.showDvToken = false;
       const comp = initComponent();
       expect(comp.showDVToken()).toBeFalse();
+    });
+  });
+
+  // The token field bound (onChange), which is no DOM event, so editing the
+  // token never reset the dataset list nor stored the token.
+  describe('dataverse token field', () => {
+    const tokenInput = () =>
+      fixture.nativeElement.querySelector(
+        '#dataverseToken',
+      ) as HTMLInputElement;
+
+    // Typing fires input events; leaving the field after an edit fires change.
+    const editToken = (value: string) => {
+      const input = tokenInput();
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
+    };
+
+    const selectDataset = (comp: DownloadComponent) => {
+      comp.doiItems.set([{ label: 'Dataset', value: 'doi:10.1/D' }]);
+      comp.datasetId.set('doi:10.1/D');
+    };
+
+    beforeEach(() => {
+      localStorage.removeItem('dataverseToken');
+      plugin.showDvToken = true;
+    });
+
+    afterEach(() => localStorage.removeItem('dataverseToken'));
+
+    it('resets the dataset list and the selection on an edit and stores the token only with storeDvToken', async () => {
+      const comp = initComponent();
+      await fixture.whenStable();
+
+      selectDataset(comp);
+      editToken('token-1');
+      expect(comp.dataverseToken()).toBe('token-1');
+      expect(comp.doiItems()).toEqual([]);
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBeNull();
+
+      plugin.storeDvToken = true;
+      selectDataset(comp);
+      editToken('token-2');
+      expect(comp.doiItems()).toEqual([]);
+      expect(comp.datasetId()).toBeUndefined();
+      expect(localStorage.getItem('dataverseToken')).toBe('token-2');
+    });
+
+    it('resets nothing when the token is restored at load or set in code', async () => {
+      plugin.storeDvToken = true;
+      localStorage.setItem('dataverseToken', 'stored-token');
+      let onUserChange!: jasmine.Spy;
+      const comp = initComponent({}, (c) => {
+        onUserChange = spyOn(c, 'onUserChange').and.callThrough();
+      });
+      await fixture.whenStable();
+      // ngModel writes the restored token into the field without a change event.
+      expect(tokenInput().value).toBe('stored-token');
+
+      selectDataset(comp);
+      comp.dataverseToken.set('token-from-code');
+      await fixture.whenStable();
+      expect(tokenInput().value).toBe('token-from-code');
+      expect(onUserChange).not.toHaveBeenCalled();
+      expect(comp.datasetId()).toBe('doi:10.1/D');
+      expect(comp.doiItems().length).toBe(1);
+    });
+
+    it('keeps the dataset preselected from globusDownloadParameters', async () => {
+      dataService.globusParamsResponse = {
+        data: { queryParameters: { datasetPid: 'doi:10.1/PRE' } },
+      };
+      let onUserChange!: jasmine.Spy;
+      const comp = initComponent(
+        { datasetDbId: '42', downloadId: 'dl-1' },
+        (c) => {
+          onUserChange = spyOn(c, 'onUserChange').and.callThrough();
+        },
+      );
+      // The async ngOnInit asks globusDownloadParameters for the dataset.
+      await settlePromises();
+      await fixture.whenStable();
+      expect(tokenInput()).not.toBeNull();
+      expect(comp.datasetId()).toBe('doi:10.1/PRE');
+      expect(comp.doiItems()).toEqual([
+        { label: 'doi:10.1/PRE', value: 'doi:10.1/PRE' },
+      ]);
+      expect(onUserChange).not.toHaveBeenCalled();
     });
   });
 
