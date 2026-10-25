@@ -48,17 +48,12 @@ import { ExecutablefileComponent } from '../executablefile/executablefile.compon
 import { AutosizeModule } from 'ngx-autosize';
 
 // RxJS
-import {
-  debounceTime,
-  firstValueFrom,
-  map,
-  Observable,
-  Subject,
-  take,
-} from 'rxjs';
+import { take } from 'rxjs';
 
 // Constants and types
 import { APP_CONSTANTS } from '../shared/constants';
+import { DvObjectSearch } from '../shared/dv-object-search';
+import { TokenEdit } from '../shared/token-edit';
 import { SubscriptionManager } from '../shared/types';
 
 @Component({
@@ -97,9 +92,6 @@ export class ComputeComponent
   // Icon constants
   readonly icon_play = APP_CONSTANTS.ICONS.PLAY;
 
-  // CONSTANTS
-  readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
-
   // NG MODEL FIELDS (signals)
   readonly dataverseToken = signal<string | undefined>(undefined);
   readonly datasetId = signal<string | undefined>(undefined);
@@ -123,14 +115,23 @@ export class ComputeComponent
   readonly doiItems = signal<SelectItem<string>[]>([]);
 
   // INTERNAL STATE VARIABLES
-  datasetSearchSubject: Subject<string> = new Subject();
-  datasetSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
+  // The edits of the token field; a lookup sent before a reset is stale.
+  private readonly tokenEdit = new TokenEdit(this.dataverseToken);
+  private readonly datasetSearcher = new DvObjectSearch({
+    items: this.doiItems,
+    lookup: (term) =>
+      this.dvObjectLookupService.getItems(
+        '',
+        'Dataset',
+        term,
+        this.dataverseToken(),
+      ),
+    generation: () => this.tokenEdit.generation,
+  });
   datasetSearchResultsSubscription?: Subscription;
   req?: ComputeRequest;
   /** The file listing of the dataset last picked. */
   private listingSubscription?: Subscription;
-  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
-  private resetGeneration = 0;
 
   // Direct references to pluginService signals (no wrapper computed needed)
   readonly showDVToken = this.pluginService.showDVToken$;
@@ -138,13 +139,6 @@ export class ComputeComponent
   readonly dataverseHeader = this.pluginService.dataverseHeader$;
   readonly sendMails = this.pluginService.sendMails$;
   readonly configLoaded = this.pluginService.configLoaded$;
-
-  constructor() {
-    this.datasetSearchResultsObservable = this.datasetSearchSubject.pipe(
-      debounceTime(this.DEBOUNCE_TIME),
-      map((searchText) => this.datasetSearch(searchText)),
-    );
-  }
 
   async ngOnInit() {
     // Load dataverseToken from localStorage if storeDvToken is enabled
@@ -168,29 +162,7 @@ export class ComputeComponent
         }
       }),
     );
-    this.datasetSearchResultsSubscription =
-      this.datasetSearchResultsObservable.subscribe({
-        next: (x) => {
-          // The search has just been sent; its answer is dropped when a token
-          // change has reset the page since.
-          const generation = this.resetGeneration;
-          x.then((v) => {
-            if (this.resetGeneration === generation) this.doiItems.set(v);
-          }).catch((err) => {
-            if (this.resetGeneration !== generation) return;
-            this.doiItems.set([
-              {
-                label: `search failed: ${err.message}`,
-                value: err.message,
-              },
-            ]);
-          });
-        },
-        error: (err) =>
-          this.doiItems.set([
-            { label: `search failed: ${err.message}`, value: err.message },
-          ]),
-      });
+    this.datasetSearchResultsSubscription = this.datasetSearcher.start();
   }
 
   ngOnDestroy(): void {
@@ -206,24 +178,15 @@ export class ComputeComponent
     this.navigation.assign('connect');
   }
 
-  // The token before an edit of the field, kept from the first input event of
-  // the edit to the change event that commits it.
-  private tokenBeforeEdit?: { value: string | undefined };
-
   onTokenInput(value: string | undefined): void {
-    this.tokenBeforeEdit ??= { value: this.dataverseToken() };
-    this.dataverseToken.set(value);
+    this.tokenEdit.input(value);
   }
 
   onUserChange() {
-    // A commit that leaves the token as it was, a browser filling in the
-    // same token again for instance, changes nothing.
-    const before = this.tokenBeforeEdit;
-    this.tokenBeforeEdit = undefined;
-    if (before === undefined || before.value === this.dataverseToken()) {
+    // A commit that left the token as it was resets nothing.
+    if (!this.tokenEdit.commit()) {
       return;
     }
-    this.resetGeneration++;
     // A file listing for the old token would only keep the spinner going.
     if (this.listingSubscription && !this.listingSubscription.closed) {
       this.listingSubscription.unsubscribe();
@@ -259,13 +222,13 @@ export class ComputeComponent
     // take(1) ends the request with its answer, also a synchronous one. An
     // answer that a token change made stale is dropped: the change reset the
     // list, and the next opening asks again.
-    const generation = this.resetGeneration;
+    const generation = this.tokenEdit.generation;
     this.dvObjectLookupService
       .getItems('', 'Dataset', undefined, this.dataverseToken())
       .pipe(take(1))
       .subscribe({
         next: (items: SelectItem<string>[]) => {
-          if (this.resetGeneration !== generation) return;
+          if (this.tokenEdit.generation !== generation) return;
           if (items && items.length > 0) {
             this.doiItems.set(items);
             this.datasetId.set(undefined);
@@ -275,7 +238,7 @@ export class ComputeComponent
           }
         },
         error: (err) => {
-          if (this.resetGeneration !== generation) return;
+          if (this.tokenEdit.generation !== generation) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems.set([]);
           this.datasetId.set(undefined);
@@ -284,30 +247,7 @@ export class ComputeComponent
   }
 
   onDatasetSearch(searchTerm: string | null) {
-    if (searchTerm === null || searchTerm.length < 3) {
-      this.doiItems.set([
-        {
-          label: 'start typing to search (at least three letters)',
-          value: 'start',
-        },
-      ]);
-      return;
-    }
-    this.doiItems.set([
-      { label: `searching "${searchTerm}"...`, value: searchTerm },
-    ]);
-    this.datasetSearchSubject.next(searchTerm);
-  }
-
-  async datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return await firstValueFrom(
-      this.dvObjectLookupService.getItems(
-        '',
-        'Dataset',
-        searchTerm,
-        this.dataverseToken(),
-      ),
-    );
+    this.datasetSearcher.onSearch(searchTerm);
   }
 
   onDatasetChange() {
