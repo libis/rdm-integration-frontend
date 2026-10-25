@@ -132,18 +132,24 @@ export class FolderTreeComponent {
     if (expanding) this.nodeExpand.emit(node);
   }
 
-  onKeydown(event: KeyboardEvent, node: TreeNode<string>): void {
+  onKeydown(
+    event: KeyboardEvent,
+    node: TreeNode<string>,
+    element: HTMLElement,
+  ): void {
     const expanded = this.tree().isExpanded(node);
     if (
       (event.key === 'ArrowRight' && !expanded) ||
       (event.key === 'ArrowLeft' && expanded)
     ) {
       this.toggle(node);
+    } else if (event.key === 'ArrowRight') {
+      this.focusFirstChild(element);
     } else if (event.key === 'Enter' || event.key === ' ') {
       this.select(node);
     } else if (event.key !== '*') {
-      // The CDK tree moves the focus: ArrowRight into an expanded node,
-      // ArrowLeft to the parent, ArrowUp, ArrowDown, Home, End and typeahead.
+      // The CDK tree moves the focus: ArrowLeft to the parent, ArrowUp,
+      // ArrowDown, Home, End and typeahead.
       return;
     }
     // Handled here, so the key must not reach the CDK tree as well: its key
@@ -152,5 +158,20 @@ export class FolderTreeComponent {
     // their listings, and is ignored.
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  // The CDK tree would look the children up in the node object it first
+  // rendered, which a listing replaces, so it reads them from the rendered
+  // rows: the first child is the next row, one level deeper.
+  private focusFirstChild(element: HTMLElement): void {
+    const next = element.nextElementSibling;
+    const level = Number(element.getAttribute('aria-level'));
+    if (
+      next instanceof HTMLElement &&
+      next.matches('cdk-tree-node') &&
+      Number(next.getAttribute('aria-level')) === level + 1
+    ) {
+      next.focus();
+    }
   }
 }

@@ -529,4 +529,54 @@ describe('FolderTreeComponent', () => {
     await fixture.whenStable();
     expect(document.activeElement).toBe(document.body);
   });
+
+  it('moves into the children an expanded node has now, after a re-listing', async () => {
+    const fixture = TestBed.createComponent(CollapsedHostComponent);
+    const folder = (name: string): TreeNode<string> => ({
+      key: `path:/${name}/`,
+      label: name,
+      data: `/${name}/`,
+    });
+    // Each listing gives "/" new node objects with the same key, as the
+    // pickers do.
+    const list = (...children: string[]) => {
+      fixture.componentInstance.nodes.set([
+        {
+          key: 'path:/',
+          label: '/',
+          data: '/',
+          expanded: true,
+          children: children.map(folder),
+        },
+      ]);
+    };
+    const arrowRightOnRoot = async () => {
+      const root = nodeNamed(fixture.nativeElement, '/');
+      root.focus();
+      key(root, 'ArrowRight');
+      await fixture.whenStable();
+    };
+    list('home');
+    await fixture.whenStable();
+    list('aaa', 'home', 'shared');
+    await fixture.whenStable();
+    expect(labels(fixture.nativeElement)).toEqual([
+      '/',
+      'aaa',
+      'home',
+      'shared',
+    ]);
+    await arrowRightOnRoot();
+    expect(focused()).toBe('aaa');
+    list('zone');
+    await fixture.whenStable();
+    await arrowRightOnRoot();
+    expect(focused()).toBe('zone');
+    // An expanded folder without children keeps the focus.
+    list();
+    await fixture.whenStable();
+    await arrowRightOnRoot();
+    expect(focused()).toBe('/');
+    expect(fixture.componentInstance.expanded).toEqual([]);
+  });
 });
