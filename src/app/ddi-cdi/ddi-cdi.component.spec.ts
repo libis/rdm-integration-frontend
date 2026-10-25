@@ -433,6 +433,77 @@ describe('DdiCdiComponent', () => {
       expect(localStorage.getItem('dataverseToken')).toBe('token-2');
     });
 
+    // Keystrokes that are never committed: input events and no change event,
+    // as x typed and taken back with Backspace before Tab.
+    const typeWithoutCommit = (
+      fixture: ComponentFixture<DdiCdiComponent>,
+      ...values: string[]
+    ) => {
+      const input = tokenInput(fixture);
+      for (const value of values) {
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+      }
+    };
+
+    // The rule compared with the live token, which every keystroke changes:
+    // an answer that came during an edit never committed was dropped, so a
+    // deep link kept the raw pid as its label and a dropped search left its
+    // "searching" item, which no opening replaces.
+    it('keeps lookups answered while the token field is edited without a commit', async () => {
+      pluginServiceStub.datasetFieldEditable$.set(false);
+      (TestBed.inject(ActivatedRoute) as { queryParams: unknown }).queryParams =
+        of({ datasetPid: 'doi:10.1/D' });
+      const label = new Subject<SelectItem<string>[]>();
+      const search = new Subject<SelectItem<string>[]>();
+      const list = new Subject<SelectItem<string>[]>();
+      const titled = { label: 'doi:10.1/D - Title', value: 'doi:10.1/D' };
+      const found = { label: 'Dataset C', value: 'doi:10.1/C' };
+      const first = [{ label: 'Dataset A', value: 'doi:10.1/A' }];
+      dvObjectLookupServiceStub.getItems.and.returnValues(label, search, list);
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      // The answers arrive in the middle of the edit.
+      typeWithoutCommit(fixture, 'x');
+      label.next([titled]);
+      label.complete();
+      await settlePromises();
+      typeWithoutCommit(fixture, '');
+      expect(component.doiItems()).toEqual([titled]);
+
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        component.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+        typeWithoutCommit(fixture, 'x');
+        search.next([found]);
+        search.complete();
+        await settlePromises();
+        typeWithoutCommit(fixture, '');
+        // The selected dataset stays in the list, under its pid.
+        expect(component.doiItems()).toEqual([
+          { label: 'doi:10.1/D', value: 'doi:10.1/D' },
+          found,
+        ]);
+
+        // After a committed change, the new list during the next edit.
+        editToken(fixture, 'token-1');
+        openSelect(fixture.nativeElement, 'datasetId');
+        fixture.detectChanges();
+        typeWithoutCommit(fixture, 'token-1x');
+        list.next(first);
+        list.complete();
+        typeWithoutCommit(fixture, 'token-1');
+        expect(component.doiItems()).toEqual(first);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
     // A lookup still under way when the token changed answered after the
     // reset: the select kept what the old token found (on a deep link the old
     // dataset alone) and asked nothing with the new one.

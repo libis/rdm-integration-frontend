@@ -97,6 +97,8 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
   private pollGeneration = 0;
   /** The file listing of the dataset last picked. */
   private listingSubscription?: Subscription;
+  /** Counts the resets of onUserChange; a lookup sent before one is stale. */
+  private resetGeneration = 0;
 
   // CONSTANTS
   readonly DEBOUNCE_TIME = APP_CONSTANTS.DEBOUNCE_TIME;
@@ -222,11 +224,11 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     this.datasetSearchResultsSubscription =
       this.datasetSearchResultsObservable.subscribe({
         next: (x) => {
-          // The search has just been sent with the current token; its answer
-          // is dropped when the token has changed since.
-          const token = this.dataverseToken();
+          // The search has just been sent; its answer is dropped when a token
+          // change has reset the page since.
+          const generation = this.resetGeneration;
           x.then((v) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             this.doiItems.set(v);
             const currentDatasetId = this.datasetId();
             if (currentDatasetId) {
@@ -234,7 +236,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
               this.ensureSelectedDatasetOption(currentDatasetId, match?.label);
             }
           }).catch((err) => {
-            if (this.dataverseToken() !== token) return;
+            if (this.resetGeneration !== generation) return;
             this.doiItems.set([
               {
                 label: `search failed: ${err.message}`,
@@ -279,6 +281,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
     if (before === undefined || before.value === this.dataverseToken()) {
       return;
     }
+    this.resetGeneration++;
     // What the old dataset produced goes with it: a listing or a generation
     // still under way, the rows, the selection, the output and the console,
     // so nothing generates without a dataset.
@@ -322,18 +325,18 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
       this.datasetId.set(undefined);
     }
 
-    // An answer to a request with an older token is dropped: the token change
-    // reset the list and the selection, and the next opening asks again.
-    const token = this.dataverseToken();
+    // An answer that a token change made stale is dropped: the change reset
+    // the list and the selection, and the next opening asks again.
+    const generation = this.resetGeneration;
     let httpSubscription: Subscription;
     // eslint-disable-next-line prefer-const -- split declaration needed to avoid TDZ with synchronous subscribe
     httpSubscription = this.dvObjectLookupService
-      .getItems('', 'Dataset', undefined, token)
+      .getItems('', 'Dataset', undefined, this.dataverseToken())
       .subscribe({
         next: (items: SelectItem<string>[]) => {
           this.subscriptions.delete(httpSubscription);
           httpSubscription?.unsubscribe();
-          if (this.dataverseToken() !== token) return;
+          if (this.resetGeneration !== generation) return;
           if (items && items.length > 0) {
             this.doiItems.set(items);
             if (previouslySelected) {
@@ -358,7 +361,7 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
         error: (err) => {
           this.subscriptions.delete(httpSubscription);
           httpSubscription?.unsubscribe();
-          if (this.dataverseToken() !== token) return;
+          if (this.resetGeneration !== generation) return;
           this.notificationService.showError(`DOI lookup failed: ${err.error}`);
           this.doiItems.set([]);
           if (!previouslySelected) {
@@ -431,14 +434,19 @@ export class DdiCdiComponent implements OnInit, OnDestroy, SubscriptionManager {
 
     this.ensureSelectedDatasetOption(pid);
 
-    // A label looked up with a token that is no longer current is dropped:
-    // the token change reset the list and the selection.
-    const token = this.dataverseToken();
+    // A label that a token change made stale is dropped: the change reset the
+    // list and the selection.
+    const generation = this.resetGeneration;
     try {
       const items = await firstValueFrom(
-        this.dvObjectLookupService.getItems('', 'Dataset', pid, token),
+        this.dvObjectLookupService.getItems(
+          '',
+          'Dataset',
+          pid,
+          this.dataverseToken(),
+        ),
       );
-      if (this.dataverseToken() !== token) return;
+      if (this.resetGeneration !== generation) return;
       const match = items.find(
         (item: SelectItem<string>) => item.value === pid,
       );
