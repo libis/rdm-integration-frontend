@@ -28,10 +28,10 @@
 <div class="treetable-cell">
   <app-tree-table #tt [nodes]="rootNodeChildren()" columns="2fr 2fr 1fr 4rem">
     <ng-template appTreeTableHeader>
-      <div class="tt-cell">Metadata field</div>
-      <div class="tt-cell">Value</div>
-      <div class="tt-cell">Metadata source</div>
-      <div class="tt-cell text-end">
+      <div class="tt-cell" role="columnheader">Metadata field</div>
+      <div class="tt-cell" role="columnheader">Value</div>
+      <div class="tt-cell" role="columnheader">Metadata source</div>
+      <div class="tt-cell text-end" role="columnheader">
         <button
           type="button"
           class="btn btn-sm btn-outline-secondary"
@@ -47,6 +47,8 @@
         #metadataRow="appMetadatafield"
         class="tt-row"
         role="row"
+        [attr.aria-level]="level + 1"
+        [attr.aria-expanded]="tt.expandedState(node)"
         [field]="node.data"
         [node]="node"
         [level]="level"

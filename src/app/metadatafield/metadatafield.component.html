@@ -1,5 +1,5 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2024). Apache 2.0 License -->
-<div class="tt-cell">
+<div class="tt-cell" role="gridcell">
   <app-tree-toggler
     [node]="node()"
     [level]="level()"
@@ -7,9 +7,9 @@
   ></app-tree-toggler
   >{{ fieldName() }}
 </div>
-<div class="tt-cell">{{ fieldValue() }}</div>
-<div class="tt-cell">{{ fieldSource() }}</div>
-<div class="tt-cell text-end">
+<div class="tt-cell" role="gridcell">{{ fieldValue() }}</div>
+<div class="tt-cell" role="gridcell">{{ fieldSource() }}</div>
+<div class="tt-cell text-end" role="gridcell">
   <button
     type="button"
     class="btn btn-sm btn-outline-secondary"

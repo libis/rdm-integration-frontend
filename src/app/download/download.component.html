@@ -174,10 +174,10 @@
           columns="1fr 6rem"
         >
           <ng-template appTreeTableHeader>
-            <div class="tt-cell">
+            <div class="tt-cell" role="columnheader">
               <a [href]="data()!.url" target="_blank">{{ data()!.id }}</a>
             </div>
-            <div class="tt-cell text-end">
+            <div class="tt-cell text-end" role="columnheader">
               <button
                 type="button"
                 class="btn btn-sm btn-outline-secondary"
@@ -193,6 +193,8 @@
               #downloadRow="appDownloadablefile"
               class="tt-row"
               role="row"
+              [attr.aria-level]="level + 1"
+              [attr.aria-expanded]="tt.expandedState(node)"
               [datafile]="node.data"
               [node]="node"
               [level]="level"

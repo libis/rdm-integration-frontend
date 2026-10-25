@@ -24,6 +24,7 @@ import {
 import { NotificationService } from '../shared/notification.service';
 import { MetadataSelectorComponent } from './metadata-selector.component';
 import { scrolledContainers } from '../../testing/page-layout';
+import { treegridStructure } from '../../testing/treegrid';
 
 describe('MetadataSelectorComponent', () => {
   let component: MetadataSelectorComponent;
@@ -190,6 +191,36 @@ describe('MetadataSelectorComponent', () => {
       .query(By.directive(CdkVirtualScrollViewport))
       .injector.get(CdkVirtualScrollViewport);
     expect(viewport.getViewportSize()).toBeGreaterThan(0);
+  });
+
+  // The first author is the first row with children.
+  it('renders a treegrid with levels and the expansion of compound rows', async () => {
+    await fixture.whenStable();
+    (
+      fixture.nativeElement.querySelector(
+        'div[app-metadatafield] app-tree-toggler button',
+      ) as HTMLButtonElement
+    ).click();
+    await fixture.whenStable();
+    expect(treegridStructure(fixture.nativeElement)).toEqual({
+      table: 'treegrid',
+      header: 'row',
+      headerCells: [
+        'columnheader',
+        'columnheader',
+        'columnheader',
+        'columnheader',
+      ],
+      rows: [
+        'title: row 1 null',
+        'keyword: row 1 null',
+        'author: row 1 true',
+        'authorName: row 2 null',
+        'authorAffiliation: row 2 null',
+        'author: row 1 false',
+      ],
+      cells: ['gridcell'],
+    });
   });
 
   it('action() and toggleAction() should delegate to MetadatafieldComponent', () => {

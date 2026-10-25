@@ -29,6 +29,7 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { treegridStructure } from '../../testing/treegrid';
 import {
   CachedComputeResponse,
   CompareResult,
@@ -1511,6 +1512,48 @@ describe('DdiCdiComponent', () => {
       expect(viewport.elementRef.nativeElement.offsetHeight).toBeGreaterThan(0);
       expect(viewport.getViewportSize()).toBeGreaterThan(0);
       expect(rowCount(fixture)).toBe(2);
+    });
+
+    it('renders a treegrid with levels and the expansion of folder rows', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      const file = (name: string): TreeNode<Datafile> => ({
+        key: `${name}:file`,
+        data: { name, directoryLabel: '' } as Datafile,
+        children: [],
+      });
+      const rootNode: TreeNode<Datafile> = {
+        data: { name: '', directoryLabel: '' } as Datafile,
+        children: [
+          {
+            key: 'dir',
+            data: { name: 'dir', directoryLabel: '' } as Datafile,
+            children: [file('a.csv')],
+          },
+          file('b.tsv'),
+        ],
+      };
+      utilsServiceStub.mapDatafiles.and.returnValue(new Map([['', rootNode]]));
+      component.setData({
+        id: 'doi:10.1/ABC',
+        url: 'https://example.org/ds',
+        data: [{ name: 'a.csv' } as Datafile, { name: 'b.tsv' } as Datafile],
+      });
+      await fixture.whenStable();
+      (
+        fixture.nativeElement.querySelector(
+          '.tt-row app-tree-toggler button',
+        ) as HTMLButtonElement
+      ).click();
+      await fixture.whenStable();
+      expect(treegridStructure(fixture.nativeElement)).toEqual({
+        table: 'treegrid',
+        header: 'row',
+        headerCells: ['columnheader', 'columnheader'],
+        rows: ['dir: row 1 true', 'a.csv: row 2 null', 'b.tsv: row 1 null'],
+        cells: ['gridcell'],
+      });
     });
 
     it('toggles one filename per row checkbox, selects and clears all from the header, and keeps the dataset link', async () => {

@@ -38,12 +38,17 @@ import { TreeTogglerComponent } from './tree-toggler.component';
         (expandedChange)="expanded.push($event.data)"
       >
         <ng-template appTreeTableHeader>
-          <div class="tt-cell">Name</div>
-          <div class="tt-cell">Size</div>
+          <div class="tt-cell" role="columnheader">Name</div>
+          <div class="tt-cell" role="columnheader">Size</div>
         </ng-template>
         <ng-template appTreeTableRow let-node let-level="level">
-          <div class="tt-row" role="row">
-            <div class="tt-cell">
+          <div
+            class="tt-row"
+            role="row"
+            [attr.aria-level]="level + 1"
+            [attr.aria-expanded]="tt.expandedState(node)"
+          >
+            <div class="tt-cell" role="gridcell">
               <app-tree-toggler
                 [node]="node"
                 [level]="level"
@@ -51,7 +56,7 @@ import { TreeTogglerComponent } from './tree-toggler.component';
               ></app-tree-toggler
               >{{ node.data }}
             </div>
-            <div class="tt-cell">{{ level }}</div>
+            <div class="tt-cell" role="gridcell">{{ level }}</div>
           </div>
         </ng-template>
       </app-tree-table>
@@ -101,17 +106,17 @@ class HostComponent {
         columns="1fr 8rem"
       >
         <ng-template appTreeTableHeader>
-          <div class="tt-cell header-text">Name</div>
-          <div class="tt-cell">
+          <div class="tt-cell header-text" role="columnheader">Name</div>
+          <div class="tt-cell" role="columnheader">
             <button type="button" class="btn btn-primary header-button">
               Run
             </button>
           </div>
         </ng-template>
-        <ng-template appTreeTableRow let-node>
-          <div class="tt-row" role="row">
-            <div class="tt-cell">{{ node.data }}</div>
-            <div class="tt-cell"></div>
+        <ng-template appTreeTableRow let-node let-level="level">
+          <div class="tt-row" role="row" [attr.aria-level]="level + 1">
+            <div class="tt-cell" role="gridcell">{{ node.data }}</div>
+            <div class="tt-cell" role="gridcell"></div>
           </div>
         </ng-template>
       </app-tree-table>
@@ -257,6 +262,26 @@ describe('TreeTableComponent', () => {
     expect(
       fixture.nativeElement.querySelector('.tt-loading .spinner-border'),
     ).not.toBeNull();
+  });
+
+  // A treegrid owns rows only: the spinner's status sits in a row and cell of
+  // its own between the header and the body.
+  it('renders a treegrid whose children are rows, the loading row included', async () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.loading.set(true);
+    await fixture.whenStable();
+    const table = fixture.nativeElement.querySelector('.tt') as HTMLElement;
+    expect(table.getAttribute('role')).toBe('treegrid');
+    const loading = table.querySelector('.tt-loading') as HTMLElement;
+    expect(loading.getAttribute('role')).toBe('row');
+    expect(
+      loading.querySelector(':scope > [role="gridcell"] > [role="status"]'),
+    ).not.toBeNull();
+    expect(
+      Array.from(table.children)
+        .filter((child) => !child.matches('cdk-virtual-scroll-viewport'))
+        .map((child) => child.getAttribute('role')),
+    ).toEqual(['row', 'row']);
   });
 
   it('virtualises long lists: renders far fewer rows than nodes', async () => {

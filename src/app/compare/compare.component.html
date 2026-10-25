@@ -151,13 +151,13 @@
     columns="1fr 4rem 4rem 1fr"
   >
     <ng-template appTreeTableHeader>
-      <div class="tt-cell">
+      <div class="tt-cell" role="columnheader">
         {{ repo() }}
         <span [hidden]="!folderName()" [title]="repoName()"
           >({{ folderName() }})</span
         >
       </div>
-      <div class="tt-cell text-center">
+      <div class="tt-cell text-center" role="columnheader">
         <span title="Comparison status">
           <button
             type="button"
@@ -228,10 +228,10 @@
           </div>
         </ng-template>
       </div>
-      <div class="tt-cell text-center">
+      <div class="tt-cell text-center" role="columnheader">
         <span title="Action"><i [class]="icon_action"></i></span>
       </div>
-      <div class="tt-cell text-end">
+      <div class="tt-cell text-end" role="columnheader">
         {{ isNewDataset() ? dataverseHeaderNoColon() : dataverseHeader() }}
         (
         @if (!isNewDataset()) {
@@ -248,6 +248,8 @@
         #datafileRow="appDatafile"
         class="tt-row"
         role="row"
+        [attr.aria-level]="level + 1"
+        [attr.aria-expanded]="tt.expandedState(node)"
         [hidden]="node.data.hidden"
         [datafile]="node.data"
         [node]="node"

@@ -29,6 +29,7 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { treegridStructure } from '../../testing/treegrid';
 import { CompareComponent } from './compare.component';
 
 class StubDataStateService {
@@ -1186,6 +1187,43 @@ describe('CompareComponent table', () => {
     expect(rows(fixture).length).toBe(2);
     expect(icons()).toEqual(['right', 'right']);
     expect(expanded()).toEqual(['false', 'false']);
+  });
+
+  // Header and rows had role row without a table, grid or treegrid around
+  // them, without cell roles, levels or expansion.
+  it('renders a treegrid with levels and the expansion of folder rows', async () => {
+    const fixture = await render();
+    const header = [
+      'columnheader',
+      'columnheader',
+      'columnheader',
+      'columnheader',
+    ];
+    expect(treegridStructure(fixture.nativeElement)).toEqual({
+      table: 'treegrid',
+      header: 'row',
+      headerCells: header,
+      rows: jasmine.arrayWithExactContents([
+        'dir: row 1 false',
+        'b.txt: row 1 null',
+      ]),
+      cells: ['gridcell'],
+    });
+    folderRow(fixture)
+      .querySelector<HTMLButtonElement>('app-tree-toggler button')!
+      .click();
+    await fixture.whenStable();
+    expect(treegridStructure(fixture.nativeElement)).toEqual({
+      table: 'treegrid',
+      header: 'row',
+      headerCells: header,
+      rows: jasmine.arrayWithExactContents([
+        'dir: row 1 true',
+        'a.txt: row 2 null',
+        'b.txt: row 1 null',
+      ]),
+      cells: ['gridcell'],
+    });
   });
 
   const filterButton = (fixture: ComponentFixture<CompareComponent>) =>

@@ -1,5 +1,5 @@
 <!-- Author: Eryk Kulikowski @ KU Leuven (2023). Apache 2.0 License -->
-<div class="tt-cell">
+<div class="tt-cell" role="gridcell">
   <app-tree-toggler
     [node]="node()"
     [level]="level()"
@@ -7,14 +7,14 @@
   ></app-tree-toggler
   >{{ sourceFile() }}
 </div>
-<div class="tt-cell text-center">
+<div class="tt-cell text-center" role="gridcell">
   <i
     [class]="comparisonIcon()"
     [style]="'color:' + comparisonColor()"
     [title]="comparisonTitle()"
   ></i>
 </div>
-<div class="tt-cell text-center">
+<div class="tt-cell text-center" role="gridcell">
   <button
     type="button"
     class="btn btn-sm btn-outline-secondary"
@@ -23,7 +23,7 @@
     <i [class]="actionIcon()"></i>
   </button>
 </div>
-<div [class]="'tt-cell ' + targetFileClass()">
+<div [class]="'tt-cell ' + targetFileClass()" role="gridcell">
   <app-tree-toggler
     [node]="node()"
     [level]="level()"

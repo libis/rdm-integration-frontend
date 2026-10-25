@@ -22,6 +22,7 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { treegridStructure } from '../../testing/treegrid';
 import { ComputeComponent } from './compute.component';
 
 class MockDataService {
@@ -428,6 +429,31 @@ describe('ComputeComponent layout and row state', () => {
         fixture.nativeElement,
       ),
     ).toEqual([fixture.nativeElement]);
+  });
+
+  it('renders a treegrid with levels and the expansion of folder rows', async () => {
+    component.rootNodeChildren.set([
+      {
+        key: 'dir',
+        data: { id: 'dir', name: 'dir', path: '', hidden: false },
+        children: [
+          { key: 'dir/run.py:file', data: { ...file('run.py'), path: 'dir' } },
+        ],
+      },
+      { key: 'top.py:file', data: file('top.py') },
+    ]);
+    await fixture.whenStable();
+    rows()[0]
+      .querySelector<HTMLButtonElement>('app-tree-toggler button')!
+      .click();
+    await fixture.whenStable();
+    expect(treegridStructure(fixture.nativeElement)).toEqual({
+      table: 'treegrid',
+      header: 'row',
+      headerCells: ['columnheader', 'columnheader'],
+      rows: ['dir: row 1 true', 'run.py: row 2 null', 'top.py: row 1 null'],
+      cells: ['gridcell'],
+    });
   });
 
   it('fits the window with 40 rows in the static body', () => {

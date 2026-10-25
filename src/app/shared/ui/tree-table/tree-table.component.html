@@ -1,5 +1,10 @@
+<!-- A treegrid: the header row and the body rows are rows of the .tt element
+     (the virtual scroll elements in between have no role), each page's row
+     template gives its rows aria-level and aria-expanded and its cells
+     gridcell, its header template gives its cells columnheader. -->
 <div
   class="tt"
+  role="treegrid"
   [style.--tt-columns]="columns()"
   [style.--tt-row-height.px]="rowHeight()"
 >
@@ -7,11 +12,14 @@
     <ng-container *ngTemplateOutlet="headerTemplate().template"></ng-container>
   </div>
   @if (loading()) {
-    <div class="tt-loading">
-      <span
-        class="spinner-border spinner-border-sm"
-        role="status"
-        aria-label="Loading"
+    <!-- A row of its own: a treegrid owns rows only. -->
+    <div class="tt-loading" role="row">
+      <span role="gridcell"
+        ><span
+          class="spinner-border spinner-border-sm"
+          role="status"
+          aria-label="Loading"
+        ></span
       ></span>
     </div>
   }

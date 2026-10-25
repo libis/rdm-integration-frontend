@@ -36,6 +36,7 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { treegridStructure } from '../../testing/treegrid';
 import { registerReauthAttempt } from '../shared/reauth';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
@@ -2271,6 +2272,13 @@ describe('DownloadComponent layout', () => {
       fixture.nativeElement.querySelectorAll('div[app-downloadablefile]')
         .length,
     ).toBe(2);
+    expect(treegridStructure(fixture.nativeElement)).toEqual({
+      table: 'treegrid',
+      header: 'row',
+      headerCells: ['columnheader', 'columnheader'],
+      rows: ['dir: row 1 true', 'f: row 2 null'],
+      cells: ['gridcell'],
+    });
   });
 
   describe('in a 1366x768 window', () => {

@@ -192,10 +192,10 @@
         columns="1fr 4rem"
       >
         <ng-template appTreeTableHeader>
-          <div class="tt-cell">
+          <div class="tt-cell" role="columnheader">
             <a [href]="data().url" target="_blank">{{ data().id }}</a>
           </div>
-          <div class="tt-cell text-center">
+          <div class="tt-cell text-center" role="columnheader">
             <button
               type="button"
               class="btn btn-sm btn-outline-secondary"
@@ -211,13 +211,15 @@
           <div
             class="tt-row"
             role="row"
+            [attr.aria-level]="level + 1"
+            [attr.aria-expanded]="tt.expandedState(node)"
             [style]="
               selectedFiles().has(node.data.name || '')
                 ? selectedFileStyle
                 : ignoredFileStyle
             "
           >
-            <div class="tt-cell">
+            <div class="tt-cell" role="gridcell">
               <app-tree-toggler
                 [node]="node"
                 [level]="level"
@@ -225,7 +227,7 @@
               ></app-tree-toggler
               >{{ node.data.name }}
             </div>
-            <div class="tt-cell text-center">
+            <div class="tt-cell text-center" role="gridcell">
               <input
                 type="checkbox"
                 class="form-check-input"
