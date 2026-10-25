@@ -6,6 +6,7 @@ import {
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
+import { settlePromises } from '../testing/promises';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
@@ -32,7 +33,7 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('datasync');
   });
 
-  it('should check access to queue and hide compute link when access is false', (done) => {
+  it('should check access to queue and hide compute link when access is false', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
 
@@ -52,17 +53,19 @@ describe('AppComponent', () => {
       },
     } as any);
 
-    app.ngOnInit();
-
-    setTimeout(() => {
+    jasmine.clock().install();
+    try {
+      app.ngOnInit();
+      jasmine.clock().tick(100);
       expect(mockElement.style.display).toBe('none');
       expect(mockUnsubscribe).toHaveBeenCalled();
+    } finally {
+      jasmine.clock().uninstall();
       document.body.removeChild(mockElement);
-      done();
-    }, 100);
+    }
   });
 
-  it('should hide compute link on error', (done) => {
+  it('should hide compute link on error', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
 
@@ -80,16 +83,18 @@ describe('AppComponent', () => {
       },
     } as any);
 
-    app.ngOnInit();
-
-    setTimeout(() => {
+    jasmine.clock().install();
+    try {
+      app.ngOnInit();
+      jasmine.clock().tick(100);
       expect(mockElement.style.display).toBe('none');
+    } finally {
+      jasmine.clock().uninstall();
       document.body.removeChild(mockElement);
-      done();
-    }, 100);
+    }
   });
 
-  it('should not hide compute link when access is true', (done) => {
+  it('should not hide compute link when access is true', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
 
@@ -108,14 +113,16 @@ describe('AppComponent', () => {
       },
     } as any);
 
-    app.ngOnInit();
-
-    setTimeout(() => {
+    jasmine.clock().install();
+    try {
+      app.ngOnInit();
+      jasmine.clock().tick(100);
       expect(mockElement.style.display).not.toBe('none');
       expect(mockUnsubscribe).toHaveBeenCalled();
+    } finally {
+      jasmine.clock().uninstall();
       document.body.removeChild(mockElement);
-      done();
-    }, 100);
+    }
   });
 
   // App template contains only a router-outlet, so no visible title to assert.
@@ -369,7 +376,7 @@ describe('AppComponent redirect handling', () => {
   });
 
   describe('redirectToConnect', () => {
-    it('should redirect /connect/upload to /connect with datasetPid after fetching persistentId', (done) => {
+    it('should redirect /connect/upload to /connect with datasetPid after fetching persistentId', async () => {
       const uploadCallback = btoa(
         'https://example.com/api/v1/datasets/10442/globusUploadParameters?locale=en&user=testuser',
       );
@@ -388,15 +395,13 @@ describe('AppComponent redirect handling', () => {
 
       (component as any).redirectToConnect(locationHref);
 
-      setTimeout(() => {
-        expect(datasetServiceSpy).toHaveBeenCalledWith('10442', undefined);
-        expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect'], {
-          queryParams: jasmine.objectContaining({
-            datasetPid: 'doi:10.5072/FK2/ABCDEF',
-          }),
-        });
-        done();
-      }, 10);
+      await settlePromises();
+      expect(datasetServiceSpy).toHaveBeenCalledWith('10442', undefined);
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect'], {
+        queryParams: jasmine.objectContaining({
+          datasetPid: 'doi:10.5072/FK2/ABCDEF',
+        }),
+      });
     });
 
     it('should navigate to /connect when callback is missing', () => {
@@ -419,7 +424,7 @@ describe('AppComponent redirect handling', () => {
   });
 
   describe('redirectToDownload', () => {
-    it('should redirect /connect/download to /download with datasetPid and downloadId', (done) => {
+    it('should redirect /connect/download to /download with datasetPid and downloadId', async () => {
       const downloadCallback = btoa(
         'https://example.com/api/v1/datasets/8153/globusDownloadParameters?locale=en&downloadId=76a3b964-a0d2-40ea-ac17-17788336bf52',
       );
@@ -437,16 +442,14 @@ describe('AppComponent redirect handling', () => {
 
       (component as any).redirectToDownload(locationHref);
 
-      setTimeout(() => {
-        expect(datasetServiceSpy).toHaveBeenCalledWith('8153', undefined);
-        expect(routerNavigateSpy).toHaveBeenCalledWith(['/download'], {
-          queryParams: jasmine.objectContaining({
-            downloadId: '76a3b964-a0d2-40ea-ac17-17788336bf52',
-            datasetPid: 'doi:10.5072/FK2/XYZABC',
-          }),
-        });
-        done();
-      }, 10);
+      await settlePromises();
+      expect(datasetServiceSpy).toHaveBeenCalledWith('8153', undefined);
+      expect(routerNavigateSpy).toHaveBeenCalledWith(['/download'], {
+        queryParams: jasmine.objectContaining({
+          downloadId: '76a3b964-a0d2-40ea-ac17-17788336bf52',
+          datasetPid: 'doi:10.5072/FK2/XYZABC',
+        }),
+      });
     });
 
     it('should navigate to /download when callback is missing', () => {
@@ -607,7 +610,7 @@ describe('AppComponent checkLoginRequired', () => {
     sessionStorage.removeItem('loginRedirectAttempt');
   });
 
-  it('should redirect to login when user is not logged in', (done) => {
+  it('should redirect to login when user is not logged in', async () => {
     spyOnProperty(component['router'], 'url', 'get').and.returnValue(
       '/connect',
     );
@@ -627,13 +630,11 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(redirectSpy).toHaveBeenCalled();
-      done();
-    }, 100);
+    await settlePromises();
+    expect(redirectSpy).toHaveBeenCalled();
   });
 
-  it('should clear redirect counter when user is logged in', (done) => {
+  it('should clear redirect counter when user is logged in', async () => {
     sessionStorage.setItem(
       'loginRedirectAttempt',
       JSON.stringify({ count: 1, timestamp: Date.now() }),
@@ -653,13 +654,11 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(sessionStorage.getItem('loginRedirectAttempt')).toBeNull();
-      done();
-    }, 100);
+    await settlePromises();
+    expect(sessionStorage.getItem('loginRedirectAttempt')).toBeNull();
   });
 
-  it('should redirect to login on getUserInfo error', (done) => {
+  it('should redirect to login on getUserInfo error', async () => {
     spyOnProperty(component['router'], 'url', 'get').and.returnValue(
       '/connect',
     );
@@ -679,13 +678,11 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(redirectSpy).toHaveBeenCalled();
-      done();
-    }, 100);
+    await settlePromises();
+    expect(redirectSpy).toHaveBeenCalled();
   });
 
-  it('should not redirect when redirect loop is detected', (done) => {
+  it('should not redirect when redirect loop is detected', async () => {
     // Set up redirect loop
     for (let i = 0; i < 3; i++) {
       (component as any).isRedirectLoop();
@@ -710,13 +707,11 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(redirectSpy).not.toHaveBeenCalled();
-      done();
-    }, 100);
+    await settlePromises();
+    expect(redirectSpy).not.toHaveBeenCalled();
   });
 
-  it('should skip login check entirely for download flow', (done) => {
+  it('should skip login check entirely for download flow', async () => {
     spyOn(component as any, 'isDownloadFlow').and.returnValue(true);
     const setConfigSpy = spyOn(
       component['pluginService'],
@@ -732,15 +727,13 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(setConfigSpy).not.toHaveBeenCalled();
-      expect(getUserInfoSpy).not.toHaveBeenCalled();
-      expect(redirectSpy).not.toHaveBeenCalled();
-      done();
-    }, 20);
+    await settlePromises();
+    expect(setConfigSpy).not.toHaveBeenCalled();
+    expect(getUserInfoSpy).not.toHaveBeenCalled();
+    expect(redirectSpy).not.toHaveBeenCalled();
   });
 
-  it('should show warning when redirect loop is detected for logged-out user', (done) => {
+  it('should show warning when redirect loop is detected for logged-out user', async () => {
     for (let i = 0; i < 3; i++) {
       (component as any).isRedirectLoop();
     }
@@ -764,15 +757,13 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(warningSpy).toHaveBeenCalledWith(
-        'Login redirect loop detected. Please refresh and try again.',
-      );
-      done();
-    }, 100);
+    await settlePromises();
+    expect(warningSpy).toHaveBeenCalledWith(
+      'Login redirect loop detected. Please refresh and try again.',
+    );
   });
 
-  it('should show warning when redirect loop is detected after getUserInfo error', (done) => {
+  it('should show warning when redirect loop is detected after getUserInfo error', async () => {
     for (let i = 0; i < 3; i++) {
       (component as any).isRedirectLoop();
     }
@@ -796,12 +787,10 @@ describe('AppComponent checkLoginRequired', () => {
 
     (component as any).checkLoginRequired({});
 
-    setTimeout(() => {
-      expect(warningSpy).toHaveBeenCalledWith(
-        'Login redirect loop detected. Please refresh and try again.',
-      );
-      done();
-    }, 100);
+    await settlePromises();
+    expect(warningSpy).toHaveBeenCalledWith(
+      'Login redirect loop detected. Please refresh and try again.',
+    );
   });
 });
 
@@ -827,7 +816,7 @@ describe('AppComponent fetchAndRedirect', () => {
     routerNavigateSpy = spyOn(component['router'], 'navigate');
   });
 
-  it('should use fallback when getDatasetVersion returns empty persistentId', (done) => {
+  it('should use fallback when getDatasetVersion returns empty persistentId', async () => {
     spyOn(component['datasetService'], 'getDatasetVersion').and.returnValue({
       subscribe: (callbacks: any) => {
         callbacks.next({ persistentId: '' });
@@ -837,15 +826,13 @@ describe('AppComponent fetchAndRedirect', () => {
 
     (component as any).fetchAndRedirect('/download', '8153', 'dl-uuid');
 
-    setTimeout(() => {
-      expect(routerNavigateSpy).toHaveBeenCalledWith(['/download'], {
-        queryParams: { datasetDbId: '8153', downloadId: 'dl-uuid' },
-      });
-      done();
-    }, 10);
+    await settlePromises();
+    expect(routerNavigateSpy).toHaveBeenCalledWith(['/download'], {
+      queryParams: { datasetDbId: '8153', downloadId: 'dl-uuid' },
+    });
   });
 
-  it('should use fallback when getDatasetVersion errors', (done) => {
+  it('should use fallback when getDatasetVersion errors', async () => {
     spyOn(component['datasetService'], 'getDatasetVersion').and.returnValue({
       subscribe: (callbacks: any) => {
         callbacks.error(new Error('Not found'));
@@ -855,11 +842,9 @@ describe('AppComponent fetchAndRedirect', () => {
 
     (component as any).fetchAndRedirect('/connect', '9999');
 
-    setTimeout(() => {
-      expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect'], {
-        queryParams: { datasetDbId: '9999' },
-      });
-      done();
-    }, 10);
+    await settlePromises();
+    expect(routerNavigateSpy).toHaveBeenCalledWith(['/connect'], {
+      queryParams: { datasetDbId: '9999' },
+    });
   });
 });

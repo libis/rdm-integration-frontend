@@ -30,6 +30,7 @@ import { HierarchicalSelectItem } from '../models/hierarchical-select-item';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { NavigationService } from '../shared/navigation.service';
+import { APP_CONSTANTS } from '../shared/constants';
 import { NotificationService } from '../shared/notification.service';
 import {
   measurePage,
@@ -242,21 +243,6 @@ class MockPluginService {
 
 class MockNavigationService {
   assign = jasmine.createSpy('assign');
-}
-
-/** Poll until a condition is met – eliminates timer races in debounce tests. */
-async function waitForSignal(
-  condition: () => boolean,
-  timeoutMs = 5000,
-  intervalMs = 50,
-): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (!condition()) {
-    if (Date.now() >= deadline) {
-      throw new Error(`waitForSignal timed out after ${timeoutMs}ms`);
-    }
-    await new Promise<void>((r) => setTimeout(r, intervalMs));
-  }
 }
 
 describe('DownloadComponent', () => {
@@ -1425,39 +1411,57 @@ describe('DownloadComponent', () => {
     expect(tokenSpy).toHaveBeenCalled();
   });
 
-  it('repoName search subscription surfaces errors from service', async () => {
-    const comp = initComponent();
-    await new Promise<void>((r) => setTimeout(r));
-    comp.globusPlugin.set({
-      repoNameFieldName: 'Endpoint',
-      repoNameFieldHasInit: true,
-      sourceUrlFieldValue: 'https://globus.example',
-    } as any);
-    spyOn(repoLookup, 'search').and.returnValue(
-      throwError(() => new Error('network down')),
-    );
+  // The searches wait DEBOUNCE_TIME after the last term on the mock clock
+  // (debounceTime reads Date.now(), hence mockDate), then their promises settle.
+  describe('debounced searches', () => {
+    beforeEach(() => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+    });
+    afterEach(() => jasmine.clock().uninstall());
 
-    comp.onRepoNameSearch('abc');
-    await waitForSignal(
-      () => comp.repoNames()[0]?.label?.includes('search failed') ?? false,
-    );
+    it('repoName search subscription surfaces errors from service', async () => {
+      const comp = initComponent();
+      // The async ngOnInit subscribes to the searches after its awaits.
+      await settlePromises();
+      comp.globusPlugin.set({
+        repoNameFieldName: 'Endpoint',
+        repoNameFieldHasInit: true,
+        sourceUrlFieldValue: 'https://globus.example',
+      } as any);
+      const search = spyOn(repoLookup, 'search').and.returnValue(
+        throwError(() => new Error('network down')),
+      );
 
-    expect(comp.repoNames()[0].label).toContain('search failed');
-  });
+      comp.onRepoNameSearch('abc');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(search).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
+      await settlePromises();
 
-  it('dataset search subscription handles rejected lookups', async () => {
-    const comp = initComponent();
-    await new Promise<void>((r) => setTimeout(r));
-    spyOn(dvLookup, 'getItems').and.returnValue(
-      throwError(() => new Error('lookup-fail')),
-    );
+      expect(search).toHaveBeenCalledTimes(1);
+      expect(comp.repoNames()[0].label).toContain('search failed');
+    });
 
-    comp.onDatasetSearch('proj');
-    await waitForSignal(
-      () => comp.doiItems()[0]?.label?.includes('search failed') ?? false,
-    );
+    it('dataset search subscription handles rejected lookups', async () => {
+      const comp = initComponent();
+      // The async ngOnInit subscribes to the searches after its awaits.
+      await settlePromises();
+      // The initial dataset listing of ngOnInit answers on a timer.
+      jasmine.clock().tick(0);
+      const getItems = spyOn(dvLookup, 'getItems').and.returnValue(
+        throwError(() => new Error('lookup-fail')),
+      );
 
-    expect(comp.doiItems()[0].label).toContain('search failed');
+      comp.onDatasetSearch('proj');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(getItems).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
+      await settlePromises();
+
+      expect(getItems).toHaveBeenCalledTimes(1);
+      expect(comp.doiItems()[0].label).toContain('search failed');
+    });
   });
 
   describe('showDVToken', () => {

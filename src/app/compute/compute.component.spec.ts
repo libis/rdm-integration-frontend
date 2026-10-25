@@ -22,7 +22,9 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { settlePromises } from '../../testing/promises';
 import { treegridStructure } from '../../testing/treegrid';
+import { APP_CONSTANTS } from '../shared/constants';
 import { ComputeComponent } from './compute.component';
 
 class MockDataService {
@@ -208,6 +210,42 @@ describe('ComputeComponent', () => {
     expect(component.doiItems()[0].label).toContain('start typing');
     component.onDatasetSearch('abcd');
     expect(component.doiItems()[0].label).toContain('searching');
+  });
+
+  // The search waits DEBOUNCE_TIME after the last term on the mock clock
+  // (debounceTime reads Date.now(), hence mockDate), then its promise settles.
+  it('searches datasets once, DEBOUNCE_TIME after the last term, and lists the results', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(2026, 9, 25));
+    try {
+      dvLookup.items = [{ label: 'Dataset A', value: 'doi:A' }];
+      // The mock declares no parameters; the page passes four.
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.callThrough();
+      component.onDatasetSearch('abc');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME / 2);
+      component.onDatasetSearch('abcd');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(getItems).not.toHaveBeenCalled();
+      expect(component.doiItems()[0].label).toBe('searching "abcd"...');
+      jasmine.clock().tick(1);
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataset',
+        'abcd',
+        undefined,
+      );
+      // The mock lookup answers on a timer too.
+      jasmine.clock().tick(0);
+      await settlePromises();
+      expect(component.doiItems()).toEqual([
+        { label: 'Dataset A', value: 'doi:A' },
+      ]);
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('setData builds tree or stops when empty', () => {

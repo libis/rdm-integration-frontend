@@ -29,7 +29,9 @@ import {
   resizeTestWindow,
   scrolledContainers,
 } from '../../testing/page-layout';
+import { settlePromises } from '../../testing/promises';
 import { treegridStructure } from '../../testing/treegrid';
+import { APP_CONSTANTS } from '../shared/constants';
 import {
   CachedComputeResponse,
   CompareResult,
@@ -374,10 +376,45 @@ describe('DdiCdiComponent', () => {
       component.onDatasetSearch('test');
       expect(component.datasetSearchSubject.next).toHaveBeenCalledWith('test');
     });
+
+    // The search waits DEBOUNCE_TIME after the last term on the mock clock
+    // (debounceTime reads Date.now(), hence mockDate), then its promise settles.
+    it('searches datasets once, DEBOUNCE_TIME after the last term, and lists the results', async () => {
+      const fixture = TestBed.createComponent(DdiCdiComponent);
+      const component = fixture.componentInstance;
+      fixture.detectChanges();
+      dvObjectLookupServiceStub.getItems.calls.reset();
+      dvObjectLookupServiceStub.getItems.and.returnValue(
+        of([{ label: 'Dataset A', value: 'doi:A' }]),
+      );
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+      try {
+        component.onDatasetSearch('abc');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME / 2);
+        component.onDatasetSearch('abcd');
+        jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+        expect(dvObjectLookupServiceStub.getItems).not.toHaveBeenCalled();
+        expect(component.doiItems()[0].label).toBe('searching "abcd"...');
+        jasmine.clock().tick(1);
+        expect(dvObjectLookupServiceStub.getItems).toHaveBeenCalledOnceWith(
+          '',
+          'Dataset',
+          'abcd',
+          undefined,
+        );
+        await settlePromises();
+        expect(component.doiItems()).toEqual([
+          { label: 'Dataset A', value: 'doi:A' },
+        ]);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
   });
 
   describe('onDatasetChange', () => {
-    it('should fetch dataset files and call setData', (done) => {
+    it('should fetch dataset files and call setData', async () => {
       const mockData: CompareResult = {
         id: 'doi:123',
         data: [{ name: 'file.csv', directoryLabel: '' } as Datafile],
@@ -390,14 +427,12 @@ describe('DdiCdiComponent', () => {
       component.datasetId.set('doi:123');
       component.onDatasetChange();
       // loading is set to false after synchronous observable completion
-      setTimeout(() => {
-        expect(dataServiceStub.getDdiCdiCompatibleFiles).toHaveBeenCalledWith(
-          'doi:123',
-          undefined,
-        );
-        expect(component.loading()).toBe(false); // loading should be false after completion
-        done();
-      }, 10);
+      await settlePromises();
+      expect(dataServiceStub.getDdiCdiCompatibleFiles).toHaveBeenCalledWith(
+        'doi:123',
+        undefined,
+      );
+      expect(component.loading()).toBe(false); // loading should be false after completion
     });
 
     it('should handle error when fetching files', () => {
@@ -534,7 +569,7 @@ describe('DdiCdiComponent', () => {
       );
     });
 
-    it('should call generateDdiCdi with correct request', (done) => {
+    it('should call generateDdiCdi with correct request', async () => {
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
@@ -552,20 +587,18 @@ describe('DdiCdiComponent', () => {
       });
       component.continueSubmitGenerate();
       // loading is set to false after synchronous observable completion
-      setTimeout(() => {
-        expect(dataServiceStub.generateDdiCdi).toHaveBeenCalledWith({
-          persistentId: 'doi:123',
-          dataverseKey: 'token',
-          queue: '',
-          fileNames: ['file.csv'],
-          sendEmailOnSuccess: false,
-        });
-        expect(component.loading()).toBe(false); // loading should be false after completion
-        done();
-      }, 10);
+      await settlePromises();
+      expect(dataServiceStub.generateDdiCdi).toHaveBeenCalledWith({
+        persistentId: 'doi:123',
+        dataverseKey: 'token',
+        queue: '',
+        fileNames: ['file.csv'],
+        sendEmailOnSuccess: false,
+      });
+      expect(component.loading()).toBe(false); // loading should be false after completion
     });
 
-    it('should handle error from generateDdiCdi', (done) => {
+    it('should handle error from generateDdiCdi', async () => {
       dataServiceStub.generateDdiCdi.and.returnValue(
         throwError(() => 'Generation failed'),
       );
@@ -578,12 +611,10 @@ describe('DdiCdiComponent', () => {
         return s;
       });
       component.continueSubmitGenerate();
-      setTimeout(() => {
-        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
-          'Generation failed: undefined',
-        );
-        done();
-      }, 10);
+      await settlePromises();
+      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+        'Generation failed: undefined',
+      );
     });
   });
 
@@ -598,11 +629,11 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component.loading.set(true);
       void component['getDdiCdiData'](mockKey);
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await settlePromises();
       expect(utilsServiceStub.sleep).toHaveBeenCalled();
     });
 
-    it('should set generatedDdiCdi on success', (done) => {
+    it('should set generatedDdiCdi on success', async () => {
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
         of({ ready: true, res: 'output', ddiCdi: GENERATED_TURTLE }),
@@ -611,18 +642,16 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component.loading.set(true);
       void component['getDdiCdiData'](mockKey);
-      setTimeout(() => {
-        expect(component.generatedDdiCdi()).toBe(GENERATED_TURTLE);
-        expect(component.output()).toBe('output');
-        expect(component.loading()).toBe(false);
-        expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
-          'DDI-CDI generated successfully!',
-        );
-        done();
-      }, 50);
+      await settlePromises();
+      expect(component.generatedDdiCdi()).toBe(GENERATED_TURTLE);
+      expect(component.output()).toBe('output');
+      expect(component.loading()).toBe(false);
+      expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
+        'DDI-CDI generated successfully!',
+      );
     });
 
-    it('should show error if response has error', (done) => {
+    it('should show error if response has error', async () => {
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
         of({ ready: true, err: 'Generation error' }),
@@ -631,15 +660,13 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component.loading.set(true);
       void component['getDdiCdiData'](mockKey);
-      setTimeout(() => {
-        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
-          'Generation error',
-        );
-        done();
-      }, 50);
+      await settlePromises();
+      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+        'Generation error',
+      );
     });
 
-    it('should handle error from getCachedDdiCdiData', (done) => {
+    it('should handle error from getCachedDdiCdiData', async () => {
       const mockKey: Key = { key: 'job-123' };
       dataServiceStub.getCachedDdiCdiData.and.returnValue(
         throwError(() => ({ error: 'Fetch failed' })),
@@ -648,13 +675,11 @@ describe('DdiCdiComponent', () => {
       const component = fixture.componentInstance;
       component.loading.set(true);
       void component['getDdiCdiData'](mockKey);
-      setTimeout(() => {
-        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
-          'Getting DDI-CDI results failed: Fetch failed',
-        );
-        expect(component.loading()).toBe(false);
-        done();
-      }, 50);
+      await settlePromises();
+      expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+        'Getting DDI-CDI results failed: Fetch failed',
+      );
+      expect(component.loading()).toBe(false);
     });
   });
 
@@ -718,7 +743,7 @@ describe('DdiCdiComponent', () => {
       );
 
       component.openInViewer();
-      await new Promise<void>((r) => setTimeout(r));
+      await settlePromises();
 
       expect(dataServiceStub.addFileToDataset).toHaveBeenCalledWith({
         persistentId: 'doi:10.5072/test',
@@ -764,7 +789,7 @@ describe('DdiCdiComponent', () => {
       );
 
       component.openInViewer();
-      await new Promise<void>((r) => setTimeout(r));
+      await settlePromises();
 
       expect(notificationServiceStub.showError).toHaveBeenCalledWith(
         'Failed to add file to dataset',
@@ -965,7 +990,7 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('getDdiCdiData polling scenarios', () => {
-      it('should poll until ready is true', (done) => {
+      it('should poll until ready is true', async () => {
         let callCount = 0;
         const mockKey: Key = { key: 'job-123' };
 
@@ -990,15 +1015,13 @@ describe('DdiCdiComponent', () => {
         component.loading.set(true);
         void component['getDdiCdiData'](mockKey);
 
-        setTimeout(() => {
-          expect(callCount).toBeGreaterThanOrEqual(3);
-          expect(component.loading()).toBe(false);
-          expect(component.generatedDdiCdi()).toBe(FINAL_TURTLE);
-          done();
-        }, 100);
+        await settlePromises();
+        expect(callCount).toBeGreaterThanOrEqual(3);
+        expect(component.loading()).toBe(false);
+        expect(component.generatedDdiCdi()).toBe(FINAL_TURTLE);
       });
 
-      it('should show error when response contains error message', (done) => {
+      it('should show error when response contains error message', async () => {
         const mockKey: Key = { key: 'job-123' };
         dataServiceStub.getCachedDdiCdiData.and.returnValue(
           of({
@@ -1014,16 +1037,14 @@ describe('DdiCdiComponent', () => {
         component.loading.set(true);
         void component['getDdiCdiData'](mockKey);
 
-        setTimeout(() => {
-          expect(notificationServiceStub.showError).toHaveBeenCalledWith(
-            'Processing error occurred',
-          );
-          expect(component.loading()).toBe(false);
-          done();
-        }, 10);
+        await settlePromises();
+        expect(notificationServiceStub.showError).toHaveBeenCalledWith(
+          'Processing error occurred',
+        );
+        expect(component.loading()).toBe(false);
       });
 
-      it('should show success notification when generation completes', (done) => {
+      it('should show success notification when generation completes', async () => {
         const mockKey: Key = { key: 'job-123' };
         dataServiceStub.getCachedDdiCdiData.and.returnValue(
           of({
@@ -1039,16 +1060,14 @@ describe('DdiCdiComponent', () => {
         component.loading.set(true);
         void component['getDdiCdiData'](mockKey);
 
-        setTimeout(() => {
-          expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
-            'DDI-CDI generated successfully!',
-          );
-          expect(component.outputDisabled()).toBe(false);
-          done();
-        }, 10);
+        await settlePromises();
+        expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
+          'DDI-CDI generated successfully!',
+        );
+        expect(component.outputDisabled()).toBe(false);
       });
 
-      it('should update output during polling', (done) => {
+      it('should update output during polling', async () => {
         let callCount = 0;
         const mockKey: Key = { key: 'job-123' };
 
@@ -1073,10 +1092,8 @@ describe('DdiCdiComponent', () => {
         component.loading.set(true);
         void component['getDdiCdiData'](mockKey);
 
-        setTimeout(() => {
-          expect(component.output()).toBe('Final output');
-          done();
-        }, 100);
+        await settlePromises();
+        expect(component.output()).toBe('Final output');
       });
     });
 
@@ -1141,23 +1158,21 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('datasetSearchResultsSubscription error path', () => {
-      it('should handle subscription errors', (done) => {
+      it('should handle subscription errors', async () => {
         const fixture = TestBed.createComponent(DdiCdiComponent);
         const component = fixture.componentInstance;
 
         // Manually trigger an error in the subscription
         component['datasetSearchSubject'].error(new Error('Test error'));
 
-        setTimeout(() => {
-          // The component should still be in a valid state
-          expect(component).toBeDefined();
-          done();
-        }, 100);
+        await settlePromises();
+        // The component should still be in a valid state
+        expect(component).toBeDefined();
       });
     });
 
     describe('getDdiCdiData without ddiCdi content', () => {
-      it('should handle response ready without ddiCdi field', (done) => {
+      it('should handle response ready without ddiCdi field', async () => {
         const mockKey: Key = { key: 'job-123' };
         dataServiceStub.getCachedDdiCdiData.and.returnValue(
           of({
@@ -1172,15 +1187,13 @@ describe('DdiCdiComponent', () => {
         component.loading.set(true);
         void component['getDdiCdiData'](mockKey);
 
-        setTimeout(() => {
-          expect(component.loading()).toBe(false);
-          expect(component.generatedDdiCdi()).toBeUndefined();
-          expect(component.output()).toBe('output without ddiCdi');
-          done();
-        }, 10);
+        await settlePromises();
+        expect(component.loading()).toBe(false);
+        expect(component.generatedDdiCdi()).toBeUndefined();
+        expect(component.output()).toBe('output without ddiCdi');
       });
 
-      it('should not show success message when ddiCdi is not generated', (done) => {
+      it('should not show success message when ddiCdi is not generated', async () => {
         const mockKey: Key = { key: 'job-123' };
         dataServiceStub.getCachedDdiCdiData.and.returnValue(
           of({
@@ -1195,10 +1208,8 @@ describe('DdiCdiComponent', () => {
         component.loading.set(true);
         void component['getDdiCdiData'](mockKey);
 
-        setTimeout(() => {
-          expect(notificationServiceStub.showSuccess).not.toHaveBeenCalled();
-          done();
-        }, 10);
+        await settlePromises();
+        expect(notificationServiceStub.showSuccess).not.toHaveBeenCalled();
       });
     });
 
@@ -1451,7 +1462,7 @@ describe('DdiCdiComponent', () => {
     });
 
     describe('continueSubmitGenerate', () => {
-      it('should close popup and submit job', (done) => {
+      it('should close popup and submit job', async () => {
         const mockKey: Key = { key: 'job-123' };
         dataServiceStub.generateDdiCdi.and.returnValue(of(mockKey));
         dataServiceStub.getCachedDdiCdiData.and.returnValue(
@@ -1472,12 +1483,10 @@ describe('DdiCdiComponent', () => {
         component.continueSubmitGenerate();
 
         expect(component.submitPopup()).toBe(false);
-        setTimeout(() => {
-          expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
-            jasmine.stringContaining('DDI-CDI generation job submitted'),
-          );
-          done();
-        }, 10);
+        await settlePromises();
+        expect(notificationServiceStub.showSuccess).toHaveBeenCalledWith(
+          jasmine.stringContaining('DDI-CDI generation job submitted'),
+        );
       });
 
       it('should set expected output format for email disabled', () => {

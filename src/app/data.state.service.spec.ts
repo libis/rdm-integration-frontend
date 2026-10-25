@@ -13,6 +13,7 @@ import { NotificationService } from './shared/notification.service';
 import { takePendingReauth } from './shared/reauth';
 import { UtilsService } from './utils.service';
 import { APP_CONSTANTS } from './shared/constants';
+import { settlePromises } from '../testing/promises';
 
 class MockDataService {
   key$ = of({ key: 'k1' });
@@ -94,8 +95,7 @@ describe('DataStateService', () => {
     };
     init();
     // Allow async polling loop to complete
-    await new Promise<void>((r) => setTimeout(r));
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     const v = service.state$();
     expect(v?.data?.map((f) => f.id)).toEqual(['a', 'b']);
   });
@@ -103,7 +103,7 @@ describe('DataStateService', () => {
   it('handles ready true with error message', async () => {
     init();
     data.cached$.next({ ready: true, res: { data: [] }, err: 'boom' });
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(notify.errors.some((e) => e.includes('boom'))).toBeTrue();
   });
 
@@ -117,7 +117,7 @@ describe('DataStateService', () => {
       of({ ready: false }),
     );
     init();
-    await new Promise<void>((resolve) => setTimeout(resolve));
+    await settlePromises();
 
     expect(poll).toHaveBeenCalledTimes(1);
     expect(notify.errors).toEqual([
@@ -129,7 +129,7 @@ describe('DataStateService', () => {
       of({ ready: true, res: { id: 'new-result', data: [] } }),
     );
     init();
-    await new Promise<void>((resolve) => setTimeout(resolve));
+    await settlePromises();
     expect(service.state$()?.id).toBe('new-result');
   });
 
@@ -157,14 +157,14 @@ describe('DataStateService', () => {
   it('handles ready true with missing response by leaving state null', async () => {
     init();
     data.cached$.next({ ready: true, res: undefined });
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(service.state$()).toBeNull();
   });
 
   it('handles getData error and navigates', async () => {
     data.getData = () => throwError(() => ({ error: 'x' })) as any;
     init();
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(notify.errors.length).toBe(1);
     expect(router.navigated[0].commands).toEqual(['/connect']);
     expect(router.navigated[0].extras?.queryParams).toEqual({});
@@ -174,7 +174,7 @@ describe('DataStateService', () => {
     data.getData = () =>
       throwError(() => ({ error: 'denied', status: 401 })) as any;
     init();
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(router.navigated[0].commands).toEqual(['/connect']);
     expect(router.navigated[0].extras?.queryParams).toEqual({ reset: 'true' });
   });
@@ -184,7 +184,7 @@ describe('DataStateService', () => {
     data.getCachedData = () => throwError(() => ({ error: '401 forbidden' }));
     const generation = (service as any).pollGeneration;
     (service as any).getCompareData({ key: 'k2' }, generation);
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(
       notify.errors.some((e) => e.includes('Comparing failed')),
     ).toBeTrue();
@@ -204,7 +204,7 @@ describe('DataStateService', () => {
     };
     data.getCachedData = () => throwError(() => reauthErr);
     init();
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(takePendingReauth()).toEqual({ domains: ['sydney.edu.au'] });
     expect(router.navigated.length).toBe(1);
     expect(router.navigated[0].commands).toEqual(['/connect']);
@@ -215,7 +215,7 @@ describe('DataStateService', () => {
     const plainErr = { status: 401, error: '401 - session expired' };
     data.getCachedData = () => throwError(() => plainErr);
     init();
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(takePendingReauth()).toBeUndefined();
     expect(router.navigated.length).toBe(1);
     expect(router.navigated[0].commands).toEqual(['/connect']);

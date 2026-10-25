@@ -5,6 +5,7 @@ import { CredentialsService } from '../../credentials.service';
 import { DataUpdatesService } from '../../data.updates.service';
 import { Fileaction, Filestatus } from '../../models/datafile';
 import { SubmitService, TransferTaskStatus } from '../../submit.service';
+import { settlePromises } from '../../../testing/promises';
 import { TransferProgressCardComponent } from './transfer-progress-card.component';
 
 class MockSubmitService {
@@ -127,7 +128,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-2');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingActive()).toBeFalse();
     expect(component.statusMessage()).toContain('Globus session expired');
@@ -143,7 +144,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'pid-123');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingActive()).toBeFalse();
     expect(component.statusMessage()).toContain('Session expired');
@@ -160,7 +161,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-3');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toBe('Custom error message');
     expect(component.statusMessage()).toBe('Custom error message');
@@ -174,7 +175,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-4');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toBe('Network timeout');
   });
@@ -187,7 +188,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-5');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toContain(
       'Unable to retrieve the latest status from Globus',
@@ -203,7 +204,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'pid-456');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toContain(
       'Unable to retrieve the latest transfer status',
@@ -250,7 +251,7 @@ describe('TransferProgressCardComponent', () => {
     // Polling should be active
     expect(component.statusPollingActive()).toBeTrue();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Status should be retrieved
@@ -277,7 +278,7 @@ describe('TransferProgressCardComponent', () => {
     // Polling should be active initially
     expect(component.statusPollingActive()).toBeTrue();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Should have computed status from data - one file in progress (not complete)
@@ -332,7 +333,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-no-bytes');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(component.transferProgress()).toBeUndefined();
   });
 
@@ -352,7 +353,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-files');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     const summary = component.filesSummary();
     expect(summary.total).toBe(100);
     expect(summary.processed).toBe(60); // transferred + skipped
@@ -382,7 +383,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-files-stable');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     const summary = component.filesSummary();
     expect(summary.total).toBe(3); // Copy + Update only
     expect(summary.processed).toBe(1);
@@ -410,7 +411,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-files-success');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     const summary = component.filesSummary();
     expect(summary.total).toBe(3);
     expect(summary.processed).toBe(3);
@@ -476,7 +477,7 @@ describe('TransferProgressCardComponent', () => {
     component.statusPollingError.set('Previous error');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     component.refresh();
 
@@ -500,7 +501,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-reset');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(component.statusPollingActive()).toBeTrue();
 
     fixture.componentRef.setInput('taskId', '');
@@ -536,7 +537,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-failed');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusTone()).toBe('error');
     expect(component.statusIcon()).toContain('exclamation');
@@ -556,7 +557,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-cancel');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusTone()).toBe('error');
     expect(component.statusIcon()).toContain('exclamation');
@@ -604,7 +605,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-nice');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusMessage()).toBe('Processing files 45/100');
   });
@@ -621,7 +622,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-plain');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusMessage()).toBe('Current status: PENDING');
   });
@@ -638,7 +639,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-empty');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusMessage()).toBe('Waiting for Globus updates…');
   });
@@ -655,7 +656,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-plain-fail');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusMessage()).toContain(
       'Transfer ended with status FAILED',
@@ -674,7 +675,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-plain-success');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusMessage()).toBe('Transfer completed successfully.');
   });
@@ -693,7 +694,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-clamp');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.transferProgress()).toBe(100); // Clamped to max
   });
@@ -708,7 +709,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-same');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     // Should only emit once (true) not twice
     expect(pollingStates).toEqual([true]);
@@ -758,7 +759,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', mockFiles);
     fixture.componentRef.setInput('taskId', 'pid-update');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Only file1 should be complete (Equal), file2 is still in progress (Updated)
@@ -788,7 +789,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', mockFiles);
     fixture.componentRef.setInput('taskId', 'pid-delete');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Only file1 should be complete (New), file2 is still being deleted (Deleted)
@@ -818,7 +819,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', mockFiles);
     fixture.componentRef.setInput('taskId', 'pid-ignore');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Only file2 (Copy) should count in total, file1 (Ignore) should not be counted at all
@@ -854,7 +855,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', mockFiles);
     fixture.componentRef.setInput('taskId', 'pid-single-upload');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Should count only 1 file (the Copy action), not 301
@@ -893,7 +894,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', mockFiles);
     fixture.componentRef.setInput('taskId', 'pid-complete');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // All files complete
@@ -912,7 +913,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', []);
     fixture.componentRef.setInput('taskId', 'pid-empty');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Empty transfer is considered complete
@@ -954,7 +955,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'pid-callback');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(callbackInvoked).toBeTrue();
@@ -965,7 +966,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('data', null);
     fixture.componentRef.setInput('taskId', 'pid-no-data');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Should not have called updateData
@@ -1001,7 +1002,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-destroy');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     expect(component.statusPollingActive()).toBeTrue();
 
     // Destroy the component by destroying the fixture
@@ -1018,7 +1019,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-generic-error');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toContain(
       'Unable to retrieve the latest status from Globus',
@@ -1034,7 +1035,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'pid-generic-error');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toContain(
       'Unable to retrieve the latest transfer status',
@@ -1050,7 +1051,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('taskId', 'task-error-property');
     fixture.detectChanges();
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     expect(component.statusPollingError()).toBe('Custom error from API');
   });
@@ -1094,7 +1095,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-clamp');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Should be clamped to 100
@@ -1112,7 +1113,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-icon-info');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.statusIcon()).toContain('spinner');
@@ -1130,7 +1131,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-icon-success');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.statusIcon()).toContain('check');
@@ -1148,7 +1149,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-icon-error');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.statusIcon()).toContain('exclamation');
@@ -1175,7 +1176,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-has-status');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.hasStatus()).toBeTrue();
@@ -1202,7 +1203,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-nice');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.statusMessage()).toBe('Processing your files');
@@ -1220,7 +1221,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-fallback');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.statusMessage()).toBe('Current status: PENDING');
@@ -1238,7 +1239,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-empty-nice');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     expect(component.statusMessage()).toContain('Waiting for Globus updates');
@@ -1256,7 +1257,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-completion-time');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
@@ -1276,7 +1277,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-request-time');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
@@ -1299,7 +1300,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-files-display');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
@@ -1314,17 +1315,14 @@ describe('TransferProgressCardComponent', () => {
     // Set submitting to true to trigger hasStatus() -> true
     fixture.componentRef.setInput('submitting', true);
     fixture.detectChanges();
-    await new Promise<void>((r) => setTimeout(r)); // Let effects run
+    await settlePromises();
 
     // Now get the card element via viewChild signal
     const cardEl = component['cardRoot']()?.nativeElement as HTMLElement;
     expect(cardEl).toBeTruthy();
 
-    // Verify the scroll would have been attempted
-    // Since scrollIntoView is called in setTimeout, we need to flush
-    await new Promise<void>((r) => setTimeout(r, 100));
-
-    // The scroll logic ran - we verify by checking hasRenderedCard is now true
+    // The scroll logic ran (scrollIntoView itself waits for a timer) - we
+    // verify by checking hasRenderedCard is now true
     expect((component as any).hasRenderedCard).toBeTrue();
   });
 
@@ -1343,7 +1341,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-failed-files');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
@@ -1365,7 +1363,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-no-failed');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
@@ -1378,7 +1376,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-disable-refresh');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const refreshButton = fixture.nativeElement.querySelector(
@@ -1393,7 +1391,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'task-enable-refresh');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     // Wait for terminal status to stop polling
@@ -1416,7 +1414,7 @@ describe('TransferProgressCardComponent', () => {
     fixture.componentRef.setInput('isGlobus', true);
     fixture.componentRef.setInput('taskId', 'display-task-123');
 
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement;
@@ -1435,7 +1433,7 @@ describe('TransferProgressCardComponent', () => {
         submit.statuses = [{ task_id: 'theme-task', status: 'ACTIVE' }];
         fixture.componentRef.setInput('isGlobus', true);
         fixture.componentRef.setInput('taskId', 'theme-task');
-        await new Promise<void>((r) => setTimeout(r));
+        await settlePromises();
         fixture.detectChanges();
         const card = fixture.nativeElement.querySelector(
           '.transfer-status',

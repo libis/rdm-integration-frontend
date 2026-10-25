@@ -24,6 +24,7 @@ import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
+import { APP_CONSTANTS } from '../shared/constants';
 import { NotificationService } from '../shared/notification.service';
 import {
   registerReauthAttempt,
@@ -31,6 +32,7 @@ import {
   takePendingReauth,
 } from '../shared/reauth';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { settlePromises } from '../../testing/promises';
 import { ConnectComponent } from './connect.component';
 
 class DataStateServiceStub {
@@ -185,21 +187,6 @@ class ConnectValidationServiceStub {
   }
   summarizeIssues(issues: string[]) {
     return issues.length ? issues.join('; ') : undefined;
-  }
-}
-
-/** Poll until a condition is met – eliminates timer races in debounce tests. */
-async function waitForSignal(
-  condition: () => boolean,
-  timeoutMs = 5000,
-  intervalMs = 50,
-): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (!condition()) {
-    if (Date.now() >= deadline) {
-      throw new Error(`waitForSignal timed out after ${timeoutMs}ms`);
-    }
-    await new Promise<void>((r) => setTimeout(r, intervalMs));
   }
 }
 
@@ -523,7 +510,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    await new Promise<void>((r) => setTimeout(r)); // flush async setConfig promise
+    await settlePromises();
     const comp: any = fixture.componentInstance;
 
     // Explicit deep-link values applied
@@ -573,7 +560,7 @@ describe('ConnectComponent additional behavior/validation', () => {
 
     const fixture = TestBed.createComponent(ConnectComponent);
     fixture.detectChanges();
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
     const comp: any = fixture.componentInstance;
     expect(comp.datasetId()).toBeUndefined();
     expect(comp.plugin()).toBeUndefined();
@@ -641,7 +628,7 @@ describe('ConnectComponent additional behavior/validation', () => {
     const fixture = TestBed.createComponent(ConnectComponent);
     const comp: any = fixture.componentInstance;
     fixture.detectChanges();
-    await new Promise<void>((r) => setTimeout(r));
+    await settlePromises();
 
     comp.plugin.set('github');
     comp.pluginId.set('github');
@@ -649,13 +636,20 @@ describe('ConnectComponent additional behavior/validation', () => {
     comp.user.set('alice');
     comp.token.set('tok');
 
-    comp.startRepoSearch();
-    comp.onRepoNameSearch('repo');
-    await waitForSignal(
-      () => comp.repoNames()[0]?.label?.includes('search failed') ?? false,
-    );
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(2026, 9, 25));
+    try {
+      comp.startRepoSearch();
+      comp.onRepoNameSearch('repo');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(repoLookup.searchSpy).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
+      await settlePromises();
+    } finally {
+      jasmine.clock().uninstall();
+    }
 
-    expect(repoLookup.searchSpy).toHaveBeenCalled();
+    expect(repoLookup.searchSpy).toHaveBeenCalledTimes(1);
     expect(comp.repoNames()[0].label).toContain('search failed: boom');
     expect(notification.errors.pop()).toContain('Repository search failed');
   });
@@ -960,7 +954,15 @@ describe('ConnectComponent additional behavior/validation', () => {
     });
   });
 
+  // The searches wait DEBOUNCE_TIME after the last term on the mock clock
+  // (debounceTime reads Date.now(), hence mockDate), then their promises settle.
   describe('dataverse object search dropdowns', () => {
+    beforeEach(() => {
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 9, 25));
+    });
+    afterEach(() => jasmine.clock().uninstall());
+
     it('delivers dataset search results to the doi dropdown', async () => {
       const fixture = TestBed.createComponent(ConnectComponent);
       const comp: any = fixture.componentInstance;
@@ -971,11 +973,15 @@ describe('ConnectComponent additional behavior/validation', () => {
       );
 
       comp.onDatasetSearch('data');
-      await waitForSignal(() =>
-        comp.doiItems().some((i: SelectItem<string>) => i.value === 'doi:1'),
-      );
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME - 1);
+      expect(dvLookup.getItems).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
+      await settlePromises();
 
-      expect(dvLookup.getItems).toHaveBeenCalled();
+      expect(dvLookup.getItems).toHaveBeenCalledTimes(1);
+      expect(
+        comp.doiItems().some((i: SelectItem<string>) => i.value === 'doi:1'),
+      ).toBeTrue();
     });
 
     it('dataset search failure shows a toast and a failure entry', async () => {
@@ -988,10 +994,10 @@ describe('ConnectComponent additional behavior/validation', () => {
       );
 
       comp.onDatasetSearch('data');
-      await waitForSignal(
-        () => comp.doiItems()[0]?.label?.includes('search failed') ?? false,
-      );
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      await settlePromises();
 
+      expect(comp.doiItems()[0].label).toContain('search failed');
       expect(notification.errors.pop()).toContain('Dataset search failed');
     });
 
@@ -1005,11 +1011,10 @@ describe('ConnectComponent additional behavior/validation', () => {
       );
 
       comp.onCollectionSearch('abc');
-      await waitForSignal(
-        () =>
-          comp.collectionItems()[0]?.label?.includes('search failed') ?? false,
-      );
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      await settlePromises();
 
+      expect(comp.collectionItems()[0].label).toContain('search failed');
       expect(notification.errors.pop()).toContain('Collection search failed');
     });
   });
