@@ -51,6 +51,22 @@ class ScrollingHostComponent {
   readonly second = signal(false);
 }
 
+// A page host whose only inline overflow is overflow-x: hidden, which makes it
+// scroll vertically (the other axis computes to auto).
+@Component({
+  imports: [DialogComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <div class="page-host" style="height: 100px; overflow-x: hidden">
+      <div style="height: 400px">Rows</div>
+      <app-dialog header="Only" [(visible)]="open"><p>One</p></app-dialog>
+    </div>
+  `,
+})
+class OverflowXHostComponent {
+  readonly open = signal(false);
+}
+
 describe('DialogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -145,7 +161,7 @@ describe('DialogComponent', () => {
 
     beforeEach(async () => {
       await TestBed.configureTestingModule({
-        imports: [ScrollingHostComponent],
+        imports: [ScrollingHostComponent, OverflowXHostComponent],
       }).compileComponents();
     });
 
@@ -183,6 +199,37 @@ describe('DialogComponent', () => {
         'height: 100px; overflow-y: auto;',
       );
       expect(document.body.classList).not.toContain('app-dialog-open');
+    });
+
+    // The restore wrote back the overflow shorthand, which cleared an inline
+    // overflow-x set on its own.
+    it('puts back an inline overflow-x set on its own, on the host and on the body', async () => {
+      document.body.style.overflowX = 'hidden';
+      try {
+        const fixture = TestBed.createComponent(OverflowXHostComponent);
+        await fixture.whenStable();
+        const host = fixture.nativeElement.querySelector(
+          '.page-host',
+        ) as HTMLElement;
+        expect(overflowY(host)).toBe('auto');
+        fixture.componentInstance.open.set(true);
+        await fixture.whenStable();
+        expect(overflowY(host)).toBe('hidden');
+        expect(overflowY(document.body)).toBe('hidden');
+        fixture.componentInstance.open.set(false);
+        await fixture.whenStable();
+        expect(host.getAttribute('style')).toBe(
+          'height: 100px; overflow-x: hidden;',
+        );
+        expect(overflowY(host)).toBe('auto');
+        expect(document.body.style.overflowX).toBe('hidden');
+        expect(document.body.style.overflowY).toBe('');
+      } finally {
+        document.body.style.removeProperty('overflow-x');
+        if (document.body.getAttribute('style') === '') {
+          document.body.removeAttribute('style');
+        }
+      }
     });
 
     it('keeps them stopped until the last open dialog closes', async () => {

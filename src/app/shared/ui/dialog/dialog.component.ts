@@ -21,6 +21,24 @@ const DIALOG_OPEN_CLASS = 'app-dialog-open';
 const scrollLocks = new Map<HTMLElement, { count: number; undo: () => void }>();
 let openDialogs = 0;
 
+// Keeps the inline value and priority of each property, longhands only (a
+// shorthand reads empty when its longhands differ), and returns how to put
+// them back.
+function keepInline(el: HTMLElement, properties: string[]): () => void {
+  const kept = properties.map((property) => ({
+    property,
+    value: el.style.getPropertyValue(property),
+    priority: el.style.getPropertyPriority(property),
+  }));
+  return () => {
+    for (const { property, value, priority } of kept) {
+      if (value) el.style.setProperty(property, value, priority);
+      else el.style.removeProperty(property);
+    }
+    if (el.getAttribute('style') === '') el.removeAttribute('style');
+  };
+}
+
 // Hides the overflow of the page (on the body, as Bootstrap's modal does) or of a scrolling
 // ancestor. Where a scrollbar showed, its gutter stays, so the content does not move.
 function stopScrolling(el: HTMLElement): () => void {
@@ -34,22 +52,14 @@ function stopScrolling(el: HTMLElement): () => void {
         parseFloat(style.borderLeftWidth) -
         parseFloat(style.borderRightWidth) >
       0;
-  const before = {
-    overflow: el.style.overflow,
-    overflowY: el.style.overflowY,
-    gutter: gutterOf.style.scrollbarGutter,
-  };
-  if (page) el.style.overflow = 'hidden';
-  else el.style.overflowY = 'hidden';
-  if (scrollbar) gutterOf.style.scrollbarGutter = 'stable';
+  const restore = keepInline(el, ['overflow-x', 'overflow-y']);
+  const restoreGutter = keepInline(gutterOf, ['scrollbar-gutter']);
+  if (page) el.style.setProperty('overflow-x', 'hidden');
+  el.style.setProperty('overflow-y', 'hidden');
+  if (scrollbar) gutterOf.style.setProperty('scrollbar-gutter', 'stable');
   return () => {
-    el.style.overflow = before.overflow;
-    el.style.overflowY = before.overflowY;
-    gutterOf.style.scrollbarGutter = before.gutter;
-    for (const changed of [el, gutterOf]) {
-      if (changed.getAttribute('style') === '')
-        changed.removeAttribute('style');
-    }
+    restore();
+    restoreGutter();
   };
 }
 
