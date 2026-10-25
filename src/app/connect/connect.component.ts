@@ -374,8 +374,6 @@ export class ConnectComponent
   });
 
   repoSearchSubject: Subject<string> = new Subject();
-  readonly collectionSearchSubject = this.collectionSearcher.terms;
-  readonly datasetSearchSubject = this.datasetSearcher.terms;
   repoSearchResultsObservable: Observable<Promise<SelectItem<string>[]>>;
   repoSearchResultsSubscription?: Subscription;
   collectionSearchResultsSubscription?: Subscription;
@@ -1389,10 +1387,6 @@ export class ConnectComponent
     this.collectionSearcher.onSearch(searchTerm);
   }
 
-  collectionSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return this.collectionSearcher.search(searchTerm);
-  }
-
   // DATASETS
 
   getDoiOptions(): void {
@@ -1454,10 +1448,6 @@ export class ConnectComponent
 
   onDatasetSearch(searchTerm: string | null) {
     this.datasetSearcher.onSearch(searchTerm);
-  }
-
-  datasetSearch(searchTerm: string): Promise<SelectItem<string>[]> {
-    return this.datasetSearcher.search(searchTerm);
   }
 
   onDatasetSelectionChange(value: string | undefined) {

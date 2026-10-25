@@ -22,9 +22,11 @@ import { OauthService } from '../oauth.service';
 import { PluginService } from '../plugin.service';
 import { RepoLookupService } from '../repo.lookup.service';
 import { ConnectValidationService } from '../shared/connect-validation.service';
+import { APP_CONSTANTS } from '../shared/constants';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import { settlePromises } from '../../testing/promises';
 import { ConnectComponent } from './connect.component';
 
 class MockDataStateService {
@@ -850,67 +852,118 @@ describe('ConnectComponent advanced behaviors', () => {
     expect(comp['isNewDatasetId']('root:Other')).toBeFalse();
   });
 
-  it('onCollectionSearch handles short input and emits search term for valid queries', () => {
-    const { comp } = createComponent();
-    const nextSpy = spyOn(comp.collectionSearchSubject, 'next');
+  // The searches go through the page's search wiring: a term of three letters
+  // or more is looked up DEBOUNCE_TIME after it (debounceTime reads
+  // Date.now(), hence mockDate), and the lookup answers on a timer.
+  const withClock = async (run: () => Promise<void> | void) => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(2026, 9, 25));
+    try {
+      await run();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  };
 
-    comp.onCollectionSearch(null);
-    expect(comp.collectionItems()[0].value).toBe('start');
-    expect(nextSpy).not.toHaveBeenCalled();
+  it('onCollectionSearch handles short input and searches valid queries', () =>
+    withClock(() => {
+      const { comp } = createComponent();
+      // The mock declares no parameters; the page passes four.
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.callThrough();
 
-    comp.onCollectionSearch('ab');
-    expect(comp.collectionItems()[0].value).toBe('start');
-    expect(nextSpy).not.toHaveBeenCalled();
+      comp.onCollectionSearch(null);
+      expect(comp.collectionItems()[0].value).toBe('start');
+      comp.onCollectionSearch('ab');
+      expect(comp.collectionItems()[0].value).toBe('start');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      expect(getItems).not.toHaveBeenCalled();
 
-    comp.onCollectionSearch('term');
-    expect(comp.collectionItems()[0].label).toContain('searching "term"');
-    expect(comp.collectionItems()[0].value).toBe('term');
-    expect(nextSpy).toHaveBeenCalledOnceWith('term');
-  });
+      comp.onCollectionSearch('term');
+      expect(comp.collectionItems()[0].label).toContain('searching "term"');
+      expect(comp.collectionItems()[0].value).toBe('term');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataverse',
+        'term',
+        undefined,
+      );
+    }));
 
-  it('collectionSearch delegates to DV lookup service with current selection', async () => {
-    dvLookup.items = [
-      { label: 'Coll A', value: 'root:A' },
-      { label: 'Coll B', value: 'root:B' },
-    ];
-    const { comp } = createComponent();
-    comp.collectionId.set('root:BASE');
-    comp.dataverseToken.set('dvTok');
+  it('the collection search asks the DV lookup service with the current selection', () =>
+    withClock(async () => {
+      dvLookup.items = [
+        { label: 'Coll A', value: 'root:A' },
+        { label: 'Coll B', value: 'root:B' },
+      ];
+      const { comp } = createComponent();
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.callThrough();
+      comp.collectionId.set('root:BASE');
+      comp.dataverseToken.set('dvTok');
 
-    const items = await comp.collectionSearch('term');
-    expect(items).toEqual(dvLookup.items);
-  });
+      comp.onCollectionSearch('term');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      expect(getItems).toHaveBeenCalledOnceWith(
+        'root:BASE',
+        'Dataverse',
+        'term',
+        'dvTok',
+      );
+      jasmine.clock().tick(0);
+      await settlePromises();
+      expect(comp.collectionItems()).toEqual(dvLookup.items);
+    }));
 
-  it('onDatasetSearch guards short inputs and triggers search subject otherwise', () => {
-    const { comp } = createComponent();
-    const nextSpy = spyOn(comp.datasetSearchSubject, 'next');
+  it('onDatasetSearch guards short inputs and searches valid queries', () =>
+    withClock(() => {
+      const { comp } = createComponent();
+      const getItems: jasmine.Spy = spyOn(
+        dvLookup,
+        'getItems',
+      ).and.callThrough();
 
-    comp.onDatasetSearch(null);
-    expect(comp.doiItems()[0].value).toBe('start');
-    expect(nextSpy).not.toHaveBeenCalled();
+      comp.onDatasetSearch(null);
+      expect(comp.doiItems()[0].value).toBe('start');
+      comp.onDatasetSearch('xy');
+      expect(comp.doiItems()[0].value).toBe('start');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      expect(getItems).not.toHaveBeenCalled();
 
-    comp.onDatasetSearch('xy');
-    expect(comp.doiItems()[0].value).toBe('start');
-    expect(nextSpy).not.toHaveBeenCalled();
+      comp.onDatasetSearch('term');
+      expect(comp.doiItems()[0].label).toContain('searching "term"');
+      expect(comp.doiItems()[0].value).toBe('term');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      expect(getItems).toHaveBeenCalledOnceWith(
+        '',
+        'Dataset',
+        'term',
+        undefined,
+      );
+    }));
 
-    comp.onDatasetSearch('term');
-    expect(comp.doiItems()[0].label).toContain('searching "term"');
-    expect(comp.doiItems()[0].value).toBe('term');
-    expect(nextSpy).toHaveBeenCalledOnceWith('term');
-  });
+  it('the dataset search prepends the create new dataset option to the lookup results', () =>
+    withClock(async () => {
+      dvLookup.items = [
+        { label: 'Dataset 1', value: 'doi:1' },
+        { label: 'Dataset 2', value: 'doi:2' },
+      ];
+      const { comp } = createComponent();
+      comp.collectionId.set('root:COLL');
 
-  it('datasetSearch prepends create new dataset option to lookup results', async () => {
-    dvLookup.items = [
-      { label: 'Dataset 1', value: 'doi:1' },
-      { label: 'Dataset 2', value: 'doi:2' },
-    ];
-    const { comp } = createComponent();
-    comp.collectionId.set('root:COLL');
-
-    const items = await comp.datasetSearch('sample');
-    expect(items[0].value).toBe('CREATE_NEW_DATASET');
-    expect(items.slice(1)).toEqual(dvLookup.items);
-  });
+      comp.onDatasetSearch('sample');
+      jasmine.clock().tick(APP_CONSTANTS.DEBOUNCE_TIME);
+      jasmine.clock().tick(0);
+      await settlePromises();
+      const items = comp.doiItems();
+      expect(items[0].value).toBe('CREATE_NEW_DATASET');
+      expect(items.slice(1)).toEqual(dvLookup.items);
+    }));
 
   it('onDatasetSelectionChange handles create-new sentinel and explicit selections', () => {
     jasmine.clock().install();
