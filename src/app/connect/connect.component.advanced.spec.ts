@@ -26,6 +26,10 @@ import { APP_CONSTANTS } from '../shared/constants';
 import { NavigationService } from '../shared/navigation.service';
 import { NotificationService } from '../shared/notification.service';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
+import {
+  restoreLoginState,
+  stashLoginState,
+} from '../shared/login-state-storage';
 import { settlePromises } from '../../testing/promises';
 import { ConnectComponent } from './connect.component';
 
@@ -354,9 +358,33 @@ describe('ConnectComponent advanced behaviors', () => {
     const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
     const p = new URL(redirectUrl).searchParams;
     expect(p.get('client_id')).toBe('client-id');
-    const state = JSON.parse(p.get('state')!);
-    expect(state.datasetId.value).toBe('doi:10.123/XYZ');
-    expect(state.plugin.value).toBe('github');
+    // Only the nonce goes through the identity provider, the rest stays in the browser
+    expect(Object.keys(JSON.parse(p.get('state')!))).toEqual(['nonce']);
+    const state = restoreLoginState(p.get('state')!);
+    expect(state?.datasetId?.value).toBe('doi:10.123/XYZ');
+    expect(state?.plugin?.value).toBe('github');
+  });
+
+  it('restoreFromOauthState restores the selections kept in the browser', () => {
+    sessionStorage.clear();
+    const { comp } = createComponent();
+    const minimalState = stashLoginState({
+      plugin: { label: 'GitHub', value: 'github' },
+      pluginId: { label: 'GitHub', value: 'github', hidden: false },
+      repoName: 'owner/repo',
+      datasetId: { label: 'doi:ABC', value: 'doi:ABC' },
+      nonce: 'nonce-stash',
+    });
+    comp['restoreFromOauthState']({ state: minimalState, code: 'oauthCode' });
+    expect(comp.plugin()).toBe('github');
+    expect(comp.repoName()).toBe('owner/repo');
+    expect(comp.datasetId()).toBe('doi:ABC');
+    expect(oauthService.lastArgs).toEqual({
+      pluginId: 'github',
+      code: 'oauthCode',
+      nonce: 'nonce-stash',
+    });
+    sessionStorage.clear();
   });
 
   it('getRepoToken opens new window when oauth client id missing', () => {

@@ -32,6 +32,10 @@ import {
   registerReauthAttempt,
   takePendingReauth,
 } from '../shared/reauth';
+import {
+  restoreLoginState,
+  stashLoginState,
+} from '../shared/login-state-storage';
 import { SnapshotStorageService } from '../shared/snapshot-storage.service';
 
 // Models
@@ -522,12 +526,8 @@ export class ConnectComponent
   ): void {
     const stateRaw = params['state'];
     if (typeof stateRaw !== 'string') return;
-    let loginState: LoginState;
-    try {
-      loginState = JSON.parse(stateRaw) as LoginState;
-    } catch {
-      return; // malformed state
-    }
+    const loginState = restoreLoginState(stateRaw);
+    if (!loginState) return; // malformed state
     // Download flows with state.download are normally caught by AppComponent
     // and routed to /download. This is a fallback for edge cases.
     if (loginState.download) {
@@ -774,7 +774,7 @@ export class ConnectComponent
       this.navigation.assign(
         buildAuthorizeUrl(base, {
           redirectUri: this.pluginService.getRedirectUri(),
-          state: JSON.stringify(loginState),
+          state: stashLoginState(loginState),
           reauth,
         }),
       );
