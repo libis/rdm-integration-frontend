@@ -22,7 +22,6 @@
     "typescript": "~6.0"
   },
   "dependencies": {
-    "@angular/animations": "^22.3.0",
     "@angular/cdk": "^22.3.0",
     "@angular/cli": "^22.3.0",
     "@angular/common": "^22.3.0",
@@ -31,7 +30,6 @@
     "@angular/forms": "^22.3.0",
     "@angular/localize": "^22.3.0",
     "@angular/platform-browser": "^22.3.0",
-    "@angular/platform-browser-dynamic": "^22.3.0",
     "@angular/router": "^22.3.0",
     "bootstrap": "^5.3.8",
     "ngx-autosize": "^2.0.4",
