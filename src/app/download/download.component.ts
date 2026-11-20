@@ -30,6 +30,10 @@ import {
   reauthFailureMessage,
   registerReauthAttempt,
 } from '../shared/reauth';
+import {
+  restoreLoginState,
+  stashLoginState,
+} from '../shared/login-state-storage';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 
@@ -387,10 +391,8 @@ export class DownloadComponent
             return;
           }
 
-          let loginState: LoginState;
-          try {
-            loginState = JSON.parse(stateRaw) as LoginState;
-          } catch {
+          const loginState = restoreLoginState(stateRaw);
+          if (!loginState) {
             this.notificationService.showError(
               'OAuth callback state is invalid. Please retry login.',
             );
@@ -1179,7 +1181,7 @@ export class DownloadComponent
     const base = normalizeTokenGetter(tg, url);
     if (base) {
       const nonce = this.newNonce(44);
-      // Include all state to preserve across OAuth redirect
+      // The state stays in the browser; only the nonce goes through Globus
       const loginState: LoginState = {
         datasetId:
           this.datasetId() && this.datasetId() !== '?'
@@ -1198,7 +1200,7 @@ export class DownloadComponent
       this.navigation.assign(
         buildAuthorizeUrl(base, {
           redirectUri: this.pluginService.getRedirectUri(),
-          state: JSON.stringify(loginState),
+          state: stashLoginState(loginState),
           reauth,
           // Guests/preview users may authenticate with any Globus identity —
           // unless an endpoint policy explicitly demanded a domain.

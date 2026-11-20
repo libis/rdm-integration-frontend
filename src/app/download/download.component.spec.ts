@@ -47,6 +47,10 @@ import {
 } from '../../testing/select';
 import { treegridStructure } from '../../testing/treegrid';
 import { registerReauthAttempt } from '../shared/reauth';
+import {
+  restoreLoginState,
+  stashLoginState,
+} from '../shared/login-state-storage';
 import { SubmitService } from '../submit.service';
 import { UtilsService } from '../utils.service';
 import { DownloadComponent } from './download.component';
@@ -917,18 +921,23 @@ describe('DownloadComponent', () => {
     expect(component.datasetId()).toBeUndefined();
   });
 
-  it('getRepoToken builds redirect including dataset state when available', () => {
+  function redirectState(): string {
+    expect(navigation.assign).toHaveBeenCalled();
+    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
+    const state = new URL(redirectUrl).searchParams.get('state');
+    expect(state).toBeTruthy();
+    return state!;
+  }
+
+  it('getRepoToken keeps the dataset state in the browser for the return', () => {
     initComponent();
     component.globusPlugin.set(plugin.getGlobusPlugin());
     component.datasetId.set('doi:ABC');
     component.dataverseToken.set('tok');
     component.getRepoToken();
-    expect(navigation.assign).toHaveBeenCalled();
-    const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
-    const match = redirectUrl.match(/state=([^&]+)/);
-    expect(match).toBeTruthy();
-    const state = JSON.parse(decodeURIComponent(match![1]));
-    expect(state.datasetId.value).toBe('doi:ABC');
+    expect(restoreLoginState(redirectState())?.datasetId?.value).toBe(
+      'doi:ABC',
+    );
   });
 
   it('getRepoToken omits dataset when placeholder selected', () => {
@@ -936,12 +945,51 @@ describe('DownloadComponent', () => {
     component.globusPlugin.set(plugin.getGlobusPlugin());
     component.datasetId.set('?');
     component.getRepoToken();
-    expect(navigation.assign).toHaveBeenCalled();
+    expect(restoreLoginState(redirectState())?.datasetId).toBeUndefined();
+  });
+
+  it('getRepoToken sends only the nonce and download flag, however many files are selected', () => {
+    initComponent();
+    component.globusPlugin.set(plugin.getGlobusPlugin());
+    component.datasetId.set('doi:ABC');
+    component.downloadId.set('dl-1');
+    component.dataverseToken.set('secret-tok');
+    component.preSelectedFileIds.set(
+      new Set(Array.from({ length: 5000 }, (_, i) => String(1000000 + i))),
+    );
+    component.getRepoToken();
+    const state = JSON.parse(redirectState());
+    expect(Object.keys(state).sort()).toEqual(['download', 'nonce']);
     const redirectUrl = navigation.assign.calls.mostRecent().args[0] as string;
-    const match = redirectUrl.match(/state=([^&]+)/);
-    expect(match).toBeTruthy();
-    const state = JSON.parse(decodeURIComponent(match![1]));
-    expect(state.datasetId).toBeUndefined();
+    expect(redirectUrl).not.toContain('secret-tok');
+    expect(redirectUrl.length).toBeLessThan(2000);
+  });
+
+  it('ngOnInit restores the download state kept in the browser after the Globus login', async () => {
+    const minimalState = stashLoginState({
+      nonce: 'nonce-stash',
+      download: true,
+      downloadId: 'dl-9',
+      accessMode: 'guest',
+      dataverseToken: 'tok-9',
+      datasetId: { value: 'doi:999', label: 'doi:999' },
+      preSelectedFileIds: ['11', '12'],
+    });
+    initComponent({ code: 'oauth-code', state: minimalState }, (comp) => {
+      spyOn(comp, 'onDatasetChange').and.stub();
+    });
+    await new Promise<void>((r) => setTimeout(r));
+
+    const req = httpMock.expectOne('api/common/oauthtoken');
+    expect(req.request.body.nonce).toBe('nonce-stash');
+    req.flush({ session_id: 'session-stash' });
+    await new Promise<void>((r) => setTimeout(r));
+
+    expect(component.datasetId()).toBe('doi:999');
+    expect(component.downloadId()).toBe('dl-9');
+    expect(component.accessMode()).toBe('guest');
+    expect(component.dataverseToken()).toBe('tok-9');
+    expect(Array.from(component.preSelectedFileIds())).toEqual(['11', '12']);
   });
 
   it('getRepoToken strips session_required_single_domain for guest users', () => {
@@ -2471,9 +2519,9 @@ describe('DownloadComponent', () => {
       comp.getRepoToken();
       const url = navigation.assign.calls.mostRecent().args[0] as string;
       expect(new URL(url).origin).toBe('https://globus.example');
-      const state = JSON.parse(new URL(url).searchParams.get('state')!);
-      expect(state.preSelectedFileIds).toEqual(['1', '2']);
-      expect(state.datasetId).toBeUndefined();
+      const state = restoreLoginState(new URL(url).searchParams.get('state')!);
+      expect(state?.preSelectedFileIds).toEqual(['1', '2']);
+      expect(state?.datasetId).toBeUndefined();
     });
 
     it('onDatasetChange explains anonymous preview url failures', async () => {
