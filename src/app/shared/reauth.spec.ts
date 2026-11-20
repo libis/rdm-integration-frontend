@@ -156,6 +156,22 @@ describe('buildAuthorizeUrl', () => {
     expect(p.get('scope')).toBe(`${consented} openid email profile`);
   });
 
+  it('keeps a scope that needs consent for two collections intact', () => {
+    // From the Globus Transfer API docs: the data_access dependencies of
+    // both collections, separated by a space, in one scope
+    const twoCollections =
+      'urn:globus:auth:scope:transfer.api.globus.org:all' +
+      '[*https://auth.globus.org/scopes/ea4c8cf2-d3a2-4c1a-92c2-59925fe7ac5b/data_access' +
+      ' *https://auth.globus.org/scopes/0357da44-c908-47e5-8351-ba5c695d11a7/data_access]';
+    const reauth = extractReauth({
+      status: 401,
+      error: { reauth: { required_scopes: [twoCollections] } },
+    });
+    expect(reauth).toEqual({ scopes: [twoCollections] });
+    const p = params(buildAuthorizeUrl(base, { ...opts, reauth }));
+    expect(p.get('scope')).toBe(`${twoCollections} openid email profile`);
+  });
+
   it('appends unmatched required scopes', () => {
     const p = params(
       buildAuthorizeUrl(
