@@ -48,7 +48,10 @@ describe('login state storage', () => {
   it('returns only what the URL carried when the nonce differs', () => {
     stashLoginState(full);
     const other = JSON.stringify({ nonce: 'other', download: true });
-    expect(restoreLoginState(other)).toEqual({ nonce: 'other', download: true });
+    expect(restoreLoginState(other)).toEqual({
+      nonce: 'other',
+      download: true,
+    });
   });
 
   it('accepts a full state from a login started before this change', () => {
