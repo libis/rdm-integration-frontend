@@ -33,7 +33,6 @@
     "@angular/platform-browser": "^22.3.0",
     "@angular/platform-browser-dynamic": "^22.3.0",
     "@angular/router": "^22.3.0",
-    "@ro-kit/ui-widgets": "^1.0.63",
     "bootstrap": "^5.3.8",
     "jsonld": "^9.0.0",
     "lit": "^3.3.3",
@@ -42,9 +41,7 @@
     "primeicons": "^8.0.2",
     "rdfxml-streaming-parser": "^3.3.0",
     "rxjs": "^7.8.2",
-    "shacl-engine": "^1.1.2",
-    "tslib": "^2.8.1",
-    "uuid": "^14.0.2"
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^22.3.0",
