@@ -39,6 +39,33 @@ describe('extractReauth', () => {
     });
   });
 
+  it('extracts policy, identity and MFA demands', () => {
+    expect(
+      extractReauth({
+        status: 401,
+        error: {
+          reauth: {
+            required_policies: ['6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b'],
+          },
+        },
+      }),
+    ).toEqual({ policies: ['6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b'] });
+    expect(
+      extractReauth({
+        status: 401,
+        error: {
+          reauth: {
+            required_identities: ['11111111-2222-4333-8444-555555555555'],
+            required_mfa: true,
+          },
+        },
+      }),
+    ).toEqual({
+      identities: ['11111111-2222-4333-8444-555555555555'],
+      mfa: true,
+    });
+  });
+
   it('returns undefined for plain errors and empty payloads', () => {
     expect(extractReauth({ status: 500, error: 'boom' })).toBeUndefined();
     expect(
@@ -199,6 +226,78 @@ describe('buildAuthorizeUrl', () => {
     expect(p.get('prompt')).toBeNull();
   });
 
+  // Globus Auth: policies cannot be combined with domains, identities or MFA
+  it('sends a policy demand alone and forces a fresh login', () => {
+    const p = params(
+      buildAuthorizeUrl(base, {
+        ...opts,
+        reauth: {
+          policies: ['6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b', 'other-policy'],
+        },
+      }),
+    );
+    expect(p.get('session_required_policies')).toBe(
+      '6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b,other-policy',
+    );
+    expect(p.get('session_required_single_domain')).toBeNull();
+    expect(p.get('session_required_identities')).toBeNull();
+    expect(p.get('session_required_mfa')).toBeNull();
+    expect(p.get('prompt')).toBe('login');
+  });
+
+  // Globus Auth: identities cannot be combined with domains
+  it('sends demanded identities with MFA but without domains', () => {
+    const p = params(
+      buildAuthorizeUrl(base, {
+        ...opts,
+        reauth: {
+          identities: ['11111111-2222-4333-8444-555555555555'],
+          mfa: true,
+        },
+      }),
+    );
+    expect(p.get('session_required_identities')).toBe(
+      '11111111-2222-4333-8444-555555555555',
+    );
+    expect(p.get('session_required_mfa')).toBe('true');
+    expect(p.get('session_required_single_domain')).toBeNull();
+    expect(p.get('prompt')).toBe('login');
+  });
+
+  it('sends an MFA demand with the demanded domains', () => {
+    const p = params(
+      buildAuthorizeUrl(base, {
+        ...opts,
+        reauth: { domains: ['sydney.edu.au'], mfa: true },
+      }),
+    );
+    expect(p.get('session_required_single_domain')).toBe('sydney.edu.au');
+    expect(p.get('session_required_mfa')).toBe('true');
+    expect(p.get('prompt')).toBe('login');
+  });
+
+  it('sends an MFA demand alone with the configured domains', () => {
+    const p = params(
+      buildAuthorizeUrl(base, { ...opts, reauth: { mfa: true } }),
+    );
+    expect(p.get('session_required_single_domain')).toBe('kuleuven.be');
+    expect(p.get('session_required_mfa')).toBe('true');
+    expect(p.get('prompt')).toBe('login');
+  });
+
+  // Globus Auth only accepts MFA together with a domain or identities
+  it('cannot send an MFA demand alone in guest mode, still forces a fresh login', () => {
+    const p = params(
+      buildAuthorizeUrl(base, {
+        ...opts,
+        guestMode: true,
+        reauth: { mfa: true },
+      }),
+    );
+    expect(p.get('session_required_mfa')).toBeNull();
+    expect(p.get('prompt')).toBe('login');
+  });
+
   it('applies error-demanded domains even in guest mode', () => {
     const p = params(
       buildAuthorizeUrl(base, {
@@ -214,6 +313,16 @@ describe('buildAuthorizeUrl', () => {
 
 describe('pending reauth storage', () => {
   afterEach(() => sessionStorage.removeItem('pendingReauth'));
+
+  it('keeps policy, identity and MFA demands', () => {
+    const demand = {
+      policies: ['6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b'],
+      identities: ['11111111-2222-4333-8444-555555555555'],
+      mfa: true,
+    };
+    storePendingReauth(demand);
+    expect(takePendingReauth()).toEqual(demand);
+  });
 
   it('stores and takes exactly once', () => {
     storePendingReauth({ domains: ['sydney.edu.au'] });
@@ -269,11 +378,21 @@ describe('registerReauthAttempt', () => {
     expect(registerReauthAttempt({ scopes: ['scope-a'] })).toBeTrue();
   });
 
+  it('counts a different policy as a different demand', () => {
+    registerReauthAttempt({
+      policies: ['6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b'],
+    });
+    registerReauthAttempt({
+      policies: ['6f5a1e2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b'],
+    });
+    expect(registerReauthAttempt({ policies: ['other-policy'] })).toBeTrue();
+  });
+
   it('forgets attempts older than the window', () => {
     sessionStorage.setItem(
       'reauthAttempts',
       JSON.stringify({
-        key: JSON.stringify([[], ['kuleuven.be']]),
+        key: JSON.stringify([[], ['kuleuven.be'], [], [], false]),
         count: 2,
         firstAt: Date.now() - 6 * 60 * 1000,
       }),

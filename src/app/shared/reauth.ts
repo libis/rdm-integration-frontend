@@ -6,6 +6,12 @@ import { TokenGetter } from '../models/plugin';
 export interface ReauthRequest {
   scopes?: string[];
   domains?: string[];
+  /** Globus authentication policy ids the session must satisfy. */
+  policies?: string[];
+  /** Globus identity ids that must be in the session. */
+  identities?: string[];
+  /** The login must use multi-factor authentication. */
+  mfa?: boolean;
   message?: string;
 }
 
@@ -20,7 +26,33 @@ interface AuthorizeBase {
 interface ReauthPayload {
   required_scopes?: string[];
   required_domains?: string[];
+  required_policies?: string[];
+  required_identities?: string[];
+  required_mfa?: boolean;
   message?: string;
+}
+
+/** Whether a demand asks the new login for anything. */
+function isActionable(r: ReauthRequest): boolean {
+  return !!(
+    r.scopes?.length ||
+    r.domains?.length ||
+    r.policies?.length ||
+    r.identities?.length ||
+    r.mfa
+  );
+}
+
+/** Copy only the known demand fields. */
+function pickDemand(r: ReauthRequest): ReauthRequest {
+  const res: ReauthRequest = {};
+  if (r.scopes?.length) res.scopes = r.scopes;
+  if (r.domains?.length) res.domains = r.domains;
+  if (r.policies?.length) res.policies = r.policies;
+  if (r.identities?.length) res.identities = r.identities;
+  if (r.mfa) res.mfa = true;
+  if (r.message) res.message = r.message;
+  return res;
 }
 
 const LEGACY_MARKER = '*scopes*';
@@ -43,12 +75,15 @@ export function extractReauth(err: unknown): ReauthRequest | undefined {
   if (e.status === 401 && typeof e.error === 'object' && e.error !== null) {
     const payload = (e.error as { reauth?: ReauthPayload }).reauth;
     if (payload) {
-      const res: ReauthRequest = {};
-      if (payload.required_scopes?.length) res.scopes = payload.required_scopes;
-      if (payload.required_domains?.length)
-        res.domains = payload.required_domains;
-      if (payload.message) res.message = payload.message;
-      if (res.scopes || res.domains) return res;
+      const res = pickDemand({
+        scopes: payload.required_scopes,
+        domains: payload.required_domains,
+        policies: payload.required_policies,
+        identities: payload.required_identities,
+        mfa: payload.required_mfa,
+        message: payload.message,
+      });
+      if (isActionable(res)) return res;
     }
     return undefined;
   }
@@ -123,7 +158,10 @@ function mergeScopes(baseScopes: string[], required: string[]): string[] {
  * Build the OAuth authorize URL. Reauth-demanded domains replace the
  * configured ones and force a fresh login (`prompt=login`); guest mode omits
  * the configured domains (any Globus identity may be used) unless an error
- * explicitly demanded one.
+ * explicitly demanded one. Globus Auth cannot combine policies with domains,
+ * identities or MFA, nor identities with domains, and takes MFA only together
+ * with a domain or identities; demanded policies come first, then identities,
+ * then domains.
  */
 export function buildAuthorizeUrl(
   base: AuthorizeBase,
@@ -139,13 +177,29 @@ export function buildAuthorizeUrl(
   if (scopes.length > 0) {
     url.searchParams.set('scope', scopes.join(' '));
   }
-  const demanded = opts.reauth?.domains ?? [];
-  const domains =
-    demanded.length > 0 ? demanded : opts.guestMode ? [] : base.baseDomains;
-  if (domains.length > 0) {
-    url.searchParams.set('session_required_single_domain', domains.join(','));
+  const reauth = opts.reauth ?? {};
+  const policies = reauth.policies ?? [];
+  const identities = reauth.identities ?? [];
+  const demanded = reauth.domains ?? [];
+  if (policies.length > 0) {
+    url.searchParams.set('session_required_policies', policies.join(','));
+  } else if (identities.length > 0) {
+    url.searchParams.set('session_required_identities', identities.join(','));
+    if (reauth.mfa) url.searchParams.set('session_required_mfa', 'true');
+  } else {
+    const domains =
+      demanded.length > 0 ? demanded : opts.guestMode ? [] : base.baseDomains;
+    if (domains.length > 0) {
+      url.searchParams.set('session_required_single_domain', domains.join(','));
+      if (reauth.mfa) url.searchParams.set('session_required_mfa', 'true');
+    }
   }
-  if (demanded.length > 0) {
+  if (
+    demanded.length > 0 ||
+    policies.length > 0 ||
+    identities.length > 0 ||
+    reauth.mfa
+  ) {
     url.searchParams.set('prompt', 'login');
   }
   url.searchParams.set('client_id', base.clientId);
@@ -194,11 +248,8 @@ export function takePendingReauth(): ReauthRequest | undefined {
     ) {
       return undefined;
     }
-    const res: ReauthRequest = {};
-    if (parsed.scopes) res.scopes = parsed.scopes;
-    if (parsed.domains) res.domains = parsed.domains;
-    if (parsed.message) res.message = parsed.message;
-    return res.scopes || res.domains ? res : undefined;
+    const res = pickDemand(parsed);
+    return isActionable(res) ? res : undefined;
   } catch {
     return undefined;
   }
@@ -215,7 +266,13 @@ export function takePendingReauth(): ReauthRequest | undefined {
  * unavailable the attempt is allowed (no counting is possible).
  */
 export function registerReauthAttempt(reauth: ReauthRequest): boolean {
-  const key = JSON.stringify([reauth.scopes ?? [], reauth.domains ?? []]);
+  const key = JSON.stringify([
+    reauth.scopes ?? [],
+    reauth.domains ?? [],
+    reauth.policies ?? [],
+    reauth.identities ?? [],
+    !!reauth.mfa,
+  ]);
   const now = Date.now();
   let count = 1;
   let firstAt = now;
